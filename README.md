@@ -35,7 +35,7 @@
 
 이 레포를 받아 바로 빌드·서명합니다. 원작 대비 바뀐 내용 전체는 `git diff 2be141b`로 볼 수 있습니다. 절차는 [`i30pd_port/app/README.md`](i30pd_port/app/README.md)의 "빌드"와 "내 앱" 절에, 도구 설치는 [`i30pd_port/SETUP_laptop.md`](i30pd_port/SETUP_laptop.md)에 있습니다.
 
-브랜치: `main` = 안정화(Releases의 Latest), `test` = 테스트 빌드(실차 검증 전, `test` 사전 배포 — 지금은 화면 탭 하나로 통일한 25개 화면 목록, 클러스터 레이아웃 17개, 고장코드 조회). 설치기에서 `2) 테스트`를 고르면 테스트 빌드가 설치됩니다. v1.6.8까지의 예전 릴리스와 패치 파일 시절 기록은 [i30-pd-dashboard-legacy](https://github.com/sung9155/i30-pd-dashboard-legacy/releases)에 있습니다.
+브랜치: `main` = 안정화(Releases의 Latest), `beta` = 테스트 빌드(실차 검증 전, 태그 `test`의 사전 배포 — 지금은 화면 탭 하나로 통일한 25개 화면 목록, 클러스터 레이아웃 17개, 고장코드 조회). 설치기에서 `2) 테스트`를 고르면 테스트 빌드가 설치됩니다. v1.6.8까지의 예전 릴리스와 패치 파일 시절 기록은 [i30-pd-dashboard-legacy](https://github.com/sung9155/i30-pd-dashboard-legacy/releases)에 있습니다.
 
 ## 레포 구성
 

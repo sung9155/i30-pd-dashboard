@@ -52,6 +52,8 @@ public final class UiText {
         EN.put("RED ALERT · 급제동","RED ALERT · hard braking");
         EN.put("USB 디버깅","USB debugging");
         EN.put("USB 디버깅 ","USB debugging ");
+        EN.put("USB 디버깅 OFF 명령을 보냈습니다. PC 연결이 끊기지 않으면 시동을 다시 거세요.","USB debugging OFF sent. If the PC stays connected, restart the engine.");
+        EN.put("USB 디버깅 ON 명령을 보냈습니다(엔지니어 모드 Factory Test와 같은 명령). 몇 초 뒤 PC를 연결하세요. 내비게이션을 재시작하면 일반 USB(CarPlay)로 돌아갑니다.","USB debugging ON sent (the same command as Engineer Mode Factory Test). Connect the PC in a few seconds. Restarting the head unit returns to normal USB (CarPlay).");
         EN.put("USB 모드 전환 실패: ","USB mode request failed: ");
         EN.put("USB 모드 전환 요청이 거부되었습니다.","The USB mode request was denied.");
         EN.put("Wi-Fi 끄기 실패/시간 초과. 백업을 보존했습니다. 원상복구하세요.","Wi-Fi shutdown failed or timed out. Backup retained; restore the original settings.");
@@ -146,6 +148,7 @@ public final class UiText {
         EN.put("다시 조회","Read again");
         EN.put("다음","Next");
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
+        EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
         EN.put("단 = 워프 단계","gear = warp stage");
         EN.put("닫기","Close");
         EN.put("대칭","Sym");

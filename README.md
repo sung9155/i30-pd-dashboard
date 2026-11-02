@@ -39,16 +39,20 @@
 </tr>
 </table>
 
-**테스트 빌드(`beta` 브랜치) 화면** — 화면 목록과 새 클러스터 레이아웃. 실차 검증 전입니다.
+**화면 목록 · 설정 · 클러스터 레이아웃** (v1.7.0부터)
 
 <table>
 <tr>
-<td width="50%"><img src="https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/beta/i30pd_port/app/screens/9_cluster_list.png" alt="화면 목록"><br><b>화면 목록</b> — 25개 화면을 길게 눌러 고름</td>
-<td width="50%"><img src="https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/beta/i30pd_port/app/screens/9d_cluster_taxi.png" alt="택시"><br><b>택시</b> — 미터기 요금</td>
+<td width="50%"><img src="i30pd_port/app/screens/9_cluster_list.png" alt="화면 목록"><br><b>화면 목록</b> — 탭 줄을 길게 눌러 23개 화면 중 고름</td>
+<td width="50%"><img src="i30pd_port/app/screens/9_settings_mode_on.png" alt="설정"><br><b>설정</b> (톱니바퀴) — 왼쪽 분류, 오른쪽 목록</td>
 </tr>
 <tr>
-<td><img src="https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/beta/i30pd_port/app/screens/9g_cluster_8bit.png" alt="8비트"><br><b>8비트</b> — 속도·부스트가 게임 화면으로</td>
-<td><img src="https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/beta/i30pd_port/app/screens/9f_cluster_hud.png" alt="HUD"><br><b>HUD</b> — 전투기 HUD</td>
+<td><img src="i30pd_port/app/screens/9g_cluster_8bit.png" alt="8비트"><br><b>8비트</b> — 속도·부스트가 게임 화면으로</td>
+<td><img src="i30pd_port/app/screens/9g_cluster_8bit_chase.png" alt="추격"><br><b>8비트 추격 시점</b> — 핸들에 따라 휘는 길</td>
+</tr>
+<tr>
+<td><img src="i30pd_port/app/screens/9d_cluster_taxi.png" alt="택시"><br><b>택시</b> — 미터기 요금</td>
+<td><img src="i30pd_port/app/screens/9f_cluster_hud.png" alt="HUD"><br><b>HUD</b> — 전투기 HUD</td>
 </tr>
 </table>
 
@@ -67,7 +71,7 @@
 - **유온**: 이 엔진(감마 1.6 T-GDI)에는 엔진오일 온도 센서가 없습니다. F1·퍼포먼스 탭은 그 자리에 흡기 온도를 보여 주고, 게이지·그래프 목록의 유온 항목은 실린더 헤드 냉각수 센서 값을 "대체"라고 표시해 보여 줍니다.
 - **없는 값**: 실제 오일·미션오일 온도, 바퀴별 휠속, TCS/ESC 개입 표시, 뒷문 2개, 안전벨트는 내비로 들어오는 데이터에 없습니다.
 
-탭별 기능과 화면은 [`i30pd_port/app/TABS.md`](i30pd_port/app/TABS.md)에 있습니다. 헤더 버튼으로 화면 테마 8가지(기본 N, 람보, BMW, 그리고 완전 검정 배경의 아이스·모노·앰버·틸·나이트)를 고를 수 있고, 클러스터 탭에는 계기판식 화면 3가지(클래식·레트로·랠리)가 있습니다.
+탭별 기능과 화면은 [`i30pd_port/app/TABS.md`](i30pd_port/app/TABS.md)에 있습니다. 화면은 23개(전체 조망·게이지·그래프·F1·퍼포먼스·레이스·기록·쇼, 클러스터 레이아웃 15개)이고 머리의 탭이나 좌우로 쓸어 넘깁니다. 톱니바퀴 설정에서 쓸 화면, 테마 10가지(기본 N, 람보, BMW, 그리고 완전 검정 배경의 아이스·모노·앰버·틸·나이트·로즈·코퍼), 8비트 차 색, 주행 모드 옵션(모드별 강조색·화면 전환), 언어를 고르고, 고장코드를 읽습니다(읽기만).
 
 ## 설치
 
@@ -79,7 +83,7 @@
 
 이 레포를 받아 바로 빌드·서명합니다. 원작 대비 바뀐 내용 전체는 `git diff 2be141b`로 볼 수 있습니다. 절차는 [`i30pd_port/app/README.md`](i30pd_port/app/README.md)의 "빌드"와 "내 앱" 절에, 도구 설치는 [`i30pd_port/SETUP_laptop.md`](i30pd_port/SETUP_laptop.md)에 있습니다.
 
-브랜치: `main` = 안정화(Releases의 Latest), `beta` = 테스트 빌드(실차 검증 전, 태그 `test`의 사전 배포 — 지금은 화면 탭 하나로 통일한 25개 화면 목록, 클러스터 레이아웃 17개, 고장코드 조회). 설치기에서 `2) 테스트`를 고르면 테스트 빌드가 설치됩니다. v1.6.8까지의 예전 릴리스와 패치 파일 시절 기록은 [i30-pd-dashboard-legacy](https://github.com/sung9155/i30-pd-dashboard-legacy/releases)에 있습니다.
+브랜치: `main` = 안정화(Releases의 Latest), `beta` = 다음 테스트 빌드(실차 검증 전, 태그 `test`의 사전 배포 — v1.7.0 직후에는 `main`과 같음). 설치기에서 `2) 테스트`를 고르면 테스트 빌드가 설치됩니다. v1.6.8까지의 예전 릴리스와 패치 파일 시절 기록은 [i30-pd-dashboard-legacy](https://github.com/sung9155/i30-pd-dashboard-legacy/releases)에 있습니다.
 
 ## 레포 구성
 

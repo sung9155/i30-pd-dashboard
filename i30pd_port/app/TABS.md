@@ -4,7 +4,7 @@
 
 예전의 **대칭** 탭(esp32CarInfo 배치, `cluster/`)은 10/30에 앱에서 삭제했다. 같은 정보는 레이스 탭이 더 많이 보여 준다.
 
-다시 그리기: `bash i30pd_port/app/preview/preview.sh <업스트림 클론(패치 적용)> [로그] [출력 폴더] [로그 위치 0~1]` → `app/screens/*.png` (JDK만 필요, `android.graphics`는 Java2D 대역).
+다시 그리기: `bash i30pd_port/app/preview/preview.sh <이 레포 루트> [로그] [출력 폴더] [로그 위치 0~1]` → `app/screens/*.png` (JDK만 필요, `android.graphics`는 Java2D 대역).
 
 글꼴: 차량과 같은 Android 4.2 Roboto를 `preview/fonts/`(git 미포함, Apache 2.0)에 두면 영문·숫자를 Roboto로, 한글은 맑은 고딕으로 그린다(차량도 한글은 대체 글꼴). 없으면 전부 맑은 고딕. 받기:
 ```

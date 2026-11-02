@@ -48,7 +48,7 @@ python3 scripts/build.py dashboard ...            # docs/BUILD.md 그대로
 ## 미리보기
 
 ```sh
-bash i30pd_port/app/preview/preview.sh <업스트림 클론(패치 적용)>   # → i30pd_port/app/screens/*.png (모든 탭)
+bash i30pd_port/app/preview/preview.sh <이 레포 루트>   # → i30pd_port/app/screens/*.png (모든 탭)
 ```
 
 JDK만 있으면 된다. 렌더러·`Telemetry`·`UiText`는 업스트림 실제 소스를 쓰고 `android.graphics`만 Java2D 대역이다. 실차 스크린샷과 배치 일치 확인.

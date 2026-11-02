@@ -180,7 +180,7 @@ ADB_SERIAL=<일련번호> bash i30pd_port/car_session.sh 30   # 장치가 여러
     --r8-jar /d/Android/sdk/build-tools/34.0.0/lib/d8.jar \
     --out build/dashboard
   ```
-  서명은 `D:\Android\sdk\build-tools\34.0.0\apksigner.bat` (V1 전용, AOSP platform 테스트키 — [`app/README.md`](app/README.md) "재현").
+  서명은 `D:\Android\sdk\build-tools\34.0.0\apksigner.bat` (V1 전용, AOSP platform 테스트키 — [`app/README.md`](app/README.md) "빌드").
 
 ---
 

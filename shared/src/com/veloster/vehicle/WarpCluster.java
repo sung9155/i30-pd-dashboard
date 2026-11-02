@@ -16,6 +16,7 @@ final class WarpCluster extends ClusterKit {
     private static final int N=160;
     private final float[] sx=new float[N],sy=new float[N],sz=new float[N];
     private final Random rnd=new Random(7);
+    { themed=true; }   // the warp layout follows the theme's accent
     private float dist,sweep;
     private long last;
     {for(int i=0;i<N;i++)spawn(i,0.05f+rnd.nextFloat()*0.95f);}

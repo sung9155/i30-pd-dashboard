@@ -12,6 +12,7 @@ import java.util.Locale;
  */
 final class EngineCluster extends ClusterKit {
     private static final int WH=0xfff2f2f2,CY=0xff4fd1ff,AM=0xffffb000,RD=0xffff3030,GR=0xff3ddc56,GY=0xff3b4046,SUB=0xff6f8c99;
+    { themed=true; }   // the aircraft-engine gauges follow the theme's accent
 
     @Override protected void draw(Canvas c){
         float rpm=v(0),cool=v(2),load=v(Telemetry.ENGINE_LOAD),fuel=v(Telemetry.FUEL_RATE),boost=v(Telemetry.BOOST),spark=v(Telemetry.SPARK),iat=v(Telemetry.INTAKE),spd=v(7),top=boostTop();

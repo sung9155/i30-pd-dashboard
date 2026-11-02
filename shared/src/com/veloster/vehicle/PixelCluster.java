@@ -58,7 +58,7 @@ final class PixelCluster extends ClusterKit {
     private static final double TAU=Math.PI*2;
     // Caches: side car [brake|left<<1|spin<<2], rear car [brake|left|right|lamps|tilt], skyline/hills per sky, hearts, beam.
     private final Bitmap[] sideCar=new Bitmap[48],rearCar=new Bitmap[96],cityStrip=new Bitmap[3],hillStrip=new Bitmap[3],heartBmp=new Bitmap[9];
-    private Bitmap beam;
+    private Bitmap beam,highBeam;
     private float pxScale=4,pxTop=52;
     private interface Art{void paint(Canvas c);}
     /** Paints art once into a bitmap at 1 pixel per scene pixel. */
@@ -132,7 +132,9 @@ final class PixelCluster extends ClusterKit {
         if(lamps){if(beam==null)beam=bake(56,18,new Art(){public void paint(Canvas b){
             for(int dx=0;dx<56;dx++){int a=(int)(0.22f*(1-dx/56f)*255),top=Math.round(7-dx*0.04f),bot=Math.round(8+dx*0.16f);px(b,dx,top,1,bot-top+1,(a<<24)|0xffecbe);}}});
             put(c,beam,cx+46,cy);
-            if(high)for(int dx=0;dx<96;dx++){int a=(int)(0.20f*(1-dx/96f)*255),tp=Math.round(6-dx*0.05f),bt=Math.round(8+dx*0.03f);px(c,cx+46+dx,cy+tp,1,bt-tp+1,(a<<24)|0xf4f6ff);}}   // high beam: aimed level and far, a faint whiter cone over the low beam
+            if(high){if(highBeam==null)highBeam=bake(96,12,new Art(){public void paint(Canvas b){   // rows 0..11 below the car's top (the cone spans 1..11)
+                for(int dx=0;dx<96;dx++){int a=(int)(0.20f*(1-dx/96f)*255),tp=Math.round(6-dx*0.05f),bt=Math.round(8+dx*0.03f);px(b,dx,tp,1,bt-tp+1,(a<<24)|0xf4f6ff);}}});
+                put(c,highBeam,cx+46,cy);}}   // high beam: aimed level and far, a faint whiter cone over the low beam
         if(tail||lamps||brake)for(int k=0;k<3;k++)px(c,cx-9+3*k,cy+3+k,9-3*k,6-2*k,((int)((brake?0.10f+0.06f*k:0.04f+0.03f*k)*255)<<24)|0xff281e);
         if(left)for(int k=0;k<2;k++){int a=((int)((0.15f+0.15f*k)*255)<<24)|0xffaa1e;px(c,cx+43+k,cy+5+k,6-2*k,4-2*k,a);px(c,cx-3+k,cy+3+k,5-2*k,4-2*k,a);}
         double per=TAU/5;int spin=(int)(((scroll/5)%per+per)%per/per*6)%6;   // 5 spokes: 6 steps cover a turn
@@ -222,7 +224,7 @@ final class PixelCluster extends ClusterKit {
         px(c,0,runAt,200,bottom+1-runAt,bands[bottom]?GRASS_A[phase]:GRASS_B[phase]);
         for(int y=hz+1;y<=bottom;y++){
             float cx=rowX[y],w=rowW[y];boolean band=bands[y];
-            px(c,cx-w/2-w*0.07f,y,w*0.07f,1,band?0xffe23b3b:0xfff2f2f2);px(c,cx+w/2,y,w*0.07f,1,band?0xffe23b3b:0xfff2f2f2);
+            px(c,cx-w/2-w*0.07f,y,w*1.14f,1,band?0xffe23b3b:0xfff2f2f2);   // both kerbs share the row's colour: one rect under the road
             px(c,cx-w/2,y,w,1,band?0xff3b3b48:0xff363642);
             if(band)px(c,cx-w*0.012f,y,Math.max(1,w*0.024f),1,0xffe8e8f0);
         }
@@ -244,7 +246,7 @@ final class PixelCluster extends ClusterKit {
         if(mode==SPORT&&vk>30)for(int i=0;i<4;i++){   // SPORT: speed lines stream out of the vanishing point toward the camera, speeding up
             float t=((now/40+i*11)%36)/36f,dx=i%2==0?-1:1,dy=0.18f+(i/2)*0.22f,n=(float)Math.hypot(dx,dy),r=16+t*t*140,len=2+t*12;
             int a=((int)(0.30f*t*(1-t)*4*0.6f*255)<<24)|0xffffff;   // fades in and out, never above 0.18
-            for(float d=0;d<len;d+=1)px(c,100+dx/n*(r+d),hz+dy/n*(r+d),1,1,a);}
+            line(c,(100+dx/n*r)*4,52+(hz+dy/n*r)*4,(100+dx/n*(r+len))*4,52+(hz+dy/n*(r+len))*4,4,a);}
         rear(c,lat,bump,brake,left,right,boost,rpm);
     }
     /** i30 N from straight behind, 49 x 39 lo-res pixels traced from Hyundai's rear view (width : height 1.24). */
@@ -359,12 +361,18 @@ final class PixelCluster extends ClusterKit {
     private static final String FONT_CHARS=" !%+-./0123456789:?ABCDEFGHIJKLMNOPQRSTUVWXYZsvx";
     /** 7 rows per glyph, 5 bits each (bit 4 = left column), as hex pairs in FONT_CHARS order. */
     private static final String FONT_ROWS="0000000000000004040404040004181902040813030004041F0404000000001F00000000000000000C0C000102040810000E11131519110E040C040404040E0E11010204081F1F02040201110E02060A121F02021F101E0101110E0608101E11110E1F0102040808080E11110E11110E0E11110F01020C000C0C000C0C000E1101020400040E1111111F11111E11111E11111E0E11101010110E1C12111111121C1F10101E10101F1F10101E1010100E11101711110F1111111F1111110E04040404040E0702020202120C111214181412111010101010101F111B1515111111111119151311110E11111111110E1E11111E1010100E11111115120D1E11111E1412110F10100E01011E1F0404040404041111111111110E11111111110A041111111515150A11110A040A11111111110A0404041F01020408101F00000E100E011E00001F1F0E04000000110A040A11";
-    private final java.util.HashMap<Integer,Bitmap> fontAtlas=new java.util.HashMap<Integer,Bitmap>();
-    private Bitmap atlas(final int color){
-        Bitmap b=fontAtlas.get(color);
-        if(b==null){b=bake(FONT_CHARS.length()*6,7,new Art(){public void paint(Canvas a){
-            for(int g=0;g<FONT_CHARS.length();g++)for(int r=0;r<7;r++){int bits=Integer.parseInt(FONT_ROWS.substring(g*14+r*2,g*14+r*2+2),16);
-                for(int k=0;k<5;k++)if((bits&(16>>k))!=0)px(a,g*6+k,r,1,1,color);}}});fontAtlas.put(color,b);}
+    private static final int[] FONT_BITS=new int[FONT_ROWS.length()/2];
+    static{for(int i=0;i<FONT_BITS.length;i++)FONT_BITS[i]=Integer.parseInt(FONT_ROWS.substring(i*2,i*2+2),16);}
+    /** Strings drawn lately, text and its one-pixel shadow baked at font scale: one blit each. Values change (speed, time),
+     * so it is a small LRU; ponytail: 64 entries is about 20 frames of the busiest HUD, raise it if the frame log shows misses. */
+    private final java.util.LinkedHashMap<String,Bitmap> textCache=new java.util.LinkedHashMap<String,Bitmap>(80,0.75f,true){
+        @Override protected boolean removeEldestEntry(java.util.Map.Entry<String,Bitmap> e){return size()>64;}};
+    private Bitmap textBitmap(final String s,final int color){
+        String key=color+"|"+s;Bitmap b=textCache.get(key);
+        if(b==null){b=bake(Math.max(1,s.length()*6),8,new Art(){public void paint(Canvas a){
+            for(int pass=0;pass<2;pass++)for(int i=0;i<s.length();i++){int g=glyph(s.charAt(i));if(g==0)continue;
+                for(int r=0;r<7;r++){int bits=FONT_BITS[g*7+r];for(int k=0;k<5;k++)if((bits&(16>>k))!=0)px(a,i*6+k+(pass==0?1:0),r+(pass==0?1:0),1,1,pass==0?0xff000000:color);}}}});
+            textCache.put(key,b);}
         return b;
     }
     /** Font pixel size for a text size: 13 -> 2 (14 px caps), 17 -> 2, 34 -> 4, 40 -> 5. */
@@ -372,15 +380,12 @@ final class PixelCluster extends ClusterKit {
     private static float fontWidth(String s,float size){int k=fontPx(size);return s.length()*6*k-k;}
     /** Glyph of a character: lower case shown as capitals except s, v (the ▼ prompt) and x; anything else as '-'. */
     private static int glyph(char ch){int g=FONT_CHARS.indexOf(ch);if(g<0)g=FONT_CHARS.indexOf(Character.toUpperCase(ch));return g<0?FONT_CHARS.indexOf('-'):g;}
-    private void pixText(Canvas c,String s,float x,float base,float size,int color,Paint.Align a){
-        int k=fontPx(size);float w=fontWidth(s,size),x0=a==Paint.Align.CENTER?x-w/2:a==Paint.Align.RIGHT?x-w:x,top=base-7*k;
-        Bitmap b=atlas(color);
-        for(int i=0;i<s.length();i++){int g=glyph(s.charAt(i));if(g==0)continue;float l=x0+i*6*k;blit(c,b,g*6,0,5,7,l,top,l+5*k,top+7*k);}
-    }
     private void sh(Canvas c,String s,float x,float y,float size,int color){sh(c,s,x,y,size,color,Paint.Align.LEFT);}
-    /** Pixel text with a one-pixel black drop shadow, baseline y. */
+    /** Pixel text with a one-pixel black drop shadow, baseline y: one blit of the baked string. */
     private void sh(Canvas c,String s,float x,float y,float size,int color,Paint.Align a){
-        int k=fontPx(size);pixText(c,s,x+k,y+k,size,0xff000000,a);pixText(c,s,x,y,size,color,a);
+        if(s.isEmpty())return;
+        int k=fontPx(size);float w=fontWidth(s,size),x0=a==Paint.Align.CENTER?x-w/2:a==Paint.Align.RIGHT?x-w:x,top=y-7*k;
+        Bitmap b=textBitmap(s,color);blit(c,b,0,0,b.getWidth(),8,x0,top,x0+b.getWidth()*k,top+8*k);
     }
     private static final String[] HEART={"01100110","11111111","11111111","01111110","00111100","00011000"};
     private void heart(Canvas c,float x,float y,float f){

@@ -119,7 +119,7 @@ BT=/d/Android/sdk/build-tools/34.0.0
 
 PD 펌웨어 대조(공개 펌웨어를 받아 확인, 이 레포에는 미포함):
 - **엔지니어링 모드**: `com.hkmc.system.app.engineering/.EngineeringModeMainActivity`가 있고 MAIN 인텐트 필터가 있어 외부에서 실행된다. 숨은 탭과 암호 화면을 거치지 않으므로 **진단 메뉴를 함부로 건드리지 말 것.**
-- **USB 디버깅**: 이 버튼이 쓰는 `com.hkmc.misc.MiscManager.setSystem(5/6)`를 PD 순정 엔지니어 모드도 쓴다. 상태 표시(`com.hkmc.Feature`·`persist.sys.dipo.state`)는 PD에서 "확인 불가"로 나올 수 있다. OFF를 누르면 ADB가 끊긴다.
+- **USB 디버깅**: PD(`com.hkmc.software.ium` 기능 없음)에서는 엔지니어 모드 Factory Test와 같은 줄을 보낸다 — ON `0A 01 → 65 01 → 0A 02`, OFF `0A 01 → 65 00 → 0A 02`(0.8초 간격, `intent.action.FACTORY_TEST` 방송). 시스템의 `MicomFactoryService`가 각 줄을 마이컴에 그대로 넘기고, 마이컴이 USB 포트를 바로 바꾼다. 예전처럼 `MiscManager.setSystem(5)`만 부르면 PD에서는 `persist.sys.dipo.state=debug`만 저장되고 `rsd`가 **다음 부팅부터 계속** 디버그 모드로 올려서(CarPlay 안 됨) 버튼을 눌러도 바로 연결되지 않았다. OFF는 `setSystem(6)`도 불러 그 값을 `carplay`로 되돌린다. ium 기능이 있는 내비는 `setSystem(5/6)`가 바로 `sys.usb.config`를 바꾸므로 그대로 쓴다. 상태 표시는 지금 `sys.usb.config`에 `adb`가 있는지로 판단한다. 실차 미검증.
 - 강제 재시작(`REBOOT`), 다른 앱 위 표시(`SYSTEM_ALERT_WINDOW`, `TYPE_PHONE`)는 platform 키 서명이라 권한이 있다.
 
 빌드·설치(노트북, 위 "빌드"와 같은 클론·도구):

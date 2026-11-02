@@ -8,6 +8,50 @@
 
 > **현대자동차 공식 앱이 아닙니다.** 순정 시스템에 앱을 설치하는 작업이라 보증·AS에서 불이익이 있을 수 있고, 책임은 사용자에게 있습니다. 주행 중에는 화면을 조작하지 마세요. 7단 DCT, 6단 수동, 블루링크 없는 내비 차에서 확인했지만 차와 내비 빌드에 따라 다를 수 있습니다.
 
+## 화면
+
+실차 사진 외에는 PC에서 실제 렌더러 코드에 실차 주행 로그를 흘려 그린 화면입니다(영어 UI, 가짜 값 없음). 탭별 설명은 [`TABS.md`](i30pd_port/app/TABS.md)에 있습니다.
+
+<table>
+<tr>
+<td width="50%"><img src="i30pd_port/app/screens/incar_d79df2b_race.png" alt="실차 레이스 탭"><br><b>레이스</b> (실차, 정차 중)</td>
+<td width="50%"><img src="i30pd_port/app/screens/2_f1.png" alt="F1 탭"><br><b>F1</b> — 큰 단수, 변속 LED, 페달·스로틀·브레이크</td>
+</tr>
+<tr>
+<td><img src="i30pd_port/app/screens/4c_race.png" alt="레이스 탭"><br><b>레이스</b> — 문·와이퍼·주차 브레이크, 공기압, G볼, 조향</td>
+<td><img src="i30pd_port/app/screens/4b_performance.png" alt="퍼포먼스 탭"><br><b>퍼포먼스</b> — 랩 타이머, G-force</td>
+</tr>
+<tr>
+<td><img src="i30pd_port/app/screens/4e_show.png" alt="쇼 탭"><br><b>쇼</b> — 파워밴드, 부스트, 트랙션 원</td>
+<td><img src="i30pd_port/app/screens/4d_records.png" alt="기록 탭"><br><b>기록</b> — 0→100 등 가속 측정, 최고값</td>
+</tr>
+<tr>
+<td><img src="i30pd_port/app/screens/5_gauge.png" alt="게이지 탭"><br><b>게이지</b> — 칸마다 신호·모양을 고름</td>
+<td><img src="i30pd_port/app/screens/7_graph.png" alt="그래프 탭"><br><b>그래프</b> — 신호를 1분·5분 그래프로</td>
+</tr>
+<tr>
+<td><img src="i30pd_port/app/screens/9a_cluster_classic.png" alt="클러스터 클래식"><br><b>클러스터</b> — 클래식</td>
+<td><img src="i30pd_port/app/screens/9b_cluster_retro.png" alt="클러스터 레트로"><br><b>클러스터</b> — 레트로 (랠리도 있음)</td>
+</tr>
+<tr>
+<td><img src="i30pd_port/app/screens/t_lambo_race.png" alt="람보 테마"><br><b>테마</b> — 람보</td>
+<td><img src="i30pd_port/app/screens/t_night_race.png" alt="나이트 테마"><br><b>테마</b> — 나이트 (완전 검정 배경)</td>
+</tr>
+</table>
+
+**테스트 빌드(`beta` 브랜치) 화면** — 화면 목록과 새 클러스터 레이아웃. 실차 검증 전입니다.
+
+<table>
+<tr>
+<td width="50%"><img src="https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/beta/i30pd_port/app/screens/9_cluster_list.png" alt="화면 목록"><br><b>화면 목록</b> — 25개 화면을 길게 눌러 고름</td>
+<td width="50%"><img src="https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/beta/i30pd_port/app/screens/9d_cluster_taxi.png" alt="택시"><br><b>택시</b> — 미터기 요금</td>
+</tr>
+<tr>
+<td><img src="https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/beta/i30pd_port/app/screens/9g_cluster_8bit.png" alt="8비트"><br><b>8비트</b> — 속도·부스트가 게임 화면으로</td>
+<td><img src="https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/beta/i30pd_port/app/screens/9f_cluster_hud.png" alt="HUD"><br><b>HUD</b> — 전투기 HUD</td>
+</tr>
+</table>
+
 ## 표시되는 값
 
 | 분류 | 값 |

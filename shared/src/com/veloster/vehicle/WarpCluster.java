@@ -12,7 +12,7 @@ import java.util.Random;
  * ponytail: 160 stars, the cost of one line each; fewer if the head unit struggles.
  */
 final class WarpCluster extends ClusterKit {
-    private static final int AC=0xff8fb8ff,TX=0xffdfe8ff,MU=0xff6f7f9e,PANEL=0xff0a0d14,EDGE=0xff24304a;
+    private static final int AC=0xffa4d9ef,TX=0xffdfe8ff,MU=0xff6f7f9e,PANEL=0xff0a0d14,EDGE=0xff24304a;   // AC is the N palette accent so the theme remaps it
     private static final int N=160;
     private final float[] sx=new float[N],sy=new float[N],sz=new float[N];
     private final Random rnd=new Random(7);

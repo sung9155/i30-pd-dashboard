@@ -31,7 +31,7 @@ import java.lang.ref.WeakReference;
 public final class QuickEntryService extends Service {
     private static final String PREFS="quick_entry",CHANNEL="vn_quick_entry",STOP="com.veloster.carplayhub.QUICK_ENTRY_OFF";
     private static final int NOTICE=9117;
-    private static final float IDLE_ALPHA=0.4f;   // faint at rest so the floating button is less distracting
+    private static final float IDLE_ALPHA=0.2f;   // very faint at rest so the floating button barely distracts; opaque while touched
     private static WeakReference<Runnable> statusObserver=new WeakReference<Runnable>(null);
     private SharedPreferences prefs;
     private WindowManager windows;

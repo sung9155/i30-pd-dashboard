@@ -104,7 +104,7 @@ public final class QuickEntryService extends Service {
         refreshOverlay();return START_STICKY;
     }
     private Intent hubIntent(){return new Intent(this,HubActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);}
-    private static Intent dashboardIntent(){return new Intent(Intent.ACTION_MAIN).setClassName("com.veloster.dashboard","com.veloster.dashboard.DashboardActivity")
+    static Intent dashboardIntent(){return new Intent(Intent.ACTION_MAIN).setClassName("com.veloster.dashboard","com.veloster.dashboard.DashboardActivity")
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);}
     private Notification notification()throws Exception{
         NotificationManager manager=(NotificationManager)getSystemService(NOTIFICATION_SERVICE);

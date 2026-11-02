@@ -30,6 +30,9 @@ public final class QuickEntryPolicyTest {
         }
         float saved=QuickEntryPolicy.relativeY(216,480,48);
         check(QuickEntryPolicy.y(saved,800,48)==376,"relative position survives rotation");
-        System.out.println("PASS: quick-entry opt-in restore, lock/screen visibility, drag bounds and rotation position");
+        check(QuickEntryPolicy.starRestore("com.hkmc.intent.action.MYMENU_SHORTCUT").equals("com.hkmc.intent.action.MYMENU_SHORTCUT"),"star key restores the remembered action");
+        for(String lost:new String[]{null,"",QuickEntryPolicy.STAR_ACTION})
+            check(QuickEntryPolicy.starRestore(lost).equals("com.mobis.intent.action.CUSTOM_SHORTCUT"),"star key never restores itself or nothing");
+        System.out.println("PASS: quick-entry opt-in restore, lock/screen visibility, drag bounds, rotation position and star key restore");
     }
 }

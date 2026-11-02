@@ -13,6 +13,7 @@ public final class UiText {
     static {
         EN.put("\n\nAP 켜짐·IP 할당은 상태와 실제 iPhone에서 따로 확인하세요.","\n\nCheck AP state and IP assignment separately in status and on the iPhone.");
         EN.put("\n\n이 기기와 페어링할까요?","\n\nPair with this device?");
+        EN.put("\n\n켜면 ☆(사용자 버튼)을 짧게 눌러 계기판을 엽니다. 끄면 원래 기능으로 되돌립니다.\n☆를 길게 눌러 순정 설정 화면을 열면 연결이 풀립니다. 그때는 여기서 다시 켜세요.\n'내 앱'을 강제 종료하면 다시 열 때까지 ☆가 동작하지 않을 수 있습니다.","\n\nWhen on, a short press of ☆ (user button) opens the dashboard. Off puts back the previous function.\nLong-pressing ☆ opens the stock settings screen, which releases it; switch it on here again.\nIf My Apps is force-stopped, ☆ may do nothing until My Apps is opened again.");
         EN.put("\nON: PC 연결용 USB 디버깅 모드\nOFF: 일반 USB 모드로 복귀하며 PC 연결이 끊길 수 있습니다.\n개발자 설정의 일반 USB 토글과는 별개입니다.","\nON: USB debugging mode for a PC connection\nOFF: normal USB mode; the PC connection may disconnect.\nThis is separate from the standard Android developer toggle.");
         EN.put("\n비밀번호: ","\nPassword: ");
         EN.put(" L/h 지금"," L/h now");
@@ -64,6 +65,11 @@ public final class UiText {
         EN.put("−2분30초","-2m30s");
         EN.put("−30초","-30 s");
         EN.put("−5분","-5 min");
+        EN.put("☆ 버튼 → 계기판","☆ button → Dashboard");
+        EN.put("☆ 버튼 설정 실패: ","☆ button setting failed: ");
+        EN.put("☆ 버튼 설정이 적용되지 않았습니다. 이 내비는 지원하지 않을 수 있습니다.","The ☆ button setting did not apply. This head unit may not support it.");
+        EN.put("☆ 버튼: ","☆ button: ");
+        EN.put("☆ 버튼을 원래 기능으로 되돌렸습니다.","☆ button is back to its previous function.");
         EN.put("가속","Accel");
         EN.put("가속 · 스로틀","Pedal/Thr");
         EN.put("가속 페달","Accelerator");
@@ -124,6 +130,8 @@ public final class UiText {
         EN.put("기존 설정 복구","Restore original settings");
         EN.put("기존 핫스팟 설정을 읽지 못했습니다. 백업 불가로 변경하지 않았습니다.","Could not read the existing hotspot configuration. No backup or changes were made.");
         EN.put("기존 핫스팟이 이미 켜져 있습니다. 설정을 변경하지 않았습니다.","The existing hotspot is already on. No settings were changed.");
+        EN.put("꺼짐","Off");
+        EN.put("끄기","Disable");
         EN.put("끔","Off");
         EN.put("나이트","Night");
         EN.put("내 앱","My Apps");
@@ -351,6 +359,7 @@ public final class UiText {
         EN.put("이번","This run");
         EN.put("이전","Previous");
         EN.put("이전 시험 백업이 남아 있습니다. 먼저 원상복구하세요.","A previous test backup remains. Restore the original settings first.");
+        EN.put("이제 ☆ 버튼을 짧게 누르면 계기판이 열립니다.","A short press of ☆ now opens the dashboard.");
         EN.put("인텐스 블루","Intense Blue");
         EN.put("일반 블루투스(Classic)를 사용합니다. BLE 검색과 GPS 데이터 수신 기능은 포함하지 않습니다.","Uses Classic Bluetooth. BLE discovery and GPS data reception are not included.");
         EN.put("일반 설치 앱은 자동 표시됩니다. 목록에서 숨겨도 앱은 삭제되지 않습니다.","Ordinary installed apps appear automatically. Hiding an app does not uninstall it.");
@@ -451,6 +460,7 @@ public final class UiText {
         EN.put("카세트 데크","Cassette deck");
         EN.put("켜기","Enable");
         EN.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","When enabled, reboot restores only the shortcut, not the full app screen. Drag the edge button to move it.\n\nIf overlays are denied, the notification remains. If the factory UI also hides notifications, use another entry point. Force-stop may prevent restoration until My Apps is opened again.");
+        EN.put("켜짐 (짧게 누르면 계기판)","On (short press opens the dashboard)");
         EN.put("켬","On");
         EN.put("코치","Coach");
         EN.put("코퍼","Copper");
@@ -502,10 +512,12 @@ public final class UiText {
         EN.put("현재 기어","Current gear");
         EN.put("현재 재생 소스에서 음악을 제어할 수 없습니다","Playback control is unavailable for this source");
         EN.put("현재 차량 표시 제한으로 N 계기판을 열 수 없습니다.","N Dashboard is unavailable under the current vehicle display restriction.");
+        EN.put("현재: ","Now: ");
         EN.put("호출","Call");
         EN.put("화면","Screens");
         EN.put("화면 잠금 상태를 추적할 수 없어 알림만 표시합니다.","Screen lock state cannot be tracked. Only the notification is shown.");
         EN.put("확인","OK");
+        EN.put("확인 불가","Unknown");
         EN.put("활성 시험 백업이 없습니다. 기존 핫스팟 접속정보는 차량 설정에서 확인하세요.","No active test backup. Check existing hotspot credentials in the vehicle settings.");
         EN.put("회"," times");
         EN.put("횡가속","Lateral G");

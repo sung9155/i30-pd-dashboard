@@ -91,7 +91,7 @@
 
 ```sh
 git clone https://github.com/sung9155/i30-pd-dashboard && cd i30-pd-dashboard
-# 테스트 빌드는: git checkout test
+# 테스트 빌드는: git checkout beta
 JAVA="<JDK 17 설치 경로>/bin/java.exe"   # 예: /c/Program Files/Eclipse Adoptium/jdk-17…/bin/java.exe
 python -X utf8 scripts/generate_translations.py
 python -X utf8 scripts/test.py --java "$JAVA" && python -X utf8 -m unittest discover -s tests -p 'test_*.py'

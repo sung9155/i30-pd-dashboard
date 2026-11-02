@@ -165,6 +165,7 @@ public final class UiText {
         EN.put("목록 편집","Edit app list");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
+        EN.put("미등","Position lamps");
         EN.put("미리 발을 떼면 더 아낍니다","Lift off earlier to save more");
         EN.put("미사용","Off");
         EN.put("바디 (BCM)","Body (BCM)");
@@ -218,6 +219,7 @@ public final class UiText {
         EN.put("사용 연료","Fuel used");
         EN.put("상태 새로 확인","Refresh status");
         EN.put("상태 확인 실패: ","Status check failed: ");
+        EN.put("상향등","High beam");
         EN.put("새 기기","New device");
         EN.put("설명 / Help","Help");
         EN.put("설정 복원 확인. 백업 표시 삭제 실패로 다음 실행 때 재확인 필요.","Settings restoration verified, but the backup marker could not be cleared. Check again next time.");

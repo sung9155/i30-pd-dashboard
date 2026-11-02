@@ -34,7 +34,7 @@ final class CassetteCluster extends ClusterKit {
         bold(c,"A",74,111,18,0xffffffff,Paint.Align.LEFT);bold(c,"C-60 · TYPE II",480,111,12,0xffffffff,Paint.Align.RIGHT);
         String title=has?music.title:t("재생 중인 곡 없음"),artist=has&&music.artist!=null?music.artist:"";
         text(c,ellipsize(title,30,404),76,154,30,INK,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
-        String sub=has?(artist.isEmpty()?"":ellipsize(artist,18,250)+(known?"  ·  ":""))+(known?mmss(pos)+" / "+mmss(music.durationMs):""):t("곡이 나오면 라벨에 적힙니다");
+        String sub=has?(artist.isEmpty()?"":ellipsize(artist,18,250)+(known?"  ·  ":""))+(known?mmss(pos)+" / "+mmss(music.durationMs):""):"";   // blank when nothing is playing
         text(c,sub,76,180,17,0xff3a4f9a,Paint.Align.LEFT,Typeface.DEFAULT);
         fill(c,76,188,480,189,0x401f3a8a);
         // reel window

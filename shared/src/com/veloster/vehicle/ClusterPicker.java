@@ -10,11 +10,11 @@ package com.veloster.vehicle;
 public final class ClusterPicker {
     /** Header tab label per screen (short: the tab is 160 px wide). */
     public static final String[] NAMES={"전체 조망","게이지","그래프","F1","퍼포먼스","레이스","기록","쇼",
-        "클래식","레트로","랠리","택시","80년대","HUD","8비트","추격","에코","G 원","야간","드래그","엔진","카세트","워프","오실로","노킹"};
+        "클래식","레트로","랠리","택시","80년대","HUD","8비트","추격","에코","G 원","야간","드래그","엔진","카세트","워프"};
     /** Second line on each tile. */
     public static final String[] DESC={"모든 값 한눈에","고른 값 게이지","시간 그래프","F1 스타일 계기판","랩 타이머","변속 표시·음악","주행 기록","쇼 화면",
         "계단 회전 곡선","주황 LCD","흰 네모 숫자","택시 미터기","80년대 디지털","전투기 HUD","8비트 게임","8비트 추격 시점","에코 코치","마찰원","야간 미니멀","드래그 출발 트리",
-        "비행기 엔진 계기판","카세트 데크","우주선 워프","오실로스코프","점화·노킹 모니터"};
+        "비행기 엔진 계기판","카세트 데크","우주선 워프"};
     public static final int OVERVIEW=0,GAUGES=1,GRAPHS=2,F1=3,CLASSIC=8,COUNT=NAMES.length,COLS=6,SLOTS=30,DIAG=SLOTS-5,CAR=SLOTS-4,LANG=SLOTS-3,THEME=SLOTS-2,EDIT=SLOTS-1;
     public static final float LEFT=17,TOP=60,TILE_W=121,TILE_H=76,GAP=8;
     private ClusterPicker(){}
@@ -33,6 +33,11 @@ public final class ClusterPicker {
     /** The shown screen after cur, wrapping; cur itself when it is the only one. */
     public static int next(int cur,int hidden){
         for(int i=1;i<=COUNT;i++){int s=(cur+i)%COUNT;if((hidden&(1<<s))==0)return s;}
+        return cur;
+    }
+    /** The shown screen before cur, wrapping; cur itself when it is the only one. */
+    public static int prev(int cur,int hidden){
+        for(int i=1;i<=COUNT;i++){int s=((cur-i)%COUNT+COUNT)%COUNT;if((hidden&(1<<s))==0)return s;}
         return cur;
     }
     /** s when shown, else the next shown screen. */

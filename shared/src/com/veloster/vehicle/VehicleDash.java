@@ -69,7 +69,7 @@ public final class VehicleDash extends View implements Runnable {
         }
     }};
     private final Runnable clusterHold=new Runnable(){public void run(){
-        if(touching&&!blocked&&getVisibility()==VISIBLE&&header.hit(downX,downY)==HeaderTabs.CLUSTER){
+        if(touching&&!blocked&&getVisibility()==VISIBLE&&header.onStrip(downX,downY)){
             touching=false;picker=true;editing=false;showCluster();invalidate();
         }
     }};
@@ -254,19 +254,16 @@ public final class VehicleDash extends View implements Runnable {
         }},"NMode-track-control").start();
     }
     private void selectTab(int id){
-        switch(id){
-            case HeaderTabs.CLUSTER:   // the one screen tab: a tap steps to the next shown screen, a long press opens the list
-                screen=ClusterPicker.next(screen,hidden);showCluster();break;
-            default:return;
-        }
-        invalidate();
+        int s=header.screenAt(id);   // a tap on a tab shows that screen; a long press on the strip opens the list
+        if(s<0)return;
+        screen=s;showCluster();invalidate();
     }
     private boolean overviewCovered(float y){return y>=347&&mediaState.snapshot(SystemClock.elapsedRealtime()).notice;}
     public boolean onTouchEvent(MotionEvent event) {
         float x=event.getX()*800/getWidth(), y=event.getY()*480/getHeight();
         if(event.getAction()==MotionEvent.ACTION_DOWN) {
             removeCallbacks(editHold);removeCallbacks(clusterHold);touching=true;downX=x;downY=y;header.down(x,y);
-            if(!blocked&&!picker&&header.hit(x,y)==HeaderTabs.CLUSTER)postDelayed(clusterHold,600);
+            if(!blocked&&!picker&&header.onStrip(x,y))postDelayed(clusterHold,600);
             overviewDown=!cluster&&!gauges&&!graphs&&!symmetric&&!blocked&&!overviewCovered(y)?overviewLayout.hit(x,y):-1;
             if(!blocked&&!picker&&((gauges&&gaugeEditor.hit(x,y)>=0)||(graphs&&graphLayout.hit(x,y)>=0)))postDelayed(editHold,600);   // not under the screen list
             return true;
@@ -302,6 +299,10 @@ public final class VehicleDash extends View implements Runnable {
             else if(slot>=0&&slot<list.length){screen=list[slot];showCluster();picker=false;}
             else{picker=false;editing=false;}
             invalidate();return true;
+        }
+        // Horizontal swipe on the body switches screens (left = next shown screen, right = previous).
+        if(!blocked&&downY>52&&Math.abs(x-downX)>=60&&Math.abs(x-downX)>Math.abs(y-downY)*1.5f){
+            screen=x<downX?ClusterPicker.next(screen,hidden):ClusterPicker.prev(screen,hidden);showCluster();invalidate();return true;
         }
         if(standalone&&tap&&x>=698&&x<=782&&downX>=698&&downX<=782&&y>=8&&y<=46&&downY>=8&&downY<=46){activity.finish();return true;}
         if(tap&&!blocked&&!cluster&&!gauges&&!graphs&&!symmetric&&overviewDown>=0&&overviewLayout.hit(x,y)==overviewDown&&!overviewCovered(y)){

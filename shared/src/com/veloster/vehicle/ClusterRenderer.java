@@ -38,7 +38,7 @@ public final class ClusterRenderer {
     private VehicleProfile prof=VehicleProfile.PETROL_DCT;
 
     /** Layouts 3 and up (ClusterPicker order); null until a layout is ported. */
-    private final ClusterKit[] extra={new TaxiCluster(),new VfdCluster(),new HudCluster(),new PixelCluster(false),new PixelCluster(true),new EcoCluster(),new GCircleCluster(),new NightCluster(),new DragCluster(),new EngineCluster(),new CassetteCluster(),new WarpCluster(),new ScopeCluster(),new KnockCluster()};
+    private final ClusterKit[] extra={new TaxiCluster(),new VfdCluster(),new HudCluster(),new PixelCluster(false),new PixelCluster(true),new EcoCluster(),new GCircleCluster(),new NightCluster(),new DragCluster(),new EngineCluster(),new CassetteCluster(),new WarpCluster()};
     /** Called every frame whatever page shows: layouts keep their trip totals (taxi fare, trip km, fuel) counting. */
     public void tick(Telemetry.Sample[] samples,long now){for(ClusterKit k:extra)if(k!=null)k.background(samples,now);}
     /** Body tap on layout (ClusterPicker index); true when the layout used it. */

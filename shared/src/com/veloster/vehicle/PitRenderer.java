@@ -116,9 +116,14 @@ public final class PitRenderer {
         if(Theme.current().mStripe){box(c,0,0,267,3,0xff5bc2e7);box(c,267,0,533,3,0xff1c69d4);box(c,533,0,800,3,0xffe22718);}  // BMW M stripe (not in the remap table)
         stroke(c,19,16,13,35,RED,4);stroke(c,27,16,21,35,BLUE,4);
         text(c,"i30 PD",36,33,23,WHITE,true);
-        // Tab strip: HeaderTabs holds the positions for both drawing and VehicleDash.onTouchEvent.
+        // Tab strip: every shown screen is a button; PitRenderer measures the labels and feeds HeaderTabs, which
+        // scrolls sideways when they overflow and keeps the current tab in view.
+        int[] shownTabs=ClusterPicker.slots(hidden,false);int cur=screen(cluster),curTab=-1;
+        float[] tabW=new float[shownTabs.length];
+        for(int i=0;i<shownTabs.length;i++){tabW[i]=tabWidth(UiText.t(ClusterPicker.NAMES[shownTabs[i]]));if(shownTabs[i]==cur)curTab=i;}
+        header.setTabs(shownTabs,tabW,curTab);
         c.save();c.clipRect(HeaderTabs.LEFT,0,HeaderTabs.RIGHT,52);
-        for(int id=0;id<HeaderTabs.W.length;id++)button(c,tabLabel(id,cluster),header.x(id),HeaderTabs.TOP,HeaderTabs.W[id],HeaderTabs.H,id==HeaderTabs.CLUSTER,BLUE);
+        for(int i=0;i<header.count();i++)button(c,UiText.t(ClusterPicker.NAMES[header.screenAt(i)]),header.x(i),HeaderTabs.TOP,header.width(i),HeaderTabs.H,i==curTab,BLUE);
         c.restore();
         if(header.moreLeft())arrow(c,HeaderTabs.LEFT+5,-1);
         if(header.moreRight())arrow(c,HeaderTabs.RIGHT-5,1);
@@ -191,7 +196,8 @@ public final class PitRenderer {
         centered(c,UiText.t(name),l+w/2,t+35,20,WHITE,true);
         centered(c,value,l+w/2,t+60,14,BLUE,true);
     }
-    private String tabLabel(int id,boolean cluster){return UiText.t(ClusterPicker.NAMES[screen(cluster)]);}
+    /** Pixel width of a header tab: its label plus side padding, with a sensible minimum. */
+    private float tabWidth(String label){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(14);return Math.max(56f,paint.measureText(label)+24f);}
     /** Faint chevron at a strip edge that has more tabs past it; dir -1 points left. */
     private void arrow(Canvas c,float x,int dir){
         box(c,x-7,9,x+7,45,0xff090b0c);

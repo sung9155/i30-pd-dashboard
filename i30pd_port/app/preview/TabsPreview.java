@@ -56,7 +56,7 @@ public final class TabsPreview {
         rec.setPicker(true,false,0);save(out,"9_cluster_list",rec,model,now,false,false);
         String[] cats={"screens","theme","paint","mode","lang","diag"};   // settings (the gear), one shot per category
         rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<20));rec.setModeOptions(true,false);
-        int[] targets={ClusterPicker.F1+2,ClusterPicker.ECO,-1};   // SPORT set to the race page
+        int[] targets={ClusterPicker.F1+2,ClusterPicker.GAUGES,-1};   // SPORT set to the race page, ECO to the gauges
         for(int k=0;k<cats.length;k++){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k],rec,model,now,false,false);}
         rec.setModeOptions(true,true);rec.setSettings(3,"auto",-1,targets);save(out,"9_settings_mode_on",rec,model,now,false,false);
         rec.setSettings(3,"auto",0,targets);save(out,"9_settings_mode_pick",rec,model,now,false,false);

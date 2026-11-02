@@ -44,6 +44,10 @@ public final class VehicleDash extends View implements Runnable {
     private int lastMode=-1,modeBack=-1;
     /** Settings category open on the left of the gear's settings (SettingsLayout). */
     private int settingsCat=SettingsLayout.SCREENS;
+    private int[] order=ClusterPicker.naturalOrder();   // display order of the screens (header tabs, swipe, settings list)
+    private float settingsScroll,lastMoveY;             // vertical scroll of the SCREENS list, and the last touch y for dragging it
+    private static String orderCsv(int[] o){StringBuilder s=new StringBuilder();for(int i=0;i<o.length;i++){if(i>0)s.append(',');s.append(o[i]);}return s.toString();}
+    private static int[] parseOrder(String s){if(s==null||s.length()==0)return null;String[] p=s.split(",");int[] o=new int[p.length];try{for(int i=0;i<p.length;i++)o[i]=Integer.parseInt(p[i].trim());}catch(NumberFormatException e){return null;}return o;}
     /** Screen per ClusterPicker.MODES slot (-1 = 원래 화면), and the slot being chosen in settings (-1 none). */
     private final int[] modeTargets=ClusterPicker.MODE_DEFAULT.clone();
     private int pickSlot=-1;
@@ -81,13 +85,13 @@ public final class VehicleDash extends View implements Runnable {
     }};
     /** Set the view flags for the current screen (the next shown one if it is hidden). */
     private void applyScreen(){
-        screen=ClusterPicker.shown(screen,hidden);
+        screen=ClusterPicker.shown(order,screen,hidden);
         gauges=screen==ClusterPicker.GAUGES;graphs=screen==ClusterPicker.GRAPHS;cluster=screen==ClusterPicker.F1;
         symmetric=screen>ClusterPicker.F1;page=symmetric?ClusterPicker.page(screen):0;
     }
     private void showCluster(){
         applyScreen();
-        activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).apply();
+        activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).putString("cluster_order",orderCsv(order)).apply();
     }
     private VehicleDash(Activity a) { super(a); activity=a; artwork=new ArtworkLoader(a,this);
         gaugeEditor=new GaugeEditor(a,gaugeLayout,new Runnable(){public void run(){invalidate();}});
@@ -110,6 +114,7 @@ public final class VehicleDash extends View implements Runnable {
             int v=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);
             screen=v>=0&&v<ClusterPicker.COUNT?v:ClusterPicker.OVERVIEW;
             hidden=ClusterPicker.valid(p.getInt("cluster_hidden",0));
+            order=ClusterPicker.validOrder(parseOrder(p.getString("cluster_order",null)));
         }catch(ClassCastException e){/* Open on Overview, everything shown, for an incompatible saved value. */}
         applyScreen();
         setVisibility(GONE); }
@@ -243,7 +248,7 @@ public final class VehicleDash extends View implements Runnable {
             if(modeScreen&&!picker){int[] st=ClusterPicker.onMode(lastMode,mode,screen,modeBack,hidden,modeTargets);modeBack=st[1];if(st[0]!=screen){screen=st[0];showCluster();}}
             lastMode=mode;
         }
-        renderer.setPicker(picker,editing,hidden);
+        renderer.setPicker(picker,editing,hidden);renderer.setOrder(order,settingsScroll);
         renderer.setModeOptions(modeColor,modeScreen);
         if(picker&&editing)renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);
         renderer.setLap(lapRunning?now-lapStart:lapMs,lapRunning);
@@ -279,11 +284,16 @@ public final class VehicleDash extends View implements Runnable {
     public boolean onTouchEvent(MotionEvent event) {
         float x=event.getX()*800/getWidth(), y=event.getY()*480/getHeight();
         if(event.getAction()==MotionEvent.ACTION_DOWN) {
-            removeCallbacks(editHold);removeCallbacks(clusterHold);touching=true;downX=x;downY=y;header.down(x,y);
+            removeCallbacks(editHold);removeCallbacks(clusterHold);touching=true;downX=x;downY=y;lastMoveY=y;header.down(x,y);
             if(!blocked&&!picker&&header.onStrip(x,y))postDelayed(clusterHold,600);
             overviewDown=!cluster&&!gauges&&!graphs&&!symmetric&&!blocked&&!overviewCovered(y)?overviewLayout.hit(x,y):-1;
             if(!blocked&&!picker&&((gauges&&gaugeEditor.hit(x,y)>=0)||(graphs&&graphLayout.hit(x,y)>=0)))postDelayed(editHold,600);   // not under the screen list
             return true;
+        }
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&picker&&editing&&settingsCat==SettingsLayout.SCREENS&&pickSlot<0&&downX>=SettingsLayout.PANE_L-6&&downY>=SettingsLayout.TOP&&downY<=SettingsLayout.BOTTOM){
+            settingsScroll=Math.max(0,Math.min(SettingsLayout.maxScreenScroll(),settingsScroll-(y-lastMoveY)));lastMoveY=y;
+            if(Math.abs(y-downY)>=10)touching=false;   // a drag that scrolls is not a tap
+            invalidate();return true;
         }
         if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y)){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);invalidate();return true;}
         if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);}return true;}
@@ -300,6 +310,18 @@ public final class VehicleDash extends View implements Runnable {
             if(!tap)return true;
             int k=SettingsLayout.cat(x,y);
             if(k>=0&&k==SettingsLayout.cat(downX,downY)){pickSlot=-1;if(k==SettingsLayout.DONE){picker=false;editing=false;}else settingsCat=k;invalidate();return true;}
+            if(settingsCat==SettingsLayout.SCREENS&&pickSlot<0){   // the 화면 list: ▲▼ reorder, tap elsewhere toggles 사용/미사용
+                int p=SettingsLayout.screenRow(y,settingsScroll);
+                if(p>=0&&p==SettingsLayout.screenRow(downY,settingsScroll)){
+                    int[] o=ClusterPicker.validOrder(order);int sc=o[p],z=SettingsLayout.screenZone(x);
+                    if(z==1)order=ClusterPicker.reorder(order,p,-1);
+                    else if(z==2)order=ClusterPicker.reorder(order,p,1);
+                    else hidden=ClusterPicker.toggle(hidden,sc);
+                    activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("cluster_order",orderCsv(order)).putInt("cluster_hidden",hidden).apply();
+                    showCluster();invalidate();
+                }
+                return true;
+            }
             int pane=pickSlot>=0?SettingsLayout.PICK:settingsCat,i=SettingsLayout.item(pane,x,y);
             if(i<0||i!=SettingsLayout.item(pane,downX,downY))return true;
             SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();
@@ -326,14 +348,14 @@ public final class VehicleDash extends View implements Runnable {
         if(picker){   // a tile picks that screen, any other tap closes the list
             if(!tap)return true;
             int i=ClusterPicker.hit(x,y),slot=i==ClusterPicker.hit(downX,downY)?i:-1;
-            int[] list=ClusterPicker.slots(hidden,false);
+            int[] list=ClusterPicker.slots(order,hidden,false);
             if(slot>=0&&slot<list.length){screen=list[slot];showCluster();picker=false;}
             else{picker=false;editing=false;}
             invalidate();return true;
         }
         // Horizontal swipe on the body switches screens (left = next shown screen, right = previous).
         if(!blocked&&downY>52&&Math.abs(x-downX)>=60&&Math.abs(x-downX)>Math.abs(y-downY)*1.5f){
-            screen=x<downX?ClusterPicker.next(screen,hidden):ClusterPicker.prev(screen,hidden);showCluster();invalidate();return true;
+            screen=x<downX?ClusterPicker.next(order,screen,hidden):ClusterPicker.prev(order,screen,hidden);showCluster();invalidate();return true;
         }
         if(standalone&&tap&&x>=698&&x<=782&&downX>=698&&downX<=782&&y>=8&&y<=46&&downY>=8&&downY<=46){activity.finish();return true;}
         if(tap&&!blocked&&!cluster&&!gauges&&!graphs&&!symmetric&&overviewDown>=0&&overviewLayout.hit(x,y)==overviewDown&&!overviewCovered(y)){

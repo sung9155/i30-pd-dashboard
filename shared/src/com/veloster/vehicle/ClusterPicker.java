@@ -30,16 +30,39 @@ public final class ClusterPicker {
     private static final int ALL=(1<<COUNT)-1;
     /** A saved mask, or 0 (all shown) when it is out of range or hides every screen. */
     public static int valid(int hidden){return (hidden&~ALL)!=0||hidden==ALL?0:hidden;}
-    /** The shown screen after cur, wrapping; cur itself when it is the only one. */
-    public static int next(int cur,int hidden){
-        for(int i=1;i<=COUNT;i++){int s=(cur+i)%COUNT;if((hidden&(1<<s))==0)return s;}
+    /** Natural display order 0..COUNT-1. */
+    public static int[] naturalOrder(){int[] o=new int[COUNT];for(int i=0;i<COUNT;i++)o[i]=i;return o;}
+    /** A saved order repaired to a permutation of 0..COUNT-1 (natural when it is missing or malformed). */
+    public static int[] validOrder(int[] o){
+        if(o==null||o.length!=COUNT)return naturalOrder();
+        boolean[] seen=new boolean[COUNT];
+        for(int s:o){if(s<0||s>=COUNT||seen[s])return naturalOrder();seen[s]=true;}
+        int[] c=new int[COUNT];System.arraycopy(o,0,c,0,COUNT);return c;
+    }
+    private static int pos(int[] order,int screen){for(int i=0;i<order.length;i++)if(order[i]==screen)return i;return 0;}
+    /** Swap the screen at display position i with its neighbour i+d (d = ±1); unchanged at the ends. */
+    public static int[] reorder(int[] order,int i,int d){
+        order=validOrder(order);int j=i+d;
+        if(i<0||i>=order.length||j<0||j>=order.length)return order;
+        int t=order[i];order[i]=order[j];order[j]=t;return order;
+    }
+    /** The shown screen after cur in display order, wrapping; cur itself when it is the only one. */
+    public static int next(int[] order,int cur,int hidden){
+        order=validOrder(order);int at=pos(order,cur);
+        for(int k=1;k<=order.length;k++){int s=order[(at+k)%order.length];if((hidden&(1<<s))==0)return s;}
         return cur;
     }
-    /** The shown screen before cur, wrapping; cur itself when it is the only one. */
-    public static int prev(int cur,int hidden){
-        for(int i=1;i<=COUNT;i++){int s=((cur-i)%COUNT+COUNT)%COUNT;if((hidden&(1<<s))==0)return s;}
+    /** The shown screen before cur in display order, wrapping; cur itself when it is the only one. */
+    public static int prev(int[] order,int cur,int hidden){
+        order=validOrder(order);int at=pos(order,cur);
+        for(int k=1;k<=order.length;k++){int s=order[((at-k)%order.length+order.length)%order.length];if((hidden&(1<<s))==0)return s;}
         return cur;
     }
+    // Natural-order convenience for callers that keep the default order (drive-mode logic, host tests).
+    public static int next(int cur,int hidden){return next(naturalOrder(),cur,hidden);}
+    public static int prev(int cur,int hidden){return prev(naturalOrder(),cur,hidden);}
+    public static int[] slots(int hidden,boolean editing){return slots(naturalOrder(),hidden,editing);}
+    public static int shown(int s,int hidden){return shown(naturalOrder(),s,hidden);}
     /** Drive modes with a screen of their own, in settings order (CLU13 codes), and their default screens (-1 = 원래 화면). */
     public static final int[] MODES={1,3,0},MODE_DEFAULT={F1,-1,-1};
     public static final String[] MODE_NAMES={"SPORT","ECO","NORMAL"};
@@ -66,15 +89,16 @@ public final class ClusterPicker {
         int k=modeSlot(mode),s=k<0?-1:validTarget(targets[k]);
         return s>=0&&(hidden&(1<<s))==0?s:-1;
     }
-    /** s when shown, else the next shown screen. */
-    public static int shown(int s,int hidden){return (hidden&(1<<s))==0?s:next(s,hidden);}
+    /** s when shown, else the next shown screen in display order. */
+    public static int shown(int[] order,int s,int hidden){return (hidden&(1<<s))==0?s:next(order,s,hidden);}
     /** Flip screen s; the last shown screen stays shown. */
     public static int toggle(int hidden,int s){int h=hidden^(1<<s);return h==ALL?hidden:h;}
-    /** Screens in tile order: the shown ones, or all of them while editing. */
-    public static int[] slots(int hidden,boolean editing){
-        int n=0;for(int s=0;s<COUNT;s++)if(editing||(hidden&(1<<s))==0)n++;
+    /** Screens in display order: the shown ones, or all of them while editing. */
+    public static int[] slots(int[] order,int hidden,boolean editing){
+        order=validOrder(order);
+        int n=0;for(int s:order)if(editing||(hidden&(1<<s))==0)n++;
         int[] out=new int[n];n=0;
-        for(int s=0;s<COUNT;s++)if(editing||(hidden&(1<<s))==0)out[n++]=s;
+        for(int s:order)if(editing||(hidden&(1<<s))==0)out[n++]=s;
         return out;
     }
 }

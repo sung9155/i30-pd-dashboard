@@ -40,6 +40,24 @@ public final class SettingsLayout {
     public static float itemH(int cat){int r=Math.max(1,rows(cat));return Math.min(MAX_ITEM_H,(BOTTOM-paneTop(cat)-GAP*(r-1))/r);}
     public static float left(int cat,int i){return PANE_L+(i%cols(cat))*(itemW(cat)+GAP);}
     public static float top(int cat,int i){return paneTop(cat)+(i/cols(cat))*(itemH(cat)+GAP);}
+
+    // --- SCREENS as a reorderable, scrollable list (one row per screen, in display order) ---
+    public static final float SCREEN_ROW_H=62,THUMB_W=104,SBTN_W=46;
+    public static float maxScreenScroll(){return Math.max(0,ClusterPicker.COUNT*SCREEN_ROW_H-(BOTTOM-TOP));}
+    public static float upBtnL(){return PANE_R-2*SBTN_W-14;}
+    public static float downBtnL(){return PANE_R-SBTN_W-6;}
+    /** Display position of the screen row under y given the scroll, or -1. */
+    public static int screenRow(float y,float scroll){
+        if(y<TOP||y>BOTTOM)return -1;
+        int p=(int)((y-TOP+scroll)/SCREEN_ROW_H);
+        return p>=0&&p<ClusterPicker.COUNT?p:-1;
+    }
+    /** For an x inside a screen row: 1 = move up, 2 = move down, 0 = toggle (the row body). */
+    public static int screenZone(float x){
+        if(x>=upBtnL()&&x<upBtnL()+SBTN_W)return 1;
+        if(x>=downBtnL()&&x<downBtnL()+SBTN_W)return 2;
+        return 0;
+    }
     /** Choice under the point in cat's pane, or -1. */
     public static int item(int cat,float x,float y){
         for(int i=0;i<count(cat);i++){float l=left(cat,i),t=top(cat,i);if(x>=l&&x<=l+itemW(cat)&&y>=t&&y<=t+itemH(cat))return i;}

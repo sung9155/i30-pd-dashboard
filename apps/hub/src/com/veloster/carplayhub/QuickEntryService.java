@@ -31,6 +31,7 @@ import java.lang.ref.WeakReference;
 public final class QuickEntryService extends Service {
     private static final String PREFS="quick_entry",CHANNEL="vn_quick_entry",STOP="com.veloster.carplayhub.QUICK_ENTRY_OFF";
     private static final int NOTICE=9117;
+    private static final float IDLE_ALPHA=0.4f;   // faint at rest so the floating button is less distracting
     private static WeakReference<Runnable> statusObserver=new WeakReference<Runnable>(null);
     private SharedPreferences prefs;
     private WindowManager windows;
@@ -103,6 +104,8 @@ public final class QuickEntryService extends Service {
         refreshOverlay();return START_STICKY;
     }
     private Intent hubIntent(){return new Intent(this,HubActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);}
+    private static Intent dashboardIntent(){return new Intent(Intent.ACTION_MAIN).setClassName("com.veloster.dashboard","com.veloster.dashboard.DashboardActivity")
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);}
     private Notification notification()throws Exception{
         NotificationManager manager=(NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         if(manager==null)throw new IllegalStateException("Notification service unavailable");
@@ -144,31 +147,45 @@ public final class QuickEntryService extends Service {
             layout=new WindowManager.LayoutParams(size,size,Build.VERSION.SDK_INT>=26?2038:WindowManager.LayoutParams.TYPE_PHONE,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,PixelFormat.TRANSLUCENT);
             layout.gravity=Gravity.TOP|Gravity.LEFT;layout.x=QuickEntryPolicy.edge(storedRight(),width,size);layout.y=QuickEntryPolicy.y(storedY(),height,size);
-            final Button created=new Button(this);created.setText(UiText.t("앱"));created.setTextSize(14);created.setPadding(0,0,0,0);created.setMinWidth(0);created.setMinimumWidth(0);created.setMinHeight(0);created.setMinimumHeight(0);
-            created.setContentDescription(UiText.t("내 앱 열기 · 길게 끌어서 위치 변경 / My Apps"));
+            final Button created=new Button(this);created.setText(UiText.t("계기판 · 가장자리 버튼"));created.setTextSize(14);created.setPadding(0,0,0,0);created.setMinWidth(0);created.setMinimumWidth(0);created.setMinHeight(0);created.setMinimumHeight(0);
+            created.setAlpha(IDLE_ALPHA);   // faint at rest so it doesn't distract; opaque while touched (below)
+            created.setContentDescription(UiText.t("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard"));
             created.setOnClickListener(new View.OnClickListener(){public void onClick(View view){
                 if(!unlockedScreen())return;
-                try{startActivity(hubIntent());}catch(RuntimeException e){error(QuickEntryService.this,"앱 화면을 열지 못했습니다. 알림에서 다시 시도하세요.");}
+                // i30 PD: the edge button opens the dashboard itself; My Apps stays in the notification (and is the fallback).
+                try{startActivity(dashboardIntent());}catch(RuntimeException e){
+                    try{startActivity(hubIntent());}catch(RuntimeException again){error(QuickEntryService.this,"앱 화면을 열지 못했습니다. 알림에서 다시 시도하세요.");}
+                }
             }});
             created.setOnTouchListener(new View.OnTouchListener(){
-                float downX,downY;int initialX,initialY;boolean dragged;
+                float downX,downY;int initialX,initialY;boolean dragged,longPressed;
                 final int slop=ViewConfiguration.get(QuickEntryService.this).getScaledTouchSlop();
+                // Long press opens My Apps (the hub); a short tap opens the dashboard; a drag repositions.
+                final Runnable openHub=new Runnable(){public void run(){
+                    longPressed=true;
+                    if(!unlockedScreen())return;
+                    try{startActivity(hubIntent());}catch(RuntimeException e){error(QuickEntryService.this,"앱 화면을 열지 못했습니다. 알림에서 다시 시도하세요.");}
+                }};
                 public boolean onTouch(View view,MotionEvent event){
                     if(layout==null||button!=created)return false;
                     int action=event.getActionMasked();
-                    if(action==MotionEvent.ACTION_DOWN){downX=event.getRawX();downY=event.getRawY();initialX=layout.x;initialY=layout.y;dragged=false;return true;}
+                    if(action==MotionEvent.ACTION_DOWN){
+                        downX=event.getRawX();downY=event.getRawY();initialX=layout.x;initialY=layout.y;dragged=false;longPressed=false;
+                        created.setAlpha(1f);created.postDelayed(openHub,500);return true;
+                    }
                     if(action==MotionEvent.ACTION_MOVE){
                         float dx=event.getRawX()-downX,dy=event.getRawY()-downY;
-                        if(dx*dx+dy*dy>slop*slop)dragged=true;
+                        if(dx*dx+dy*dy>slop*slop){dragged=true;created.removeCallbacks(openHub);}
                         if(dragged){layout.x=QuickEntryPolicy.bound(initialX+Math.round(dx),width,size);layout.y=QuickEntryPolicy.bound(initialY+Math.round(dy),height,size);updateOverlay();}
                         return true;
                     }
                     if(action==MotionEvent.ACTION_UP||action==MotionEvent.ACTION_CANCEL){
+                        created.removeCallbacks(openHub);created.setAlpha(IDLE_ALPHA);
                         if(dragged){
                             boolean right=QuickEntryPolicy.right(layout.x,width,size);
                             layout.x=QuickEntryPolicy.edge(right,width,size);
                             prefs.edit().putBoolean("right",right).putFloat("relative_y",QuickEntryPolicy.relativeY(layout.y,height,size)).commit();updateOverlay();
-                        }else if(action==MotionEvent.ACTION_UP)created.performClick();
+                        }else if(action==MotionEvent.ACTION_UP&&!longPressed)created.performClick();
                         return true;
                     }
                     return true;

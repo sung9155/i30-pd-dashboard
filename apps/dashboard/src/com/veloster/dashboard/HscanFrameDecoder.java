@@ -28,6 +28,34 @@ final class HscanFrameDecoder {
         }
     }
 
+    /** i30 PD (pd_kr) hscan_mux slots verified in-car 2026-10-29 (i30pd_port/HSCAN_DECODE.md).
+     * Function numbers differ from the JSN stream (0x07/0x23/0x53/0x5a/0x6e); unlisted slots are never published. */
+    private static int expectedSize(int function) {
+        switch (function) {
+            case 0x01: return 8; // CGW1: driver door (byte1 bit0), wiper speed (byte3)
+            case 0x02: return 4; // CLU11: vehicle speed
+            case 0x03: return 4; // CLU12: odometer
+            case 0x04: return 8; // CLU13: drive mode, range, average fuel economy
+            case 0x08: return 8; // EMS11: engine rpm, torque
+            case 0x09: return 8; // EMS12: coolant, accelerator pedal
+            case 0x0a: return 8; // battery voltage
+            case 0x0b: return 8; // byte2 intake air temperature
+            case 0x0c: return 8; // EMS16: spark timing
+            case 0x0e: return 8; // EMS19: boost pressure
+            case 0x10: return 8; // EMS_H12: manual-gearbox gear sent to the cluster (CF_Ems_DesCurGr)
+            case 0x12: return 7; // EPB11: electronic parking brake
+            case 0x13: return 8; // ESP12: brake pressure, lateral/longitudinal acceleration
+            case 0x17: return 8; // MDPS11: driver steering torque
+            case 0x19: return 5; // SAS11: steering angle and speed
+            case 0x1b: return 8; // TCS13: driver braking
+            case 0x1d: return 8; // LVR12: gear selector P/R/N/D/M
+            case 0x1f: return 8; // current gear while driving
+            case 0x20: return 6; // TPMS: byte1 valid flag, bytes 2-5 tire pressure psi
+            case 0x21: return 6; // EMS20: fuel consumption
+            default: return -1;
+        }
+    }
+
     private boolean prefix() {
         for (int i = 0; i < Math.min(used, HEADER.length); i++)
             if ((frame[i] & 255) != HEADER[i]) return false;
@@ -51,8 +79,7 @@ final class HscanFrameDecoder {
         offset = 11;
         for (int i = 0; i < count; i++) {
             int function = frame[offset++] & 255, size = frame[offset++] & 255;
-            if (((function == 7 || function == 0x23 || function == 0x5a || function == 0x6e) && size == 8)
-                || (function == 0x53 && size == 5)) {
+            if (size == expectedSize(function)) {
                 byte[] value = new byte[size]; System.arraycopy(frame, offset, value, 0, size);
                 sink.record(function, value, receivedAt);
             }

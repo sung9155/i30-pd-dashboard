@@ -3,7 +3,7 @@ package com.veloster.vehicle;
 /** Six or twelve display slots. Preferences never write vehicle settings. */
 public final class GaugeLayout {
     public static final int SLOTS=12;
-    private static final int[] DEFAULT_SIGNALS={0,7,9,1,2,10,11,12,15,16,17,13};
+    private static final int[] DEFAULT_SIGNALS={0,7,9,29,2,10,11,12,15,16,17,13};
     private final int[] signals=new int[SLOTS], styles=new int[SLOTS];
     private boolean dense;
     public GaugeLayout(){reset();}

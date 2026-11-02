@@ -17,8 +17,11 @@ final class HscanDataClient {
     HscanDataClient(Gate gate) { this.gate = gate; }
 
     synchronized void start() {
-        if (session != null || !"jsn_kr".equals(android.os.Build.PRODUCT)
-            || !"eng.vmadmin.20250902.081552".equals(android.os.Build.VERSION.INCREMENTAL)) return;
+        // i30 PD (D-Audio Plus KR). Slots verified on build eng.vmadmin.20260114.084130 (adb getprop, 2026-10-29);
+        // other pd_kr builds are read too (read-only, nothing is sent) and flagged so mismatched slots get reported.
+        if (session != null || !"pd_kr".equals(android.os.Build.PRODUCT)) return;
+        if (!"eng.vmadmin.20260114.084130".equals(android.os.Build.VERSION.INCREMENTAL))
+            android.util.Log.w("VehicleDash", "Unverified pd_kr build " + android.os.Build.VERSION.INCREMENTAL + ": hscan slots may differ");
         session = new Session();
         session.decoder.start();
         session.reader.start();
@@ -108,7 +111,7 @@ final class HscanDataClient {
             HscanFrameDecoder parser = new HscanFrameDecoder(new HscanFrameDecoder.Sink() {
                 public void record(int function, byte[] data, long receivedAt) {
                     synchronized (delivery) {
-                        if (active && gate.accepts()) VehicleDash.hscanJsn(0xc7, function, data, receivedAt);
+                        if (active && gate.accepts()) VehicleDash.hscanPd(0xc7, function, data, receivedAt);
                     }
                 }
             });
@@ -123,7 +126,9 @@ final class HscanDataClient {
                     }
                     if (chunk.sequence != previous + 1) parser.reset();
                     previous = chunk.sequence;
-                    parser.accept(chunk.bytes, 0, chunk.bytes.length, chunk.time);
+                    // One bad frame must not end the process (an uncaught exception in any thread kills the app).
+                    try { parser.accept(chunk.bytes, 0, chunk.bytes.length, chunk.time); }
+                    catch (RuntimeException badFrame) { android.util.Log.w("VehicleDash", "hscan frame dropped", badFrame); parser.reset(); }
                 }
             } catch (InterruptedException stopped) {
                 Thread.currentThread().interrupt();

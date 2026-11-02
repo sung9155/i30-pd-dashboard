@@ -25,7 +25,8 @@ public final class HscanFrameDecoderTest {
                 count[0]++; timestamp[0] = at;
             }
         });
-        byte[] good = frame(7, new byte[] {0, 0, 70, 64, 31, 0, 0, 0});
+        // i30 PD slot 0x08 (EMS11) as captured in-car: rpm bytes 2-3 little-endian.
+        byte[] good = frame(0x08, new byte[] {5, 11, (byte) 0xca, 9, 11, 10, 0, 0x7f});
         for (int chunk : new int[] {1, 7, 263, 264}) {
             decoder.reset(); int before = count[0];
             for (int i = 0; i < good.length; i += chunk)
@@ -36,7 +37,7 @@ public final class HscanFrameDecoderTest {
         byte[] bad = good.clone(); bad[30] ^= 1;
         decoder.accept(bad, 0, 264, 1);
         check(count[0] == before, "bad checksum rejected");
-        bad = good.clone(); bad[9] = 2; bad[21] = 0x23; bad[22] = 9; checksum(bad);
+        bad = good.clone(); bad[9] = 2; bad[21] = 0x19; bad[22] = 9; checksum(bad);
         decoder.accept(bad, 0, 264, 1);
         check(count[0] == before, "malformed second item rejects entire batch");
         bad = good.clone(); bad[200] = 1; checksum(bad);
@@ -59,10 +60,11 @@ public final class HscanFrameDecoderTest {
         decoder.accept(good, 0, 264, 2);
         check(count[0] == ++before, "fresh frame after reset");
         decoder.accept(frame(0x68, new byte[8]), 0, 264, 2);
-        decoder.accept(frame(7, new byte[5]), 0, 264, 2);
-        check(count[0] == before, "unknown function and wrong known size ignored");
-        for (int function : new int[] {0x23, 0x53, 0x5a, 0x6e}) {
-            byte[] value = frame(function, new byte[function == 0x53 ? 5 : 8]);
+        decoder.accept(frame(0x07, new byte[8]), 0, 264, 2); // JSN BAT11 slot: not a PD slot
+        decoder.accept(frame(0x08, new byte[5]), 0, 264, 2);
+        check(count[0] == before, "unknown function, JSN-only function and wrong known size ignored");
+        for (int function : new int[] {0x01, 0x02, 0x04, 0x09, 0x0a, 0x0c, 0x0e, 0x10, 0x12, 0x13, 0x17, 0x19, 0x1b, 0x1d, 0x1f, 0x21}) {
+            byte[] value = frame(function, new byte[function == 0x02 ? 4 : function == 0x19 ? 5 : function == 0x12 ? 7 : function == 0x21 ? 6 : 8]);
             decoder.accept(value, 0, 264, 2);
             check(count[0] == ++before, "allowlisted function " + function);
         }

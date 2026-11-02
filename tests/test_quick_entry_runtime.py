@@ -33,11 +33,13 @@ public final class MemoryPreferences implements SharedPreferences, SharedPrefere
 "android/content/Intent.java": '''package android.content;
 public class Intent {
  public static final String ACTION_SCREEN_OFF="android.intent.action.SCREEN_OFF",ACTION_SCREEN_ON="android.intent.action.SCREEN_ON",ACTION_USER_PRESENT="android.intent.action.USER_PRESENT",ACTION_BOOT_COMPLETED="android.intent.action.BOOT_COMPLETED";
+ public static final String ACTION_MAIN="android.intent.action.MAIN";
  public static final int FLAG_ACTIVITY_NEW_TASK=0x10000000,FLAG_ACTIVITY_CLEAR_TOP=0x4000000,FLAG_ACTIVITY_SINGLE_TOP=0x20000000;
  private String action;public Class<?> component;public int flags;
  public Intent(){} public Intent(String a){action=a;}public Intent(Context c,Class<?> cls){component=cls;}
  public Intent setAction(String a){action=a;return this;}public String getAction(){return action;}
  public Intent addFlags(int f){flags|=f;return this;}
+ public String packageName,className;public Intent setClassName(String p,String c){packageName=p;className=c;return this;}
 }''',
 "android/content/IntentFilter.java": '''package android.content;public class IntentFilter {public void addAction(String a){}}''',
 "android/content/BroadcastReceiver.java": '''package android.content;public abstract class BroadcastReceiver {public abstract void onReceive(Context c,Intent i);}''',
@@ -112,6 +114,8 @@ public class PendingIntent {public static final int FLAG_UPDATE_CURRENT=0x800000
  public OnClickListener click;public OnTouchListener touch;public void setOnClickListener(OnClickListener l){click=l;}
  public void setOnTouchListener(OnTouchListener l){touch=l;}public boolean performClick(){if(click!=null)click.onClick(this);return true;}
  public void setContentDescription(CharSequence s){}
+ public boolean postDelayed(Runnable r,long d){return true;}public boolean removeCallbacks(Runnable r){return true;}
+ public void setAlpha(float a){}
 }''',
 "android/view/ViewConfiguration.java": '''package android.view;import android.content.Context;public class ViewConfiguration {public static ViewConfiguration get(Context c){return new ViewConfiguration();}public int getScaledTouchSlop(){return 8;}}''',
 "android/view/WindowManager.java": '''package android.view;import android.util.DisplayMetrics;
@@ -166,6 +170,7 @@ public final class QuickEntryRuntimeHarness {
   check(Context.env.activities==0,"starting service never opens screen");
   check((Context.env.windows.last.flags&WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)!=0,"overlay cannot take keyboard focus");
   Context.env.windows.view.performClick();check(Context.env.activities==1,"explicit click opens app");
+  check("com.veloster.dashboard".equals(Context.env.lastActivity.packageName),"edge button opens the dashboard");
   broadcast(Intent.ACTION_SCREEN_OFF);check(Context.env.windows.view==null,"screen-off immediately removes overlay");
   Context.env.power.on=false;broadcast(Intent.ACTION_SCREEN_ON);check(Context.env.windows.view==null,"power state remains off");
   Context.env.power.on=true;Context.env.keyguard.locked=true;broadcast(Intent.ACTION_SCREEN_ON);check(Context.env.windows.view==null,"locked screen stays hidden");
@@ -238,14 +243,14 @@ public final class QuickEntryRuntimeHarness {
  }
  static void languageRefresh(){
   Context c=reset();QuickEntryService s=start(2);
-  check("앱".equals(((android.widget.Button)Context.env.windows.view).label),"Korean overlay");
+  check("계기판".equals(((android.widget.Button)Context.env.windows.view).label),"Korean overlay");
   com.veloster.i18n.LanguageSettings.save(c,"en");s.onStartCommand(null,0,2);
-  check("Apps".equals(((android.widget.Button)Context.env.windows.view).label),"existing overlay rebuilt in English");
+  check("Dash".equals(((android.widget.Button)Context.env.windows.view).label),"existing overlay rebuilt in English");
   Context.env.prefs.edit().putString("error","바로가기 서비스 종료 요청에 실패했습니다.").commit();
   check(QuickEntryService.status(c).contains("Could not request"),"persisted error key translated at display");
   check(Context.env.windows.adds-Context.env.windows.removes==1,"language refresh leaves exactly one overlay");
   com.veloster.i18n.LanguageSettings.save(c,"ko");s.onStartCommand(null,0,3);
-  check("앱".equals(((android.widget.Button)Context.env.windows.view).label),"Korean switch back");s.onDestroy();
+  check("계기판".equals(((android.widget.Button)Context.env.windows.view).label),"Korean switch back");s.onDestroy();
  }
  public static void main(String[] args){
   java.util.Locale.setDefault(java.util.Locale.KOREAN);
@@ -253,7 +258,7 @@ public final class QuickEntryRuntimeHarness {
   missingWindowServiceFallsBack();receiverFailureFallsBack();notificationFailureStops();offActionAndStickyRestart();rotationAndDrag();
   updateFailureRemovesOverlay();modernReflectionPath();deniedServiceStart();
   languagePreferences();languageRefresh();
-  System.out.println("PASS: 16 actual service/receiver lifecycle scenarios under host Android stubs (not device runtime)");
+  System.out.println("PASS: 17 actual service/receiver lifecycle scenarios under host Android stubs (not device runtime)");
  }
 }
 '''
@@ -297,7 +302,7 @@ class QuickEntryRuntimeTests(unittest.TestCase):
             ran = subprocess.run([java, "-cp", str(classes), "com.veloster.carplayhub.QuickEntryRuntimeHarness"],
                                  capture_output=True, text=True)
             self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
-            self.assertIn("PASS: 16", ran.stdout)
+            self.assertIn("PASS: 17", ran.stdout)
 
     def test_manifest_keeps_controls_private_and_boot_scoped(self):
         manifest = ET.parse(ROOT / "apps/hub/AndroidManifest.xml").getroot()

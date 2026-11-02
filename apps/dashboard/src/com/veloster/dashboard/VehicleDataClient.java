@@ -17,6 +17,9 @@ final class VehicleDataClient implements Runnable {
     private final Context context;
     private final Handler handler=new Handler();
     private volatile boolean active,ignition;
+    // i30 PD: the BCM ignition service may be absent. The head unit only runs with the key on and the
+    // hscan subscriber is read-only, so an unknown ignition state is treated as on.
+    private volatile boolean ignitionUnknown;
     private volatile int generation;
     private volatile HscanDataClient hscan;
     private NModeManager nmode;
@@ -28,15 +31,17 @@ final class VehicleDataClient implements Runnable {
     private BCMPowerListener plistener;
     private PgsStatusListener rlistener;
     VehicleDataClient(Context context){this.context=context;}
-    synchronized void start(){if(active)return;active=true;generation++;ignition=false;VehicleDash.ignition(false);run();}
-    private boolean accepts(int token){return active&&token==generation&&ignition;}
+    /** Retry delay for services that are missing; doubles up to 30 s (the BCM service may not exist on the PD). */
+    private long retryMs=2000;
+    synchronized void start(){if(active)return;active=true;generation++;ignition=false;VehicleDash.ignition(false);retryMs=2000;run();}
+    private boolean accepts(int token){return active&&token==generation&&(ignition||ignitionUnknown);}
     public synchronized void run(){
         if(!active)return;
         final int token=generation;
         if(power==null)try{
             power=(BCMManager)com.hkmc.VehicleInfoManager.getInstance(context).getService(com.hkmc.VehicleInfoManager.BCM_SERVICE);
             if(power==null)throw new IllegalStateException("BCM service unavailable");
-            ignition=power.getIGNStatus();
+            ignition=power.getIGNStatus();ignitionUnknown=false;
             plistener=new BCMPowerListener(){public void onIgnitionChanged(boolean on){
                 synchronized(VehicleDataClient.this){
                 if(!active||token!=generation)return;
@@ -50,7 +55,7 @@ final class VehicleDataClient implements Runnable {
                 }
             }};
             power.addPowerListener(plistener);
-        }catch(RuntimeException e){power=null;log("power",e);}catch(LinkageError e){power=null;log("power",e);}
+        }catch(RuntimeException e){power=null;ignitionUnknown=true;log("power",e);}catch(LinkageError e){power=null;ignitionUnknown=true;log("power",e);}
         if(nmode==null)try{
             nmode=new NModeManager(context);
             nlistener=new NModeListener(){
@@ -74,11 +79,11 @@ final class VehicleDataClient implements Runnable {
             rlistener=new PgsStatusListener(){public void onRVMViewStatusChanged(int view){if(accepts(token))VehicleDash.rearView(view);}};
             rear.registerPgsStatusListener(rlistener);
         }catch(RuntimeException e){rear=null;log("rear view",e);}catch(LinkageError e){rear=null;log("rear view",e);}
-        if(power==null||nmode==null||vehicle==null)handler.postDelayed(this,2000);
+        if(power==null||nmode==null||vehicle==null){handler.postDelayed(this,retryMs);retryMs=Math.min(30000,retryMs*2);}
         if(hscan==null)try{
             hscan=new HscanDataClient(new HscanDataClient.Gate(){public boolean accepts(){return VehicleDataClient.this.accepts(token);}});
         }catch(RuntimeException e){hscan=null;log("HSCAN",e);}catch(LinkageError e){hscan=null;log("HSCAN",e);}
-        if(hscan!=null&&ignition)hscan.start();
+        if(hscan!=null&&(ignition||ignitionUnknown))hscan.start();
     }
     synchronized void stop(){
         if(!active)return;active=false;generation++;handler.removeCallbacks(this);
@@ -90,5 +95,10 @@ final class VehicleDataClient implements Runnable {
         nmode=null;vehicle=null;power=null;nlistener=null;vlistener=null;plistener=null;
         rear=null;rlistener=null;
     }
-    private static void log(String source,Throwable error){android.util.Log.e("NDashboard","Subscription unavailable: "+source,error);}
+    private static final java.util.Set<String> LOGGED=new java.util.HashSet<String>();
+    /** Full trace once per source; repeats of a missing service log one line. */
+    private static void log(String source,Throwable error){
+        if(LOGGED.add(source))android.util.Log.e("NDashboard","Subscription unavailable: "+source,error);
+        else android.util.Log.w("NDashboard","Subscription unavailable: "+source+" ("+error+")");
+    }
 }

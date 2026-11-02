@@ -29,7 +29,15 @@ public final class VehicleDash extends View implements Runnable {
     private final GraphEditor graphEditor;
     private final OverviewLayout overviewLayout=new OverviewLayout();
     private int overviewDown=-1;
-    private boolean cluster, media, gauges, graphs, touching;
+    private boolean cluster, media, gauges, graphs, symmetric, touching;
+    /** Symmetric-tab variant (PitRenderer.PAGE_*). Lap timer on the performance page: tap starts, tap stops, tap again resets. */
+    private int page;
+    /** Last Cluster layout shown (0 Classic, 1 Retro, 2 Rally), restored when the tab opens. */
+    private int clusterLayout;
+    private final HeaderTabs header=renderer.header();
+    private boolean lapRunning;
+    private long lapStart, lapMs;
+    private long introStart;
     private float downX,downY;
     private long lastDiagnostic;
     private long lastPolicyCheck;
@@ -53,7 +61,13 @@ public final class VehicleDash extends View implements Runnable {
             overviewLayout.style(i,a.getSharedPreferences("pit_vehicle_ui",0).getInt("overview_style_"+i,2));
         }catch(IllegalArgumentException e){/* Retain default for an invalid saved style. */}
         catch(ClassCastException e){/* Retain default for incompatible preferences. */}
-        shiftTarget=ShiftGuide.clamp(a.getSharedPreferences("pit_vehicle_ui",0).getInt("shift_target",ShiftGuide.DEFAULT)); setVisibility(GONE); }
+        // Kept as saved (0 = never set); the renderer and the -/+ buttons resolve it with the detected powertrain.
+        shiftTarget=a.getSharedPreferences("pit_vehicle_ui",0).getInt("shift_target",0);
+        try{Theme.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("theme","n"));}
+        catch(ClassCastException e){Theme.select("n");/* Incompatible saved value: open in N. */}
+        try{int v=a.getSharedPreferences("pit_vehicle_ui",0).getInt("cluster_layout",0);clusterLayout=v>=0&&v<=2?v:0;}
+        catch(ClassCastException e){/* Keep Classic for an incompatible saved value. */}
+        setVisibility(GONE); }
     public static void attach(Activity a) {
         try {
             FrameLayout parent=(FrameLayout)a.findViewById(android.R.id.content);
@@ -149,7 +163,8 @@ public final class VehicleDash extends View implements Runnable {
     public static void additional(byte[] data) { DATA.additional(data,SystemClock.elapsedRealtime()); }
     public static void hscanJsn(int cid,int funcLow,byte[] data){DATA.hscanJsn(cid,funcLow,data,SystemClock.elapsedRealtime());}
     public static void hscanJsn(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanJsn(cid,funcLow,data,receivedAt);}
-    protected void onAttachedToWindow() { super.onAttachedToWindow(); artwork.open();mediaReceiver.start(activity); post(this); }
+    public static void hscanPd(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanPd(cid,funcLow,data,receivedAt);}
+    protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity); post(this); }
     protected void onDetachedFromWindow() { removeCallbacks(this);removeCallbacks(editHold);touching=false;gaugeEditor.dismiss();graphEditor.dismiss();mediaReceiver.stop();artwork.close();super.onDetachedFromWindow(); }
     public void run() {
         long delay=100;
@@ -159,7 +174,10 @@ public final class VehicleDash extends View implements Runnable {
         if(getVisibility()==VISIBLE) {
             invalidate();long now=SystemClock.elapsedRealtime();
             if(graphs)delay=250;
+            else if(symmetric&&page==PitRenderer.PAGE_PERFORMANCE&&lapRunning)delay=33;
+            else if(symmetric&&page>=PitRenderer.PAGE_RACE)delay=50;  // shift blink, upshift pop, live run timers
             else if(!(cluster&&media&&!gauges) && mediaState.snapshot(now).notice)delay=16;
+            if(introStart>0&&now-introStart<1500)delay=Math.min(delay,33);   // smooth the welcome sweep
             if(now-lastDiagnostic>=5000) { lastDiagnostic=now;android.util.Log.i("VehicleDash",DATA.diagnostics(now)); }
         }
         postDelayed(this,delay);
@@ -170,8 +188,14 @@ public final class VehicleDash extends View implements Runnable {
         renderer.setArtwork(artwork.bitmap());
         renderer.setGaugeLayout(gauges?gaugeLayout:null);
         renderer.setGraphLayout(graphs?graphLayout:null);
+        renderer.setSymmetric(symmetric);
+        renderer.setPage(page);
+        renderer.setLap(lapRunning?now-lapStart:lapMs,lapRunning);
         renderer.setOverviewLayout(overviewLayout);
         renderer.draw(c,getWidth(),getHeight(),cluster,DATA,now,shiftTarget,media,track);
+        if(introStart==0)introStart=now;
+        long introEl=now-introStart;
+        if(introEl<1500)renderer.drawIntro(c,introEl/1500f);
     }
     private void requestMedia(final int command){
         if(blocked||!mediaPending.compareAndSet(false,true))return;
@@ -188,25 +212,53 @@ public final class VehicleDash extends View implements Runnable {
             }});
         }},"NMode-track-control").start();
     }
+    private void selectTab(int id){
+        switch(id){
+            case HeaderTabs.OVERVIEW:cluster=false;gauges=false;graphs=false;symmetric=false;break;
+            case HeaderTabs.F1:cluster=true;gauges=false;graphs=false;symmetric=false;break;
+            case HeaderTabs.PERF:page=symmetric&&page==PitRenderer.PAGE_PERFORMANCE?PitRenderer.PAGE_SHOW:PitRenderer.PAGE_PERFORMANCE;symmetric=true;cluster=false;gauges=false;graphs=false;break;
+            case HeaderTabs.RACE:page=symmetric&&page==PitRenderer.PAGE_RACE?PitRenderer.PAGE_RECORDS:PitRenderer.PAGE_RACE;symmetric=true;cluster=false;gauges=false;graphs=false;break;
+            case HeaderTabs.GAUGES:gauges=true;cluster=false;graphs=false;symmetric=false;break;
+            case HeaderTabs.GRAPHS:graphs=true;gauges=false;cluster=false;symmetric=false;break;
+            case HeaderTabs.CLUSTER:
+                // Tapping Cluster again cycles Classic -> Retro -> Rally; opening it restores the last layout.
+                if(symmetric&&PitRenderer.isCluster(page))clusterLayout=(clusterLayout+1)%3;
+                page=PitRenderer.PAGE_CLASSIC+clusterLayout;symmetric=true;cluster=false;gauges=false;graphs=false;
+                activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("cluster_layout",clusterLayout).apply();break;
+            case HeaderTabs.LANG:LanguageSettings.show(activity,new Runnable(){public void run(){invalidate();}});return;
+            case HeaderTabs.THEME:
+                Theme.select(Theme.next(Theme.current().id));
+                activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("theme",Theme.current().id).apply();break;
+            default:return;
+        }
+        invalidate();
+    }
     private boolean overviewCovered(float y){return y>=347&&mediaState.snapshot(SystemClock.elapsedRealtime()).notice;}
     public boolean onTouchEvent(MotionEvent event) {
         float x=event.getX()*800/getWidth(), y=event.getY()*480/getHeight();
         if(event.getAction()==MotionEvent.ACTION_DOWN) {
-            removeCallbacks(editHold);touching=true;downX=x;downY=y;
-            overviewDown=!cluster&&!gauges&&!graphs&&!blocked&&!overviewCovered(y)?overviewLayout.hit(x,y):-1;
+            removeCallbacks(editHold);touching=true;downX=x;downY=y;header.down(x,y);
+            overviewDown=!cluster&&!gauges&&!graphs&&!symmetric&&!blocked&&!overviewCovered(y)?overviewLayout.hit(x,y):-1;
             if(!blocked&&((gauges&&gaugeEditor.hit(x,y)>=0)||(graphs&&graphLayout.hit(x,y)>=0)))postDelayed(editHold,600);
             return true;
         }
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y)){touching=false;removeCallbacks(editHold);invalidate();return true;}
         if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);}return true;}
-        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);return true; }
+        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);header.up();return true; }
         if(event.getAction()!=MotionEvent.ACTION_UP)return true;
         removeCallbacks(editHold);
+        if(header.up()){touching=false;return true;}   // a strip scroll is never a tap
         boolean tap=touching && Math.abs(x-downX)<16 && Math.abs(y-downY)<16;
         touching=false;
-        if(standalone&&tap&&x>=666&&x<=782&&downX>=666&&downX<=782&&y>=8&&y<=46&&downY>=8&&downY<=46){activity.finish();return true;}
-        if(tap&&!blocked&&!cluster&&!gauges&&!graphs&&overviewDown>=0&&overviewLayout.hit(x,y)==overviewDown&&!overviewCovered(y)){
+        if(standalone&&tap&&x>=698&&x<=782&&downX>=698&&downX<=782&&y>=8&&y<=46&&downY>=8&&downY<=46){activity.finish();return true;}
+        if(tap&&!blocked&&!cluster&&!gauges&&!graphs&&!symmetric&&overviewDown>=0&&overviewLayout.hit(x,y)==overviewDown&&!overviewCovered(y)){
             overviewLayout.cycle(overviewDown);
             activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("overview_style_"+overviewDown,overviewLayout.style(overviewDown)).apply();
+            invalidate();return true;
+        }
+        if(tap&&!blocked&&symmetric&&page==PitRenderer.PAGE_PERFORMANCE&&x>=600&&x<=788&&downX>=600&&downX<=788&&y>=339&&y<=468&&downY>=339&&downY<=468){
+            long now=SystemClock.elapsedRealtime();
+            if(lapRunning){lapMs=now-lapStart;lapRunning=false;}else if(lapMs>0)lapMs=0;else{lapStart=now;lapRunning=true;}
             invalidate();return true;
         }
         if(tap&&!blocked&&gauges&&x>=650&&x<=788&&downX>=650&&downX<=788&&y>=54&&y<=78&&downY>=54&&downY<=78){gaugeEditor.toggleGrid();return true;}
@@ -224,22 +276,29 @@ public final class VehicleDash extends View implements Runnable {
             if(media && x>=494 && x<=580 && downX>=494 && downX<=580){requestMedia(-1);return true;}
             if(media && x>=588 && x<=686 && downX>=588 && downX<=686){requestMedia(0);return true;}
             if(media && x>=694 && x<=782 && downX>=694 && downX<=782){requestMedia(1);return true;}
-            int next=shiftTarget;
+            // Step from the target on screen, inside the detected powertrain's range (petrol 3000-6700, diesel 2100-4700).
+            VehicleProfile prof=DATA.profile();
+            int next=ShiftGuide.target(shiftTarget,prof);
             float minus=media?210:548,plus=media?440:740;
             if(x>=minus && x<=minus+42 && downX>=minus && downX<=minus+42)next-=100;
             if(x>=plus && x<=plus+42 && downX>=plus && downX<=plus+42)next+=100;
-            shiftTarget=ShiftGuide.clamp(next);
+            shiftTarget=ShiftGuide.clamp(next,prof.shiftMin,prof.shiftMax);
             activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("shift_target",shiftTarget).apply();
             invalidate();return true;
         }
+        if(tap && !blocked && symmetric && page==PitRenderer.PAGE_RACE){
+            if(x>=500 && x<=788 && downX>=500 && downX<=788 && y>=104 && y<=184 && downY>=104 && downY<=184){media=!media;mediaState.dismissNotice();invalidate();return true;}
+            if(media && y>=410 && y<=440 && downY>=410 && downY<=440){
+                if(x>=508 && x<=594 && downX>=508 && downX<=594){requestMedia(-1);return true;}
+                if(x>=598 && x<=690 && downX>=598 && downX<=690){requestMedia(0);return true;}
+                if(x>=694 && x<=782 && downX>=694 && downX<=782){requestMedia(1);return true;}
+            }
+        }
         if(!tap || blocked || y<8 || y>46 || downY<8 || downY>46)return true;
         gaugeEditor.dismiss();graphEditor.dismiss();
-        if(x>=144 && x<=244 && downX>=144 && downX<=244) { cluster=false;gauges=false;graphs=false;invalidate(); }
-        else if(x>=250 && x<=322 && downX>=250 && downX<=322) { cluster=true;gauges=false;graphs=false;invalidate(); }
-        else if(x>=328 && x<=412 && downX>=328 && downX<=412) { gauges=true;cluster=false;graphs=false;invalidate(); }
-        else if(x>=418 && x<=528 && downX>=418 && downX<=528) { graphs=true;gauges=false;cluster=false;invalidate(); }
-        else if(x>=534 && x<=582 && downX>=534 && downX<=582){LanguageSettings.show(activity,new Runnable(){public void run(){invalidate();}});}
-        else if(x>=666 && x<=782 && downX>=666 && downX<=782)close();
+        int id=header.hit(x,y);
+        if(id>=0&&id==header.hit(downX,downY))selectTab(id);
+        else if(x>=698 && x<=782 && downX>=698 && downX<=782)close();
         return true;
     }
 }

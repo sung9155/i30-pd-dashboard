@@ -2,7 +2,7 @@ package com.veloster.vehicle;
 
 /** Fixed overview geometry and per-signal display choices, separate from gauges. */
 public final class OverviewLayout {
-    private static final int[] ORDER={7,0,8,9,10,1,2,29,14,13,15,16,17,11,12,18,22,26,25,27};
+    private static final int[] ORDER={7,0,8,9,10,2,29,14,13,15,16,17,11,12,18,22,26,25,27};
     private final int[] styles=new int[Telemetry.LABELS.length];
     private static void check(int i){if(i<0||i>=Telemetry.LABELS.length)throw new IllegalArgumentException("overview signal");}
     public OverviewLayout(){for(int i=0;i<styles.length;i++)styles[i]=2;}

@@ -99,7 +99,6 @@ public final class HubActivity extends Activity {
         LinearLayout bar = new LinearLayout(this);
         add(bar, UiText.t("내 앱"), new Runnable(){public void run(){page="apps";render();}});
         add(bar,"Language / 언어",new Runnable(){public void run(){LanguageSettings.show(HubActivity.this,new Runnable(){public void run(){render();QuickEntryService.restore(HubActivity.this);}});}});
-        add(bar, UiText.t("연결 점검"), new Runnable(){public void run(){page="radio";render();}});
         add(bar, UiText.t("닫기"), new Runnable(){public void run(){finish();}});
         root.addView(bar);
         ScrollView scroll = new ScrollView(this);
@@ -131,7 +130,7 @@ public final class HubActivity extends Activity {
         if(QuickEntryService.mode(this)==QuickEntryPolicy.OFF)
             text(UiText.t("처음 설치했다면 실행 바로가기를 설정하세요. 순정 홈에는 앱이 자동으로 추가되지 않습니다."));
         LinearLayout first=new LinearLayout(this),second=new LinearLayout(this);
-        add(first,UiText.t("N 계기판"),new Runnable(){public void run(){openDashboard();}});
+        add(first,UiText.t("계기판"),new Runnable(){public void run(){openDashboard();}});
         add(first,UiText.t("USB 디버깅"),new Runnable(){public void run(){usbDebug();}});
         add(second,UiText.t("엔지니어링 모드"),new Runnable(){public void run(){openEngineering();}});
         add(second,UiText.t("안드로이드 기본앱"),new Runnable(){public void run(){page="android";render();}});
@@ -212,7 +211,7 @@ public final class HubActivity extends Activity {
     private void openDashboard(){
         Intent request=new Intent(Intent.ACTION_MAIN).setClassName("com.veloster.dashboard","com.veloster.dashboard.DashboardActivity");
         request.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        open(request,UiText.t("N 계기판"));
+        open(request,UiText.t("계기판"));
     }
     private void openEngineering(){
         open(new Intent(Intent.ACTION_MAIN).setClassName("com.hkmc.system.app.engineering","com.hkmc.system.app.engineering.EngineeringModeMainActivity"),UiText.t("엔지니어링 모드"));

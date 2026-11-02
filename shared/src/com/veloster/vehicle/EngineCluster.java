@@ -11,7 +11,7 @@ import java.util.Locale;
  * (red warning, amber caution, cyan advisory, white memo); the gear in a green landing-gear box.
  */
 final class EngineCluster extends ClusterKit {
-    private static final int WH=0xfff2f2f2,CY=0xff4fd1ff,AM=0xffffb000,RD=0xffff3030,GR=0xff3ddc56,GY=0xff3b4046,SUB=0xff6f8c99;
+    private static final int WH=0xfff2f2f2,CY=0xffa4d9ef,AM=0xffffb000,RD=0xffff3030,GR=0xff3ddc56,GY=0xff3b4046,SUB=0xff6f8c99;   // CY is the N palette accent so the theme remaps it
     { themed=true; }   // the aircraft-engine gauges follow the theme's accent
 
     @Override protected void draw(Canvas c){

@@ -83,6 +83,20 @@ public final class Telemetry {
             ageMs=age;value=v; valid=ok; changed=diff; seen=received; stale=old;
         }
     }
+    private float boostGood=Float.NaN,boostLast=Float.NaN;private long boostGoodAt;
+    /**
+     * Boost (bar) minus samples this turbo cannot make: outside -1..+2.5 bar, or a lone jump of more than 0.5 bar from
+     * the last good sample under 1 s ago (real boost moved at most 0.28 bar between samples in the drive logs). Two
+     * samples in a row within 0.15 bar take a new level. A dropped sample never reaches the display, graphs or MAX;
+     * the previous value stays. In-car: 3.62 bar MAX after a throttle lift that an aftermarket gauge did not show.
+     */
+    private void boost(float v,boolean ok,long now){
+        boolean confirmed=Math.abs(v-boostLast)<=0.15f;
+        boostLast=ok?v:Float.NaN;
+        if(ok&&(v<-1f||v>2.5f||(now-boostGoodAt<1000&&Math.abs(v-boostGood)>0.5f&&!confirmed)))return;
+        if(ok){boostGood=v;boostGoodAt=now;}
+        put(BOOST,v,ok,now);
+    }
     private void put(int i, float v, boolean ok, long now) {
         changed[i] = ok && valid[i] && seen[i] && now-times[i] <= STALE_MS && values[i] != v;
         counts[i]++; values[i]=v; valid[i]=ok; seen[i]=true; times[i]=now;
@@ -354,7 +368,7 @@ public final class Telemetry {
             // In-car: idle -0.02 bar, peak +0.89 bar at 70 % load (r=0.72 with TQI).
             int raw=((b[2]&255)>>4)|((b[3]&255)<<4);
             boolean ok=raw!=0xfff&&!Float.isNaN(baroHpa);
-            put(BOOST,ok?(raw*1.322f-baroHpa)/1000f:0,ok,now);
+            boost(ok?(raw*1.322f-baroHpa)/1000f:0,ok,now);
         }else if(funcLow==0x04&&b.length==8){
             // CLU13 CF_Clu_DrivingModeSwi @16|2: 0 normal, 1 sport, 3 eco (10/30 tagged captures; 2 never seen).
             int mode=b[2]&3;

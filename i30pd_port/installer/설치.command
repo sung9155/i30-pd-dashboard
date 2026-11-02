@@ -9,14 +9,13 @@
 #              --diag(설치하지 않고 진단 기록 파일만 만든다)
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-INSTALLER_VERSION='2026-11-02c'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+INSTALLER_VERSION='2026-11-02d'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 VERIFIED_BUILD='eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 LOW_BUILD='eng.vmadmin.20260114.084725'        # 블루링크 없는 D-Audio Plus LOW — 2026-10-31 실차 설치·동작 확인
 PT_URL='https://dl.google.com/android/repository/platform-tools-latest-darwin.zip'
 # 안정화 = 최신 정식 릴리스, 테스트 = 'test' 사전 배포(덮어쓰며 갱신). --apk-base 를 주면 그 주소를 그대로 쓴다.
 RELEASES='https://github.com/sung9155/i30-pd-dashboard/releases'
 RAW='https://raw.githubusercontent.com/sung9155/i30-pd-dashboard'   # 새 설치기 확인용(main = 안정화, beta = 테스트)
-MAIL='********@*****.***'   # 진단 기록·문제 제보 받는 곳
 APK_BASE=''
 APKS='dashboard-i30pd-platform.apk myapps-i30pd-platform.apk'
 ADB=''; YES=''; UNINSTALL=''; CHANNEL=''; DIAG=''
@@ -47,7 +46,7 @@ warn() { printf '\033[33m%s\033[0m\n' "$1"; printf '%s\n' "$1" >> "$LOG"; }
 finish() { [ -z "$YES" ] && { echo; read -r -p '창을 닫으려면 Enter' _; }; exit "$1"; }
 die()  { printf '\n\033[31m%s\033[0m\n' "$1"; log "ERROR: $1"
          warn "기록 파일: $LOG"
-         warn "문제를 알릴 때 이 파일을 메일($MAIL)에 첨부해 보내 주세요."
+         warn '문제를 알릴 때 이 기록 파일을 함께 보내 주세요.'
          [ -z "$YES" ] && open -R "$LOG" 2>/dev/null
          finish "$2"; }
 ask()  { [ -n "$YES" ] && return 0; read -r -p "$1 [Y/n] " r; case "$r" in ''|[Yy]*) return 0 ;; *) return 1 ;; esac; }
@@ -116,7 +115,7 @@ if [ -z "$UNINSTALL" ] && [ -z "$DIAG" ] && [ -z "$APK_BASE" ]; then
       head_ '받을 버전'
       note '  1) 안정화 (권장) — 실차에서 확인된 버전'
       note '  2) 테스트 — 새 기능, 아직 실차 검증 전. 문제가 있으면 안정화로 다시 설치하면 됩니다'
-      note '  3) 진단 기록 모으기 — 설치하지 않고, 문제를 알릴 때 메일로 보낼 파일만 만듭니다'
+      note '  3) 진단 기록 모으기 — 설치하지 않고, 문제를 알릴 때 보낼 파일만 만듭니다'
       read -r -p '번호를 입력하고 Enter [1] ' r
       case "$(printf '%s' "$r" | tr -d ' ')" in 2) CHANNEL=test ;; 3) DIAG=1 ;; *) CHANNEL=stable ;; esac
     fi
@@ -230,11 +229,8 @@ if [ -n "$DIAG" ]; then
     echo; echo '[이 PC 설치기 기록]'; cat "$LOG"
   } | mask > "$out"
   ok "만든 파일: $out"
-  note "이 파일을 메일에 첨부해 $MAIL 로 보내 주세요. 본문에 증상(언제, 어떤 화면에서, 무엇이)을 적어 주세요."
-  if [ -z "$YES" ]; then
-    printf '%s' "$MAIL" | pbcopy 2>/dev/null && note '(메일 주소를 클립보드에 복사했습니다. 받는 사람 칸에 붙여 넣으세요)'
-    open -R "$out" 2>/dev/null
-  fi
+  note '문제를 알릴 때 이 파일을 보내 주세요. 증상(언제, 어떤 화면에서, 무엇이)도 함께 알려 주세요.'
+  [ -z "$YES" ] && open -R "$out" 2>/dev/null
   usb_off; finish 0
 fi
 if [ "$build" = "$LOW_BUILD" ]; then

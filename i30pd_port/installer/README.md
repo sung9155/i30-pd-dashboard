@@ -54,8 +54,8 @@
 - **서명 충돌.** 예전에 다른 서명으로 깔린 앱이 있어 `INCONSISTENT_CERTIFICATES` 가 나면, 묻고 나서 지우고 다시 설치한다.
 - **삭제.** `삭제.cmd`(= `설치.cmd -Uninstall`)로 두 앱을 지운다. 이때는 APK 를 받지 않는다. '내 앱'이 ☆ 버튼을 계기판으로 돌려 놨으면(`persist.sys.key.custom` = `com.veloster.carplayhub.STAR_KEY`) 먼저 `service call com.hkmc.micom.mode 34 s16 com.mobis.intent.action.CUSTOM_SHORTCUT`으로 순정 "없음"으로 되돌리고 다시 읽어 확인한다.
 - **폴더 APK 확인.** 폴더 옆 APK 가 `PK` 로 시작하지 않으면(브라우저가 GitHub 페이지를 `.apk` 이름으로 저장한 경우) 무시하고 릴리스에서 받는다. 설치가 실패하면 adb 의 실패 이유를 화면에 같이 보여 준다.
-- **기록.** `%LOCALAPPDATA%\i30pd-installer\install_<시각>.log`(맥 `~/Library/Logs/i30pd-installer/`)에 adb 명령과 출력을 남긴다. 실패하면 이 파일을 메일(`********@*****.***`)로 보내 달라고 안내하고 기록 폴더를 열어 준다.
-- **진단 기록.** `진단기록.cmd`(= `설치.cmd -Diag`, 맥 `진단기록.command` = `--diag`) 또는 버전 메뉴의 `3)`. 차에 연결해 **읽기만** 한다: 정해 둔 속성, 두 앱의 `dumpsys package` 중 버전·경로·설치 시각 줄, `logcat -d -v time -s VehicleDash VNCarPlayHub VNQuickEntry NDashboard DtcDialog AndroidRuntime:E PackageManager:I`의 마지막 3000줄, 이번 실행 기록. MAC·휴대폰 번호·메일 주소·adb 기기 번호를 가린 뒤 바탕화면 `i30pd_진단기록_<시각>.txt`(UTF-8)로 저장하고, 메일 주소를 클립보드에 넣고 그 파일을 탐색기/Finder에서 보여 준다. 전체 logcat은 블루투스 폰 이름·번호·연락처가 섞여 넣지 않는다.
+- **기록.** `%LOCALAPPDATA%\i30pd-installer\install_<시각>.log`(맥 `~/Library/Logs/i30pd-installer/`)에 adb 명령과 출력을 남긴다. 실패하면 문제를 알릴 때 이 파일을 함께 보내 달라고 안내하고 기록 폴더를 열어 준다.
+- **진단 기록.** `진단기록.cmd`(= `설치.cmd -Diag`, 맥 `진단기록.command` = `--diag`) 또는 버전 메뉴의 `3)`. 차에 연결해 **읽기만** 한다: 정해 둔 속성, 두 앱의 `dumpsys package` 중 버전·경로·설치 시각 줄, `logcat -d -v time -s VehicleDash VNCarPlayHub VNQuickEntry NDashboard DtcDialog AndroidRuntime:E PackageManager:I`의 마지막 3000줄, 이번 실행 기록. MAC·휴대폰 번호·메일 주소·adb 기기 번호를 가린 뒤 바탕화면 `i30pd_진단기록_<시각>.txt`(UTF-8)로 저장하고 그 파일을 탐색기/Finder에서 보여 준다. 전체 logcat은 블루투스 폰 이름·번호·연락처가 섞여 넣지 않는다.
 - **같은 버전 건너뛰기.** 설치 전에 `pm path`로 차의 APK를 `adb pull`해 받은 파일과 해시(맥 `cmp`)를 비교하고, 같으면 그 앱은 설치하지 않는다(내비는 설치한 APK를 바이트 그대로 보관한다). 비교에 실패하면 그냥 설치한다.
 - **새 설치기 알림.** 시작할 때 `raw.githubusercontent.com`의 `main`(테스트를 고르면 `beta`도) `install.ps1`/`설치.command`에서 설치기 버전을 읽어, 더 새것이면 알리고 그대로 계속한다(5초 제한, 실패는 기록에만).
 - **디버깅용 기록.** 원격으로 원인을 가를 수 있게 기록 파일에 더 남긴다.

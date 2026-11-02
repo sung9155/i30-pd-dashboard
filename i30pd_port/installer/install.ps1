@@ -18,7 +18,7 @@ param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switc
 $ErrorActionPreference = 'Continue'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-02c'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-02d'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
 # 위와 같고, 2026-10-31 실차 설치·동작 확인(다른 LOW 차 한 대는 USB "장치 설명자 요청 실패" — 그 차 포트·배선 문제로 봄).
@@ -28,7 +28,6 @@ $USB_URL = 'https://dl.google.com/android/repository/usb_driver_r13-windows.zip'
 # APK를 폴더에서 못 찾으면 공개 배포 레포에서 받는다: 안정화 = 최신 정식 릴리스, 테스트 = 'test' 사전 배포(덮어쓰며 갱신).
 $Releases = 'https://github.com/sung9155/i30-pd-dashboard/releases'
 $Raw = 'https://raw.githubusercontent.com/sung9155/i30-pd-dashboard'   # 새 설치기 확인용(main = 안정화, beta = 테스트)
-$Mail = '********@*****.***'   # 진단 기록·문제 제보 받는 곳
 $Apps = @(
   [pscustomobject]@{ apk='dashboard-i30pd-platform.apk'; pkg='com.veloster.dashboard'; name='대시보드' },
   [pscustomobject]@{ apk='myapps-i30pd-platform.apk';   pkg='com.veloster.carplayhub'; name="'내 앱'" }
@@ -44,7 +43,7 @@ function Head($m){ $t = Get-Date -Format HH:mm:ss; Write-Host ''; Write-Host "$m
 function Die($m,$code){
   Write-Host ''; Write-Host $m -ForegroundColor Red; Log "ERROR: $m"
   Write-Host "기록 파일: $Log" -ForegroundColor Yellow
-  Write-Host "문제를 알릴 때 이 파일을 메일($Mail)에 첨부해 보내 주세요." -ForegroundColor Yellow
+  Write-Host '문제를 알릴 때 이 기록 파일을 함께 보내 주세요.' -ForegroundColor Yellow
   if(-not $Yes){ try { Start-Process explorer.exe "/select,`"$Log`"" } catch {} }
   exit $code
 }
@@ -138,7 +137,7 @@ if(-not $Uninstall -and -not $Diag -and -not $ApkBase){
       Head '받을 버전'
       Note '  1) 안정화 (권장) — 실차에서 확인된 버전' Gray
       Note '  2) 테스트 — 새 기능, 아직 실차 검증 전. 문제가 있으면 안정화로 다시 설치하면 됩니다' Gray
-      Note '  3) 진단 기록 모으기 — 설치하지 않고, 문제를 알릴 때 메일로 보낼 파일만 만듭니다' Gray
+      Note '  3) 진단 기록 모으기 — 설치하지 않고, 문제를 알릴 때 보낼 파일만 만듭니다' Gray
       $r = (Read-Host '번호를 입력하고 Enter [1]').Trim()
       if($r -eq '3'){ $Diag = $true } else { $Channel = $(if($r -eq '2'){ 'test' } else { 'stable' }) }
     }
@@ -337,11 +336,8 @@ if($Diag){
   $out = Join-Path $desk ("i30pd_진단기록_{0}.txt" -f (Get-Date -Format yyyyMMdd_HHmmss))
   [IO.File]::WriteAllText($out, (Mask $sb.ToString()), (New-Object Text.UTF8Encoding $true))
   Note "만든 파일: $out" Green
-  Note "이 파일을 메일에 첨부해 $Mail 로 보내 주세요. 본문에 증상(언제, 어떤 화면에서, 무엇이)을 적어 주세요." White
-  if(-not $Yes){
-    try { Set-Clipboard -Value $Mail; Note '(메일 주소를 클립보드에 복사했습니다. 받는 사람 칸에 붙여 넣으세요)' DarkGray } catch {}
-    Start-Process explorer.exe "/select,`"$out`""
-  }
+  Note '문제를 알릴 때 이 파일을 보내 주세요. 증상(언제, 어떤 화면에서, 무엇이)도 함께 알려 주세요.' White
+  if(-not $Yes){ Start-Process explorer.exe "/select,`"$out`"" }
   UsbOffNote; exit 0
 }
 if($build -eq $LowBuild){

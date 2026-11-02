@@ -65,6 +65,17 @@ final class PixelCluster extends ClusterKit {
     private Bitmap bake(int w,int h,Art a){Bitmap b=bitmap(w,h);float s=pxScale,t=pxTop;pxScale=1;pxTop=0;a.paint(new Canvas(b));pxScale=s;pxTop=t;return b;}
     /** Stamps a baked bitmap at scene position x,y (4x, no smoothing). */
     private void put(Canvas c,Bitmap b,float x,float y){blit(c,b,0,0,b.getWidth(),b.getHeight(),x*4,52+y*4,(x+b.getWidth())*4,52+(y+b.getHeight())*4);}
+    /** Draws the car yawed into a bend: horizontal bands shifted and narrowed toward the top, so a sliver of the far
+     * side shows as it turns. shear is in scene pixels across the car's height (+ = turning that way). */
+    private void putYaw(Canvas c,Bitmap b,float x,float y,float shear){
+        int w=b.getWidth(),h=b.getHeight(),bands=10;float bh=h/(float)bands;
+        for(int i=0;i<bands;i++){
+            int sy=Math.round(i*bh),eh=Math.round((i+1)*bh)-sy; if(eh<=0)continue;
+            float f=(bands-1-i)/(float)(bands-1);                 // 1 at the top, 0 at the bottom
+            float dx=shear*f, nar=Math.abs(shear)*0.18f*f;         // shift, and a slight narrowing so the body turns away
+            blit(c,b,0,sy,w,eh,(x+dx+nar)*4,52+(y+sy)*4,(x+dx+w-nar)*4,52+(y+sy+eh)*4);
+        }
+    }
     /** Repeats a horizontal strip across the 200-pixel scene, scrolled by off. */
     private void strip(Canvas c,Bitmap b,float off,float y){int w=b.getWidth();float o=((off%w)+w)%w;for(float x=-o;x<200;x+=w)put(c,b,x,y);}
     private int phase;
@@ -268,7 +279,8 @@ final class PixelCluster extends ClusterKit {
         boolean sport=mode==SPORT;
         int key=((brake?1:0)|(left?2:0)|(right?4:0)|((tail||lamps)?8:0)|((tilt+1)<<4))+(sport?48:0);
         if(rearCar[key]==null){final boolean b0=brake,l0=left,r0=right,lp=tail||lamps;final int t0=tilt,d0=sport?1:0;rearCar[key]=bake(51,40,new Art(){public void paint(Canvas b){rearArt(b,1,0,t0,b0,l0,r0,lp,d0);}});}
-        put(c,rearCar[key],ox-1,oy);
+        float yaw=lat*4.2f;                                   // lat here is the steering turn; the car yaws into the bend
+        if(Math.abs(yaw)>0.6f)putYaw(c,rearCar[key],ox-1,oy,yaw);else put(c,rearCar[key],ox-1,oy);
         if(!Float.isNaN(boost)&&boost>0.9f&&blink(now,120)){for(int ex:new int[]{8,37}){run(c,0xffffcc33,ox,oy,34,ex,ex+3);run(c,0xffff7a1a,ox,oy,35,ex+1,ex+2);}}
         else if(!Float.isNaN(boost)&&boost>0.3f){int k=(int)(now/125%3);for(int ex:new int[]{8,37})px(c,ox+ex+k,oy+34+k%2,3,1,0x99c8c8d2);}
         float ped=v(9);   // exhaust smoke from both tailpipes under throttle (more gas, more smoke)

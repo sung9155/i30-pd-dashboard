@@ -208,8 +208,11 @@ public final class HscanPdTelemetryTest {
         u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x50,0x59,0,0,0x80,0),1004);check(u.sample(Telemetry.BOOST,1004).value>0.8f,"1885 hPa drive peak is about +0.89 bar once two samples agree");
         u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x50,0xda,0,0,0x80,0),1005);u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x50,0xda,0,0,0x80,0),1006);
         check(Math.abs(u.sample(Telemetry.BOOST,1006).value-0.89f)<0.01f,"3.62 bar (in-car lift-off MAX) is never shown, even twice");
-        u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0xd0,0x7a,0,0,0x80,0),1007);check(u.sample(Telemetry.BOOST,1007).value<1f,"lone +1.6 bar spike dropped");
-        u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x30,0x55,0,0,0x80,0),1008);check(Math.abs(u.sample(Telemetry.BOOST,1008).value-0.80f)<0.01f,"next normal sample shown");
+        u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0xc0,0x8d,0,0,0x80,0),1007);check(u.sample(Telemetry.BOOST,1007).value<1f,"lone rise to +2.0 bar dropped");
+        u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0xd0,0x7a,0,0,0x80,0),1008);check(u.sample(Telemetry.BOOST,1008).value>1.5f,"+0.7 bar rise to +1.6 (hard spool) shown");
+        u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x39,0x2e,0,0,0x80,0),1009);check(u.sample(Telemetry.BOOST,1009).value<0,"lift-off fall from +1.6 to idle shown at once");
+        u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x30,0x55,0,0,0x80,0),1010);check(u.sample(Telemetry.BOOST,1010).value<0,"+0.82 bar in one sample from idle held");
+        u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x30,0x55,0,0,0x80,0),1011);check(Math.abs(u.sample(Telemetry.BOOST,1011).value-0.80f)<0.01f,"and shown once the next sample agrees");
         u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x39,0x2e,0,0,0x80,0),2500);check(u.sample(Telemetry.BOOST,2500).value<0,"after a 1 s gap any in-range value is taken");
         // CLU13 drive mode (slot 0x04 byte2 &3) and EPB11 park brake (slot 0x12 EPB_STATUS) - 10/30 tagged captures.
         int[][] mode={{0x00,0},{0x03,3},{0x01,1}};

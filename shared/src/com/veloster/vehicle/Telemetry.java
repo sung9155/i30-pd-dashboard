@@ -85,15 +85,17 @@ public final class Telemetry {
     }
     private float boostGood=Float.NaN,boostLast=Float.NaN;private long boostGoodAt;
     /**
-     * Boost (bar) minus samples this turbo cannot make: outside -1..+2.5 bar, or a lone jump of more than 0.5 bar from
-     * the last good sample under 1 s ago (real boost moved at most 0.28 bar between samples in the drive logs). Two
+     * Boost (bar) minus samples this turbo cannot make: outside -1..+2.5 bar, or a lone rise of more than 0.8 bar over
+     * the last good sample under 1 s ago (~0.17 s per sample; a full-throttle spool is about 0.35 bar per sample, gentle
+     * drive logs 0.28 at most). Falls are never filtered: the recirculation valve dumps boost that fast on a lift. Two
      * samples in a row within 0.15 bar take a new level. A dropped sample never reaches the display, graphs or MAX;
      * the previous value stays. In-car: 3.62 bar MAX after a throttle lift that an aftermarket gauge did not show.
+     * ponytail: 0.8 is from physics, not a sport-drive log; retune from one if real spools get held back.
      */
     private void boost(float v,boolean ok,long now){
         boolean confirmed=Math.abs(v-boostLast)<=0.15f;
         boostLast=ok?v:Float.NaN;
-        if(ok&&(v<-1f||v>2.5f||(now-boostGoodAt<1000&&Math.abs(v-boostGood)>0.5f&&!confirmed)))return;
+        if(ok&&(v<-1f||v>2.5f||(now-boostGoodAt<1000&&v-boostGood>0.8f&&!confirmed)))return;
         if(ok){boostGood=v;boostGoodAt=now;}
         put(BOOST,v,ok,now);
     }

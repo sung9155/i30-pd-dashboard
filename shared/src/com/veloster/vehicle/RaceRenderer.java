@@ -79,7 +79,7 @@ public final class RaceRenderer {
         box(c,RC,232,R,BOT,0xff0c1a20);
         // TPMS and steering give up their cells to the music panel, so keep them as a compact header line.
         text(c,"TPMS "+fmt("%.0f",v(Telemetry.TPMS_FL))+" "+fmt("%.0f",v(Telemetry.TPMS_FR))+" "+fmt("%.0f",v(Telemetry.TPMS_RL))+" "+fmt("%.0f",v(Telemetry.TPMS_RR)),RC+12,252,11,MUTED,Paint.Align.LEFT);
-        text(c,"STEER "+fmt("%+.0f",v(13))+"°",R-12,252,11,MUTED,Paint.Align.RIGHT);
+        text(c,"STEER "+fmt("%+.1f",v(13))+"°",R-12,252,11,MUTED,Paint.Align.RIGHT);
         box(c,RC+12,262,R-12,263,LINE);
         text(c,"♪ "+(music==null||music.source.length()==0?"MEDIA":music.source),RC+12,284,11,BLUE,Paint.Align.LEFT);
         cover(c,RC+12,294,80);
@@ -265,7 +265,7 @@ public final class RaceRenderer {
         if(!Float.isNaN(angle)){float x=mid+(br-mid)*Math.max(-1,Math.min(1,angle/540f));p.setColor(T(BLUE));c.drawRect(Math.min(mid,x),by,Math.max(mid,x),by+6,p);}
         p.setColor(T(WHITE));c.drawRect(mid-1,by-3,mid+1,by+9,p);
         text(c,"°",R-8,STEER_TOP+62,14,MUTED,Paint.Align.RIGHT);
-        text(c,fmt("%+.0f",angle),R-20,STEER_TOP+62,40,WHITE,Paint.Align.RIGHT);
+        text(c,fmt("%+.1f",angle),R-20,STEER_TOP+62,40,WHITE,Paint.Align.RIGHT);
         box(c,bl,STEER_TOP+74,mid-2,BOT-8,TRACK);box(c,mid+2,STEER_TOP+74,br,BOT-8,TRACK);
         text(c,"RATE",bl+6,STEER_TOP+88,11,MUTED,Paint.Align.LEFT);text(c,"°/s",mid-8,BOT-14,11,MUTED,Paint.Align.RIGHT);
         text(c,fmt("%.0f",v(Telemetry.STEERING_SPEED)),mid-28,BOT-14,22,WHITE,Paint.Align.RIGHT);

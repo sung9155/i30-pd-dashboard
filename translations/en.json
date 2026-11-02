@@ -503,7 +503,7 @@
   "원래 화면": "Previous screen",
   "다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)": "Debugging turns on at the next restart (press OFF to undo)",
   "USB 디버깅 ON 명령을 보냈습니다(엔지니어 모드 Factory Test와 같은 명령). 몇 초 뒤 PC를 연결하세요. 내비게이션을 재시작하면 일반 USB(CarPlay)로 돌아갑니다.": "USB debugging ON sent (the same command as Engineer Mode Factory Test). Connect the PC in a few seconds. Restarting the head unit returns to normal USB (CarPlay).",
-  "USB 디버깅 OFF 명령을 보냈습니다. PC 연결이 끊기지 않으면 시동을 다시 거세요.": "USB debugging OFF sent. If the PC stays connected, restart the engine.",
+  "USB 디버깅 OFF 명령을 보냈습니다(엔지니어 모드 Factory Test 0A 01 → 65 00 → 0A 02와 같은 명령). PC 연결이 끊기지 않으면 시동을 다시 거세요.": "USB debugging OFF sent (the same command as Engineer Mode Factory Test 0A 01 → 65 00 → 0A 02). If the PC stays connected, restart the engine.",
   "☆ 버튼 → 계기판": "☆ button → Dashboard",
   "☆ 버튼: ": "☆ button: ",
   "켜짐 (짧게 누르면 계기판)": "On (short press opens the dashboard)",
@@ -515,5 +515,10 @@
   "이제 ☆ 버튼을 짧게 누르면 계기판이 열립니다.": "A short press of ☆ now opens the dashboard.",
   "☆ 버튼을 원래 기능으로 되돌렸습니다.": "☆ button is back to its previous function.",
   "☆ 버튼 설정이 적용되지 않았습니다. 이 내비는 지원하지 않을 수 있습니다.": "The ☆ button setting did not apply. This head unit may not support it.",
-  "☆ 버튼 설정 실패: ": "☆ button setting failed: "
+  "☆ 버튼 설정 실패: ": "☆ button setting failed: ",
+  "시동 안내 화면 건너뛰기": "Skip the start-up notice",
+  "시동 안내 화면: ": "Start-up notice: ",
+  "자동 확인": "confirmed automatically",
+  "그대로 표시": "shown as usual",
+  "\n\n켜면 내비가 켜질 때 나오는 안내 및 동의 화면을 '내 앱'이 바로 [확인]합니다. 직접 확인 버튼을 누른 것과 같습니다.\n시동을 걸 때마다 동작하려면 실행 바로가기(가장자리 버튼 또는 알림)를 켜 두세요. 꺼져 있으면 내비가 완전히 다시 켜질 때만 동작합니다.": "\n\nWhen on, My Apps confirms the notice and consent screen shown when the head unit starts, the same as pressing its confirm button.\nTo act on every ignition, keep Quick entry (edge button or notification) on. Without it, it only acts when the head unit fully restarts."
 }

@@ -102,7 +102,7 @@ public class PendingIntent {public static final int FLAG_UPDATE_CURRENT=0x800000
 "android/os/IBinder.java": '''package android.os;public interface IBinder {}''',
 "android/os/PowerManager.java": '''package android.os;public class PowerManager {public boolean on=true;public boolean isScreenOn(){return on;}}''',
 "android/util/DisplayMetrics.java": '''package android.util;public class DisplayMetrics {public int widthPixels,heightPixels;public float density;}''',
-"android/util/Log.java": '''package android.util;public class Log {public static int e(String a,String b,Throwable e){return 0;}public static int w(String a,String b,Throwable e){return 0;}}''',
+"android/util/Log.java": '''package android.util;public class Log {public static int e(String a,String b,Throwable e){return 0;}public static int w(String a,String b,Throwable e){return 0;}public static int w(String a,String b){return 0;}public static int i(String a,String b){return 0;}}''',
 "android/view/Gravity.java": '''package android.view;public class Gravity {public static final int TOP=48,LEFT=3;}''',
 "android/view/MotionEvent.java": '''package android.view;public class MotionEvent {
  public static final int ACTION_DOWN=0,ACTION_UP=1,ACTION_MOVE=2,ACTION_CANCEL=3;
@@ -293,7 +293,7 @@ class QuickEntryRuntimeTests(unittest.TestCase):
             sources.append(harness)
             production = ROOT / "apps/hub/src/com/veloster/carplayhub"
             sources.extend((ROOT / "shared/src/com/veloster/i18n" / (name + ".java")) for name in ("UiText", "LanguageSettings"))
-            sources.extend(production / (name + ".java") for name in ("QuickEntryPolicy", "QuickEntryService", "QuickEntryReceiver"))
+            sources.extend(production / (name + ".java") for name in ("QuickEntryPolicy", "QuickEntryService", "QuickEntryReceiver", "ConsentSkip"))
             classes = base / "classes"
             classes.mkdir()
             compiled = subprocess.run([javac, "-encoding", "UTF-8", "-source", "7", "-target", "7", "-d", str(classes),

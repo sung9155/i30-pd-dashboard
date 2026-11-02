@@ -129,6 +129,8 @@ public final class HubActivity extends Activity {
         text(UiText.t("바로가기: ")+QuickEntryService.status(this));
         add(content,UiText.t("☆ 버튼 → 계기판"),new Runnable(){public void run(){starKey();}});
         text(UiText.t("☆ 버튼: ")+StarKey.status(this));
+        add(content,UiText.t("시동 안내 화면 건너뛰기"),new Runnable(){public void run(){consentSkip();}});
+        text(UiText.t("시동 안내 화면: ")+(ConsentSkip.enabled(this)?UiText.t("자동 확인"):UiText.t("그대로 표시")));
         if(QuickEntryService.mode(this)==QuickEntryPolicy.OFF)
             text(UiText.t("처음 설치했다면 실행 바로가기를 설정하세요. 순정 홈에는 앱이 자동으로 추가되지 않습니다."));
         LinearLayout first=new LinearLayout(this),second=new LinearLayout(this);
@@ -178,6 +180,13 @@ public final class HubActivity extends Activity {
             .setMessage(UiText.t("현재: ")+StarKey.status(this)+UiText.t("\n\n켜면 ☆(사용자 버튼)을 짧게 눌러 계기판을 엽니다. 끄면 원래 기능으로 되돌립니다.\n☆를 길게 눌러 순정 설정 화면을 열면 연결이 풀립니다. 그때는 여기서 다시 켜세요.\n'내 앱'을 강제 종료하면 다시 열 때까지 ☆가 동작하지 않을 수 있습니다."))
             .setPositiveButton(UiText.t("켜기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){requestStar(true);}})
             .setNegativeButton(UiText.t("끄기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){requestStar(false);}})
+            .setNeutralButton(UiText.t("취소"),null).show();
+    }
+    private void consentSkip(){
+        new AlertDialog.Builder(this).setTitle(UiText.t("시동 안내 화면 건너뛰기"))
+            .setMessage(UiText.t("현재: ")+(ConsentSkip.enabled(this)?UiText.t("자동 확인"):UiText.t("그대로 표시"))+UiText.t("\n\n켜면 내비가 켜질 때 나오는 안내 및 동의 화면을 '내 앱'이 바로 [확인]합니다. 직접 확인 버튼을 누른 것과 같습니다.\n시동을 걸 때마다 동작하려면 실행 바로가기(가장자리 버튼 또는 알림)를 켜 두세요. 꺼져 있으면 내비가 완전히 다시 켜질 때만 동작합니다."))
+            .setPositiveButton(UiText.t("켜기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){ConsentSkip.set(HubActivity.this,true);render();}})
+            .setNegativeButton(UiText.t("끄기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){ConsentSkip.set(HubActivity.this,false);render();}})
             .setNeutralButton(UiText.t("취소"),null).show();
     }
     private void requestStar(boolean on){
@@ -296,7 +305,7 @@ public final class HubActivity extends Activity {
                 result=!UsbDebugControl.request(HubActivity.this,on)?UiText.t("USB 모드 전환 요청이 거부되었습니다.")
                     :now?UiText.t("USB 디버깅 ")+(on?"ON":"OFF")+UiText.t(" 전환 요청 완료. 실제 PC 연결은 별도로 확인하세요.")
                     :on?UiText.t("USB 디버깅 ON 명령을 보냈습니다(엔지니어 모드 Factory Test와 같은 명령). 몇 초 뒤 PC를 연결하세요. 내비게이션을 재시작하면 일반 USB(CarPlay)로 돌아갑니다.")
-                    :UiText.t("USB 디버깅 OFF 명령을 보냈습니다. PC 연결이 끊기지 않으면 시동을 다시 거세요.");}
+                    :UiText.t("USB 디버깅 OFF 명령을 보냈습니다(엔지니어 모드 Factory Test 0A 01 → 65 00 → 0A 02와 같은 명령). PC 연결이 끊기지 않으면 시동을 다시 거세요.");}
             catch(Exception e){result=UiText.t("USB 모드 전환 실패: ")+e.getClass().getSimpleName();}
             final String answer=result;usbBusy=false;
             runOnUiThread(new Runnable(){public void run(){if(!isFinishing())new AlertDialog.Builder(HubActivity.this).setMessage(UiText.t(answer)).setPositiveButton(UiText.t("확인"),null).show();}});

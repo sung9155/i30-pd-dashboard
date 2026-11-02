@@ -14,6 +14,7 @@ public final class UiText {
         EN.put("\n\nAP 켜짐·IP 할당은 상태와 실제 iPhone에서 따로 확인하세요.","\n\nCheck AP state and IP assignment separately in status and on the iPhone.");
         EN.put("\n\n이 기기와 페어링할까요?","\n\nPair with this device?");
         EN.put("\n\n켜면 ☆(사용자 버튼)을 짧게 눌러 계기판을 엽니다. 끄면 원래 기능으로 되돌립니다.\n☆를 길게 눌러 순정 설정 화면을 열면 연결이 풀립니다. 그때는 여기서 다시 켜세요.\n'내 앱'을 강제 종료하면 다시 열 때까지 ☆가 동작하지 않을 수 있습니다.","\n\nWhen on, a short press of ☆ (user button) opens the dashboard. Off puts back the previous function.\nLong-pressing ☆ opens the stock settings screen, which releases it; switch it on here again.\nIf My Apps is force-stopped, ☆ may do nothing until My Apps is opened again.");
+        EN.put("\n\n켜면 내비가 켜질 때 나오는 안내 및 동의 화면을 '내 앱'이 바로 [확인]합니다. 직접 확인 버튼을 누른 것과 같습니다.\n시동을 걸 때마다 동작하려면 실행 바로가기(가장자리 버튼 또는 알림)를 켜 두세요. 꺼져 있으면 내비가 완전히 다시 켜질 때만 동작합니다.","\n\nWhen on, My Apps confirms the notice and consent screen shown when the head unit starts, the same as pressing its confirm button.\nTo act on every ignition, keep Quick entry (edge button or notification) on. Without it, it only acts when the head unit fully restarts.");
         EN.put("\nON: PC 연결용 USB 디버깅 모드\nOFF: 일반 USB 모드로 복귀하며 PC 연결이 끊길 수 있습니다.\n개발자 설정의 일반 USB 토글과는 별개입니다.","\nON: USB debugging mode for a PC connection\nOFF: normal USB mode; the PC connection may disconnect.\nThis is separate from the standard Android developer toggle.");
         EN.put("\n비밀번호: ","\nPassword: ");
         EN.put(" L/h 지금"," L/h now");
@@ -53,7 +54,7 @@ public final class UiText {
         EN.put("RED ALERT · 급제동","RED ALERT · hard braking");
         EN.put("USB 디버깅","USB debugging");
         EN.put("USB 디버깅 ","USB debugging ");
-        EN.put("USB 디버깅 OFF 명령을 보냈습니다. PC 연결이 끊기지 않으면 시동을 다시 거세요.","USB debugging OFF sent. If the PC stays connected, restart the engine.");
+        EN.put("USB 디버깅 OFF 명령을 보냈습니다(엔지니어 모드 Factory Test 0A 01 → 65 00 → 0A 02와 같은 명령). PC 연결이 끊기지 않으면 시동을 다시 거세요.","USB debugging OFF sent (the same command as Engineer Mode Factory Test 0A 01 → 65 00 → 0A 02). If the PC stays connected, restart the engine.");
         EN.put("USB 디버깅 ON 명령을 보냈습니다(엔지니어 모드 Factory Test와 같은 명령). 몇 초 뒤 PC를 연결하세요. 내비게이션을 재시작하면 일반 USB(CarPlay)로 돌아갑니다.","USB debugging ON sent (the same command as Engineer Mode Factory Test). Connect the PC in a few seconds. Restarting the head unit returns to normal USB (CarPlay).");
         EN.put("USB 모드 전환 실패: ","USB mode request failed: ");
         EN.put("USB 모드 전환 요청이 거부되었습니다.","The USB mode request was denied.");
@@ -106,6 +107,7 @@ public final class UiText {
         EN.put("공회전 중","Idling");
         EN.put("관성","Inertia");
         EN.put("구간 아래에서 가속하면 측정","starts when you accelerate through the range");
+        EN.put("그대로 표시","shown as usual");
         EN.put("그래프","Graphs");
         EN.put("그래프 ","Graph ");
         EN.put("그래프를 길게 눌러 항목 변경","Hold a graph to change its signal");
@@ -266,6 +268,8 @@ public final class UiText {
         EN.put("시간 30초 × ","Time 30 s × ");
         EN.put("시간 그래프","Values over time");
         EN.put("시간 요금 · 30초당 100원","Time fare · 100 won per 30 s");
+        EN.put("시동 안내 화면 건너뛰기","Skip the start-up notice");
+        EN.put("시동 안내 화면: ","Start-up notice: ");
         EN.put("시스템","System");
         EN.put("시험 접속정보 보기","Show test credentials");
         EN.put("시험 핫스팟 켜기","Test hotspot");
@@ -367,6 +371,7 @@ public final class UiText {
         EN.put("읽기 거부","refused");
         EN.put("읽기만 합니다. 고장코드 삭제는 정비소 진단기로 하세요.","Read only. Clear codes with a workshop scan tool.");
         EN.put("잎 1개 = 20점","1 leaf = 20 points");
+        EN.put("자동 확인","confirmed automatically");
         EN.put("작동","Active");
         EN.put("잔상 3 s","3 s glow");
         EN.put("재생 중","Playing");

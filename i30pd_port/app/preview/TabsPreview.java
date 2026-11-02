@@ -45,6 +45,8 @@ public final class TabsPreview {
         save(out,"4e_show",show,model,now,false,false);
         rec.setPage(PitRenderer.PAGE_RACE);save(out,"4c_race",rec,model,now,false,false);
         save(out,"4c_race_music",rec,model,now,false,true);   // race tab with the music panel toggled on
+        race(out,"4c_race_mt",rec,model,now,VehicleProfile.PETROL_MT,1);       // 6MT: half TPMS + clutch pressed
+        race(out,"4c_race_mt_out",rec,model,now,VehicleProfile.PETROL_MT,0);   // and released
         rec.setPage(PitRenderer.PAGE_RECORDS);save(out,"4d_records",rec,model,now,false,false);
         String[] layouts={"9a_cluster_classic","9b_cluster_retro","9c_cluster_rally","9d_cluster_taxi","9e_cluster_80s","9f_cluster_hud","9g_cluster_8bit","9g_cluster_8bit_chase",
             "9h_cluster_eco","9i_cluster_gcircle","9j_cluster_night","9k_cluster_drag","9l_cluster_engine","9m_cluster_cassette","9n_cluster_warp"};
@@ -93,6 +95,17 @@ public final class TabsPreview {
             int f=b[i]&255,l=b[i+1]&255;if(i+2+l>b.length)break;
             byte[] p=new byte[l];System.arraycopy(b,i+2,p,0,l);model.hscanPd(0xc7,f,p,now);i+=2+l;
         }
+    }
+    /** Race tab for a profile the 7DCT log cannot detect: header from PitRenderer, body redrawn with prof and the
+     * clutch sample forced (-1 leaves it as logged). */
+    private static void race(File dir,String name,PitRenderer r,Telemetry m,long now,VehicleProfile prof,int clutch) throws Exception {
+        BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+        r.draw(c,800,480,false,m,now,0,false,null);
+        Telemetry.Sample[] s=m.snapshot(now);
+        if(clutch>=0)s[Telemetry.CLUTCH]=new Telemetry.Sample(clutch,true,false,true,false,0);
+        android.graphics.Paint bg=new android.graphics.Paint(1);bg.setColor(Theme.current().map(0xff040506));c.drawRect(0,53,800,480,bg);
+        new RaceRenderer().draw(c,s,ShiftGuide.evaluate(s,ShiftGuide.target(0,prof),prof),now,r.stats(),prof,false,null,null);
+        ImageIO.write(img,"png",new File(dir,name+".png"));
     }
     private static void cluster(File dir,String name,int layout,Telemetry m,long now,DriveStats st,VehicleProfile prof) throws Exception {
         BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);

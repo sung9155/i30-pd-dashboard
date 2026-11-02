@@ -63,7 +63,11 @@ public final class RaceRenderer {
         text(c,mediaOn?"✕":"♪",R-10,TOP+16,12,mediaOn?WHITE:MUTED,Paint.Align.RIGHT);   // tap the SPEED cell to toggle the music panel
         bar(c,"ACCEL "+fmt("%.0f",pedal)+" %","FUEL "+fmt("%.1f",v(Telemetry.FUEL_RATE))+" L/h",RC,R,pedal/100,BLUE,false);
         if(mediaOn)mediaPanel(c);         // music fills the TPMS/steering area; those two go compact inside it
-        else{tires(c);steering(c);}
+        else{
+            // 6MT: TPMS gives up half its width to the clutch pedal.
+            boolean side=prof.trans==VehicleProfile.Trans.MT;float split=side?(RC+R)/2-2:R;
+            tires(c,split);if(side)clutch(c,split+4);
+            steering(c);}
         trip(c);
     }
     /** Dedicated race + music layout for the right column: speed/accel/TPMS/steering kept compact on top, a
@@ -222,20 +226,29 @@ public final class RaceRenderer {
         text(c,"LAT "+fmt("%+.2f",gx),CR-8,416,12,MUTED,Paint.Align.RIGHT);
         text(c,"LON "+fmt("%+.2f",gy),CR-8,434,12,MUTED,Paint.Align.RIGHT);
     }
-    /** TPMS grid: four tyres around a body outline, pressure at each corner, amber/red when low. */
-    private void tires(Canvas c){
-        box(c,RC,232,R,STEER_TOP-4,PANEL);
-        text(c,"TPMS",RC+8,248,12,MUTED,Paint.Align.LEFT);text(c,"psi",R-8,248,12,MUTED,Paint.Align.RIGHT);
-        float cx=(RC+R)/2,cy=(232+STEER_TOP-4)/2f+8,bw=40,bh=96;
+    /** TPMS grid: four tyres around a body outline, pressure at each corner, amber/red when low. rr below R is the
+     * half-width cell of the 6MT page: narrower body and tyres, smaller numbers. */
+    private void tires(Canvas c,float rr){
+        boolean half=rr<R;float tw=half?12:16,size=half?22:28,pad=half?8:12;
+        box(c,RC,232,rr,STEER_TOP-4,PANEL);
+        text(c,"TPMS",RC+8,248,12,MUTED,Paint.Align.LEFT);text(c,"psi",rr-8,248,12,MUTED,Paint.Align.RIGHT);
+        float cx=(RC+rr)/2,cy=(232+STEER_TOP-4)/2f+8,bw=half?28:40,bh=96;
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(T(MUTED));r.set(cx-bw/2,cy-bh/2,cx+bw/2,cy+bh/2);c.drawRoundRect(r,10,10,p);p.setStyle(Paint.Style.FILL);
         int[] sig={Telemetry.TPMS_FL,Telemetry.TPMS_FR,Telemetry.TPMS_RL,Telemetry.TPMS_RR};
         for(int i=0;i<4;i++){
             boolean right=i%2==1,rear=i>=2;float val=v(sig[i]);
-            float tx=right?cx+bw/2+4:cx-bw/2-20,ty=rear?cy+bh/2-40:cy-bh/2+6;
-            p.setColor(T(Float.isNaN(val)?TRACK:val<TIRE_CRIT?D():val<TIRE_LOW?AMBER:Theme.current().dangerRing?WHITE:BLUE));r.set(tx,ty,tx+16,ty+34);c.drawRoundRect(r,3,3,p);   // amber: a normal tyre must not look like a warning
-            if(!Float.isNaN(val)&&val<TIRE_CRIT)ThemeShapes.ring(c,p,tx-3,ty-3,tx+19,ty+37);
-            text(c,fmt("%.0f",val),right?R-12:RC+12,ty+28,28,WHITE,right?Paint.Align.RIGHT:Paint.Align.LEFT);
+            float tx=right?cx+bw/2+4:cx-bw/2-4-tw,ty=rear?cy+bh/2-40:cy-bh/2+6;
+            p.setColor(T(Float.isNaN(val)?TRACK:val<TIRE_CRIT?D():val<TIRE_LOW?AMBER:Theme.current().dangerRing?WHITE:BLUE));r.set(tx,ty,tx+tw,ty+34);c.drawRoundRect(r,3,3,p);   // amber: a normal tyre must not look like a warning
+            if(!Float.isNaN(val)&&val<TIRE_CRIT)ThemeShapes.ring(c,p,tx-3,ty-3,tx+tw+3,ty+37);
+            text(c,fmt("%.0f",val),right?rr-pad:RC+pad,ty+28,size,WHITE,right?Paint.Align.RIGHT:Paint.Align.LEFT);
         }
+    }
+    /** 6MT clutch pedal (EMS12 CLU_ACK as received): pressed fills the cell in the accent like the gear box. */
+    private void clutch(Canvas c,float l){
+        float v=v(Telemetry.CLUTCH);boolean in=v>0;
+        box(c,l,232,R,STEER_TOP-4,in?BLUE:PANEL);
+        text(c,"CLUTCH",l+8,248,12,in?BG:MUTED,Paint.Align.LEFT);
+        text(c,Float.isNaN(v)?"—":in?"IN":"OUT",(l+R)/2,(232+STEER_TOP-4)/2f+20,in?44:36,in?BG:MUTED,Paint.Align.CENTER);
     }
     /** Steering cell: a simple wheel icon turned by the displayed angle (right = clockwise, as
      * Telemetry.displayValue shows it), a centre-zero bar, the angle, the SAS steering speed and the MDPS driver torque. */

@@ -466,6 +466,7 @@ public final class UiText {
         EN.put("코퍼","Copper");
         EN.put("클래식","Classic");
         EN.put("클러스터","Cluster");
+        EN.put("클러치 (수동)","Clutch (manual)");
         EN.put("타이어 공기압","Tire pressure");
         EN.put("타이어 공기압 낮음","Low tire pressure");
         EN.put("택시","Taxi");

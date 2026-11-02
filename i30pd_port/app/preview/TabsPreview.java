@@ -47,6 +47,7 @@ public final class TabsPreview {
         save(out,"4c_race_music",rec,model,now,false,true);   // race tab with the music panel toggled on
         race(out,"4c_race_mt",rec,model,now,VehicleProfile.PETROL_MT,1);       // 6MT: clutch cell left of the brake, pressed
         race(out,"4c_race_mt_out",rec,model,now,VehicleProfile.PETROL_MT,0);   // and released
+        race(out,"4c_race_mt_hint",rec,model,now,VehicleProfile.PETROL_MT,0,4); // the ECU's shift hint (▲4) on its red band
         race(out,"4c_race_diesel",rec,model,now,VehicleProfile.DIESEL_DCT,-1); // DPF slot instead of SPARK
         rec.setPage(PitRenderer.PAGE_RECORDS);save(out,"4d_records",rec,model,now,false,false);
         String[] layouts={"9a_cluster_classic","9b_cluster_retro","9c_cluster_rally","9d_cluster_taxi","9e_cluster_80s","9f_cluster_hud","9g_cluster_8bit","9g_cluster_8bit_chase",
@@ -95,11 +96,13 @@ public final class TabsPreview {
     }
     /** Race tab for a profile the 7DCT log cannot detect: header from PitRenderer, body redrawn with prof and the
      * clutch sample forced (-1 leaves it as logged). */
-    private static void race(File dir,String name,PitRenderer r,Telemetry m,long now,VehicleProfile prof,int clutch) throws Exception {
+    private static void race(File dir,String name,PitRenderer r,Telemetry m,long now,VehicleProfile prof,int clutch) throws Exception {race(dir,name,r,m,now,prof,clutch,0);}
+    private static void race(File dir,String name,PitRenderer r,Telemetry m,long now,VehicleProfile prof,int clutch,int hint) throws Exception {
         BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
         r.draw(c,800,480,false,m,now,0,false,null);
         Telemetry.Sample[] s=m.snapshot(now);
         if(clutch>=0)s[Telemetry.CLUTCH]=new Telemetry.Sample(clutch,true,false,true,false,0);
+        if(hint!=0)s[Telemetry.SHIFT_HINT]=new Telemetry.Sample(hint,true,false,true,false,0);
         android.graphics.Paint bg=new android.graphics.Paint(1);bg.setColor(Theme.current().map(0xff040506));c.drawRect(0,53,800,480,bg);
         new RaceRenderer().draw(c,s,ShiftGuide.evaluate(s,ShiftGuide.target(0,prof),prof),now,r.stats(),prof,false,null,null);
         ImageIO.write(img,"png",new File(dir,name+".png"));

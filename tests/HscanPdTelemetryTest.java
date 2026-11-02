@@ -251,9 +251,19 @@ public final class HscanPdTelemetryTest {
         t.hscanPd(0xc7,0x01,b(0x03,0x04,0x69,0x00,0,0,0,0x00),3307);equal(t,Telemetry.TURN_LEFT,1,3307);equal(t,Telemetry.TURN_RIGHT,0,3307);
         t.hscanPd(0xc7,0x01,b(0x03,0x04,0x61,0x00,0,0,0,0x40),3308);equal(t,Telemetry.TURN_RIGHT,1,3308);equal(t,Telemetry.TURN_LEFT,0,3308);
         check("ON".equals(Telemetry.label(Telemetry.TURN_LEFT,1))&&"OFF".equals(Telemetry.label(Telemetry.TURN_RIGHT,0)),"turn-signal labels");
+        // Headlamps: CGW1 byte3 bit7 HeadLampLow (on 0x80, off 0x00 in the 10/30 capture); the wiper keeps bits 0-2.
+        t.hscanPd(0xc7,0x01,b(0x03,0x04,0x61,0x80,0,0,0,0x00),3309);equal(t,Telemetry.HEAD_LAMP,1,3309);equal(t,Telemetry.WIPER,0,3309);
+        t.hscanPd(0xc7,0x01,b(0x03,0x04,0x61,0x81,0,0,0,0x00),3310);equal(t,Telemetry.HEAD_LAMP,1,3310);equal(t,Telemetry.WIPER,1,3310);
+        t.hscanPd(0xc7,0x01,b(0x03,0x04,0x61,0x00,0,0,0,0x00),3311);equal(t,Telemetry.HEAD_LAMP,0,3311);
+        check("ON".equals(Telemetry.label(Telemetry.HEAD_LAMP,1)),"headlamp label");
+        // Lamp switch bits (11/02 capture): byte4 bit6 parking / bit7 head -> tail lit; byte4 bit0 high beam.
+        t.hscanPd(0xc7,0x01,b(0x03,0x04,0x61,0x00,0x00,0,0,0x00),3312);equal(t,Telemetry.TAIL_LAMP,0,3312);equal(t,Telemetry.HIGH_BEAM,0,3312);
+        t.hscanPd(0xc7,0x01,b(0x03,0x04,0x61,0x00,0x40,0,0,0x00),3313);equal(t,Telemetry.TAIL_LAMP,1,3313);equal(t,Telemetry.HEAD_LAMP,0,3313);equal(t,Telemetry.HIGH_BEAM,0,3313);
+        t.hscanPd(0xc7,0x01,b(0x03,0x04,0x61,0x80,0x80,0,0,0x00),3314);equal(t,Telemetry.HEAD_LAMP,1,3314);equal(t,Telemetry.TAIL_LAMP,1,3314);equal(t,Telemetry.HIGH_BEAM,0,3314);
+        t.hscanPd(0xc7,0x01,b(0x03,0x04,0x61,0x80,0x81,0,0,0x00),3315);equal(t,Telemetry.HEAD_LAMP,1,3315);equal(t,Telemetry.TAIL_LAMP,1,3315);equal(t,Telemetry.HIGH_BEAM,1,3315);
         // JSN-only slots are not decoded by the PD path.
         t.hscanPd(0xc7,0x07,b(0,0,74,64,31,0,0,0),1000);check(!t.sample(Telemetry.BAT_SOC,1000).seen,"JSN BAT11 slot ignored on PD");
-        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.SHIFT_HINT+1,"label/unit tables cover the added signals");
+        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.HIGH_BEAM+1,"label/unit tables cover the added signals");
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
 }

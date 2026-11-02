@@ -86,6 +86,10 @@ public final class DriveStatsTest {
         for(int k=0;k<3;k++){t+=80;turn(h,t,70,0.4f,20,0);}
         for(int k=0;k<13;k++){t+=80;turn(h,t,70,0f,20,0);}
         check(Float.isNaN(h.cornerMinSpeed),"a sample gap is not counted as corner time");
+        // Boost bars run to 1.5 bar and grow in 0.5 bar steps once the car has gone past (tuned cars).
+        check(DriveStats.boostTop(Float.NaN)==1.5f&&DriveStats.boostTop(0.9f)==1.5f&&DriveStats.boostTop(1.44f)==1.5f,"stock car keeps 1.5 bar");
+        check(DriveStats.boostTop(1.46f)==2.0f&&DriveStats.boostTop(1.78f)==2.0f&&DriveStats.boostTop(2.1f)==2.5f,"tuned car widens in 0.5 bar steps");
+        check(new DriveStats().boostTop()==1.5f,"nothing seen yet reads 1.5 bar");
 
         // A 4 s hole in the speed data mid-run: no time is drawn across it (no start or finish inside the hole).
         DriveStats gh=new DriveStats();long tg=0;

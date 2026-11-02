@@ -46,7 +46,18 @@ public class Canvas {
     // Android sweeps clockwise from 3 o'clock; Java2D counter-clockwise, hence the negated angles.
     public void drawArc(RectF r,float start,float sweep,boolean center,Paint p){
         shape(new Arc2D.Float(r.left,r.top,r.right-r.left,r.bottom-r.top,-start,-sweep,center?Arc2D.PIE:Arc2D.OPEN),p);}
-    public void drawBitmap(Bitmap b,Object src,RectF dst,Paint p){}  // ponytail: no album art in previews
+    /** Draws into a Bitmap (the layouts' pixel-art caches). */
+    public Canvas(Bitmap b){this(b.img.createGraphics());}
+    // Pixel art: nearest neighbour unless the paint asks for filtering. Album art (no image) draws nothing.
+    public void drawBitmap(Bitmap b,Object src,RectF dst,Paint p){
+        if(b==null||b.img==null)return;
+        Rect s=src instanceof Rect?(Rect)src:null;
+        int sx=s==null?0:s.left,sy=s==null?0:s.top,sw=s==null?b.img.getWidth():s.right-s.left,sh=s==null?b.img.getHeight():s.bottom-s.top;
+        Object was=g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,p!=null&&(p.flags&2)!=0?RenderingHints.VALUE_INTERPOLATION_BILINEAR:RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        g.drawImage(b.img,Math.round(dst.left),Math.round(dst.top),Math.round(dst.right),Math.round(dst.bottom),sx,sy,sx+sw,sy+sh,null);
+        if(was!=null)g.setRenderingHint(RenderingHints.KEY_INTERPOLATION,was);
+    }
     // Like Android's font fallback: Roboto for the glyphs it has, the CJK base font for the rest (Hangul).
     public void drawText(String s,float x,float y,Paint p){
         apply(p);

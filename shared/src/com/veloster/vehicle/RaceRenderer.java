@@ -175,11 +175,12 @@ public final class RaceRenderer {
     private void boost(Canvas c,float boost){
         cell(c,"BOOST",fmt("%+.2f",boost),"bar",L,232,LC,316,36,WHITE);
         text(c,"MAX "+fmt("%+.2f",st.maxBoost),LC-8,248,12,MUTED,Paint.Align.RIGHT);
-        // -0.8..+1.5 bar, lit from 0 toward the value.
-        float x0=L+8,x1=LC-8,y=256,zero=x0+(x1-x0)*.8f/2.3f;
+        // -0.8 bar up to the boost top (1.5, wider on a tuned car), lit from 0 toward the value.
+        float top=st==null?DriveStats.boostTop(Float.NaN):st.boostTop(),span=top+.8f;
+        float x0=L+8,x1=LC-8,y=256,zero=x0+(x1-x0)*.8f/span;
         p.setColor(T(TRACK));c.drawRect(x0,y,x1,y+8,p);
-        if(!Float.isNaN(boost)){float x=x0+(x1-x0)*Math.max(0,Math.min(1,(boost+.8f)/2.3f));
-            p.setColor(T(boost>=1.2f?RED:boost>=0?BLUE:MUTED));c.drawRect(Math.min(zero,x),y,Math.max(zero,x),y+8,p);}
+        if(!Float.isNaN(boost)){float x=x0+(x1-x0)*Math.max(0,Math.min(1,(boost+.8f)/span));
+            p.setColor(T(boost>=top*0.8f?RED:boost>=0?BLUE:MUTED));c.drawRect(Math.min(zero,x),y,Math.max(zero,x),y+8,p);}
         p.setColor(T(WHITE));c.drawRect(zero-1,y-3,zero+1,y+11,p);
     }
     private void gear(Canvas c){

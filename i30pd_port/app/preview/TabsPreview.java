@@ -18,7 +18,8 @@ public final class TabsPreview {
         List<String> raw=new ArrayList<>();
         for(String line:Files.readAllLines(new File(a[0]).toPath(),StandardCharsets.UTF_8))if(line.startsWith("RAW "))raw.add(line.substring(4).replace(" ","").trim());
         File out=new File(a[1]);out.mkdirs();
-        Theme.select(System.getProperty("preview.theme","n"));   // PREVIEW_THEME=lambo|bmw|redblack in preview.sh
+        Theme.select(System.getProperty("preview.theme","n"));   // PREVIEW_THEME=lambo|bmw|ice|mono|amber|teal|night|rose|copper in preview.sh
+        CarPaint.select(System.getProperty("preview.paint","blue"));   // PREVIEW_PAINT=white|red|black|grey|navy|brown|intense|orange
         float at=a.length>2?Float.parseFloat(a[2]):1f;   // 0..1 position in the log
         long secs=600_000;for(String line:Files.readAllLines(new File(a[0]).toPath(),StandardCharsets.UTF_8))
             if(line.startsWith("# PC_START")&&line.contains("SECS="))secs=Long.parseLong(line.replaceAll(".*SECS=(\\d+).*","$1"))*1000;
@@ -45,13 +46,26 @@ public final class TabsPreview {
         rec.setPage(PitRenderer.PAGE_RACE);save(out,"4c_race",rec,model,now,false,false);
         save(out,"4c_race_music",rec,model,now,false,true);   // race tab with the music panel toggled on
         rec.setPage(PitRenderer.PAGE_RECORDS);save(out,"4d_records",rec,model,now,false,false);
-        String[] layouts={"9a_cluster_classic","9b_cluster_retro","9c_cluster_rally"};
-        for(int i=0;i<3;i++){rec.setPage(PitRenderer.PAGE_CLASSIC+i);save(out,layouts[i],rec,model,now,false,false);}
+        String[] layouts={"9a_cluster_classic","9b_cluster_retro","9c_cluster_rally","9d_cluster_taxi","9e_cluster_80s","9f_cluster_hud","9g_cluster_8bit","9g_cluster_8bit_chase",
+            "9h_cluster_eco","9i_cluster_gcircle","9j_cluster_night","9k_cluster_drag","9l_cluster_engine","9m_cluster_cassette","9n_cluster_warp"};
+        for(int i=0;i<layouts.length;i++){rec.setPage(PitRenderer.PAGE_CLASSIC+i);save(out,layouts[i],rec,model,now,false,false);}
+        rec.setPicker(true,false,0);save(out,"9_cluster_list",rec,model,now,false,false);
+        String[] cats={"screens","theme","paint","mode","lang","diag"};   // settings (the gear), one shot per category
+        rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<20));rec.setModeOptions(true,false);
+        int[] targets={ClusterPicker.F1+2,ClusterPicker.ECO,-1};   // SPORT set to the race page
+        for(int k=0;k<cats.length;k++){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k],rec,model,now,false,false);}
+        rec.setModeOptions(true,true);rec.setSettings(3,"auto",-1,targets);save(out,"9_settings_mode_on",rec,model,now,false,false);
+        rec.setSettings(3,"auto",0,targets);save(out,"9_settings_mode_pick",rec,model,now,false,false);
+        rec.setPicker(false,false,0);rec.setModeOptions(false,false);
         // Missing signals (empty model) and a 6MT profile, drawn straight through ClusterRenderer.
-        String[] empty={"x_cluster_empty","x_cluster_empty_retro","x_cluster_empty_rally"};
         Telemetry none=new Telemetry();
-        for(int i=0;i<3;i++)cluster(out,empty[i],i,none.snapshot(now),now,new DriveStats(),VehicleProfile.PETROL_DCT);
-        cluster(out,"x_cluster_mt",0,model.snapshot(now),now,rec.stats(),VehicleProfile.PETROL_MT);
+        for(int i=0;i<layouts.length;i++)cluster(out,"x_"+layouts[i].substring(3)+"_empty",i,none,now,new DriveStats(),VehicleProfile.PETROL_DCT);
+        cluster(out,"x_cluster_mt",0,model,now,rec.stats(),VehicleProfile.PETROL_MT);
+        // Taxi right panel: the radio during a trip (sample track), the receipt after 빈차 · 운행 종료.
+        MediaState ms=new MediaState();ms.mode(0x36);
+        ms.update(1,true,"한강 따라 달리는 밤의 드라이브 (Night Drive Remix)",true,"City Lights Band",true,83000,true,214000,false,now);ms.playback(1,1);
+        taxi(out,"9d_cluster_taxi_music",model,now,ms.snapshot(now),false);
+        taxi(out,"9d_cluster_taxi_receipt",model,now,ms.snapshot(now),true);
         // Theme switch on a live renderer: draw once in the selected theme, then switch to lambo and draw again.
         String was=Theme.current().id;PitRenderer sw=new PitRenderer();sw.setSymmetric(true);sw.setPage(PitRenderer.PAGE_RACE);
         save(out,"x_theme_before",sw,model,now,false,false);Theme.select("lambo");save(out,"x_theme_switch",sw,model,now,false,false);Theme.select(was);
@@ -76,9 +90,17 @@ public final class TabsPreview {
             byte[] p=new byte[l];System.arraycopy(b,i+2,p,0,l);model.hscanPd(0xc7,f,p,now);i+=2+l;
         }
     }
-    private static void cluster(File dir,String name,int layout,Telemetry.Sample[] s,long now,DriveStats st,VehicleProfile prof) throws Exception {
+    private static void cluster(File dir,String name,int layout,Telemetry m,long now,DriveStats st,VehicleProfile prof) throws Exception {
         BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
-        new ClusterRenderer().draw(new android.graphics.Canvas(img.createGraphics()),layout,s,now,st,prof);
+        new ClusterRenderer().draw(new android.graphics.Canvas(img.createGraphics()),layout,m.snapshot(now),now,st,prof,m,null);
+        ImageIO.write(img,"png",new File(dir,name+".png"));
+    }
+    private static void taxi(File dir,String name,Telemetry m,long now,MediaState.Snapshot track,boolean endTrip) throws Exception {
+        BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);ClusterRenderer r=new ClusterRenderer();
+        android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+        r.draw(c,3,m.snapshot(now),now,new DriveStats(),VehicleProfile.PETROL_DCT,m,track);   // the car moves: trip starts
+        if(endTrip)r.tap(3,150,420);
+        r.draw(c,3,m.snapshot(now),now+50,new DriveStats(),VehicleProfile.PETROL_DCT,m,track);
         ImageIO.write(img,"png",new File(dir,name+".png"));
     }
     private static void save(File dir,String name,PitRenderer r,Telemetry model,long now,boolean cluster,boolean media) throws Exception {

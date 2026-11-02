@@ -266,7 +266,7 @@ opendbc는 믿되, **슬롯→CAN ID가 값으로 확정된 프레임에만** �
 | `TurnSigLh` / `TSigLHSw` | b2 bit3 / b5 bit2 | 좌 깜빡이에서만 `0x61→0x69`, b5 `0x04` |
 | `TSigRHSw` / `TurnSigRh` | b5 bit1 / b7 bit6 | 우 깜빡이에서만 b5 `0x02`, b7 `0x40` |
 | `HazardSw` | b4 bit1 | 비상등에서만 `0xe0→0xe2` |
-| `HeadLampLow` | b3 bit7 | 전조등 on `0x80` / off `0x00` |
+| `HeadLampLow` | b3 bit7 | 전조등 on `0x80` / off `0x00` → 앱 신호 53 `HEAD_LAMP`(테스트 버전, 8비트 화면의 차 조명) |
 | `ALightStat`·`LightSwState` | b4 bit5-7 | 전조등 on에서 `0xe0` |
 
 7개 필드가 DBC 자리와 맞으므로, 캡처에서 아직 열어 보지 않은 아래 필드도 DBC 위치대로 넣었다(0 닫힘 / 1 열림, 2·3은 버림).

@@ -102,7 +102,7 @@ final class PixelCluster extends ClusterKit {
         boolean brake=v(10)>5,left=v(Telemetry.TURN_LEFT)>0,right=v(Telemetry.TURN_RIGHT)>0;   // the bits blink with the real lamps
         if(chase){
             scroll+=vk*dt*0.06f;
-            float steer=v(Telemetry.STEERING),turn=Float.isNaN(steer)?0:Math.max(-1.3f,Math.min(1.3f,steer/110f));   // the road bends with the steering wheel, not lateral G
+            float steer=v(Telemetry.STEERING),turn=Float.isNaN(steer)?0:Math.max(-1.3f,Math.min(1.3f,-steer/110f));   // the road bends with the steering wheel (steer left -> road curves left), not lateral G
             curve+=(-turn*1.7f-curve)*Math.min(1,dt*2.2f);bgX+=curve*vk*dt*0.05f;
             // The car leans a few pixels toward the steering: enough to see it respond, never enough to distract. The
             // first 2 deg are the SAS wobble straight ahead; past ~30 deg it stays at 6 px.

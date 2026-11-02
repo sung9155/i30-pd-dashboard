@@ -22,6 +22,7 @@ final class VehicleDataClient implements Runnable {
     private volatile boolean ignitionUnknown;
     private volatile int generation;
     private volatile HscanDataClient hscan;
+    private volatile com.veloster.vehicle.ObdLive obd;
     private NModeManager nmode;
     private VehicleInfoManager vehicle;
     private BCMManager power;
@@ -84,10 +85,15 @@ final class VehicleDataClient implements Runnable {
             hscan=new HscanDataClient(new HscanDataClient.Gate(){public boolean accepts(){return VehicleDataClient.this.accepts(token);}});
         }catch(RuntimeException e){hscan=null;log("HSCAN",e);}catch(LinkageError e){hscan=null;log("HSCAN",e);}
         if(hscan!=null&&(ignition||ignitionUnknown))hscan.start();
+        if(obd==null)try{obd=new com.veloster.vehicle.ObdLive();}catch(RuntimeException e){obd=null;log("OBD",e);}catch(LinkageError e){obd=null;log("OBD",e);}
+        if(obd!=null&&(ignition||ignitionUnknown))obd.start(
+            new com.veloster.vehicle.ObdLive.Sink(){public void value(int pid,int a,int b){if(accepts(token))VehicleDash.obd(pid,a,b);}},
+            new com.veloster.vehicle.ObdLive.Gate(){public boolean open(){return accepts(token);}});
     }
     synchronized void stop(){
         if(!active)return;active=false;generation++;handler.removeCallbacks(this);
         if(hscan!=null){hscan.stop();hscan=null;}
+        if(obd!=null){obd.stop();obd=null;}
         try{if(nmode!=null)nmode.unregisterNModeListener(nlistener);}catch(RuntimeException e){log("NMode stop",e);}catch(LinkageError e){log("NMode stop",e);}
         try{if(vehicle!=null)vehicle.removeListener(vlistener);}catch(RuntimeException e){log("speed stop",e);}catch(LinkageError e){log("speed stop",e);}
         try{if(power!=null)power.removePowerListener(plistener);}catch(RuntimeException e){log("power stop",e);}catch(LinkageError e){log("power stop",e);}

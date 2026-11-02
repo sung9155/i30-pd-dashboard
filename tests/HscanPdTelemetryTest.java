@@ -267,7 +267,12 @@ public final class HscanPdTelemetryTest {
         t.hscanPd(0xc7,0x09,b(0,0xaf,0,0x8c,0,0,0,0x10),3400);equal(t,Telemetry.CLUTCH,1,3400);
         t.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),3401);equal(t,Telemetry.CLUTCH,0,3401);
         check("IN".equals(Telemetry.label(Telemetry.CLUTCH,1))&&"OUT".equals(Telemetry.label(Telemetry.CLUTCH,0)),"clutch label");
-        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.CLUTCH+1,"label/unit tables cover the added signals");
+        // OBD-II mode 01 live PIDs via the active poller (2026-11-02 probe): ambient, fuel level, catalyst temp, absolute load.
+        t.obd(0x46,0x42,0,3400);equal(t,Telemetry.AMBIENT,26,3400);
+        t.obd(0x2f,0x7f,0,3401);check(Math.abs(t.sample(Telemetry.FUEL_LEVEL,3401).value-49.8f)<0.5f,"fuel level ~50%");
+        t.obd(0x3c,0x0b,0x54,3402);check(Math.abs(t.sample(Telemetry.CAT_TEMP,3402).value-250f)<1f,"catalyst temp ~250 C");
+        t.obd(0x43,0x00,0x31,3403);check(Math.abs(t.sample(Telemetry.ABS_LOAD,3403).value-19.2f)<0.5f,"absolute load ~19%");
+        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.ABS_LOAD+1,"label/unit tables cover the added signals");
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
 }

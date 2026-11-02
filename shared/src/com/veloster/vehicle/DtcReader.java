@@ -49,13 +49,14 @@ public final class DtcReader {
         Binder listener=r.new Listener(),token=new Binder();
         call(svc,1,listener,token);   // registerHscanMicomListener
         List<Result> out=new ArrayList<Result>();
+        ObdLive.diagBusy=true;        // pause the live OBD poller while a trouble-code read owns the channel
         try{
             for(Object[] e:ECUS){
                 String name=(String)e[0];int ecu=(Integer)e[1];
                 if(progress!=null)progress.step(name);
                 out.add(r.read(svc,name,ecu,(Integer)e[2]));
             }
-        }finally{call(svc,2,listener,token);}   // unregisterHscanMicomListener
+        }finally{call(svc,2,listener,token);ObdLive.diagBusy=false;}   // unregisterHscanMicomListener
         return out;
     }
 

@@ -263,7 +263,11 @@ public final class HscanPdTelemetryTest {
         t.hscanPd(0xc7,0x01,b(0x03,0x04,0x61,0x80,0x81,0,0,0x00),3315);equal(t,Telemetry.HEAD_LAMP,1,3315);equal(t,Telemetry.TAIL_LAMP,1,3315);equal(t,Telemetry.HIGH_BEAM,1,3315);
         // JSN-only slots are not decoded by the PD path.
         t.hscanPd(0xc7,0x07,b(0,0,74,64,31,0,0,0),1000);check(!t.sample(Telemetry.BAT_SOC,1000).seen,"JSN BAT11 slot ignored on PD");
-        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.HIGH_BEAM+1,"label/unit tables cover the added signals");
+        // Clutch pedal for the 6MT race cell: EMS12 CLU_ACK byte3 bit7, shown as received (IN pressed / OUT released).
+        t.hscanPd(0xc7,0x09,b(0,0xaf,0,0x8c,0,0,0,0x10),3400);equal(t,Telemetry.CLUTCH,1,3400);
+        t.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),3401);equal(t,Telemetry.CLUTCH,0,3401);
+        check("IN".equals(Telemetry.label(Telemetry.CLUTCH,1))&&"OUT".equals(Telemetry.label(Telemetry.CLUTCH,0)),"clutch label");
+        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.CLUTCH+1,"label/unit tables cover the added signals");
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
 }

@@ -8,7 +8,7 @@ import java.util.Arrays;
  * remap table. Semantic green / amber (ok / caution) are never remapped. No Android imports: host-tested.
  */
 public final class Theme {
-    public static final String[] IDS={"n","lambo","bmw","ice","mono","amber","teal","night"};
+    public static final String[] IDS={"n","lambo","bmw","ice","mono","amber","teal","night","rose","copper"};
     public static final int SHAPE_CUT=0,SHAPE_HEX=1,SHAPE_ROUND=2;
 
     // N palette literals grouped by role (RGB only; alpha is kept from the caller).
@@ -56,6 +56,9 @@ public final class Theme {
         new Theme("amber","AM",SHAPE_CUT,1,false,true,0xffff3b30,0xff000000,new int[]{0x000000,0x070402,0x0d0904,0x3a2810,0x22180a,0xffd9a8,0xa8865c,0xff9a1f,0x2e1c06,0xff6a00}),
         new Theme("teal","EV",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x020606,0x081010,0x1f3836,0x122422,0xe6fffb,0x7aa09b,0x00e0c6,0x06302b,0x00a3ff}),
         new Theme("night","NT",SHAPE_CUT,1,false,false,0xffe0453a,0xff000000,new int[]{0x000000,0x030405,0x07090b,0x1c2329,0x12171b,0xb8c4cc,0x66737c,0x3f86d9,0x0c1d30,0x2a5fa0}),
+        // Rose: round cells like M, without its stripe. Copper: hex cells like LB, normal digit weight.
+        new Theme("rose","RS",SHAPE_ROUND,0,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x080506,0x110b0d,0x3a2830,0x24181d,0xfff2f6,0xa8909a,0xff8fb1,0x3a1624,0xff4f7b}),
+        new Theme("copper","CU",SHAPE_HEX,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x070504,0x0e0a08,0x3a2c22,0x241b15,0xf8ece2,0xa69282,0xe08a52,0x33200f,0xc0502a}),
     };
     private static volatile Theme current=ALL[0];
 

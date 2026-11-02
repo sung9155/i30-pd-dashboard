@@ -23,9 +23,15 @@ def main():
     sources = [ROOT / "shared/src/com/veloster/vehicle/Telemetry.java",
                ROOT / "shared/src/com/veloster/vehicle/VehicleProfile.java",
                ROOT / "shared/src/com/veloster/vehicle/ShiftGuide.java",
+               ROOT / "shared/src/com/veloster/vehicle/Dtc.java",
                ROOT / "shared/src/com/veloster/vehicle/DriveStats.java",
                ROOT / "shared/src/com/veloster/vehicle/Theme.java",
                ROOT / "shared/src/com/veloster/vehicle/HeaderTabs.java",
+               ROOT / "shared/src/com/veloster/vehicle/ClusterPicker.java",
+               ROOT / "shared/src/com/veloster/vehicle/SparkRetard.java",
+               ROOT / "shared/src/com/veloster/vehicle/DayPhase.java",
+               ROOT / "shared/src/com/veloster/vehicle/TaxiFare.java",
+               ROOT / "shared/src/com/veloster/vehicle/CarPaint.java",
                ROOT / "shared/src/com/veloster/i18n/UiText.java",
                ROOT / "apps/dashboard/src/com/veloster/dashboard/HscanFrameDecoder.java"]
     sources += [hub / (name + ".java") for name in ("RadioTrial", "BluetoothSession", "RebootRequest", "QuickEntryPolicy")]

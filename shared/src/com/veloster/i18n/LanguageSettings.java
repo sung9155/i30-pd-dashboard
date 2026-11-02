@@ -21,11 +21,12 @@ public final class LanguageSettings {
         if(saved)init(context);
         return saved;
     }
-    public static void show(final Activity activity,final Runnable changed){
+    /** Opens the language chooser; returns it so a caller that hides its view can dismiss it too. */
+    public static AlertDialog show(final Activity activity,final Runnable changed){
         final String[] modes={"auto","ko","en"};
         final int[] selected={0};String current=selection(activity);
         for(int i=0;i<modes.length;i++)if(modes[i].equals(current))selected[0]=i;
-        new AlertDialog.Builder(activity).setTitle("Language / 언어")
+        return new AlertDialog.Builder(activity).setTitle("Language / 언어")
             .setSingleChoiceItems(new String[]{"System / 시스템","한국어","English"},selected[0],new DialogInterface.OnClickListener(){
                 public void onClick(DialogInterface dialog,int which){selected[0]=which;}
             }).setPositiveButton(UiText.t("저장"),new DialogInterface.OnClickListener(){

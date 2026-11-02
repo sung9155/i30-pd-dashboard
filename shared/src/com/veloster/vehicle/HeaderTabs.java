@@ -5,9 +5,12 @@ package com.veloster.vehicle;
  * VehicleDash hit-tests, scrolled sideways by a finger drag that starts on the strip. No Android: host-tested.
  */
 public final class HeaderTabs {
-    public static final int OVERVIEW=0,F1=1,PERF=2,RACE=3,GAUGES=4,GRAPHS=5,CLUSTER=6,LANG=7,THEME=8;
-    public static final float LEFT=120,RIGHT=636,TOP=8,H=38,GAP=4,DRAG=12;
-    public static final float[] W={76,40,66,56,56,56,66,40,40};
+    public static final int CLUSTER=0;
+    public static final float LEFT=120,RIGHT=580,TOP=8,H=38,GAP=4,DRAG=12;
+    public static final float[] W={200};
+    /** Gear button left of the clock: opens the screen list in edit mode. */
+    public static final float GEAR_L=590,GEAR_W=44;
+    public static boolean gear(float x,float y){return x>=GEAR_L&&x<=GEAR_L+GEAR_W&&y>=TOP&&y<=TOP+H;}
 
     private float scroll,startScroll,downX;
     private boolean tracking,dragging;

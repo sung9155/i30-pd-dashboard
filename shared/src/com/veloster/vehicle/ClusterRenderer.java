@@ -37,13 +37,23 @@ public final class ClusterRenderer {
     private DriveStats st;
     private VehicleProfile prof=VehicleProfile.PETROL_DCT;
 
-    public void draw(Canvas c,int layout,Telemetry.Sample[] samples,long frameTime,DriveStats stats,VehicleProfile profile){
+    /** Layouts 3 and up (ClusterPicker order); null until a layout is ported. */
+    private final ClusterKit[] extra={new TaxiCluster(),new VfdCluster(),new HudCluster(),new PixelCluster(false),new PixelCluster(true),new EcoCluster(),new GCircleCluster(),new NightCluster(),new DragCluster(),new EngineCluster(),new CassetteCluster(),new WarpCluster(),new ScopeCluster(),new KnockCluster()};
+    /** Called every frame whatever page shows: layouts keep their trip totals (taxi fare, trip km, fuel) counting. */
+    public void tick(Telemetry.Sample[] samples,long now){for(ClusterKit k:extra)if(k!=null)k.background(samples,now);}
+    /** Body tap on layout (ClusterPicker index); true when the layout used it. */
+    public boolean tap(int layout,float x,float y){return layout>=3&&layout-3<extra.length&&extra[layout-3]!=null&&extra[layout-3].tap(x,y);}
+    public void draw(Canvas c,int layout,Telemetry.Sample[] samples,long frameTime,DriveStats stats,VehicleProfile profile,Telemetry model,MediaState.Snapshot music){
         s=samples;now=frameTime;st=stats;if(profile!=null)prof=profile;
         float gv=v(8);int gi=Float.isNaN(gv)?0:(int)gv;
         if(gi>=1&&gi<=7){if(lastGear>0&&gi!=lastGear)popAt=now;lastGear=gi;}
         fixedPalette=layout==1;
         fill(c,0,52,800,480,fixedPalette?R_BG:BG);
-        if(layout==1)retro(c);else if(layout==2)rally(c);else classic(c);
+        if(layout>=3&&layout-3<extra.length&&extra[layout-3]!=null){
+            extra[layout-3].background(samples,frameTime);   // also when drawn without tick(); a second call in a frame adds nothing
+            extra[layout-3].frame(c,samples,model,stats,profile,frameTime,music);
+        }
+        else if(layout==1)retro(c);else if(layout==2)rally(c);else classic(c);
     }
 
     // ---- Classic ---------------------------------------------------------------------------------------------
@@ -57,7 +67,7 @@ public final class ClusterRenderer {
         float cool=v(2),in=v(Telemetry.INTAKE),boost=v(Telemetry.BOOST),acc=v(9);
         meter(c,12,138,133,258,"COOLANT","°C",fmt("%.0f",cool),temp(cool,100,110),(cool-40)/80,hero,false);
         meter(c,141,138,262,258,"INTAKE","°C",fmt("%.0f",in),temp(in,60,80),in/80,hero,false);
-        meter(c,12,266,133,386,"BOOST","bar",fmt("%+.2f",boost),WHITE,boost/1.5f,hero,false);
+        meter(c,12,266,133,386,"BOOST","bar",fmt("%+.2f",boost),WHITE,boost/(st==null?DriveStats.boostTop(Float.NaN):st.boostTop()),hero,false);
         meter(c,141,266,262,386,"ACCEL","%",fmt("%.0f",acc),WHITE,acc/100,hero,false);
         int[] ts={Telemetry.TPMS_FL,Telemetry.TPMS_FR,Telemetry.TPMS_RL,Telemetry.TPMS_RR};String[] tn={"FL","FR","RL","RR"};
         for(int i=0;i<4;i++){

@@ -30,6 +30,11 @@ public class TelemetryHistoryTest {
         check(near(Telemetry.displayValue(Telemetry.STEERING,t.sample(Telemetry.STEERING,400250).value),-13.5f),"opposite steering direction remains symmetric");
         check(Float.floatToIntBits(Telemetry.displayValue(Telemetry.STEERING,-0f))==Float.floatToIntBits(0f),"straight steering never displays negative zero");
         check(Telemetry.displayValue(1,95.5f)==95.5f,"other display values are untouched");
+        // Signals stored separately are paired by time, not by index (one may have missed samples).
+        Telemetry u=new Telemetry();
+        u.temperatures(new byte[]{(byte)180,(byte)188},1000);u.temperatures(new byte[]{(byte)190,(byte)188},2000);
+        Telemetry.Series c=u.history(1,2000,60000),al=c.at(new long[]{1000,1900,5000},300);
+        check(al.size()==3&&al.valid[0]&&near(al.values[0],c.values[0])&&al.valid[1]&&near(al.values[1],c.values[1])&&!al.valid[2],"nearest sample within 300 ms, else invalid");
         System.out.println("Telemetry history and steering display tests passed");
     }
 }

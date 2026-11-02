@@ -41,9 +41,14 @@ public final class PitRenderer {
     private final ShowRenderer showRenderer=new ShowRenderer();
     private final ClusterRenderer clusterRenderer=new ClusterRenderer();
     public static final int PAGE_PERFORMANCE=1,PAGE_RACE=2,PAGE_RECORDS=3,PAGE_SHOW=4,PAGE_CLASSIC=5,PAGE_RETRO=6,PAGE_RALLY=7;
-    /** Cluster tab pages: Classic, Retro, Rally (one tab, tapped again to cycle). */
-    public static boolean isCluster(int page){return page>=PAGE_CLASSIC&&page<=PAGE_RALLY;}
-    private static final String[] CLUSTER_NAMES={"클래식","레트로","랠리"};
+    /** Pages ClusterRenderer draws: PAGE_CLASSIC and up (layout = page - PAGE_CLASSIC, screen = ClusterPicker.CLASSIC + layout). */
+    public static boolean isCluster(int page){return page>=PAGE_CLASSIC&&page<ClusterPicker.page(ClusterPicker.COUNT);}
+    private boolean picker,editing;
+    private int hidden;
+    /** Screen list over the body while open, its edit mode and the hidden screens (VehicleDash owns the gesture). */
+    public void setPicker(boolean open,boolean edit,int hiddenScreens){picker=open;editing=edit;hidden=hiddenScreens;}
+    /** Body tap on a Cluster layout (taxi meter button and the like); true when it was used. */
+    public boolean clusterTap(float x,float y){return symmetric&&isCluster(page)&&clusterRenderer.tap(page-PAGE_CLASSIC,x,y);}
     private final HeaderTabs header=new HeaderTabs();
     /** The tab strip VehicleDash hit-tests and scrolls; the same instance draws it. */
     public HeaderTabs header(){return header;}
@@ -100,6 +105,7 @@ public final class PitRenderer {
     public void draw(Canvas c,int width,int height,boolean cluster,Telemetry model,long now,int target,boolean media,MediaState.Snapshot track){
         mediaPage=cluster && media;music=track;
         frameTime=now;samples=model.snapshot(now);profile=model.profile();
+        clusterRenderer.tick(samples,now);   // trip totals of the layouts count on every page
         // The profile's range, so the "목표" label shows the target the cue really uses (a diesel's is 2100-4700).
         shiftTarget=ShiftGuide.target(target,profile);
         cue=ShiftGuide.evaluate(samples,shiftTarget,profile);stats.update(samples,now);
@@ -111,12 +117,12 @@ public final class PitRenderer {
         stroke(c,19,16,13,35,RED,4);stroke(c,27,16,21,35,BLUE,4);
         text(c,"i30 PD",36,33,23,WHITE,true);
         // Tab strip: HeaderTabs holds the positions for both drawing and VehicleDash.onTouchEvent.
-        boolean tab=gaugeLayout==null&&graphLayout==null;
         c.save();c.clipRect(HeaderTabs.LEFT,0,HeaderTabs.RIGHT,52);
-        for(int id=0;id<HeaderTabs.W.length;id++)button(c,tabLabel(id),header.x(id),HeaderTabs.TOP,HeaderTabs.W[id],HeaderTabs.H,tabOn(id,cluster,tab),BLUE);
+        for(int id=0;id<HeaderTabs.W.length;id++)button(c,tabLabel(id,cluster),header.x(id),HeaderTabs.TOP,HeaderTabs.W[id],HeaderTabs.H,id==HeaderTabs.CLUSTER,BLUE);
         c.restore();
         if(header.moreLeft())arrow(c,HeaderTabs.LEFT+5,-1);
         if(header.moreRight())arrow(c,HeaderTabs.RIGHT-5,1);
+        gearButton(c,picker&&editing);
         centered(c,clock(),667,32,20,WHITE,true);
         button(c,UiText.t("돌아가기"),698,8,84,38,false,BLUE);
         if(graphLayout!=null)graphRenderer.draw(c,model,now,graphLayout);
@@ -125,45 +131,67 @@ public final class PitRenderer {
         else if(symmetric&&page==PAGE_SHOW)showRenderer.draw(c,samples,frameTime,profile);
         else if(symmetric&&page==PAGE_RACE)raceRenderer.draw(c,samples,cue,frameTime,stats,profile,media,music,artwork);
         else if(symmetric&&page==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
-        else if(symmetric&&isCluster(page))clusterRenderer.draw(c,page-PAGE_CLASSIC,samples,frameTime,stats,profile);
+        else if(symmetric&&isCluster(page))clusterRenderer.draw(c,page-PAGE_CLASSIC,samples,frameTime,stats,profile,model,music);
         else if(mediaPage)drawCombined(c);else if(cluster)drawCluster(c);else drawDashboard(c);
-        // Pages without their own shift light (performance, show, the three clusters) get the race tab's cue from the same
+        // Pages without their own shift light (performance, show, every cluster layout) get the race tab's cue from the same
         // shift target: the page edge blinks red (100 ms, as on the race tab).
         if(graphLayout==null&&gaugeLayout==null&&symmetric&&cue.shift&&(page==PAGE_PERFORMANCE||page==PAGE_SHOW||isCluster(page))
             &&(frameTime/100)%2==0){
             paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(4);paint.setColor(T(RED));c.drawRect(3,55,797,478,paint);
             paint.setStyle(Paint.Style.FILL);
         }
-        if(graphLayout==null&&!mediaPage && music!=null && music.notice)drawMedia(c,true);
-        if(cluster&&gaugeLayout==null&&graphLayout==null)drawArtworkToggle(c);
+        if(picker)drawPicker(c,screen(cluster));
+        else if(graphLayout==null&&!mediaPage && music!=null && music.notice)drawMedia(c,true);
+        if(cluster&&!picker&&gaugeLayout==null&&graphLayout==null)drawArtworkToggle(c);
         c.restore();
     }
-    private String tabLabel(int id){
-        switch(id){
-            case HeaderTabs.OVERVIEW:return UiText.t("전체 조망");
-            case HeaderTabs.F1:return "F1";
-            case HeaderTabs.PERF:return UiText.t(page==PAGE_SHOW?"쇼":"퍼포먼스");
-            // Tapping 레이스 again flips to its records page; the label says which one is showing.
-            case HeaderTabs.RACE:return UiText.t(page==PAGE_RECORDS?"기록":"레이스");
-            case HeaderTabs.GAUGES:return UiText.t("게이지");
-            case HeaderTabs.GRAPHS:return UiText.t("그래프");
-            case HeaderTabs.CLUSTER:return UiText.t(symmetric&&isCluster(page)?CLUSTER_NAMES[page-PAGE_CLASSIC]:"클러스터");
-            case HeaderTabs.LANG:return UiText.language().toUpperCase(Locale.US);
-            default:return Theme.current().label;
-        }
+    /** Screen now showing (ClusterPicker index). */
+    private int screen(boolean cluster){
+        return graphLayout!=null?ClusterPicker.GRAPHS:gaugeLayout!=null?ClusterPicker.GAUGES:cluster?ClusterPicker.F1:symmetric?ClusterPicker.F1+page:ClusterPicker.OVERVIEW;
     }
-    private boolean tabOn(int id,boolean cluster,boolean tab){
-        switch(id){
-            case HeaderTabs.OVERVIEW:return !cluster&&!symmetric&&tab;
-            case HeaderTabs.F1:return cluster&&tab;
-            case HeaderTabs.PERF:return symmetric&&(page==PAGE_PERFORMANCE||page==PAGE_SHOW)&&tab;
-            case HeaderTabs.RACE:return symmetric&&(page==PAGE_RACE||page==PAGE_RECORDS)&&tab;
-            case HeaderTabs.GAUGES:return gaugeLayout!=null;
-            case HeaderTabs.GRAPHS:return graphLayout!=null;
-            case HeaderTabs.CLUSTER:return symmetric&&isCluster(page)&&tab;
-            default:return false;
-        }
+    /** Gear left of the clock (HeaderTabs.GEAR_L): opens the screen list in edit mode; lit while editing. */
+    private void gearButton(Canvas c,boolean on){
+        float x=HeaderTabs.GEAR_L,cx=x+HeaderTabs.GEAR_W/2,cy=HeaderTabs.TOP+HeaderTabs.H/2;int ink=on?BLUE:MUTED;
+        button(c,"",x,HeaderTabs.TOP,HeaderTabs.GEAR_W,HeaderTabs.H,on,BLUE);
+        for(int i=0;i<8;i++){double a=i*Math.PI/4;stroke(c,cx+(float)Math.cos(a)*6,cy+(float)Math.sin(a)*6,cx+(float)Math.cos(a)*11,cy+(float)Math.sin(a)*11,ink,4);}
+        paint.setColor(T(ink));c.drawCircle(cx,cy,8,paint);
+        paint.setColor(T(on?0xff233b46:0xff111415));c.drawCircle(cx,cy,3.5f,paint);
     }
+    /**
+     * Screen list: 6 x 5 tiles over a dimmed body, the current screen outlined. Normally only the shown screens; in edit
+     * mode (the gear) all of them, each marked 사용 or 미사용, then the language and theme tiles and 완료.
+     */
+    private void drawPicker(Canvas c,int cur){
+        box(c,0,52,800,480,0xe6040506);
+        int[] list=ClusterPicker.slots(hidden,editing);
+        for(int i=0;i<list.length;i++){
+            int s=list[i];boolean off=(hidden&(1<<s))!=0;
+            float l=ClusterPicker.left(i),t=ClusterPicker.top(i),w=ClusterPicker.TILE_W,h=ClusterPicker.TILE_H;
+            box(c,l,t,l+w,t+h,s==cur?0xff1c303b:off?0xff08090a:0xff101315);
+            if(s==cur){box(c,l,t,l+w,t+3,BLUE);box(c,l,t+h-3,l+w,t+h,BLUE);box(c,l,t,l+3,t+h,BLUE);box(c,l+w-3,t,l+w,t+h,BLUE);}
+            centered(c,UiText.t(ClusterPicker.NAMES[s]),l+w/2,t+35,20,off?MUTED:s==cur?BLUE:WHITE,true);
+            if(editing)centered(c,UiText.t(off?"미사용":"사용"),l+w/2,t+60,14,off?MUTED:BLUE,true);
+            else centered(c,UiText.t(ClusterPicker.DESC[s]),l+w/2,t+58,11,MUTED,false);
+        }
+        if(!editing)return;
+        setting(c,ClusterPicker.DIAG,"진단",UiText.t("고장코드"));
+        setting(c,ClusterPicker.CAR,"차량 색",UiText.t(CarPaint.label()));
+        setting(c,ClusterPicker.LANG,"언어",UiText.language().toUpperCase(Locale.US));
+        setting(c,ClusterPicker.THEME,"테마",Theme.current().label);
+        float l=ClusterPicker.left(ClusterPicker.EDIT),t=ClusterPicker.top(ClusterPicker.EDIT),w=ClusterPicker.TILE_W,h=ClusterPicker.TILE_H;
+        box(c,l,t,l+w,t+h,0xff16232b);
+        box(c,l,t,l+w,t+3,BLUE);box(c,l,t+h-3,l+w,t+h,BLUE);box(c,l,t,l+3,t+h,BLUE);box(c,l+w-3,t,l+w,t+h,BLUE);
+        centered(c,UiText.t("완료"),l+w/2,t+35,20,BLUE,true);
+        centered(c,UiText.t("눌러서 사용·미사용"),l+w/2,t+58,11,MUTED,false);
+    }
+    /** Setting tile in edit mode: name, current value in the accent. */
+    private void setting(Canvas c,int slot,String name,String value){
+        float l=ClusterPicker.left(slot),t=ClusterPicker.top(slot),w=ClusterPicker.TILE_W,h=ClusterPicker.TILE_H;
+        box(c,l,t,l+w,t+h,0xff16232b);
+        centered(c,UiText.t(name),l+w/2,t+35,20,WHITE,true);
+        centered(c,value,l+w/2,t+60,14,BLUE,true);
+    }
+    private String tabLabel(int id,boolean cluster){return UiText.t(ClusterPicker.NAMES[screen(cluster)]);}
     /** Faint chevron at a strip edge that has more tabs past it; dir -1 points left. */
     private void arrow(Canvas c,float x,int dir){
         box(c,x-7,9,x+7,45,0xff090b0c);

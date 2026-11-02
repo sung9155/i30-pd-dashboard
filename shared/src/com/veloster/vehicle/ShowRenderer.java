@@ -23,7 +23,9 @@ public final class ShowRenderer {
     private final RectF oval=new RectF();
     private static final int BG=0xff05070a,PANEL=0xff0e1318,LINE=0xff263038,TRACK=0xff1b2228,
         WHITE=0xffe6f1f6,MUTED=0xff86969f,BLUE=0xff5bc8f5,RED=0xffff4a5e,GREEN=0xff3ddc84,AMBER=0xffffb84d;
-    private static final float BMIN=-1.0f,BMAX=1.5f,A0=140,SW=260;
+    private static final float BMIN=-1.0f,A0=140,SW=260;
+    /** Gauge top: 1.5 bar, wider once this session has seen more boost (tuned cars). */
+    private float bmax=1.5f,maxSeen=Float.NaN;
     private Telemetry.Sample[] s;
     private VehicleProfile prof=VehicleProfile.PETROL_DCT;
     private long now,last;
@@ -122,6 +124,7 @@ public final class ShowRenderer {
         if(!Float.isNaN(boost)){
             if(!boostInit){needleBoost=boost;boostInit=true;}
             else needleBoost+=(boost-needleBoost)*Math.min(1f,dt/120f);
+            if(Float.isNaN(maxSeen)||boost>maxSeen){maxSeen=boost;bmax=DriveStats.boostTop(maxSeen);}
             if(peakBoost==Float.NEGATIVE_INFINITY||boost>peakBoost){peakBoost=boost;peakAt=now;}
             else if(now-peakAt>1800)peakBoost=Math.max(boost,peakBoost-dt*0.0006f);
         }
@@ -131,23 +134,23 @@ public final class ShowRenderer {
         p.setStyle(Paint.Style.STROKE);p.setStrokeCap(Paint.Cap.ROUND);
         p.setStrokeWidth(14);p.setColor(T(TRACK));c.drawArc(oval,A0,SW,false,p);
         // positive-boost fill from the zero mark to the needle, glowing when high
-        float zf=(0-BMIN)/(BMAX-BMIN);
-        float nb=Float.isNaN(boost)?Float.NaN:Math.max(BMIN,Math.min(BMAX,needleBoost));
+        float zf=(0-BMIN)/(bmax-BMIN);
+        float nb=Float.isNaN(boost)?Float.NaN:Math.max(BMIN,Math.min(bmax,needleBoost));
         if(!Float.isNaN(nb)&&nb>0){
-            float a=SW*((nb-0)/(BMAX-BMIN));
-            float glow=Math.max(0,Math.min(1,nb/BMAX));
+            float a=SW*((nb-0)/(bmax-BMIN));
+            float glow=Math.max(0,Math.min(1,nb/bmax));
             p.setStrokeWidth(14+10*glow);p.setColor(T(withAlpha(accent,0x33)));c.drawArc(oval,A0+SW*zf,a,false,p);
             p.setStrokeWidth(14);p.setColor(T(accent));c.drawArc(oval,A0+SW*zf,a,false,p);
         }else if(!Float.isNaN(nb)&&nb<0){
-            float a=SW*((0-nb)/(BMAX-BMIN));
+            float a=SW*((0-nb)/(bmax-BMIN));
             p.setStrokeWidth(14);p.setColor(T(0xff4a5a63));c.drawArc(oval,A0+SW*zf-a,a,false,p);
         }
         p.setStrokeCap(Paint.Cap.BUTT);
         // ticks + labels every 0.5 bar
-        for(float bl=BMIN;bl<=BMAX+0.01f;bl+=0.5f){
-            float ang=(float)Math.toRadians(A0+SW*((bl-BMIN)/(BMAX-BMIN)));
+        for(float bl=BMIN;bl<=bmax+0.01f;bl+=0.5f){
+            float ang=(float)Math.toRadians(A0+SW*((bl-BMIN)/(bmax-BMIN)));
             float c1=(float)Math.cos(ang),s1=(float)Math.sin(ang);
-            boolean major=Math.abs(bl)<0.01f||Math.abs(bl-BMAX)<0.01f||Math.abs(bl-BMIN)<0.01f;
+            boolean major=Math.abs(bl)<0.01f||Math.abs(bl-bmax)<0.01f||Math.abs(bl-BMIN)<0.01f;
             p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(major?3:2);p.setColor(T(major?WHITE:MUTED));
             c.drawLine(cx+c1*(rad-12),cy+s1*(rad-12),cx+c1*(rad+2),cy+s1*(rad+2),p);
             p.setStyle(Paint.Style.FILL);
@@ -155,14 +158,14 @@ public final class ShowRenderer {
         }
         // peak-hold needle
         if(peakBoost!=Float.NEGATIVE_INFINITY){
-            float pa=(float)Math.toRadians(A0+SW*((Math.max(BMIN,Math.min(BMAX,peakBoost))-BMIN)/(BMAX-BMIN)));
+            float pa=(float)Math.toRadians(A0+SW*((Math.max(BMIN,Math.min(bmax,peakBoost))-BMIN)/(bmax-BMIN)));
             p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(T(AMBER));
             c.drawLine(cx+(float)Math.cos(pa)*(rad-18),cy+(float)Math.sin(pa)*(rad-18),cx+(float)Math.cos(pa)*(rad+2),cy+(float)Math.sin(pa)*(rad+2),p);
             p.setStyle(Paint.Style.FILL);
         }
         // live needle
         if(!Float.isNaN(nb)){
-            float na=(float)Math.toRadians(A0+SW*((nb-BMIN)/(BMAX-BMIN)));
+            float na=(float)Math.toRadians(A0+SW*((nb-BMIN)/(bmax-BMIN)));
             float nx=cx+(float)Math.cos(na)*(rad-6),ny=cy+(float)Math.sin(na)*(rad-6);
             p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(4);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(T(accent));
             c.drawLine(cx,cy,nx,ny,p);p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);

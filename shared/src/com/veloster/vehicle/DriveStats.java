@@ -122,4 +122,7 @@ public final class DriveStats {
     public int trailCount(){return tCount;}
     public float trailX(int i){return tx[(tHead-tCount+i+TRAIL)%TRAIL];}
     public float trailY(int i){return ty[(tHead-tCount+i+TRAIL)%TRAIL];}
+    /** Top of a boost bar: 1.5 bar, widened in 0.5 bar steps once the highest boost seen goes past it (tuned cars). */
+    public static float boostTop(float peak){return Float.isNaN(peak)?1.5f:Math.max(1.5f,(float)Math.ceil((peak+0.05f)*2)/2);}
+    public float boostTop(){return boostTop(maxBoost);}
 }

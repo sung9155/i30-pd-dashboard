@@ -7,9 +7,9 @@ public final class Telemetry {
     public static final int TCS=22,ESC=23,ABS=24,BAT_SOC=25,BAT_VOLTAGE=26,STEERING_SPEED=27,ELSD=28;
     public static final int INTAKE=29,GEAR_SELECTOR=30,ODOMETER=31,ENGINE_LOAD=32,YAW=33,DRIVE_MODE=34,PARK_BRAKE=35;
     public static final int THROTTLE_POS=36,FUEL_RATE=37,RANGE=38,AVG_FUEL=39,TORQUE_CORR=40,TORQUE_FRICTION=41;
-    public static final int SPARK=42,BRAKE_SWITCH=43,STEER_TORQUE=44,DOOR_DRIVER=45,WIPER=46,DOOR_PASSENGER=47,TRUNK=48,HOOD=49,TURN_LEFT=50,TURN_RIGHT=51,SHIFT_HINT=52;
-    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장"};
-    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", ""};
+    public static final int SPARK=42,BRAKE_SWITCH=43,STEER_TORQUE=44,DOOR_DRIVER=45,WIPER=46,DOOR_PASSENGER=47,TRUNK=48,HOOD=49,TURN_LEFT=50,TURN_RIGHT=51,SHIFT_HINT=52,HEAD_LAMP=53;
+    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등"};
+    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", ""};
     public static final long STALE_MS = 60000; // UI freshness threshold, not an OEM timeout.
     public static final long HISTORY_MS=300000,HISTORY_STEP_MS=250;
     private final History[] history=new History[LABELS.length];
@@ -21,6 +21,16 @@ public final class Telemetry {
         public final boolean[] valid,breakBefore;
         Series(int n){times=new long[n];values=new float[n];valid=new boolean[n];breakBefore=new boolean[n];}
         public int size(){return times.length;}
+        /** This series read at the given times: the nearest sample within tolMs, else invalid (times ascending). */
+        public Series at(long[] at,long tolMs){
+            Series r=new Series(at.length);int j=0;
+            for(int i=0;i<at.length;i++){
+                while(j+1<times.length&&Math.abs(times[j+1]-at[i])<=Math.abs(times[j]-at[i]))j++;
+                r.times[i]=at[i];
+                if(j<times.length&&Math.abs(times[j]-at[i])<=tolMs){r.values[i]=values[j];r.valid[i]=valid[j];r.breakBefore[i]=breakBefore[j];}
+            }
+            return r;
+        }
     }
     private static final class History {
         private static final int CAPACITY=(int)(HISTORY_MS/HISTORY_STEP_MS)+1;
@@ -195,7 +205,7 @@ public final class Telemetry {
         if(signal==DRIVE_MODE)return driveModeLabel((int)value);
         if(signal==PARK_BRAKE||signal==BRAKE_SWITCH)return value>0?"ON":"OFF";
         if(signal==DOOR_DRIVER||signal==DOOR_PASSENGER||signal==TRUNK||signal==HOOD)return value>0?"OPEN":"CLOSED";
-        if(signal==TURN_LEFT||signal==TURN_RIGHT)return value>0?"ON":"OFF";
+        if(signal==TURN_LEFT||signal==TURN_RIGHT||signal==HEAD_LAMP)return value>0?"ON":"OFF";
         if(signal==WIPER)return value==0?"OFF":value==1?"LOW":value==2?"HIGH":"—";
         return null;
     }
@@ -397,6 +407,7 @@ public final class Telemetry {
             // Turn signals (action-tagged): CGW1 byte2 bit3 left, byte7 bit6 right (opendbc TurnSigLh/Rh). The bit blinks with the lamp.
             put(TURN_LEFT,(b[2]>>3)&1,true,now);
             put(TURN_RIGHT,(b[7]>>6)&1,true,now);
+            put(HEAD_LAMP,(b[3]>>7)&1,true,now);   // HeadLampLow: on 0x80 / off 0x00 (10/30 capture)
         }else if(funcLow==0x21&&b.length==6){
             // EMS20 FCO @0|16 *0.128 uL injected per 10 ms message -> *0.36 = L/h (idle 0.4-0.8, drive peak 30).
             int fco=(b[0]&255)|((b[1]&255)<<8);

@@ -3,6 +3,7 @@ package com.veloster.vehicle;
 import com.veloster.i18n.UiText;
 import com.veloster.i18n.LanguageSettings;
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.os.SystemClock;
 import android.view.Gravity;
@@ -32,14 +33,27 @@ public final class VehicleDash extends View implements Runnable {
     private boolean cluster, media, gauges, graphs, symmetric, touching;
     /** Symmetric-tab variant (PitRenderer.PAGE_*). Lap timer on the performance page: tap starts, tap stops, tap again resets. */
     private int page;
-    /** Last Cluster layout shown (0 Classic, 1 Retro, 2 Rally), restored when the tab opens. */
-    private int clusterLayout;
+    /** Screen showing (ClusterPicker index); saved, so the dashboard reopens on it. */
+    private int screen;
+    /** Screens the driver hid (ClusterPicker bit mask); saved, so it survives a reboot. */
+    private int hidden;
+    /** Screen list open (long press on the Cluster tab), and its edit mode where a tile tap shows or hides it. */
+    private boolean picker,editing;
+    /** The language chooser opened from the list, dismissed with the dashboard like the gauge/graph editors. */
+    private android.app.Dialog langDialog;
     private final HeaderTabs header=renderer.header();
     private boolean lapRunning;
     private long lapStart, lapMs;
     private long introStart;
     private float downX,downY;
     private long lastDiagnostic;
+    /** Frame cost since the last diagnostics line (logcat VehicleDash every 5 s), to judge the heavier layouts on the car. */
+    private long drawNs,drawMaxNs;
+    private int drawFrames;
+    private String drawStats(){
+        String s=drawFrames==0?"":String.format(java.util.Locale.US," draw avg %.1f max %.1f ms over %d frames (page %d%s)",drawNs/1e6/drawFrames,drawMaxNs/1e6,drawFrames,page,symmetric?"":", tab");
+        drawNs=drawMaxNs=0;drawFrames=0;return s;
+    }
     private long lastPolicyCheck;
     private boolean resumed;
     private long entryRequestUntil;
@@ -49,11 +63,26 @@ public final class VehicleDash extends View implements Runnable {
     private boolean blocked;
     private boolean standalone;
     private final Runnable editHold=new Runnable(){public void run(){
-        if((gauges||graphs)&&touching&&!blocked&&getVisibility()==VISIBLE){
+        if((gauges||graphs)&&touching&&!blocked&&!picker&&getVisibility()==VISIBLE){
             int slot=graphs?graphLayout.hit(downX,downY):gaugeEditor.hit(downX,downY);
             if(slot>=0){touching=false;if(graphs)graphEditor.edit(slot);else gaugeEditor.edit(slot);}
         }
     }};
+    private final Runnable clusterHold=new Runnable(){public void run(){
+        if(touching&&!blocked&&getVisibility()==VISIBLE&&header.hit(downX,downY)==HeaderTabs.CLUSTER){
+            touching=false;picker=true;editing=false;showCluster();invalidate();
+        }
+    }};
+    /** Set the view flags for the current screen (the next shown one if it is hidden). */
+    private void applyScreen(){
+        screen=ClusterPicker.shown(screen,hidden);
+        gauges=screen==ClusterPicker.GAUGES;graphs=screen==ClusterPicker.GRAPHS;cluster=screen==ClusterPicker.F1;
+        symmetric=screen>ClusterPicker.F1;page=symmetric?ClusterPicker.page(screen):0;
+    }
+    private void showCluster(){
+        applyScreen();
+        activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).apply();
+    }
     private VehicleDash(Activity a) { super(a); activity=a; artwork=new ArtworkLoader(a,this);
         gaugeEditor=new GaugeEditor(a,gaugeLayout,new Runnable(){public void run(){invalidate();}});
         graphEditor=new GraphEditor(a,graphLayout,new Runnable(){public void run(){invalidate();}});
@@ -65,8 +94,15 @@ public final class VehicleDash extends View implements Runnable {
         shiftTarget=a.getSharedPreferences("pit_vehicle_ui",0).getInt("shift_target",0);
         try{Theme.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("theme","n"));}
         catch(ClassCastException e){Theme.select("n");/* Incompatible saved value: open in N. */}
-        try{int v=a.getSharedPreferences("pit_vehicle_ui",0).getInt("cluster_layout",0);clusterLayout=v>=0&&v<=2?v:0;}
-        catch(ClassCastException e){/* Keep Classic for an incompatible saved value. */}
+        try{CarPaint.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("car_paint","blue"));}
+        catch(ClassCastException e){CarPaint.select("blue");}
+        try{
+            SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);
+            int v=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);
+            screen=v>=0&&v<ClusterPicker.COUNT?v:ClusterPicker.OVERVIEW;
+            hidden=ClusterPicker.valid(p.getInt("cluster_hidden",0));
+        }catch(ClassCastException e){/* Open on Overview, everything shown, for an incompatible saved value. */}
+        applyScreen();
         setVisibility(GONE); }
     public static void attach(Activity a) {
         try {
@@ -100,10 +136,12 @@ public final class VehicleDash extends View implements Runnable {
     public static void pauseStandalone(Activity a){
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
         d.resumed=false;d.touching=false;d.removeCallbacks(d.editHold);
-        d.gaugeEditor.dismiss();d.graphEditor.dismiss();d.mediaReceiver.stop();d.artwork.close();
+        d.gaugeEditor.dismiss();d.graphEditor.dismiss();d.dismissList();d.mediaReceiver.stop();d.artwork.close();
     }
+    /** Close the screen list and anything it opened (language chooser). */
+    private void dismissList(){picker=false;editing=false;if(langDialog!=null&&langDialog.isShowing())langDialog.dismiss();langDialog=null;}
     private void showDashboard(){setVisibility(VISIBLE);if(entry!=null)entry.setVisibility(GONE);bringToFront();}
-    private void close() { entryRequestUntil=0;removeCallbacks(editHold);touching=false;gaugeEditor.dismiss();graphEditor.dismiss();setVisibility(GONE); if(entry!=null) entry.setVisibility(blocked?GONE:VISIBLE); }
+    private void close() { entryRequestUntil=0;removeCallbacks(editHold);touching=false;gaugeEditor.dismiss();graphEditor.dismiss();dismissList();setVisibility(GONE); if(entry!=null) entry.setVisibility(blocked?GONE:VISIBLE); }
     public static void consumeEntryIntent(Activity a){entryIntent(a,a.getIntent());}
     /** Explicit opt-in only; consume once and require a live unrestricted OEM response. */
     public static void entryIntent(Activity a,android.content.Intent intent){
@@ -165,7 +203,7 @@ public final class VehicleDash extends View implements Runnable {
     public static void hscanJsn(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanJsn(cid,funcLow,data,receivedAt);}
     public static void hscanPd(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanPd(cid,funcLow,data,receivedAt);}
     protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity); post(this); }
-    protected void onDetachedFromWindow() { removeCallbacks(this);removeCallbacks(editHold);touching=false;gaugeEditor.dismiss();graphEditor.dismiss();mediaReceiver.stop();artwork.close();super.onDetachedFromWindow(); }
+    protected void onDetachedFromWindow() { removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(clusterHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();mediaReceiver.stop();artwork.close();super.onDetachedFromWindow(); }
     public void run() {
         long delay=100;
         long tick=SystemClock.elapsedRealtime();
@@ -178,7 +216,7 @@ public final class VehicleDash extends View implements Runnable {
             else if(symmetric&&page>=PitRenderer.PAGE_RACE)delay=50;  // shift blink, upshift pop, live run timers
             else if(!(cluster&&media&&!gauges) && mediaState.snapshot(now).notice)delay=16;
             if(introStart>0&&now-introStart<1500)delay=Math.min(delay,33);   // smooth the welcome sweep
-            if(now-lastDiagnostic>=5000) { lastDiagnostic=now;android.util.Log.i("VehicleDash",DATA.diagnostics(now)); }
+            if(now-lastDiagnostic>=5000) { lastDiagnostic=now;android.util.Log.i("VehicleDash",DATA.diagnostics(now)+drawStats()); }
         }
         postDelayed(this,delay);
     }
@@ -190,9 +228,12 @@ public final class VehicleDash extends View implements Runnable {
         renderer.setGraphLayout(graphs?graphLayout:null);
         renderer.setSymmetric(symmetric);
         renderer.setPage(page);
+        renderer.setPicker(picker,editing,hidden);
         renderer.setLap(lapRunning?now-lapStart:lapMs,lapRunning);
         renderer.setOverviewLayout(overviewLayout);
+        long drawStart=System.nanoTime();
         renderer.draw(c,getWidth(),getHeight(),cluster,DATA,now,shiftTarget,media,track);
+        long took=System.nanoTime()-drawStart;drawNs+=took;drawMaxNs=Math.max(drawMaxNs,took);drawFrames++;
         if(introStart==0)introStart=now;
         long introEl=now-introStart;
         if(introEl<1500)renderer.drawIntro(c,introEl/1500f);
@@ -214,21 +255,8 @@ public final class VehicleDash extends View implements Runnable {
     }
     private void selectTab(int id){
         switch(id){
-            case HeaderTabs.OVERVIEW:cluster=false;gauges=false;graphs=false;symmetric=false;break;
-            case HeaderTabs.F1:cluster=true;gauges=false;graphs=false;symmetric=false;break;
-            case HeaderTabs.PERF:page=symmetric&&page==PitRenderer.PAGE_PERFORMANCE?PitRenderer.PAGE_SHOW:PitRenderer.PAGE_PERFORMANCE;symmetric=true;cluster=false;gauges=false;graphs=false;break;
-            case HeaderTabs.RACE:page=symmetric&&page==PitRenderer.PAGE_RACE?PitRenderer.PAGE_RECORDS:PitRenderer.PAGE_RACE;symmetric=true;cluster=false;gauges=false;graphs=false;break;
-            case HeaderTabs.GAUGES:gauges=true;cluster=false;graphs=false;symmetric=false;break;
-            case HeaderTabs.GRAPHS:graphs=true;gauges=false;cluster=false;symmetric=false;break;
-            case HeaderTabs.CLUSTER:
-                // Tapping Cluster again cycles Classic -> Retro -> Rally; opening it restores the last layout.
-                if(symmetric&&PitRenderer.isCluster(page))clusterLayout=(clusterLayout+1)%3;
-                page=PitRenderer.PAGE_CLASSIC+clusterLayout;symmetric=true;cluster=false;gauges=false;graphs=false;
-                activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("cluster_layout",clusterLayout).apply();break;
-            case HeaderTabs.LANG:LanguageSettings.show(activity,new Runnable(){public void run(){invalidate();}});return;
-            case HeaderTabs.THEME:
-                Theme.select(Theme.next(Theme.current().id));
-                activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("theme",Theme.current().id).apply();break;
+            case HeaderTabs.CLUSTER:   // the one screen tab: a tap steps to the next shown screen, a long press opens the list
+                screen=ClusterPicker.next(screen,hidden);showCluster();break;
             default:return;
         }
         invalidate();
@@ -237,19 +265,44 @@ public final class VehicleDash extends View implements Runnable {
     public boolean onTouchEvent(MotionEvent event) {
         float x=event.getX()*800/getWidth(), y=event.getY()*480/getHeight();
         if(event.getAction()==MotionEvent.ACTION_DOWN) {
-            removeCallbacks(editHold);touching=true;downX=x;downY=y;header.down(x,y);
+            removeCallbacks(editHold);removeCallbacks(clusterHold);touching=true;downX=x;downY=y;header.down(x,y);
+            if(!blocked&&!picker&&header.hit(x,y)==HeaderTabs.CLUSTER)postDelayed(clusterHold,600);
             overviewDown=!cluster&&!gauges&&!graphs&&!symmetric&&!blocked&&!overviewCovered(y)?overviewLayout.hit(x,y):-1;
-            if(!blocked&&((gauges&&gaugeEditor.hit(x,y)>=0)||(graphs&&graphLayout.hit(x,y)>=0)))postDelayed(editHold,600);
+            if(!blocked&&!picker&&((gauges&&gaugeEditor.hit(x,y)>=0)||(graphs&&graphLayout.hit(x,y)>=0)))postDelayed(editHold,600);   // not under the screen list
             return true;
         }
-        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y)){touching=false;removeCallbacks(editHold);invalidate();return true;}
-        if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);}return true;}
-        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);header.up();return true; }
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y)){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);invalidate();return true;}
+        if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);}return true;}
+        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);header.up();return true; }
         if(event.getAction()!=MotionEvent.ACTION_UP)return true;
-        removeCallbacks(editHold);
+        removeCallbacks(editHold);removeCallbacks(clusterHold);
         if(header.up()){touching=false;return true;}   // a strip scroll is never a tap
         boolean tap=touching && Math.abs(x-downX)<16 && Math.abs(y-downY)<16;
         touching=false;
+        if(tap&&!blocked&&HeaderTabs.gear(x,y)&&HeaderTabs.gear(downX,downY)){   // gear: edit the screen list, again to close it
+            boolean open=!(picker&&editing);picker=open;editing=open;if(open)showCluster();invalidate();return true;
+        }
+        if(picker){   // a tile picks that screen (in edit mode turns it on or off, or sets car paint/language/theme), any other tap (완료 too) closes the list
+            if(!tap)return true;
+            int i=ClusterPicker.hit(x,y),slot=i==ClusterPicker.hit(downX,downY)?i:-1;
+            int[] list=ClusterPicker.slots(hidden,editing);
+            if(editing&&slot==ClusterPicker.LANG)langDialog=LanguageSettings.show(activity,new Runnable(){public void run(){
+                if(entry!=null)entry.setText(UiText.t("N 계기판"));   // the OEM screen's entry button follows the language too
+                invalidate();}});
+            else if(editing&&slot==ClusterPicker.DIAG)DtcDialog.show(activity);   // read-only trouble codes
+            else if(editing&&slot==ClusterPicker.CAR){
+                CarPaint.next();
+                activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("car_paint",CarPaint.id()).apply();
+            }
+            else if(editing&&slot==ClusterPicker.THEME){
+                Theme.select(Theme.next(Theme.current().id));
+                activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("theme",Theme.current().id).apply();
+            }
+            else if(slot>=0&&slot<list.length&&editing){hidden=ClusterPicker.toggle(hidden,list[slot]);showCluster();}
+            else if(slot>=0&&slot<list.length){screen=list[slot];showCluster();picker=false;}
+            else{picker=false;editing=false;}
+            invalidate();return true;
+        }
         if(standalone&&tap&&x>=698&&x<=782&&downX>=698&&downX<=782&&y>=8&&y<=46&&downY>=8&&downY<=46){activity.finish();return true;}
         if(tap&&!blocked&&!cluster&&!gauges&&!graphs&&!symmetric&&overviewDown>=0&&overviewLayout.hit(x,y)==overviewDown&&!overviewCovered(y)){
             overviewLayout.cycle(overviewDown);
@@ -261,6 +314,7 @@ public final class VehicleDash extends View implements Runnable {
             if(lapRunning){lapMs=now-lapStart;lapRunning=false;}else if(lapMs>0)lapMs=0;else{lapStart=now;lapRunning=true;}
             invalidate();return true;
         }
+        if(tap&&!blocked&&symmetric&&PitRenderer.isCluster(page)&&y>52&&downY>52&&renderer.clusterTap(x,y)){invalidate();return true;}
         if(tap&&!blocked&&gauges&&x>=650&&x<=788&&downX>=650&&downX<=788&&y>=54&&y<=78&&downY>=54&&downY<=78){gaugeEditor.toggleGrid();return true;}
         if(tap&&!blocked&&graphs&&y>=54&&y<=79&&downY>=54&&downY<=79){
             if(x>=628&&x<=702&&downX>=628&&downX<=702)graphEditor.window(60000);

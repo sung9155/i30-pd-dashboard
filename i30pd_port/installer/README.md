@@ -51,7 +51,7 @@
 - **"알 수 없는 장치"로 뜰 때.** 차를 기다리는 동안 Windows 장치 목록(`Win32_PnPEntity`)도 본다. 차는 USB 디버깅을 켜면 `USB\VID_18D1&PID_D00D`로 잡히는데 Google USB 드라이버 INF에 `D00D`가 없어 드라이버가 자동으로 안 붙는다. 이 장치가 오류 상태면 드라이버를 직접 지정하는 순서를 보여 주고, 묻고 나서 Google 공식 드라이버(`usb_driver_r13-windows.zip`)를 `%LOCALAPPDATA%\i30pd-installer\usb_driver\`에 받아 풀고 장치 관리자를 연다(지정은 사람이: 드라이버 업데이트 → 직접 선택 → 디스크 있음 → `android_winusb.inf` → Android ADB Interface). `USB\VID_0000&PID_0002`("장치 설명자 요청 실패", 코드 43)만 보이면 드라이버가 아니라 연결 문제라 케이블·포트를 바꾸라고 안내한다. 맥은 드라이버가 필요 없다.
 - **빌드 확인.** 내비 빌드가 검증본(`eng.vmadmin.20260114.084130`)과 다르면 "값이 틀릴 수 있다" 고 묻고 진행.
 - **서명 충돌.** 예전에 다른 서명으로 깔린 앱이 있어 `INCONSISTENT_CERTIFICATES` 가 나면, 묻고 나서 지우고 다시 설치한다.
-- **삭제.** `삭제.cmd`(= `설치.cmd -Uninstall`)로 두 앱을 지운다. 이때는 APK 를 받지 않는다.
+- **삭제.** `삭제.cmd`(= `설치.cmd -Uninstall`)로 두 앱을 지운다. 이때는 APK 를 받지 않는다. '내 앱'이 ☆ 버튼을 계기판으로 돌려 놨으면(`persist.sys.key.custom` = `com.veloster.carplayhub.STAR_KEY`) 먼저 `service call com.hkmc.micom.mode 34 s16 com.mobis.intent.action.CUSTOM_SHORTCUT`으로 순정 "없음"으로 되돌리고 다시 읽어 확인한다.
 - **폴더 APK 확인.** 폴더 옆 APK 가 `PK` 로 시작하지 않으면(브라우저가 GitHub 페이지를 `.apk` 이름으로 저장한 경우) 무시하고 릴리스에서 받는다. 설치가 실패하면 adb 의 실패 이유를 화면에 같이 보여 준다.
 - **기록.** `%LOCALAPPDATA%\i30pd-installer\install_<시각>.log`(맥 `~/Library/Logs/i30pd-installer/`)에 adb 명령과 출력을 남긴다. 실패하면 이 파일을 Issues 에 올려 달라고 안내하고 기록 폴더를 열어 준다.
 - **디버깅용 기록.** 원격으로 원인을 가를 수 있게 기록 파일에 더 남긴다.
@@ -63,7 +63,7 @@
 - **진행 상황(스크린샷용).** 화면 맨 위에 설치기 버전(`설치기 2026-10-31c` — 고칠 때마다 올림), 단계 제목마다 시각을 찍는다.
   - 앱 설치는 `adb install` 대신 ① 전송(`adb push` → `/data/local/tmp`, 최대 60초) ② 설치(`adb shell pm install -r`, 최대 120초) 두 단계로 나누고, 기다리는 동안 경과 초(`5s 10s …`)를 같은 줄에 찍는다. 삭제도 단계마다 최대 60초.
   - 시간을 넘기면 `멈춘 곳: 대시보드 ① 전송`(USB 쪽 — 케이블·포트) 또는 `② 설치`(내비 쪽 — 차 화면 확인 창, 재시동)와 할 일, 내비 설치 로그(`logcat` PackageManager 등) 마지막 12줄을 화면에 띄우고 끝낸다. 그 화면 사진 한 장으로 원인을 가를 수 있다. Windows는 `taskkill /T`로 adb 프로세스 트리를 끝낸다.
-- **내비 정보.** 연결되면 정해 둔 속성만 읽어 기록한다: 기기·빌드·지문·USB 상태(`sys.usb.*`, `persist.sys.dipo.state`). `getprop` 전체는 시리얼·블루투스 주소 같은 개인 정보가 있어 공개 Issues에 올라갈 기록에 넣지 않는다.
+- **내비 정보.** 연결되면 정해 둔 속성만 읽어 기록한다: 기기·빌드·지문·USB 상태(`sys.usb.*`, `persist.sys.dipo.state`)·☆ 버튼 동작(`persist.sys.key.custom`). `getprop` 전체는 시리얼·블루투스 주소 같은 개인 정보가 있어 공개 Issues에 올라갈 기록에 넣지 않는다.
   - 보드를 `ro.product.device`로 구분해 화면에 표시한다: `daudioplus_*` = 블루링크 D-Audio Plus, `daudiopluslow_*` = 블루링크 없는 LOW 보드(1 GB).
   - LOW 빌드(`eng.vmadmin.20260114.084725`)는 확인된 빌드로 보고 묻지 않는다. 2026-01-14 펌웨어 비교에서 USB 설정·차량 데이터 데몬·엔지니어 모드가 블루링크판과 같았고, 2026-10-31 LOW 차에서 설치·동작을 확인했다. 다른 LOW 차 한 대는 "장치 설명자 요청 실패"로 연결되지 않았는데, 같은 케이블·PC로 다른 차는 됐으므로 그 차의 포트·배선 문제로 본다.
 - **필요한 것.** Windows 10/11 에 기본으로 있는 PowerShell 만 있으면 된다. 추가 설치 없음.

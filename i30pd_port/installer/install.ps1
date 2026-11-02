@@ -17,7 +17,7 @@ param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switc
 $ErrorActionPreference = 'Continue'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-01b'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-02'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
 # 위와 같고, 2026-10-31 실차 설치·동작 확인(다른 LOW 차 한 대는 USB "장치 설명자 요청 실패" — 그 차 포트·배선 문제로 봄).
@@ -267,7 +267,7 @@ Note "차 연결됨: $serial" Green
 # 정해 둔 항목만 읽는다: getprop 전체에는 시리얼·블루투스 주소 등 개인 정보가 있어, 공개 Issues에 올라갈 기록 파일에 넣지 않는다.
 $pv = @{}
 foreach($k in 'ro.product.name','ro.product.device','ro.build.product','ro.build.version.incremental','ro.build.fingerprint',
-              'sys.usb.config','sys.usb.state','persist.sys.usb.config','persist.sys.dipo.state'){
+              'sys.usb.config','sys.usb.state','persist.sys.usb.config','persist.sys.dipo.state','persist.sys.key.custom'){
   $pv[$k] = (Adb '-s' $serial 'shell' 'getprop' $k).Trim()
 }
 $build = $pv['ro.build.version.incremental']; $device = $pv['ro.product.device']
@@ -283,6 +283,14 @@ if($build -eq $LowBuild){
 # --- 삭제 모드 --------------------------------------------------------------
 if($Uninstall){
   Head '앱 삭제'
+  # '내 앱'이 ☆ 버튼을 계기판으로 돌려 놨으면 순정 "없음"으로 되돌린다(앱이 사라지면 ☆가 아무것도 안 하게 됨).
+  # IModeManager.setCustomKey(트랜잭션 34): '내 앱'과 같은 호출, 서비스 쪽 권한 검사 없음.
+  if($pv['persist.sys.key.custom'] -eq 'com.veloster.carplayhub.STAR_KEY'){
+    Adb '-s' $serial 'shell' 'service' 'call' 'com.hkmc.micom.mode' '34' 's16' 'com.mobis.intent.action.CUSTOM_SHORTCUT' | Out-Null
+    if((Adb '-s' $serial 'shell' 'getprop' 'persist.sys.key.custom').Trim() -eq 'com.veloster.carplayhub.STAR_KEY'){
+      Note '☆ 버튼: 되돌리지 못했습니다. 삭제 뒤 ☆를 길게 눌러 설정 화면에서 기능을 다시 고르세요.' Yellow
+    } else { Note '☆ 버튼: 원래대로(없음) 되돌림' Green }
+  }
   foreach($app in $Apps){
     $o = AdbWait 60 "$($app.name) 삭제" @('-s',$serial,'uninstall',$app.pkg)
     if($null -eq $o){ Stuck "$($app.name) 삭제(내비)" '차 화면에 확인 창이 떠 있으면 누르고, 없으면 시동을 껐다 켠 뒤 다시 실행하세요.' }

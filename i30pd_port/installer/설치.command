@@ -8,7 +8,7 @@
 # 테스트 인자: --adb <adb 경로>  --apk-base <URL>  --channel stable|test  --yes(확인 모두 예, 대기/프롬프트 생략, 안정화)  --uninstall(두 앱 삭제)
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-INSTALLER_VERSION='2026-11-01b'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+INSTALLER_VERSION='2026-11-02'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 VERIFIED_BUILD='eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 LOW_BUILD='eng.vmadmin.20260114.084725'        # 블루링크 없는 D-Audio Plus LOW — 2026-10-31 실차 설치·동작 확인
 PT_URL='https://dl.google.com/android/repository/platform-tools-latest-darwin.zip'
@@ -186,6 +186,14 @@ fi
 # --- 삭제 모드 --------------------------------------------------------------
 if [ -n "$UNINSTALL" ]; then
   head_ '앱 삭제'
+  # '내 앱'이 ☆ 버튼을 계기판으로 돌려 놨으면 순정 "없음"으로 되돌린다(앱이 사라지면 ☆가 아무것도 안 하게 됨).
+  # IModeManager.setCustomKey(트랜잭션 34): '내 앱'과 같은 호출, 서비스 쪽 권한 검사 없음.
+  if [ "$(prop persist.sys.key.custom)" = com.veloster.carplayhub.STAR_KEY ]; then
+    adb_ -s "$SERIAL" shell service call com.hkmc.micom.mode 34 s16 com.mobis.intent.action.CUSTOM_SHORTCUT >/dev/null
+    if [ "$(prop persist.sys.key.custom)" = com.veloster.carplayhub.STAR_KEY ]; then
+      warn '☆ 버튼: 되돌리지 못했습니다. 삭제 뒤 ☆를 길게 눌러 설정 화면에서 기능을 다시 고르세요.'
+    else ok '☆ 버튼: 원래대로(없음) 되돌림'; fi
+  fi
   for apk in $APKS; do
     adb_wait 60 "$(name_of $apk) 삭제" -s "$SERIAL" uninstall "$(pkg_of $apk)" || stuck "$(name_of $apk) 삭제(내비)" "$PM_HINT"
     if printf '%s' "$OUT" | grep -q Success; then ok "$(name_of $apk): 삭제됨"; continue; fi

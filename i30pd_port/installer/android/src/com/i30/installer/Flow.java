@@ -31,15 +31,20 @@ import java.util.regex.Pattern;
  * No Android imports: MainActivity supplies the USB link and the screen, the desktop test a TCP link.
  */
 final class Flow {
-    interface Ui { void say(String m); boolean ask(String q); }
+    interface Ui {
+        void say(String m);
+        boolean ask(String q);
+        /** One line that shows how long this wait has lasted; null ends it. */
+        default void waiting(String label) {}
+        default boolean cancelled() { return false; }
+    }
     interface Car { Adb.Transport waitCar(Ui ui) throws Exception; }
     enum Mode { INSTALL, UNINSTALL, DIAG }
 
     /** A failure the user should read as is (no stack trace). */
     static final class Stop extends Exception { Stop(String m) { super(m); } }
 
-    static final String VERSION = "2026-11-02b";   // shown on screen and compared with the published source; raise on every change
-    static final String MAIL = "********@*****.***";
+    static final String VERSION = "2026-11-02c";   // shown on screen and compared with the published source; raise on every change
     static final String RELEASES = "https://github.com/sung9155/i30-pd-dashboard/releases";
     static final String RAW = "https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/";
     static final String VERIFIED_BUILD = "eng.vmadmin.20260114.084130", LOW_BUILD = "eng.vmadmin.20260114.084725";
@@ -74,7 +79,12 @@ final class Flow {
         Adb adb = new Adb(car.waitCar(ui));
         try {
             ui.say("\n■ 차와 adb 연결");
-            adb.connect(key(dir), 180_000, () -> ui.say("→ 차 화면에 \"USB 디버깅 허용\" 창이 뜨면 [항상 허용]을 누르세요. (3분 기다립니다)"));
+            ui.waiting("차와 연결 중");
+            adb.connect(key(dir), 180_000, () -> {
+                ui.say("→ 차 화면에 \"USB 디버깅 허용\" 창이 뜨면 [항상 허용]을 누르세요.");
+                ui.waiting("차 화면의 허용을 기다리는 중 (최대 3분)");
+            });
+            ui.waiting(null);
             String product = prop(adb, "ro.product.name");
             if (!product.equals("pd_kr")) throw new Stop("i30 PD 내비(pd_kr)가 아닙니다: " + product + "\n이 기기에는 아무것도 하지 않았습니다.");
             String build = prop(adb, "ro.build.version.incremental"), device = prop(adb, "ro.product.device");
@@ -130,11 +140,14 @@ final class Flow {
         }
         String remote = "/data/local/tmp/" + app[0];
         ui.say(app[2] + " (" + apk.length() / 1024 + " KB)");
-        ui.say("  ① 전송 (USB)...");
+        ui.say("  ① 전송 (USB)");
+        ui.waiting("① 전송 중 (최대 60초)");
         try { adb.push(apk, remote, 60_000); }
-        catch (IOException e) { throw new Stop(app[2] + " 전송 실패: " + e.getMessage() + "\n케이블·OTG 어댑터를 확인하고 Factory Test부터 다시 하세요."); }
-        ui.say("  ② 설치 (내비)...");
+        catch (IOException e) { if (ui.cancelled()) throw e; throw new Stop(app[2] + " 전송 실패: " + e.getMessage() + "\n케이블·OTG 어댑터를 확인하고 Factory Test부터 다시 하세요."); }
+        ui.say("  ② 설치 (내비)");
+        ui.waiting("② 설치 중 (최대 2분)");
         String o = adb.shell("pm install -r " + remote, 120_000);
+        ui.waiting(null);
         // Only a signature clash is fixed by uninstalling; any other failure must not remove the working app.
         if (o.contains("INCONSISTENT_CERTIFICATES") || o.contains("UPDATE_INCOMPATIBLE")) {
             ui.say(app[2] + ": 기존에 다른 서명으로 설치돼 있습니다.");
@@ -159,8 +172,9 @@ final class Flow {
             String v = versionLines(adb.shell("dumpsys package " + app[1], 30_000));
             b.append(app[2]).append(" (").append(app[1]).append(")\n").append(v.isEmpty() ? "  설치돼 있지 않음\n" : v);
         }
-        ui.say("기록 읽는 중...");
+        ui.waiting("기록 읽는 중");
         b.append("\n[기록: ").append(LOG_TAGS).append("]\n").append(tail(adb.shell("logcat -d -v time -s " + LOG_TAGS, 60_000), 3000));
+        ui.waiting(null);
         File out = new File(new File(dir, "diag"), "i30pd_diag_" + stamp("yyyyMMdd_HHmmss") + ".txt");
         if (!out.getParentFile().isDirectory() && !out.getParentFile().mkdirs()) throw new IOException("저장 폴더를 만들지 못했습니다");
         Files.write(out.toPath(), mask(b.toString()).getBytes(StandardCharsets.UTF_8));
@@ -200,7 +214,7 @@ final class Flow {
         try {
             download(base + "/" + name, part, ui);
         } catch (Stop e) {
-            if (!dst.isFile()) throw e;
+            if (!dst.isFile() || ui.cancelled()) throw e;
             ui.say(e.getMessage());
             if (!ui.ask(name + "을(를) 받지 못했습니다. 전에 받아 둔 파일(" + new SimpleDateFormat("M월 d일 HH:mm", Locale.KOREA).format(new Date(dst.lastModified())) + ")로 계속할까요?"))
                 throw e;
@@ -218,7 +232,7 @@ final class Flow {
             c.setReadTimeout(30_000);
             try (InputStream in = c.getInputStream(); OutputStream out = new FileOutputStream(dst)) {
                 byte[] b = new byte[16 * 1024];
-                for (int n; (n = in.read(b)) > 0; ) out.write(b, 0, n);
+                for (int n; (n = in.read(b)) > 0; ) { if (ui.cancelled()) throw new Stop("취소했습니다."); out.write(b, 0, n); }
             }
         } catch (IOException e) {
             throw new Stop("APK 다운로드 실패: " + dst.getName().replace(".part", "") + "\n인터넷 연결을 확인하세요.\n" + url + "\n" + e);

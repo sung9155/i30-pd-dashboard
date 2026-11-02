@@ -9,7 +9,7 @@
 #              --diag(설치하지 않고 진단 기록 파일만 만든다)
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-INSTALLER_VERSION='2026-11-02b'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+INSTALLER_VERSION='2026-11-02c'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 VERIFIED_BUILD='eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 LOW_BUILD='eng.vmadmin.20260114.084725'        # 블루링크 없는 D-Audio Plus LOW — 2026-10-31 실차 설치·동작 확인
 PT_URL='https://dl.google.com/android/repository/platform-tools-latest-darwin.zip'
@@ -162,18 +162,24 @@ note '  (4) USB 케이블 연결 (USB-C 맥이면 USB-A 어댑터 필요)'
 head_ '3) 차 연결 확인'
 "$ADB" start-server >/dev/null 2>&1
 SERIAL=''; tries=0
+# 기다리는 동안 같은 안내를 5초마다 다시 찍지 않는다: 바뀔 때만 새 줄, 같으면 그 줄 끝의 경과 초만 고친다.
+WAIT_MSG=''; WAIT_T0=$(date +%s)
+wait_() { if [ "$1" != "$WAIT_MSG" ]; then [ -n "$WAIT_MSG" ] && echo; log "$1"; WAIT_MSG="$1"; fi
+          printf '\r\033[%sm%s  %s초 \033[0m' "${2:-0}" "$1" $(( $(date +%s) - WAIT_T0 )); }
+wait_end() { [ -n "$WAIT_MSG" ] && echo; WAIT_MSG=''; }
 while [ -z "$SERIAL" ]; do
   dl="$("$ADB" devices -l 2>&1)"; printf '%s\n' "$dl" >> "$LOG"
   SERIAL="$(printf '%s\n' "$dl" | awk '$2=="device" && /product:pd_kr( |$)/ {print $1; exit}')"   # exactly pd_kr, not pd_kr2
   [ -n "$SERIAL" ] && break
   [ -n "$YES" ] && die '차(pd_kr)를 찾지 못했습니다.' 1
-  if printf '%s' "$dl" | grep -q unauthorized; then warn '→ 차 화면에 "USB 디버깅 허용" 창이 뜨면 [항상 허용] 하세요.'
-  elif printf '%s\n' "$dl" | awk '$2=="device"' | grep -q .; then warn '→ 차가 아닌 기기만 보입니다(휴대폰 등). 그 기기는 건드리지 않습니다.'
-  else note '→ 차를 기다리는 중... USB 디버깅/Factory Test(0A 01/65 01/0A 02) 다시 확인.'; fi
+  if printf '%s' "$dl" | grep -q unauthorized; then wait_ '→ 차 화면에 "USB 디버깅 허용" 창이 뜨면 [항상 허용] 하세요.' 33
+  elif printf '%s\n' "$dl" | awk '$2=="device"' | grep -q .; then wait_ '→ 차가 아닌 기기만 보입니다(휴대폰 등). 그 기기는 건드리지 않습니다.' 33
+  else wait_ '→ 차를 기다리는 중... USB 디버깅/Factory Test(0A 01/65 01/0A 02) 다시 확인.'; fi
   tries=$((tries + 1))
   # 5초 간격으로 1분. 차 화면에서 허용을 눌러야 하는 상태면 3분까지 기다린다.
   limit=12; printf '%s' "$dl" | grep -q unauthorized && limit=36
   if [ $tries -ge $limit ]; then
+    wait_end
     # 못 찾음: 맥이 본 USB 장치 목록을 기록에 남긴다(차가 USB에 아예 안 나타났는지 가르는 근거).
     log "== USB 장치 목록 (system_profiler) =="; system_profiler SPUSBDataType 2>/dev/null >> "$LOG"
     if printf '%s' "$dl" | grep -q unauthorized; then warn '마지막 상태: 차 화면에서 USB 디버깅 허용을 누르지 않음'
@@ -185,6 +191,7 @@ while [ -z "$SERIAL" ]; do
   fi
   sleep 5
 done
+wait_end
 ok "차 연결됨: $SERIAL"
 
 # --- 내비 정보 · 빌드 확인 -------------------------------------------------------

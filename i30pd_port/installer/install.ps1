@@ -18,7 +18,7 @@ param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switc
 $ErrorActionPreference = 'Continue'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-02b'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-02c'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
 # 위와 같고, 2026-10-31 실차 설치·동작 확인(다른 LOW 차 한 대는 USB "장치 설명자 요청 실패" — 그 차 포트·배선 문제로 봄).
@@ -235,6 +235,13 @@ function DriverHelp(){
 $serial = $null
 $tries = 0
 $hinted = $null
+# 기다리는 동안 같은 안내를 5초마다 다시 찍지 않는다: 바뀔 때만 새 줄, 같으면 그 줄 끝의 경과 초만 고친다.
+$script:waitMsg = $null; $waitT0 = Get-Date
+function Wait($m,[string]$c='Gray'){
+  if($m -ne $script:waitMsg){ if($script:waitMsg){ Write-Host '' }; Log $m; $script:waitMsg = $m }
+  Write-Host ("`r{0}  {1}초 " -f $m, [int]((Get-Date) - $waitT0).TotalSeconds) -NoNewline -ForegroundColor $c
+}
+function WaitEnd(){ if($script:waitMsg){ Write-Host ''; $script:waitMsg = $null } }
 while(-not $serial){
   $dl = & $script:adbExe devices -l 2>&1 | Out-String
   Add-Content -LiteralPath $Log -Value $dl
@@ -248,9 +255,10 @@ while(-not $serial){
   if($pd.Count -gt 0){ $serial = $pd[0]; break }
   if($Yes){ Die '차(pd_kr)를 찾지 못했습니다.' 1 }
   $usb = UsbProblem
-  if($dl -match 'unauthorized'){ Note '→ 차 화면에 "USB 디버깅 허용" 창이 뜨면 [항상 허용] 하세요.' Yellow }
-  elseif($usb -eq 'driver'){ if($hinted -ne 'driver'){ DriverHelp; $hinted='driver' } else { Note '→ 드라이버 지정을 기다리는 중... (위 안내 참고)' Gray } }
+  if($dl -match 'unauthorized'){ Wait '→ 차 화면에 "USB 디버깅 허용" 창이 뜨면 [항상 허용] 하세요.' Yellow }
+  elseif($usb -eq 'driver'){ if($hinted -ne 'driver'){ WaitEnd; DriverHelp; $hinted='driver' } else { Wait '→ 드라이버 지정을 기다리는 중... (위 안내 참고)' } }
   elseif($usb -eq 'cable' -and $hinted -ne 'cable'){
+    WaitEnd
     Note '→ USB 장치 하나가 연결에 실패했습니다("알 수 없는 USB 장치(장치 설명자 요청 실패)").' Yellow
     Note '  가장 흔한 원인은 Factory Test 입력 실수입니다: 케이블을 빼고  0A 01 / 65 01 / 0A 02  를 띄어쓰기까지 정확히,' Yellow
     Note '  한 줄씩 지우고 입력해 SEND 한 뒤 다시 꽂으세요(실제 사례: 코드를 고쳐 입력하자 바로 설치됨).' Yellow
@@ -260,23 +268,26 @@ while(-not $serial){
     $hinted='cable'
   }
   elseif($usb -eq 'other' -and $hinted -ne 'other'){
+    WaitEnd
     Note '→ 오류 상태인 USB 장치가 있습니다. 차를 꽂은 뒤 생긴 장치라면 아래 ID를 Issues에 알려 주세요(차종·블루링크 유무와 함께).' Yellow
     Note "  $script:badIds" DarkGray
     $hinted='other'
   }
   elseif($others.Count -gt 0){
-    Note '→ 차가 아닌 기기만 보입니다(휴대폰 등). 그 기기는 건드리지 않습니다.' Yellow
     if($hinted -ne 'others'){
+      WaitEnd
       Note '  차인데 여기 보인다면 기기 이름(product:)이 검증된 pd_kr과 다른 내비입니다. 이 줄을 Issues에 알려 주세요:' Gray
       foreach($line in ($dl -split "`r?`n")){ if($line -match '^\S+\s+device\b'){ Note "  $line" DarkGray } }
       $hinted='others'
     }
+    Wait '→ 차가 아닌 기기만 보입니다(휴대폰 등). 그 기기는 건드리지 않습니다.' Yellow
   }
-  else { Note '→ 차를 기다리는 중... USB 디버깅/Factory Test(0A 01/65 01/0A 02) 다시 확인.' Gray }
+  else { Wait '→ 차를 기다리는 중... USB 디버깅/Factory Test(0A 01/65 01/0A 02) 다시 확인.' }
   $tries++
   # 5초 간격으로 1분. 사람이 할 일이 남았으면(드라이버 지정, 차 화면 허용) 3분까지 기다린다.
   $limit = if($hinted -eq 'driver' -or $dl -match 'unauthorized'){ 36 } else { 12 }
   if($tries -ge $limit){
+    WaitEnd
     # 못 찾음: 마지막 상태를 한눈에 요약한다(자세한 시간순 기록은 기록 파일에).
     $why = if($dl -match 'unauthorized'){ '차 화면에서 USB 디버깅 허용을 누르지 않음' }
       elseif($usb -eq 'driver'){ '차는 보였지만 Windows 드라이버가 지정되지 않음' }
@@ -290,6 +301,7 @@ while(-not $serial){
   }
   Start-Sleep -Seconds 5
 }
+WaitEnd
 Note "차 연결됨: $serial" Green
 
 # --- 내비 정보 · 빌드 확인 -------------------------------------------------------

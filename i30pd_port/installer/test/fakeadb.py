@@ -1,6 +1,6 @@
 import sys,os,shutil
 # Fake adb for the PC installers (see run.sh). State next to this file: star.txt (☆ action), inst/<pkg>.apk (installed), tmp/ (pushed).
-# FAKE_STUCK=1: the ☆ reset call is accepted but changes nothing.
+# FAKE_STUCK=1: the ☆ reset call is accepted but changes nothing. FAKE_ABSENT=n: the first n 'devices' calls see no car.
 d=os.path.dirname(os.path.abspath(__file__));st=os.path.join(d,'star.txt');a=sys.argv[1:]
 inst=os.path.join(d,'inst');tmp=os.path.join(d,'tmp');os.makedirs(inst,exist_ok=True);os.makedirs(tmp,exist_ok=True)
 open(os.path.join(d,'calls.log'),'a',encoding='utf-8').write(' '.join(a)+'\n')
@@ -9,6 +9,7 @@ star=open(st).read().strip() if os.path.exists(st) else ''
 PKG=lambda p:'com.veloster.dashboard' if 'dashboard' in p else 'com.veloster.carplayhub'
 if not a:sys.exit(0)
 if a[0]=='version':print('Android Debug Bridge version 1.0.41')
+elif a[0]=='devices' and open(os.path.join(d,'calls.log'),encoding='utf-8').read().count('devices')<=int(os.environ.get('FAKE_ABSENT','0')):print('List of devices attached\n')
 elif a[0]=='devices':print('List of devices attached\nFAKE123\tdevice usb:1-1 product:pd_kr model:x device:daudioplus_kr transport_id:1\n')
 elif a[0]=='uninstall':
     f=os.path.join(inst,a[1]+'.apk')

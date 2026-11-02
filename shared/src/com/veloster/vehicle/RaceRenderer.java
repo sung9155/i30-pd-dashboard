@@ -10,7 +10,8 @@ import java.util.Locale;
 
 /** Flat race-dash page in the F1 palette, laid out like an aftermarket racing display: body status strip and shift
  * bar on top; RPM, boost (with session peak) and a 2x2 temperature/pedal grid on the left; gear and G in the middle;
- * speed, a TPMS corner grid and a steering cell on the right; a trip line at the bottom (an acceleration-run banner while one runs).
+ * speed, a TPMS corner grid and a steering cell on the right (a 6MT adds a clutch cell left of the brake bar, a
+ * diesel shows DPF in the SPARK slot); a trip line at the bottom (an acceleration-run banner while one runs).
  * drawRecords() is the second page of the same tab: acceleration runs and session peaks (DriveStats). Brake pressure has its own bar cell under RPM and the
  * accelerator pedal its own bar cell under speed; fuel flow is text only (it follows pedal, load and rpm, so a second bar adds little). Only received samples; missing ones show a dash. */
 public final class RaceRenderer {
@@ -25,7 +26,7 @@ public final class RaceRenderer {
         RED=0xffff4059,AMBER=0xffffb84d,GREEN=0xff3ddc84,BG=0xff040506;
     private static final float TIRE_LOW=30,TIRE_CRIT=26;
     private static final long BLINK_MS=100,POP_MS=150,TURN_MS=350;
-    private static final float STEER_TOP=364,L=12,R=788,LC=300,CL=308,CR=492,RC=500,TOP=104,BOT=448;
+    private static final float STEER_TOP=320,L=12,R=788,LC=300,CL=308,CR=492,RC=500,TOP=104,BOT=448;
     private Telemetry.Sample[] s;
     private DriveStats st;
     private ShiftGuide.Cue cue;
@@ -48,13 +49,18 @@ public final class RaceRenderer {
         float rpm=v(0),boost=v(Telemetry.BOOST);
         float brake=v(10),pedal=v(9);
         cell(c,"RPM",fmt("%.0f",rpm),"rpm",L,TOP,LC,184,48,!Float.isNaN(rpm)&&rpm>=prof.redline?RED:WHITE);
-        bar(c,"BRAKE",fmt("%.1f",brake)+" bar",L,LC,brake/100,RED,true);
+        // 6MT: the clutch sits left of the brake, in pedal order (clutch | brake | gear | accel).
+        boolean mt=prof.trans==VehicleProfile.Trans.MT;
+        if(mt)clutch(c);
+        bar(c,"BRAKE",fmt("%.1f",brake)+" bar",mt?L+76:L,LC,brake/100,RED,true);
         boost(c,boost);
         float w=(LC-L-4)/2,h=(BOT-320-4)/2;
         cell(c,"COOLANT",fmt("%.0f",v(2)),"°C",L,320,L+w,320+h,26,v(2)>=110?D():v(2)>=100?AMBER:WHITE);
         cell(c,"INTAKE",fmt("%.0f",v(Telemetry.INTAKE)),"°C",L+w+4,320,LC,320+h,26,v(Telemetry.INTAKE)>=80?D():v(Telemetry.INTAKE)>=60?AMBER:WHITE);
         cell(c,"THROTTLE",fmt("%.0f",v(Telemetry.THROTTLE_POS)),"%",L,324+h,L+w,BOT,26,WHITE);
-        cell(c,"SPARK",fmt("%.0f",v(Telemetry.SPARK)),"°",L+w+4,324+h,LC,BOT,26,WHITE);
+        // A diesel has no ignition timing: the slot is kept for the DPF soot load, a dash until a source is confirmed.
+        if(prof.fuel==VehicleProfile.Fuel.DIESEL)cell(c,"DPF","—","g",L+w+4,324+h,LC,BOT,26,WHITE);
+        else cell(c,"SPARK",fmt("%.0f",v(Telemetry.SPARK)),"°",L+w+4,324+h,LC,BOT,26,WHITE);
         gear(c);gforce(c);
         // Shift point reached: the whole page edge blinks with the bar and the gear box.
         if(cue.shift&&blink()){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(4);p.setColor(T(RED));c.drawRect(3,55,797,478,p);p.setStyle(Paint.Style.FILL);}
@@ -63,11 +69,7 @@ public final class RaceRenderer {
         text(c,mediaOn?"✕":"♪",R-10,TOP+16,12,mediaOn?WHITE:MUTED,Paint.Align.RIGHT);   // tap the SPEED cell to toggle the music panel
         bar(c,"ACCEL "+fmt("%.0f",pedal)+" %","FUEL "+fmt("%.1f",v(Telemetry.FUEL_RATE))+" L/h",RC,R,pedal/100,BLUE,false);
         if(mediaOn)mediaPanel(c);         // music fills the TPMS/steering area; those two go compact inside it
-        else{
-            // 6MT: TPMS gives up half its width to the clutch pedal.
-            boolean side=prof.trans==VehicleProfile.Trans.MT;float split=side?(RC+R)/2-2:R;
-            tires(c,split);if(side)clutch(c,split+4);
-            steering(c);}
+        else{tires(c);steering(c);}
         trip(c);
     }
     /** Dedicated race + music layout for the right column: speed/accel/TPMS/steering kept compact on top, a
@@ -223,45 +225,49 @@ public final class RaceRenderer {
         text(c,"LAT "+fmt("%+.2f",gx),CR-8,416,12,MUTED,Paint.Align.RIGHT);
         text(c,"LON "+fmt("%+.2f",gy),CR-8,434,12,MUTED,Paint.Align.RIGHT);
     }
-    /** TPMS grid: four tyres around a body outline, pressure at each corner, amber/red when low. rr below R is the
-     * half-width cell of the 6MT page: narrower body and tyres, smaller numbers. */
-    private void tires(Canvas c,float rr){
-        boolean half=rr<R;float tw=half?12:16,size=half?22:28,pad=half?8:12;
-        box(c,RC,232,rr,STEER_TOP-4,PANEL);
-        text(c,"TPMS",RC+8,248,12,MUTED,Paint.Align.LEFT);text(c,"psi",rr-8,248,12,MUTED,Paint.Align.RIGHT);
-        float cx=(RC+rr)/2,cy=(232+STEER_TOP-4)/2f+8,bw=half?28:40,bh=96;
-        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(T(MUTED));r.set(cx-bw/2,cy-bh/2,cx+bw/2,cy+bh/2);c.drawRoundRect(r,10,10,p);p.setStyle(Paint.Style.FILL);
+    /** TPMS grid: four tyres around a body outline, pressure at each corner, amber/red when low. The cell ends at 316
+     * like BOOST on the left, so the right column's seams line up with the left one's. */
+    private void tires(Canvas c){
+        box(c,RC,232,R,STEER_TOP-4,PANEL);
+        text(c,"TPMS",RC+8,248,12,MUTED,Paint.Align.LEFT);text(c,"psi",R-8,248,12,MUTED,Paint.Align.RIGHT);
+        float cx=(RC+R)/2,cy=(232+STEER_TOP-4)/2f+6,bw=34,bh=54,tw=16,th=22;
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(T(MUTED));r.set(cx-bw/2,cy-bh/2,cx+bw/2,cy+bh/2);c.drawRoundRect(r,8,8,p);p.setStyle(Paint.Style.FILL);
         int[] sig={Telemetry.TPMS_FL,Telemetry.TPMS_FR,Telemetry.TPMS_RL,Telemetry.TPMS_RR};
         for(int i=0;i<4;i++){
             boolean right=i%2==1,rear=i>=2;float val=v(sig[i]);
-            float tx=right?cx+bw/2+4:cx-bw/2-4-tw,ty=rear?cy+bh/2-40:cy-bh/2+6;
-            p.setColor(T(Float.isNaN(val)?TRACK:val<TIRE_CRIT?D():val<TIRE_LOW?AMBER:Theme.current().dangerRing?WHITE:BLUE));r.set(tx,ty,tx+tw,ty+34);c.drawRoundRect(r,3,3,p);   // amber: a normal tyre must not look like a warning
-            if(!Float.isNaN(val)&&val<TIRE_CRIT)ThemeShapes.ring(c,p,tx-3,ty-3,tx+tw+3,ty+37);
-            text(c,fmt("%.0f",val),right?rr-pad:RC+pad,ty+28,size,WHITE,right?Paint.Align.RIGHT:Paint.Align.LEFT);
+            float tx=right?cx+bw/2+4:cx-bw/2-4-tw,ty=rear?cy+bh/2-th-2:cy-bh/2+2;
+            p.setColor(T(Float.isNaN(val)?TRACK:val<TIRE_CRIT?D():val<TIRE_LOW?AMBER:Theme.current().dangerRing?WHITE:BLUE));r.set(tx,ty,tx+tw,ty+th);c.drawRoundRect(r,3,3,p);   // amber: a normal tyre must not look like a warning
+            if(!Float.isNaN(val)&&val<TIRE_CRIT)ThemeShapes.ring(c,p,tx-3,ty-3,tx+tw+3,ty+th+3);
+            text(c,fmt("%.0f",val),right?R-12:RC+12,ty+th-1,24,WHITE,right?Paint.Align.RIGHT:Paint.Align.LEFT);
         }
     }
-    /** 6MT clutch pedal (EMS12 CLU_ACK as received): pressed fills the cell in the accent like the gear box. */
-    private void clutch(Canvas c,float l){
+    /** 6MT clutch pedal (EMS12 CLU_ACK as received), left of the brake bar: pressed fills the cell in the accent. */
+    private void clutch(Canvas c){
         float v=v(Telemetry.CLUTCH);boolean in=v>0;
-        box(c,l,232,R,STEER_TOP-4,in?BLUE:PANEL);
-        text(c,"CLUTCH",l+8,248,12,in?BG:MUTED,Paint.Align.LEFT);
-        text(c,Float.isNaN(v)?"—":in?"IN":"OUT",(l+R)/2,(232+STEER_TOP-4)/2f+20,in?44:36,in?BG:MUTED,Paint.Align.CENTER);
+        box(c,L,188,L+72,228,in?BLUE:PANEL);
+        text(c,"CLUTCH",L+36,204,11,in?BG:MUTED,Paint.Align.CENTER);
+        text(c,Float.isNaN(v)?"—":in?"IN":"OUT",L+36,222,15,in?BG:MUTED,Paint.Align.CENTER);
     }
-    /** Steering cell: a simple wheel icon turned by the displayed angle (right = clockwise, as
-     * Telemetry.displayValue shows it), a centre-zero bar, the angle, the SAS steering speed and the MDPS driver torque. */
+    /** Steering cell (320..448, as tall as the 2x2 grid on the left): a simple wheel icon turned by the displayed angle
+     * (right = clockwise, as Telemetry.displayValue shows it), a centre-zero bar, the angle, and the SAS steering speed
+     * and MDPS driver torque in their own boxes. */
     private void steering(Canvas c){
         box(c,RC,STEER_TOP,R,BOT,PANEL);
         float angle=v(Telemetry.STEERING);
-        wheel(c,RC+46,(STEER_TOP+BOT)/2f,34,Float.isNaN(angle)?0:angle);
-        text(c,"STEER",RC+86,STEER_TOP+16,12,MUTED,Paint.Align.LEFT);
+        wheel(c,RC+58,(STEER_TOP+BOT)/2f+4,44,Float.isNaN(angle)?0:angle);
+        text(c,"STEER",RC+8,STEER_TOP+16,12,MUTED,Paint.Align.LEFT);
         // Centre-zero bar to +-540 deg: past half a turn the wheel icon alone cannot show which way.
-        float bl=RC+130,br=R-8,mid=(bl+br)/2,by=STEER_TOP+10;
+        float bl=RC+118,br=R-8,mid=(bl+br)/2,by=STEER_TOP+10;
         p.setColor(T(TRACK));c.drawRect(bl,by,br,by+6,p);
         if(!Float.isNaN(angle)){float x=mid+(br-mid)*Math.max(-1,Math.min(1,angle/540f));p.setColor(T(BLUE));c.drawRect(Math.min(mid,x),by,Math.max(mid,x),by+6,p);}
         p.setColor(T(WHITE));c.drawRect(mid-1,by-3,mid+1,by+9,p);
-        text(c,"°",R-8,BOT-30,14,MUTED,Paint.Align.RIGHT);
-        text(c,fmt("%+.0f",angle),R-20,BOT-30,36,WHITE,Paint.Align.RIGHT);
-        text(c,"RATE "+fmt("%.0f",v(Telemetry.STEERING_SPEED))+"°/s   TORQUE "+fmt("%+.1f",v(Telemetry.STEER_TORQUE))+" Nm",R-8,BOT-10,12,MUTED,Paint.Align.RIGHT);
+        text(c,"°",R-8,STEER_TOP+62,14,MUTED,Paint.Align.RIGHT);
+        text(c,fmt("%+.0f",angle),R-20,STEER_TOP+62,40,WHITE,Paint.Align.RIGHT);
+        box(c,bl,STEER_TOP+74,mid-2,BOT-8,TRACK);box(c,mid+2,STEER_TOP+74,br,BOT-8,TRACK);
+        text(c,"RATE",bl+6,STEER_TOP+88,11,MUTED,Paint.Align.LEFT);text(c,"°/s",mid-8,BOT-14,11,MUTED,Paint.Align.RIGHT);
+        text(c,fmt("%.0f",v(Telemetry.STEERING_SPEED)),mid-28,BOT-14,22,WHITE,Paint.Align.RIGHT);
+        text(c,"TORQUE",mid+8,STEER_TOP+88,11,MUTED,Paint.Align.LEFT);text(c,"Nm",br-6,BOT-14,11,MUTED,Paint.Align.RIGHT);
+        text(c,fmt("%+.1f",v(Telemetry.STEER_TORQUE)),br-28,BOT-14,22,WHITE,Paint.Align.RIGHT);
     }
     // Wheel icon geometry in wheel units (x right, y down, rim radius 1), rotated clockwise by wa about (wx,wy).
     private float wx,wy,wr,wa;

@@ -47,6 +47,9 @@ public final class PitRenderer {
     private int hidden;
     /** Screen list over the body while open, its edit mode and the hidden screens (VehicleDash owns the gesture). */
     public void setPicker(boolean open,boolean edit,int hiddenScreens){picker=open;editing=edit;hidden=hiddenScreens;}
+    private int[] order=ClusterPicker.naturalOrder();
+    private float settingsScroll;
+    public void setOrder(int[] o,float scroll){order=o;settingsScroll=scroll;}
     /** Drive-mode options shown on their edit tiles: accent colour by mode, screen by mode. */
     private boolean modeColor,modeScreen;
     public void setModeOptions(boolean color,boolean screen){modeColor=color;modeScreen=screen;}
@@ -114,7 +117,7 @@ public final class PitRenderer {
     }
     public void draw(Canvas c,int width,int height,boolean cluster,Telemetry model,long now,int target,boolean media,MediaState.Snapshot track){
         mediaPage=cluster && media;raceMedia=media;music=track;
-        frameTime=now;samples=model.snapshot(now);profile=model.profile();
+        frameTime=now;samples=model.snapshot(now);profile=model.profile();thModel=model;
         clusterRenderer.tick(samples,now);   // trip totals of the layouts count on every page
         // The profile's range, so the "목표" label shows the target the cue really uses (a diesel's is 2100-4700).
         shiftTarget=ShiftGuide.target(target,profile);
@@ -128,7 +131,7 @@ public final class PitRenderer {
         text(c,"i30 PD",36,33,23,WHITE,true);
         // Tab strip: every shown screen is a button; PitRenderer measures the labels and feeds HeaderTabs, which
         // scrolls sideways when they overflow and keeps the current tab in view.
-        int[] shownTabs=ClusterPicker.slots(hidden,false);int cur=screen(cluster),curTab=-1;
+        int[] shownTabs=ClusterPicker.slots(order,hidden,false);int cur=screen(cluster),curTab=-1;
         float[] tabW=new float[shownTabs.length];
         for(int i=0;i<shownTabs.length;i++){tabW[i]=tabWidth(UiText.t(ClusterPicker.NAMES[shownTabs[i]]));if(shownTabs[i]==cur)curTab=i;}
         header.setTabs(shownTabs,tabW,curTab);
@@ -176,7 +179,7 @@ public final class PitRenderer {
     private void drawPicker(Canvas c,int cur){
         if(editing){drawSettings(c);return;}
         box(c,0,52,800,480,0xe6040506);
-        int[] list=ClusterPicker.slots(hidden,editing);
+        int[] list=ClusterPicker.slots(order,hidden,editing);
         for(int i=0;i<list.length;i++){
             int s=list[i];boolean off=(hidden&(1<<s))!=0;
             float l=ClusterPicker.left(i),t=ClusterPicker.top(i),w=ClusterPicker.TILE_W,h=ClusterPicker.TILE_H;
@@ -196,6 +199,7 @@ public final class PitRenderer {
             text(c,UiText.t(SettingsLayout.CATS[i]),l+16,t+SettingsLayout.CAT_H/2+7,18,on||done?BLUE:WHITE,true);
         }
         box(c,SettingsLayout.PANE_L-8,SettingsLayout.TOP,SettingsLayout.PANE_L-7,SettingsLayout.BOTTOM,LINE);
+        if(settingsCat==SettingsLayout.SCREENS&&pickSlot<0){drawScreenList(c);return;}
         int cat=pickSlot>=0?SettingsLayout.PICK:settingsCat;float w=SettingsLayout.itemW(cat),h=SettingsLayout.itemH(cat);
         if(pickSlot>=0)text(c,ClusterPicker.MODE_NAMES[pickSlot]+" "+UiText.t("모드 화면"),SettingsLayout.PANE_L,SettingsLayout.TOP+20,16,BLUE,true);
         for(int i=0;i<SettingsLayout.count(cat);i++){
@@ -225,6 +229,78 @@ public final class PitRenderer {
             if(sub==null)text(c,UiText.t(name),tx,t+h/2+7,18,ink,true);
             else{text(c,UiText.t(name),tx,t+h/2-3,18,ink,true);text(c,UiText.t(sub),tx,t+h/2+17,12,cat==SettingsLayout.SCREENS&&!dim?BLUE:MUTED,cat==SettingsLayout.SCREENS);}
             if(value!=null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);String v=UiText.t(value);text(c,v,l+w-20-paint.measureText(v),t+h/2+7,18,sel||cat==SettingsLayout.MODE&&i>=SettingsLayout.MODE_FIRST&&!dim?BLUE:MUTED,true);}
+        }
+    }
+    /** The 화면 category as a reorderable, scrollable list: a mini preview, the name, 사용/미사용, and ▲▼ to move it. */
+    private void drawScreenList(Canvas c){
+        int[] ord=ClusterPicker.validOrder(order);
+        float L=SettingsLayout.PANE_L,R=SettingsLayout.PANE_R,rh=SettingsLayout.SCREEN_ROW_H,top=SettingsLayout.TOP,bot=SettingsLayout.BOTTOM;
+        c.save();c.clipRect(L-6,top,800,bot);
+        for(int p=0;p<ord.length;p++){
+            int s=ord[p];float t=top+p*rh-settingsScroll;
+            if(t+rh<top||t>bot)continue;
+            boolean off=(hidden&(1<<s))!=0;
+            box(c,L,t+4,R,t+rh-4,off?0xff08090a:0xff101315);
+            float tw=SettingsLayout.THUMB_W-10,th=rh-18;
+            Bitmap tb=thumb(s);
+            if(tb!=null){cellRect.set(L+6,t+9,L+6+tw,t+9+th);c.drawBitmap(tb,null,cellRect,paint);}
+            else box(c,L+6,t+9,L+6+tw,t+9+th,0xff05070a);
+            float tx=L+SettingsLayout.THUMB_W+8;int ink=off?MUTED:WHITE;
+            text(c,UiText.t(ClusterPicker.NAMES[s]),tx,t+rh/2-3,17,ink,true);
+            text(c,UiText.t(ClusterPicker.DESC[s]),tx,t+rh/2+16,11,MUTED,false);
+            String use=UiText.t(off?"미사용":"사용");paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(13);
+            text(c,use,SettingsLayout.upBtnL()-12-paint.measureText(use),t+rh/2+5,13,off?MUTED:BLUE,true);
+            float by=t+(rh-SettingsLayout.SBTN_W)/2;
+            moveBtn(c,SettingsLayout.upBtnL(),by,true,p>0);
+            moveBtn(c,SettingsLayout.downBtnL(),by,false,p<ord.length-1);
+        }
+        c.restore();
+        float max=SettingsLayout.maxScreenScroll();
+        if(max>0){float h=bot-top,vis=Math.max(24,h*h/(ord.length*rh)),y=top+(h-vis)*(settingsScroll/max);box(c,798,top,800,bot,0xff0c1012);box(c,798,y,800,y+vis,0xff2a3b44);}
+    }
+    private void moveBtn(Canvas c,float x,float y,boolean up,boolean on){
+        float w=SettingsLayout.SBTN_W;box(c,x,y,x+w,y+w,on?0xff16232b:0xff0c0e10);
+        float cx=x+w/2,cy=y+w/2;paint.setColor(T(on?BLUE:0xff2a3036));
+        shape.reset();
+        if(up){shape.moveTo(cx,cy-7);shape.lineTo(cx-8,cy+5);shape.lineTo(cx+8,cy+5);}
+        else{shape.moveTo(cx,cy+7);shape.lineTo(cx-8,cy-5);shape.lineTo(cx+8,cy-5);}
+        shape.close();c.drawPath(shape,paint);
+    }
+    // Mini previews for the screen list: each layout rendered once at thumbnail size and cached, rebuilt when the
+    // car paint or theme changes (so the 8-bit and themed previews stay right).
+    private static final int TW=96,TH=54;
+    private final Bitmap[] thumbs=new Bitmap[ClusterPicker.COUNT];
+    private Telemetry thModel;
+    private final GaugeLayout thGauge=new GaugeLayout();
+    private final GraphLayout thGraph=new GraphLayout();
+    private int thumbPaint=-1;private Theme thumbTheme;
+    /** Mini preview of a screen: the real layout rendered small, cached. Null if it could not be drawn. */
+    private Bitmap thumb(int s){
+        if(s<0||s>=thumbs.length||thModel==null)return null;
+        if(thumbPaint!=CarPaint.index()||thumbTheme!=Theme.current()){for(int i=0;i<thumbs.length;i++)thumbs[i]=null;thumbPaint=CarPaint.index();thumbTheme=Theme.current();}
+        if(thumbs[s]==null){
+            try{
+                Bitmap b=Bitmap.createBitmap(TW,TH,Bitmap.Config.ARGB_8888);
+                Canvas tc=new Canvas(b);tc.drawColor(T(BG));
+                tc.scale(TW/800f,TH/428f);tc.translate(0,-52);   // show the body (y 52..480) only
+                drawBodyFor(tc,s);
+                thumbs[s]=b;
+            }catch(Throwable e){thumbs[s]=null;}
+        }
+        return thumbs[s];
+    }
+    /** Draw a given screen's body (no header) for its thumbnail, using the current frame's data. */
+    private void drawBodyFor(Canvas c,int s){
+        if(s==ClusterPicker.GRAPHS)graphRenderer.draw(c,thModel,frameTime,thGraph);
+        else if(s==ClusterPicker.GAUGES)gaugeRenderer.draw(c,thModel,frameTime,thGauge);
+        else if(s==ClusterPicker.F1)drawCluster(c);
+        else if(s==ClusterPicker.OVERVIEW)drawDashboard(c);
+        else{int pg=s-ClusterPicker.F1;
+            if(pg==PAGE_PERFORMANCE)performanceRenderer.draw(c,samples,0,false,profile);
+            else if(pg==PAGE_SHOW)showRenderer.draw(c,samples,frameTime,profile);
+            else if(pg==PAGE_RACE)raceRenderer.draw(c,samples,cue,frameTime,stats,profile,false,null,null);
+            else if(pg==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
+            else if(isCluster(pg))clusterRenderer.draw(c,pg-PAGE_CLASSIC,samples,frameTime,stats,profile,thModel,null);
         }
     }
     /** Pixel width of a header tab: its label plus side padding, with a sensible minimum. */

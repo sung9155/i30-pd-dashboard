@@ -18,7 +18,7 @@ import java.util.Base64;
 import javax.crypto.Cipher;
 
 /**
- * The host half of adb, just enough to install an APK: connect + RSA auth, shell:, and sync: push.
+ * The host half of adb, just enough to install an APK: connect + RSA auth, shell:, and sync: push and pull.
  * Speaks the old protocol the car's Android 4.2 adbd expects (version 0x01000000, 4 KB payloads,
  * byte-sum checksums). One stream at a time. No Android imports, so the desktop test drives it over TCP.
  */
@@ -191,6 +191,37 @@ final class Adb implements Closeable {
         syncHeader(quit, "QUIT", new byte[0]);
         write(quit.toByteArray(), deadline);
         close(deadline);
+    }
+
+    /** sync: RECV path, then DATA... / DONE (or FAIL). Whole file in memory: only used for the two small APKs. */
+    byte[] pull(String remotePath, long timeoutMs) throws IOException {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        open("sync:", deadline);
+        ByteArrayOutputStream req = new ByteArrayOutputStream();
+        syncHeader(req, "RECV", remotePath.getBytes(StandardCharsets.UTF_8));
+        write(req.toByteArray(), deadline);
+        ByteArrayOutputStream file = new ByteArrayOutputStream();
+        for (int pos = 0; ; ) {
+            byte[] r = await(pos + 8, deadline);
+            String id = new String(r, pos, 4, StandardCharsets.US_ASCII);
+            if (id.equals("DONE")) break;
+            int len = ByteBuffer.wrap(r, pos + 4, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+            if ((!id.equals("DATA") && !id.equals("FAIL")) || len < 0 || len > 1 << 16) throw new IOException("받기 실패: 응답이 깨졌습니다");
+            r = await(pos + 8 + len, deadline);
+            if (id.equals("FAIL")) throw new IOException("받기 실패: " + new String(r, pos + 8, len, StandardCharsets.UTF_8));
+            file.write(r, pos + 8, len);
+            pos += 8 + len;
+        }
+        ByteArrayOutputStream quit = new ByteArrayOutputStream();
+        syncHeader(quit, "QUIT", new byte[0]);
+        write(quit.toByteArray(), deadline);
+        close(deadline);
+        return file.toByteArray();
+    }
+
+    private byte[] await(int size, long deadline) throws IOException {
+        while (inbox.size() < size) { if (closed) throw new IOException("받기 실패: 내비가 연결을 닫았습니다"); pump(deadline); }
+        return inbox.toByteArray();
     }
 
     private static void syncHeader(ByteArrayOutputStream o, String id, byte[] body) {

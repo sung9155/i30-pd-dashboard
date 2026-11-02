@@ -11,7 +11,7 @@
 
 ## 쓰는 법 (차주)
 
-1. 받은 ZIP 을 푼다. 폴더 안에 `설치.cmd`, `삭제.cmd`, `install.ps1` 이 있으면 된다. APK 2개는 **옆에 있으면 그걸 쓰고, 없으면 공개 배포 레포(`i30-pd-dashboard`)의 최신 릴리스에서 자동으로 받는다.**
+1. 받은 ZIP 을 푼다. 폴더 안에 `설치.cmd`, `삭제.cmd`, `진단기록.cmd`, `install.ps1` 이 있으면 된다. APK 2개는 **옆에 있으면 그걸 쓰고, 없으면 공개 배포 레포(`i30-pd-dashboard`)의 최신 릴리스에서 자동으로 받는다.**
 2. **`설치.cmd` 더블클릭.** 노란 "보안 경고" 가 뜨면 [실행].
 3. 콘솔 안내대로 차 화면에서 엔지니어 모드 · Factory Test(`0A 01` → `65 01` → `0A 02`)를 하고 USB 연결 → Enter.
 4. 자동으로 차(pd_kr)를 찾아 앱 2개를 설치하고 '내 앱' 을 띄운다. 끝나면 '내 앱'에서 **실행 바로가기 → 가장자리 버튼 + 알림 → 저장**.
@@ -37,8 +37,9 @@
 4. 나머지는 Windows와 같다. USB-C만 있는 맥은 USB-A 어댑터가 필요하다.
 
 - 기록: `~/Library/Logs/i30pd-installer/install_<시각>.log`
-- 삭제: `삭제.command` 더블클릭(= `bash 설치.command --uninstall`)
-- 시험 인자: `--adb <경로>` `--apk-base <URL>` `--yes` `--uninstall` (종료 코드는 Windows와 같다)
+- 삭제: `삭제.command` 더블클릭(= `bash 설치.command --uninstall`), 진단 기록: `진단기록.command`(= `--diag`)
+- 시험 인자: `--adb <경로>` `--apk-base <URL>` `--yes` `--uninstall` `--diag` (종료 코드는 Windows와 같다)
+- 진단 기록의 가림 처리는 macOS 기본 `perl`을 쓴다.
 - 줄바꿈은 LF여야 하고(`.gitattributes`), ZIP 안에서 실행 권한(755)이 있어야 더블클릭으로 열린다. Windows `Compress-Archive`는 권한을 못 넣으므로 RELEASE.md의 Python 명령으로 만든다.
 - 가짜 adb로 정상 설치 · 서명 충돌 재설치 · 삭제 · 폴더 APK 사용 · 공개 릴리스에서 APK 받기 · 404/비 APK 거르기 · 차 없음(종료 1)을 확인했다(Windows Git Bash에서. 실제 맥·실차로는 아직 안 해 봤다).
 
@@ -53,7 +54,10 @@
 - **서명 충돌.** 예전에 다른 서명으로 깔린 앱이 있어 `INCONSISTENT_CERTIFICATES` 가 나면, 묻고 나서 지우고 다시 설치한다.
 - **삭제.** `삭제.cmd`(= `설치.cmd -Uninstall`)로 두 앱을 지운다. 이때는 APK 를 받지 않는다. '내 앱'이 ☆ 버튼을 계기판으로 돌려 놨으면(`persist.sys.key.custom` = `com.veloster.carplayhub.STAR_KEY`) 먼저 `service call com.hkmc.micom.mode 34 s16 com.mobis.intent.action.CUSTOM_SHORTCUT`으로 순정 "없음"으로 되돌리고 다시 읽어 확인한다.
 - **폴더 APK 확인.** 폴더 옆 APK 가 `PK` 로 시작하지 않으면(브라우저가 GitHub 페이지를 `.apk` 이름으로 저장한 경우) 무시하고 릴리스에서 받는다. 설치가 실패하면 adb 의 실패 이유를 화면에 같이 보여 준다.
-- **기록.** `%LOCALAPPDATA%\i30pd-installer\install_<시각>.log`(맥 `~/Library/Logs/i30pd-installer/`)에 adb 명령과 출력을 남긴다. 실패하면 이 파일을 Issues 에 올려 달라고 안내하고 기록 폴더를 열어 준다.
+- **기록.** `%LOCALAPPDATA%\i30pd-installer\install_<시각>.log`(맥 `~/Library/Logs/i30pd-installer/`)에 adb 명령과 출력을 남긴다. 실패하면 이 파일을 메일(`********@*****.***`)로 보내 달라고 안내하고 기록 폴더를 열어 준다.
+- **진단 기록.** `진단기록.cmd`(= `설치.cmd -Diag`, 맥 `진단기록.command` = `--diag`) 또는 버전 메뉴의 `3)`. 차에 연결해 **읽기만** 한다: 정해 둔 속성, 두 앱의 `dumpsys package` 중 버전·경로·설치 시각 줄, `logcat -d -v time -s VehicleDash VNCarPlayHub VNQuickEntry NDashboard DtcDialog AndroidRuntime:E PackageManager:I`의 마지막 3000줄, 이번 실행 기록. MAC·휴대폰 번호·메일 주소·adb 기기 번호를 가린 뒤 바탕화면 `i30pd_진단기록_<시각>.txt`(UTF-8)로 저장하고, 메일 주소를 클립보드에 넣고 그 파일을 탐색기/Finder에서 보여 준다. 전체 logcat은 블루투스 폰 이름·번호·연락처가 섞여 넣지 않는다.
+- **같은 버전 건너뛰기.** 설치 전에 `pm path`로 차의 APK를 `adb pull`해 받은 파일과 해시(맥 `cmp`)를 비교하고, 같으면 그 앱은 설치하지 않는다(내비는 설치한 APK를 바이트 그대로 보관한다). 비교에 실패하면 그냥 설치한다.
+- **새 설치기 알림.** 시작할 때 `raw.githubusercontent.com`의 `main`(테스트를 고르면 `beta`도) `install.ps1`/`설치.command`에서 설치기 버전을 읽어, 더 새것이면 알리고 그대로 계속한다(5초 제한, 실패는 기록에만).
 - **디버깅용 기록.** 원격으로 원인을 가를 수 있게 기록 파일에 더 남긴다.
   - 환경: Windows·PowerShell(맥은 macOS·CPU), adb 버전.
   - Windows는 USB 장치 목록 전체를 바뀔 때마다 시각과 함께 남긴다(케이블을 꽂는 순간 무엇이 나타났는지 보이게).
@@ -63,7 +67,7 @@
 - **진행 상황(스크린샷용).** 화면 맨 위에 설치기 버전(`설치기 2026-10-31c` — 고칠 때마다 올림), 단계 제목마다 시각을 찍는다.
   - 앱 설치는 `adb install` 대신 ① 전송(`adb push` → `/data/local/tmp`, 최대 60초) ② 설치(`adb shell pm install -r`, 최대 120초) 두 단계로 나누고, 기다리는 동안 경과 초(`5s 10s …`)를 같은 줄에 찍는다. 삭제도 단계마다 최대 60초.
   - 시간을 넘기면 `멈춘 곳: 대시보드 ① 전송`(USB 쪽 — 케이블·포트) 또는 `② 설치`(내비 쪽 — 차 화면 확인 창, 재시동)와 할 일, 내비 설치 로그(`logcat` PackageManager 등) 마지막 12줄을 화면에 띄우고 끝낸다. 그 화면 사진 한 장으로 원인을 가를 수 있다. Windows는 `taskkill /T`로 adb 프로세스 트리를 끝낸다.
-- **내비 정보.** 연결되면 정해 둔 속성만 읽어 기록한다: 기기·빌드·지문·USB 상태(`sys.usb.*`, `persist.sys.dipo.state`)·☆ 버튼 동작(`persist.sys.key.custom`). `getprop` 전체는 시리얼·블루투스 주소 같은 개인 정보가 있어 공개 Issues에 올라갈 기록에 넣지 않는다.
+- **내비 정보.** 연결되면 정해 둔 속성만 읽어 기록한다: 기기·빌드·지문·USB 상태(`sys.usb.*`, `persist.sys.dipo.state`)·☆ 버튼 동작(`persist.sys.key.custom`). `getprop` 전체는 시리얼·블루투스 주소 같은 개인 정보가 있어 기록에 넣지 않는다.
   - 보드를 `ro.product.device`로 구분해 화면에 표시한다: `daudioplus_*` = 블루링크 D-Audio Plus, `daudiopluslow_*` = 블루링크 없는 LOW 보드(1 GB).
   - LOW 빌드(`eng.vmadmin.20260114.084725`)는 확인된 빌드로 보고 묻지 않는다. 2026-01-14 펌웨어 비교에서 USB 설정·차량 데이터 데몬·엔지니어 모드가 블루링크판과 같았고, 2026-10-31 LOW 차에서 설치·동작을 확인했다. 다른 LOW 차 한 대는 "장치 설명자 요청 실패"로 연결되지 않았는데, 같은 케이블·PC로 다른 차는 됐으므로 그 차의 포트·배선 문제로 본다.
 - **필요한 것.** Windows 10/11 에 기본으로 있는 PowerShell 만 있으면 된다. 추가 설치 없음.
@@ -105,6 +109,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1 -AdbPath <가짜
 - `-ApkBase`: APK 받을 base URL 을 바꾼다. 로컬 폴더를 `file:///C:/.../server` 로 줘서 다운로드 경로를 시험할 수 있다.
 - `-Yes`: 확인 모두 '예', 대기/프롬프트 생략, 끝나면 종료 코드 반환.
 - `-Uninstall`: 두 앱 삭제.
+- `-Diag`: 진단 기록 파일만 만든다(차에는 쓰지 않음).
 - 종료 코드: 0 = 성공, 1 = 취소/설치 실패, 2 = ADB/APK 없음.
 
 가짜 adb 는 `devices -l`(pd_kr 한 줄), `getprop`, `install`(`Success`), `uninstall` 에 정해진 출력을 내는 `.cmd` 면 된다. 정상 설치 · 삭제 · 서명 충돌 재설치, **그리고 `file://` 서버에서 APK 받아 설치하는 흐름** 과 비공개 레포 404 시 안내 메시지를 이 방식으로 확인했다(실차 설치는 아직 이 스크립트로 해 보지 않았다).

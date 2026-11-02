@@ -1,7 +1,9 @@
 """A stand-in for the car's Android 4.2 adbd over TCP, strict about what the old one checks:
 header magic, byte-sum checksum, 4 KB payloads, the RSA token signature and the public key struct.
 Connection n plays scenario n: 1 new key (pubkey + prompt), 2 known key (signature) and a signature
-clash on the dashboard, 3 uninstall, 4 a navi that is not pd_kr.
+clash on the dashboard, 3 uninstall, 4 a navi that is not pd_kr, 5 install, 6 the same install again
+(pm path + RECV return what is installed), 7 diagnostics (log lines with a MAC, a phone number, a mail
+address), 8 install from a cached APK. Installed packages carry over between connections.
 usage: fake_adbd.py PORT LOG SERVER_DIR"""
 import os, socket, struct, sys, base64
 
@@ -9,6 +11,17 @@ CNXN, AUTH, OPEN, OKAY, CLSE, WRTE = 0x4e584e43, 0x48545541, 0x4e45504f, 0x59414
 SHA1_INFO = bytes([0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14])
 port, logpath, server = int(sys.argv[1]), sys.argv[2], sys.argv[3]
 known = []
+installed = {}   # package -> APK bytes, across connections
+PKG = lambda p: 'com.veloster.dashboard' if 'dashboard' in p else 'com.veloster.carplayhub'
+LOGCAT = ('11-02 16:18:22.123 I/VehicleDash( 812): draw avg 9.1 ms\n'
+          '11-02 16:18:23.000 I/VNCarPlayHub( 901): bt peer 00:1A:7D:DA:71:13 name Galaxy 010-1234-5678 kim@example.com\n'
+          '11-02 16:18:24.000 E/AndroidRuntime( 812): FATAL EXCEPTION: main\n')
+
+def reply(s, rid, local, data):
+    """adbd's way: at most 4 KB per WRTE, each acknowledged before the next."""
+    for i in range(0, len(data), 4096):
+        send(s, WRTE, rid, local, data[i:i + 4096])
+        assert recv(s)[0] == OKAY
 
 def log(m):
     with open(logpath, 'a', encoding='utf-8') as f: f.write(m + '\n')
@@ -80,13 +93,17 @@ def session(s, no):
                 assert files[p] == open(os.path.join(server, os.path.basename(p)), 'rb').read(), 'pushed bytes differ'
                 if no == 2 and 'dashboard' in p and not failed_once:
                     failed_once = True; out = 'Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE]'
-                else: out = '\tpkg: %s\r\nSuccess' % p
-            elif c.startswith('pm uninstall '): out = 'Success'
+                else: out = '\tpkg: %s\r\nSuccess' % p; installed[PKG(p)] = files[p]
+            elif c.startswith('pm uninstall '): out = 'Success'; installed.pop(c[13:], None)
+            elif c.startswith('pm path '): out = 'package:/data/app/%s-1.apk' % c[8:] if c[8:] in installed else ''
+            elif c.startswith('dumpsys package '):
+                out = ('Packages:\r\n  Package [%s] (41a0):\r\n    codePath=/data/app/%s-1.apk\r\n    versionCode=10 targetSdk=17\r\n    versionName=1.9\r\n'
+                       '    firstInstallTime=2026-11-02 16:00:00\r\n    lastUpdateTime=2026-11-02 16:10:00\r\n' % (c[16:], c[16:])) if c[16:] in installed else ''
+            elif c == 'date': out = 'Mon Nov  2 16:20:00 KST 2026'
+            elif c.startswith('logcat -d -v time -s '): out = LOGCAT.replace('\n', '\r\n') * 2000
             elif c.startswith('rm -f '): files.pop(c[6:])
             elif c.startswith('am start '): out = 'Starting: Intent { cmp=com.veloster.carplayhub/.HubActivity }'
-            if out:
-                send(s, WRTE, rid, local, (out + '\r\n').encode())
-                assert recv(s)[0] == OKAY
+            if out: reply(s, rid, local, (out + '\r\n').encode())
             send(s, CLSE, rid, local)
         elif svc == 'sync:':
             buf = b''
@@ -96,6 +113,16 @@ def session(s, no):
                 buf += d; send(s, OKAY, rid, local)
                 if buf.startswith(b'QUIT'): send(s, CLSE, rid, local); break
                 if len(buf) < 8: continue
+                if buf[:4] == b'RECV':
+                    n = struct.unpack_from('<I', buf, 4)[0]
+                    if len(buf) < 8 + n: continue
+                    path = buf[8:8 + n].decode(); buf = buf[8 + n:]; log('pull ' + path)
+                    data = installed.get(PKG(path)) if path.startswith('/data/app/') else None
+                    if data is None: out = b'FAIL' + struct.pack('<I', 14) + b'No such file\0\0'
+                    else:
+                        out = b''.join(b'DATA' + struct.pack('<I', len(data[i:i + 65536])) + data[i:i + 65536] for i in range(0, len(data), 65536))
+                        out += b'DONE' + struct.pack('<I', 0)
+                    reply(s, rid, local, out); continue
                 assert buf[:4] == b'SEND', 'sync stream'
                 n = struct.unpack_from('<I', buf, 4)[0]
                 path = buf[8:8 + n].decode().split(',')[0]; i = 8 + n; data = b''

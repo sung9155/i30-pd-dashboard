@@ -6,10 +6,11 @@
   무서명 .exe 가 SmartScreen/백신에 막히던 문제를 없애려고 배치 + PowerShell 로 바꿨다. powershell.exe 는
   Microsoft 서명본이라 SmartScreen 평판 차단이 없고, .cmd 는 파란 차단창 없이 노란 경고 한 번만 뜬다.
 
-  버전: 시작할 때 안정화(최신 정식 릴리스, 실차 확인) / 테스트('test' 사전 배포, 실차 검증 전) 중 고른다.
+  버전: 시작할 때 안정화(최신 정식 릴리스, 실차 확인) / 테스트('test' 사전 배포, 실차 검증 전) / 진단 기록 모으기 중 고른다.
   테스트 인자: -AdbPath <adb 경로>  -Channel stable|test  -Yes(확인 모두 예, 대기/프롬프트 생략, 안정화)  -Uninstall(두 앱 삭제)
+              -Diag(설치하지 않고 진단 기록 파일만 만든다)
 #>
-param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switch]$Uninstall)
+param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switch]$Uninstall, [switch]$Diag)
 
 # 'Continue' (not 'Stop'): adb writes its progress to stderr, and under 'Stop' a native
 # command's stderr turns into a terminating error (NativeCommandError) that aborts the
@@ -17,7 +18,7 @@ param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switc
 $ErrorActionPreference = 'Continue'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-02'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-02b'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
 # 위와 같고, 2026-10-31 실차 설치·동작 확인(다른 LOW 차 한 대는 USB "장치 설명자 요청 실패" — 그 차 포트·배선 문제로 봄).
@@ -26,6 +27,8 @@ $PT_URL = 'https://dl.google.com/android/repository/platform-tools-latest-window
 $USB_URL = 'https://dl.google.com/android/repository/usb_driver_r13-windows.zip'
 # APK를 폴더에서 못 찾으면 공개 배포 레포에서 받는다: 안정화 = 최신 정식 릴리스, 테스트 = 'test' 사전 배포(덮어쓰며 갱신).
 $Releases = 'https://github.com/sung9155/i30-pd-dashboard/releases'
+$Raw = 'https://raw.githubusercontent.com/sung9155/i30-pd-dashboard'   # 새 설치기 확인용(main = 안정화, beta = 테스트)
+$Mail = '********@*****.***'   # 진단 기록·문제 제보 받는 곳
 $Apps = @(
   [pscustomobject]@{ apk='dashboard-i30pd-platform.apk'; pkg='com.veloster.dashboard'; name='대시보드' },
   [pscustomobject]@{ apk='myapps-i30pd-platform.apk';   pkg='com.veloster.carplayhub'; name="'내 앱'" }
@@ -41,13 +44,22 @@ function Head($m){ $t = Get-Date -Format HH:mm:ss; Write-Host ''; Write-Host "$m
 function Die($m,$code){
   Write-Host ''; Write-Host $m -ForegroundColor Red; Log "ERROR: $m"
   Write-Host "기록 파일: $Log" -ForegroundColor Yellow
-  Write-Host '문제를 알릴 때 이 파일을 Issues(github.com/sung9155/i30-pd-dashboard/issues)에 올려 주세요.' -ForegroundColor Yellow
+  Write-Host "문제를 알릴 때 이 파일을 메일($Mail)에 첨부해 보내 주세요." -ForegroundColor Yellow
   if(-not $Yes){ try { Start-Process explorer.exe "/select,`"$Log`"" } catch {} }
   exit $code
 }
 function UsbOffNote(){
   Note 'USB 디버깅 끄기: 시동을 껐다 켜면 저절로 꺼집니다. 바로 끄려면 Factory Test에서  0A 01 → 65 00 → 0A 02' Gray
   Note "  (또는 '내 앱' → USB 디버깅 → OFF). 끄면 노트북 연결이 끊깁니다." Gray
+}
+# 진단 기록에서 사람을 가릴 수 있는 것: MAC 주소, 휴대폰 번호, 메일 주소, adb 기기 번호, 경로 속 Windows 사용자 이름.
+function Mask([string]$t){
+  $t = $t -replace '\b(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b','<MAC>'
+  $t = $t -replace '\b01[016789][-. ]?\d{3,4}[-. ]?\d{4}\b','<전화번호>'
+  $t = $t -replace '[\w.+-]+@[\w-]+(?:\.[\w-]+)+','<메일>'
+  if($serial){ $t = $t.Replace($serial,'<기기번호>') }
+  if($env:USERPROFILE){ $t = $t.Replace($env:USERPROFILE,'%USERPROFILE%') }
+  return $t
 }
 function Ask($m){ if($Yes){ return $true }; $r = Read-Host "$m [Y/n]"; return ($r -eq '' -or $r -match '^[Yy]') }
 function Adb([Parameter(ValueFromRemainingArguments=$true)]$a){
@@ -88,7 +100,7 @@ function Stuck($where,$hint){
 }
 
 Write-Host ''
-Write-Host $(if($Uninstall){ "  i30 PD 대시보드 삭제   (설치기 $InstallerVersion)" } else { "  i30 PD 대시보드 설치   (설치기 $InstallerVersion)" }) -ForegroundColor White
+Write-Host $(if($Uninstall){ "  i30 PD 대시보드 삭제   (설치기 $InstallerVersion)" } elseif($Diag){ "  i30 PD 대시보드 진단 기록   (설치기 $InstallerVersion)" } else { "  i30 PD 대시보드 설치   (설치기 $InstallerVersion)" }) -ForegroundColor White
 Write-Host '  ----------------------' -ForegroundColor DarkGray
 Note '현대자동차 공식 앱이 아닙니다. 순정 시스템에 앱을 설치하는 작업이라 보증/AS 불이익이 있을 수 있고,' Yellow
 Note '책임은 본인에게 있습니다. 모든 작업은 정차 · 시동 켠 상태에서 하세요.' Yellow
@@ -120,22 +132,39 @@ Note "adb: $script:adbExe" DarkGray
 Log ("환경: Windows $([Environment]::OSVersion.Version) / PowerShell $($PSVersionTable.PSVersion) / " + ((& $script:adbExe version 2>&1 | Select-Object -First 1) -join ''))
 
 # --- 버전 고르기 (-ApkBase 를 주면 그 주소를 그대로 쓴다) ---------------------
-if(-not $Uninstall -and -not $ApkBase){
+if(-not $Uninstall -and -not $Diag -and -not $ApkBase){
   if($Channel -ne 'stable' -and $Channel -ne 'test'){
     if($Yes){ $Channel = 'stable' } else {
       Head '받을 버전'
       Note '  1) 안정화 (권장) — 실차에서 확인된 버전' Gray
       Note '  2) 테스트 — 새 기능, 아직 실차 검증 전. 문제가 있으면 안정화로 다시 설치하면 됩니다' Gray
-      $r = Read-Host '번호를 입력하고 Enter [1]'; $Channel = $(if($r.Trim() -eq '2'){ 'test' } else { 'stable' })
+      Note '  3) 진단 기록 모으기 — 설치하지 않고, 문제를 알릴 때 메일로 보낼 파일만 만듭니다' Gray
+      $r = (Read-Host '번호를 입력하고 Enter [1]').Trim()
+      if($r -eq '3'){ $Diag = $true } else { $Channel = $(if($r -eq '2'){ 'test' } else { 'stable' }) }
     }
   }
-  $ApkBase = $(if($Channel -eq 'test'){ "$Releases/download/test" } else { "$Releases/latest/download" })
-  if($Channel -eq 'test'){ Note '버전: 테스트 (실차 검증 전)' Yellow } else { Note '버전: 안정화' Green }
+  if(-not $Diag){
+    $ApkBase = $(if($Channel -eq 'test'){ "$Releases/download/test" } else { "$Releases/latest/download" })
+    if($Channel -eq 'test'){ Note '버전: 테스트 (실차 검증 전)' Yellow } else { Note '버전: 안정화' Green }
+  }
+}
+
+# --- 새 설치기 확인 (막지는 않는다) ---------------------------------------------
+# 레포에 올라간 install.ps1의 $InstallerVersion과 비교한다. 테스트를 고른 사람에게만 beta(테스트) 설치기도 알린다.
+foreach($b in $(if($Channel -eq 'test'){ @('main','beta') } else { @('main') })){
+  try {
+    $c = (Invoke-WebRequest -Uri "$Raw/$b/i30pd_port/installer/install.ps1" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop).Content
+    if($c -is [byte[]]){ $c = [Text.Encoding]::UTF8.GetString($c) }
+    if($c -match "InstallerVersion = '([^']+)'" -and [string]::CompareOrdinal($Matches[1], $InstallerVersion) -gt 0){
+      $where = $(if($b -eq 'main'){ "안정화 $($Matches[1]) — $Releases/latest" } else { "테스트 $($Matches[1]) — $Releases/tag/test" })
+      Note "새 설치기가 있습니다($where). 그 ZIP을 다시 받아 쓰세요. 이번에는 그대로 계속합니다." Yellow
+    }
+  } catch { Log "설치기 버전 확인 실패($b): $($_.Exception.Message)" }
 }
 
 # --- APK 준비 (폴더에 있으면 쓰고, 없으면 공개 레포에서 받기) -----------------
-if(-not $Uninstall){ Head '0) 앱 파일 준비' }
-foreach($app in $(if($Uninstall){ @() } else { $Apps })){
+if(-not $Uninstall -and -not $Diag){ Head '0) 앱 파일 준비' }
+foreach($app in $(if($Uninstall -or $Diag){ @() } else { $Apps })){
   $local = Join-Path $ROOT $app.apk
   # 브라우저로 받은 GitHub 페이지(HTML)가 .apk 이름으로 저장된 경우가 있어, 'PK'로 시작할 때만 폴더 것을 쓴다.
   $ok=$false; if(Test-Path $local){ $fs=[IO.File]::OpenRead($local); $mg=New-Object byte[] 2; [void]$fs.Read($mg,0,2); $fs.Close(); $ok=($mg[0] -eq 0x50 -and $mg[1] -eq 0x4B) }
@@ -273,6 +302,36 @@ foreach($k in 'ro.product.name','ro.product.device','ro.build.product','ro.build
 $build = $pv['ro.build.version.incremental']; $device = $pv['ro.product.device']
 $board = if($device -match 'daudiopluslow'){ 'D-Audio Plus LOW (블루링크 없음)' } elseif($device -match 'daudioplus'){ 'D-Audio Plus (블루링크)' } else { "확인 안 됨 ($device)" }
 Note "내비: $board / 빌드 $build / USB $($pv['sys.usb.state'])" DarkGray
+
+# --- 진단 기록 모드: 읽기만 한다 -------------------------------------------------
+# 정해 둔 속성, 두 앱의 버전, 우리 앱 태그·충돌·설치 기록만. 차 기록 전체에는 블루투스로 붙은 폰 이름·번호·연락처가 섞인다.
+if($Diag){
+  Head '진단 기록 모으기 (차에는 아무것도 바꾸지 않습니다)'
+  $sb = New-Object Text.StringBuilder
+  [void]$sb.AppendLine("i30 PD 진단 기록 — $(Get-Date -Format 'yyyy-MM-dd HH:mm') / PC 설치기 $InstallerVersion (Windows)").AppendLine().AppendLine('[내비]')
+  foreach($k in ($pv.Keys | Sort-Object)){ [void]$sb.AppendLine("${k}: $($pv[$k])") }
+  [void]$sb.AppendLine("시각: $((Adb '-s' $serial 'shell' 'date').Trim())").AppendLine().AppendLine('[앱]')
+  foreach($app in $Apps){
+    $v = @((Adb '-s' $serial 'shell' 'dumpsys' 'package' $app.pkg) -split "`r?`n" | Where-Object { $_ -match '(versionCode|versionName|firstInstallTime|lastUpdateTime|codePath)=' } | ForEach-Object { '  ' + $_.Trim() } | Select-Object -Unique)
+    [void]$sb.AppendLine("$($app.name) ($($app.pkg))")
+    if($v.Count){ $v | ForEach-Object { [void]$sb.AppendLine($_) } } else { [void]$sb.AppendLine('  설치돼 있지 않음') }
+  }
+  Note '기록 읽는 중...' Gray
+  $tags = @('VehicleDash:V','VNCarPlayHub:V','VNQuickEntry:V','NDashboard:V','DtcDialog:V','AndroidRuntime:E','PackageManager:I')
+  $lc = & $script:adbExe -s $serial shell logcat -d -v time -s @tags 2>&1 | Out-String   # 설치기 기록에는 안 남긴다(아래에 그 기록을 붙임)
+  [void]$sb.AppendLine().AppendLine("[기록: $($tags -join ' ')]").AppendLine(((($lc -split "`r?`n") | Select-Object -Last 3000) -join "`r`n"))
+  [void]$sb.AppendLine().AppendLine('[이 PC 설치기 기록]').Append((Get-Content -Raw -LiteralPath $Log))
+  $desk = [Environment]::GetFolderPath('Desktop'); if(-not $desk -or -not (Test-Path $desk)){ $desk = $LogDir }
+  $out = Join-Path $desk ("i30pd_진단기록_{0}.txt" -f (Get-Date -Format yyyyMMdd_HHmmss))
+  [IO.File]::WriteAllText($out, (Mask $sb.ToString()), (New-Object Text.UTF8Encoding $true))
+  Note "만든 파일: $out" Green
+  Note "이 파일을 메일에 첨부해 $Mail 로 보내 주세요. 본문에 증상(언제, 어떤 화면에서, 무엇이)을 적어 주세요." White
+  if(-not $Yes){
+    try { Set-Clipboard -Value $Mail; Note '(메일 주소를 클립보드에 복사했습니다. 받는 사람 칸에 붙여 넣으세요)' DarkGray } catch {}
+    Start-Process explorer.exe "/select,`"$out`""
+  }
+  UsbOffNote; exit 0
+}
 if($build -eq $LowBuild){
   Note '블루링크 없는 내비(LOW 보드) — 설치가 확인된 빌드입니다.' DarkGray
 } elseif($build -and $build -ne $VerifiedBuild){
@@ -310,6 +369,13 @@ $pushHint = 'USB로 파일을 보내다 멈췄습니다. 케이블·노트북 �
 $pmHint = '내비가 설치를 끝내지 않았습니다. 차 화면에 확인 창이 떠 있으면 누르고, 없으면 시동을 껐다 켠 뒤 다시 실행하세요.'
 foreach($app in $Apps){
   $apk = $app.path; $remote = "/data/local/tmp/$($app.apk)"
+  # 내비는 설치한 APK를 바이트 그대로 보관한다: 받아 와서 같으면 같은 버전이니 건너뛴다.
+  $pp = ((Adb '-s' $serial 'shell' 'pm' 'path' $app.pkg) -replace '\s','') -replace '^package:',''
+  $have = Join-Path $LogDir "installed_$($app.apk)"; Remove-Item -LiteralPath $have -ErrorAction SilentlyContinue
+  if($pp -match '^/.+\.apk$' -and $null -ne (AdbWait 60 "$($app.name) 설치된 파일 비교" @('-s',$serial,'pull',$pp,$have)) -and
+     (Test-Path $have) -and (Get-FileHash $have).Hash -eq (Get-FileHash $apk).Hash){
+    Note "$($app.name): 이미 같은 버전이 설치돼 있습니다 — 건너뜀" Green; continue
+  }
   Note ("{0} ({1} KB)" -f $app.name, [math]::Round((Get-Item $apk).Length / 1KB)) White
   $o = AdbWait 60 '① 전송 (USB)' @('-s',$serial,'push',$apk,$remote)
   if($null -eq $o){ Stuck "$($app.name) ① 전송" $pushHint }

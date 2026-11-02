@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
@@ -23,16 +22,18 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** One screen: channel, 설치 / 삭제, and the running log. The steps live in Flow. */
+/** One screen: channel, 설치 / 삭제 / 진단 기록 / 기록 보내기, and the running log. The steps live in Flow. */
 public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
-    private static final String VERSION = "2026-11-02";
     private TextView log;
     private ScrollView scroll;
-    private Button installBtn, removeBtn;
+    private Button installBtn, removeBtn, diagBtn;
     private RadioButton test;
 
     @Override protected void onCreate(Bundle b) {
@@ -44,7 +45,7 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         root.setPadding(pad, pad, pad, pad);
 
         TextView title = new TextView(this);
-        title.setText("i30 PD 대시보드 설치 (휴대폰, " + VERSION + ")");
+        title.setText("i30 PD 대시보드 설치 (휴대폰, " + Flow.VERSION + ")");
         title.setTextSize(20);
         root.addView(title);
         TextView warn = new TextView(this);
@@ -65,13 +66,15 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         root.addView(channel);
 
         LinearLayout buttons = new LinearLayout(this);
-        installBtn = button(buttons, "설치", v -> start(false));
-        removeBtn = button(buttons, "삭제", v -> start(true));
-        button(buttons, "기록 복사", v -> {
-            ((ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE)).setPrimaryClip(ClipData.newPlainText("i30pd", log.getText()));
-            say("(기록을 복사했습니다)");
-        });
+        installBtn = button(buttons, "설치", v -> start(Flow.Mode.INSTALL));
+        removeBtn = button(buttons, "삭제", v -> start(Flow.Mode.UNINSTALL));
         root.addView(buttons);
+        LinearLayout report = new LinearLayout(this);
+        diagBtn = button(report, "진단 기록", v -> start(Flow.Mode.DIAG));
+        button(report, "기록 보내기", v -> new Thread(() -> {
+            try { send(save("i30pd_log_", "")); } catch (IOException e) { say("기록 저장 실패: " + e.getMessage()); }
+        }).start());
+        root.addView(report);
 
         log = new TextView(this);
         log.setTypeface(Typeface.MONOSPACE);
@@ -80,6 +83,8 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         scroll.addView(log);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
+        say("[진단 기록]은 차를 연결해 상태와 앱 기록만 읽어 메일(" + Flow.MAIL + ")로 보낼 파일을 만듭니다. 차에는 아무것도 바꾸지 않습니다.");
+        new Thread(() -> { String n = Flow.newer(); if (n != null) say("\n" + n); }).start();
     }
 
     private Button button(LinearLayout row, String text, android.view.View.OnClickListener l) {
@@ -90,22 +95,56 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         return b;
     }
 
-    private void start(boolean uninstall) {
-        installBtn.setEnabled(false);
-        removeBtn.setEnabled(false);
+    private void start(Flow.Mode mode) {
+        enable(false);
         log.setText("");
         String base = Flow.base(test.isChecked());
-        if (!uninstall) say(test.isChecked() ? "버전: 테스트 (실차 검증 전)" : "버전: 안정화");
+        if (mode == Flow.Mode.INSTALL) say(test.isChecked() ? "버전: 테스트 (실차 검증 전)" : "버전: 안정화");
         new Thread(() -> {
             try {
-                Flow.run(base, uninstall, getFilesDir(), this, this);
+                File diag = Flow.run(base, mode, getFilesDir(), this, this);
+                if (diag != null) send(diag);
             } catch (Flow.Stop e) {
-                say("\n중단: " + e.getMessage());
+                say("\n중단: " + e.getMessage() + "\n[기록 보내기]로 이 화면의 기록을 메일로 보낼 수 있습니다.");
             } catch (Exception e) {
-                say("\n오류: " + e + "\n[기록 복사]로 이 내용을 Issues(github.com/sung9155/i30-pd-dashboard/issues)에 알려 주세요.");
+                say("\n오류: " + e + "\n[기록 보내기]로 이 내용을 메일(" + Flow.MAIL + ")로 알려 주세요.");
             }
-            runOnUiThread(() -> { installBtn.setEnabled(true); removeBtn.setEnabled(true); });
+            runOnUiThread(() -> enable(true));
         }).start();
+    }
+
+    private void enable(boolean on) { installBtn.setEnabled(on); removeBtn.setEnabled(on); diagBtn.setEnabled(on); }
+
+    /** The on-screen log, masked, after the given head (a diagnostics file's text, or nothing). */
+    private File save(String prefix, String head) throws IOException {
+        CountDownLatch read = new CountDownLatch(1);
+        String[] screen = new String[1];
+        runOnUiThread(() -> { screen[0] = log.getText().toString(); read.countDown(); });
+        try { read.await(); } catch (InterruptedException e) { throw new IOException(e); }
+        File dir = new File(getFilesDir(), "diag");
+        if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("저장 폴더를 만들지 못했습니다");
+        File f = new File(dir, prefix + System.currentTimeMillis() / 1000 + ".txt");
+        Files.write(f.toPath(), (head + "\n[이 폰 화면 기록]\n" + Flow.mask(screen[0])).getBytes(StandardCharsets.UTF_8));
+        return f;
+    }
+
+    /** Mail with the file attached, through whatever mail app the user picks. */
+    private void send(File f) throws IOException {
+        if (!f.getName().startsWith("i30pd_log_")) {   // a diagnostics file: add this run's screen to it
+            File merged = save("i30pd_diag_", new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+            if (!f.delete()) f.deleteOnExit();
+            f = merged;
+        }
+        android.net.Uri uri = DiagProvider.uri(f);
+        Intent mail = new Intent(Intent.ACTION_SEND).setType("text/plain")
+                .putExtra(Intent.EXTRA_EMAIL, new String[]{Flow.MAIL})
+                .putExtra(Intent.EXTRA_SUBJECT, "i30 PD 대시보드 진단 기록")
+                .putExtra(Intent.EXTRA_TEXT, "증상(언제, 어떤 화면에서, 무엇이):\n\n\n받는 사람: " + Flow.MAIL + " / 첨부: " + f.getName())
+                .putExtra(Intent.EXTRA_STREAM, uri)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        mail.setClipData(ClipData.newRawUri("", uri));   // the chooser passes the read grant on only through ClipData
+        say("\n메일 앱을 고르세요. 받는 사람(" + Flow.MAIL + ")과 첨부 파일이 채워집니다. 본문에 증상을 적어 보내 주세요.");
+        runOnUiThread(() -> startActivity(Intent.createChooser(mail, "진단 기록 보내기").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)));
     }
 
     @Override public void say(String m) {

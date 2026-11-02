@@ -200,7 +200,10 @@ public final class RaceRenderer {
         long cool=st.coolDownLeft();
         String hint=Telemetry.shiftHint(v(Telemetry.SHIFT_HINT));  // 6MT: the cluster's shift recommendation
         String note=cue.shift?"SHIFT ▲":cool>0?"COOL-DOWN "+clock(cool):st.warmUp?"WARM-UP":!hint.isEmpty()?"SHIFT "+hint:code<0?"":Telemetry.selectorLabel(code);
-        text(c,note,(CL+CR)/2,324,cue.shift?16:14,cue.shift?BG:cool>0||st.warmUp?Theme.current().readableOn(T(BLUE),D()):BG,Paint.Align.CENTER);
+        // The ECU's shift hint on a red band, so it stands out from the cyan box without the app's own blinking SHIFT cue.
+        boolean ecuHint=!cue.shift&&cool<=0&&!st.warmUp&&!hint.isEmpty();
+        if(ecuHint){p.setStyle(Paint.Style.FILL);p.setColor(T(RED));c.drawRect(CL+6,307,CR-6,330,p);}
+        text(c,note,(CL+CR)/2,324,cue.shift?16:14,ecuHint?WHITE:cue.shift?BG:cool>0||st.warmUp?Theme.current().readableOn(T(BLUE),D()):BG,Paint.Align.CENTER);
     }
     private void gforce(Canvas c){
         box(c,CL,336,CR,BOT,PANEL);

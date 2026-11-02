@@ -314,6 +314,7 @@ public final class UiText {
         EN.put("엔진·변속기·제동·조향·에어백·바디 (읽기만)","Engine, transmission, brakes, steering, airbag, body (read only)");
         EN.put("연결 점검","Connections");
         EN.put("연료 L/h","Fuel L/h");
+        EN.put("연료 잔량","Fuel level");
         EN.put("연료 차단","Fuel cut");
         EN.put("연료 차단 · ","Fuel cut · ");
         EN.put("연료 차단 중","Fuel cut");
@@ -388,6 +389,7 @@ public final class UiText {
         EN.put("전체 기본 배치로 복원","Reset all gauges");
         EN.put("전체 조망","Overview");
         EN.put("전투기 HUD","Fighter HUD");
+        EN.put("절대 부하","Absolute load");
         EN.put("점화","Spark");
         EN.put("점화 °","Spark °");
         EN.put("점화 맵 · 최근 60초","Spark map · last 60 s");
@@ -443,6 +445,7 @@ public final class UiText {
         EN.put("처리 실패: ","Operation failed: ");
         EN.put("처리 중입니다. 완료될 때까지 기다려 주세요.","Working. Please wait until this finishes.");
         EN.put("처음 설치했다면 실행 바로가기를 설정하세요. 순정 홈에는 앱이 자동으로 추가되지 않습니다.","After first installation, set up Quick entry. The factory home screen does not add this app automatically.");
+        EN.put("촉매 온도","Catalyst temp");
         EN.put("최고","Best");
         EN.put("최고 0→100 km/h 초","Best 0→100 km/h s");
         EN.put("최고 RPM","Peak rpm");

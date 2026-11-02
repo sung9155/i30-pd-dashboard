@@ -216,6 +216,7 @@ public final class VehicleDash extends View implements Runnable {
     public static void hscanJsn(int cid,int funcLow,byte[] data){DATA.hscanJsn(cid,funcLow,data,SystemClock.elapsedRealtime());}
     public static void hscanJsn(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanJsn(cid,funcLow,data,receivedAt);}
     public static void hscanPd(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanPd(cid,funcLow,data,receivedAt);}
+    public static void obd(int pid,int a,int b){DATA.obd(pid,a,b,SystemClock.elapsedRealtime());}
     protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity); post(this); }
     protected void onDetachedFromWindow() { removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(clusterHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();mediaReceiver.stop();artwork.close();super.onDetachedFromWindow(); }
     public void run() {

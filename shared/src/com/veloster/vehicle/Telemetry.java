@@ -7,9 +7,9 @@ public final class Telemetry {
     public static final int TCS=22,ESC=23,ABS=24,BAT_SOC=25,BAT_VOLTAGE=26,STEERING_SPEED=27,ELSD=28;
     public static final int INTAKE=29,GEAR_SELECTOR=30,ODOMETER=31,ENGINE_LOAD=32,YAW=33,DRIVE_MODE=34,PARK_BRAKE=35;
     public static final int THROTTLE_POS=36,FUEL_RATE=37,RANGE=38,AVG_FUEL=39,TORQUE_CORR=40,TORQUE_FRICTION=41;
-    public static final int SPARK=42,BRAKE_SWITCH=43,STEER_TORQUE=44,DOOR_DRIVER=45,WIPER=46,DOOR_PASSENGER=47,TRUNK=48,HOOD=49,TURN_LEFT=50,TURN_RIGHT=51,SHIFT_HINT=52,HEAD_LAMP=53,TAIL_LAMP=54,HIGH_BEAM=55,CLUTCH=56;
-    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)"};
-    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", ""};
+    public static final int SPARK=42,BRAKE_SWITCH=43,STEER_TORQUE=44,DOOR_DRIVER=45,WIPER=46,DOOR_PASSENGER=47,TRUNK=48,HOOD=49,TURN_LEFT=50,TURN_RIGHT=51,SHIFT_HINT=52,HEAD_LAMP=53,TAIL_LAMP=54,HIGH_BEAM=55,CLUTCH=56,FUEL_LEVEL=57,CAT_TEMP=58,ABS_LOAD=59;
+    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하"};
+    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%"};
     public static final long STALE_MS = 60000; // UI freshness threshold, not an OEM timeout.
     public static final long HISTORY_MS=300000,HISTORY_STEP_MS=250;
     private final History[] history=new History[LABELS.length];
@@ -197,6 +197,19 @@ public final class Telemetry {
     public static String shiftHint(float hint) { return Float.isNaN(hint)||hint==0?"":(hint>0?"▲":"▼")+(int)Math.abs(hint); }
     /** DRIVE_MODE value = CLU13 CF_Clu_DrivingModeSwi code: 0=NORMAL 1=SPORT 3=ECO. */
     public static String driveModeLabel(int code) { return code==0?"NORMAL":code==1?"SPORT":code==3?"ECO":"—"; }
+    /**
+     * OBD-II mode 01 PID live data from the active poller (ObdLive, read-only): a and b are the first two data bytes
+     * after the PID. Standard SAE formulas; the engine ECU answered these in the 2026-11-02 probe. Ambient fills the
+     * AMBIENT slot the OEM event never sets on PD.
+     */
+    public synchronized void obd(int pid,int a,int b,long now){
+        switch(pid){
+            case 0x46: put(AMBIENT,a-40,true,now); break;                  // ambient air temperature, A-40 °C
+            case 0x2f: put(FUEL_LEVEL,a*100f/255,true,now); break;        // fuel tank level, A*100/255 %
+            case 0x3c: put(CAT_TEMP,((a<<8|b)/10f)-40,true,now); break;   // catalyst temperature, (256A+B)/10-40 °C
+            case 0x43: put(ABS_LOAD,(a<<8|b)*100f/255,true,now); break;   // absolute load, (256A+B)*100/255 %
+        }
+    }
     /** Text for enumerated signals; null means a plain number. */
     public static String label(int signal,float value) {
         if(signal==8)return gearLabel((int)value);

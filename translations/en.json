@@ -502,5 +502,17 @@
   "원래 화면": "Previous screen",
   "다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)": "Debugging turns on at the next restart (press OFF to undo)",
   "USB 디버깅 ON 명령을 보냈습니다(엔지니어 모드 Factory Test와 같은 명령). 몇 초 뒤 PC를 연결하세요. 내비게이션을 재시작하면 일반 USB(CarPlay)로 돌아갑니다.": "USB debugging ON sent (the same command as Engineer Mode Factory Test). Connect the PC in a few seconds. Restarting the head unit returns to normal USB (CarPlay).",
-  "USB 디버깅 OFF 명령을 보냈습니다. PC 연결이 끊기지 않으면 시동을 다시 거세요.": "USB debugging OFF sent. If the PC stays connected, restart the engine."
+  "USB 디버깅 OFF 명령을 보냈습니다. PC 연결이 끊기지 않으면 시동을 다시 거세요.": "USB debugging OFF sent. If the PC stays connected, restart the engine.",
+  "☆ 버튼 → 계기판": "☆ button → Dashboard",
+  "☆ 버튼: ": "☆ button: ",
+  "켜짐 (짧게 누르면 계기판)": "On (short press opens the dashboard)",
+  "꺼짐": "Off",
+  "확인 불가": "Unknown",
+  "현재: ": "Now: ",
+  "\n\n켜면 ☆(사용자 버튼)을 짧게 눌러 계기판을 엽니다. 끄면 원래 기능으로 되돌립니다.\n☆를 길게 눌러 순정 설정 화면을 열면 연결이 풀립니다. 그때는 여기서 다시 켜세요.\n'내 앱'을 강제 종료하면 다시 열 때까지 ☆가 동작하지 않을 수 있습니다.": "\n\nWhen on, a short press of ☆ (user button) opens the dashboard. Off puts back the previous function.\nLong-pressing ☆ opens the stock settings screen, which releases it; switch it on here again.\nIf My Apps is force-stopped, ☆ may do nothing until My Apps is opened again.",
+  "끄기": "Disable",
+  "이제 ☆ 버튼을 짧게 누르면 계기판이 열립니다.": "A short press of ☆ now opens the dashboard.",
+  "☆ 버튼을 원래 기능으로 되돌렸습니다.": "☆ button is back to its previous function.",
+  "☆ 버튼 설정이 적용되지 않았습니다. 이 내비는 지원하지 않을 수 있습니다.": "The ☆ button setting did not apply. This head unit may not support it.",
+  "☆ 버튼 설정 실패: ": "☆ button setting failed: "
 }

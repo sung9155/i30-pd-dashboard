@@ -24,5 +24,9 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+        <!-- ☆ button broadcast from the OEM mode service (no permission on its side); only opens the dashboard. -->
+        <receiver android:name="com.veloster.carplayhub.StarKey" android:exported="true">
+            <intent-filter><action android:name="com.veloster.carplayhub.STAR_KEY" /></intent-filter>
+        </receiver>
     </application>
 </manifest>

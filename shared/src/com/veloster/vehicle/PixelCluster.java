@@ -79,6 +79,8 @@ final class PixelCluster extends ClusterKit {
     private String lastGear="";
 
     PixelCluster(boolean chase){this.chase=chase;}
+    /** Chase car's sideways offset in lo-res pixels (+ right), eased toward the steering. */
+    private float sway;
 
     private void px(Canvas c,float x,float y,float w,float h,int color){fill(c,x*pxScale,pxTop+y*pxScale,(x+w)*pxScale,pxTop+(y+h)*pxScale,color);}
     private void run(Canvas c,int color,float ox,float oy,int y,int x1,int x2){px(c,ox+x1,oy+y,x2-x1+1,1,color);}
@@ -101,6 +103,10 @@ final class PixelCluster extends ClusterKit {
             scroll+=vk*dt*0.06f;
             float steer=v(Telemetry.STEERING),turn=Float.isNaN(steer)?0:Math.max(-1.3f,Math.min(1.3f,steer/110f));   // the road bends with the steering wheel, not lateral G
             curve+=(-turn*1.7f-curve)*Math.min(1,dt*2.2f);bgX+=curve*vk*dt*0.05f;
+            // The car leans a few pixels toward the steering: enough to see it respond, never enough to distract. The
+            // first 2 deg are the SAS wobble straight ahead; past ~30 deg it stays at 6 px.
+            float sv=Float.isNaN(steer)?0:steer,dz=sv>0?Math.max(0,sv-2):Math.min(0,sv+2);
+            sway+=(6*(float)Math.tanh(dz/12f)-sway)*Math.min(1,dt*4);
             float lo=Float.isNaN(lon)?0:lon,gmag=(float)Math.hypot(la,lo);   // G is the ride: a sharp change jolts the camera, then settles
             bumpE=bumpE*Math.max(0f,1-dt*3.5f)+Math.abs(gmag-prevG)*7f;prevG=gmag;
             float bump=Math.min(6f,bumpE)*(float)Math.sin(now/38.0);
@@ -251,7 +257,7 @@ final class PixelCluster extends ClusterKit {
     }
     /** i30 N from straight behind, 49 x 39 lo-res pixels traced from Hyundai's rear view (width : height 1.24). */
     private void rear(Canvas c,float lat,float bump,boolean brake,boolean left,boolean right,float boost,float rpm){
-        float ox=76-Math.round(lat*8),oy=68+Math.round(bump)+(!Float.isNaN(rpm)&&rpm>prof.redline-1000?(int)Math.round(Math.sin(now/25.0)):0);
+        float ox=76+Math.round(sway),oy=68+Math.round(bump)+(!Float.isNaN(rpm)&&rpm>prof.redline-1000?(int)Math.round(Math.sin(now/25.0)):0);
         int tilt=Math.abs(lat)>0.25f?(lat>0?-1:1):0;
         px(c,ox-3,oy+37,55,3,0x80000000);
         if(tail||lamps||brake)for(int k=0;k<3;k++){int red=((int)((brake?0.10f+0.05f*k:0.04f+0.02f*k)*255)<<24)|0xff281e;px(c,ox-6+2*k,oy+12+k,18-4*k,8-2*k,red);px(c,ox+37+2*k,oy+12+k,18-4*k,8-2*k,red);}

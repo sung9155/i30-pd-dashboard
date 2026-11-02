@@ -1,4 +1,4 @@
-# i30 PD 대시보드 앱 — 2단계(코드 수정)·3단계(빌드·서명) 산출물
+# i30 PD 대시보드 앱 — 포팅 내용과 빌드
 
 업스트림 `reikop/veloster-n-dashboard`(`main` = `2be141b`)에 PD 포팅을 적용한 결과. 이 레포가 업스트림의 포크라 바뀐 소스가 레포 루트(`apps/`·`shared/`·`tests/`)에 그대로 있다. 바뀐 내용 전체는 `git diff 2be141b`.
 
@@ -79,16 +79,16 @@
    **기준 DBC**: commaai/opendbc `hyundai_2015_ccan.dbc` + ajouatom/openpilot `hyundai_kia_generic.dbc`. 브레이크압 = openpilot ESP12 CYL_PRES 동일 값.
    **속도 "—" 깜빡임 수정**: OEM 속도 이벤트(단위 미상)가 hscan 값을 지우던 것 → hscan 차속 수신 후엔 OEM 이벤트 무시(`Telemetry.speed`).
 4. **점화 상태 폴백** `VehicleDataClient`: PD에 `BCMManager`(IGN 상태)가 없으면 hscan 구독이 영영 안 시작되므로, BCM 서비스 획득 실패 시 점화 ON으로 간주(`ignitionUnknown`). hscan은 수신 전용이라 안전.
-5. **클러스터 대칭 화면** `i30pd_port/cluster/` 적용 + PRND 띠를 변속 레버 신호로 표시(D에선 단수 숫자, 수동 게이트에선 `M3`처럼 M+단수). 속도 칸 왼쪽 위에 주행 모드(SPORT 빨강·ECO 초록·NORMAL 회색), 오른쪽 위에 주차 브레이크 체결 시 빨간 Ⓟ. 게이지 탭에서도 두 신호를 골라 `SPORT`·`ON`처럼 글자로 볼 수 있다(`Telemetry.label`).
+5. **주행 모드·주차 브레이크 표시**: 게이지 탭에서 두 신호를 골라 `SPORT`·`ON`처럼 글자로 볼 수 있다(`Telemetry.label`). 처음 넣었던 클러스터 대칭 화면은 2026-10-30에 앱에서 뺐다(같은 정보는 레이스 탭, 보관 소스 `i30pd_port/cluster/`).
+6. 번역 `translations/en.json`에 "변속 레버"(Shift lever) 등 추가 → `UiText.java` 재생성. 테스트: 디코더 화이트리스트 갱신, 실차 바이트 고정값으로 PD 디코더를 검사하는 `tests/HscanPdTelemetryTest.java` 신설(v1.6.9 기준 PD HSCAN 검사 186건, 전체 Java·Python 시험 통과).
 7. **화면 차종 문구**: 상단 `N / PIT` → `i30 PD`, F1 기어 패널 `V E L O S T E R  N` → `i 3 0  P D`, F1+음악 `VELOSTER N` → `HYUNDAI i30` (`PitRenderer`). 앱 이름 `N Dashboard`는 그대로.
-6. 번역 `translations/en.json`에 "변속 레버"(Shift lever) 추가 → `UiText.java` 재생성. 테스트: 디코더 화이트리스트 갱신, `tests/HscanPdTelemetryTest.java`(실차 바이트 고정값 28건) 신설. 전체 Java 12종 + Python 43건 통과.
 
 ## 빌드 (노트북, Git Bash)
 
 ```sh
 git clone https://github.com/sung9155/i30-pd-dashboard && cd i30-pd-dashboard
 # 테스트 빌드는: git checkout test
-JAVA="/c/Program Files/Microsoft/jdk-17.0.20.101-hotspot/bin/java.exe"
+JAVA="<JDK 17 설치 경로>/bin/java.exe"   # 예: /c/Program Files/Eclipse Adoptium/jdk-17…/bin/java.exe
 python -X utf8 scripts/generate_translations.py
 python -X utf8 scripts/test.py --java "$JAVA" && python -X utf8 -m unittest discover -s tests -p 'test_*.py'
 python -X utf8 scripts/build.py dashboard --java "$JAVA" \
@@ -106,7 +106,7 @@ BT=/d/Android/sdk/build-tools/34.0.0
 
 ## 내 앱 (My Apps) — 가장자리 버튼으로 대시보드 열기
 
-업스트림의 보조 앱 `apps/hub`(`com.veloster.carplayhub` v10 `1.9-i18n`, "My Apps companion")도 같은 패치에 PD용 수정을 넣었다. 대시보드와 별도 APK다.
+업스트림의 보조 앱 `apps/hub`(`com.veloster.carplayhub` v10 `1.9-i18n`, "My Apps companion")에도 PD용 수정을 넣었다. 대시보드와 별도 APK다.
 
 1. **가장자리 버튼을 누르면 대시보드가 바로 열린다.** 48 dp 버튼이고 글자는 `계기판`(영어 `Dash`)이다. 대시보드가 없으면 '내 앱'이 열린다. 끌면 좌우 가장자리에 붙고 높이가 저장된다. 상시 알림을 누르면 '내 앱'이 열린다. 업스트림은 버튼이 '내 앱'을 열었다.
 2. **"연결 점검"(시험 핫스팟) 버튼을 뺐다.** 벨N에서도 AP 실패로 끝난 실험이다.
@@ -118,7 +118,7 @@ PD 펌웨어 대조(공개 펌웨어를 받아 확인, 이 레포에는 미포�
 - **USB 디버깅**: 이 버튼이 쓰는 `com.hkmc.misc.MiscManager.setSystem(5/6)`를 PD 순정 엔지니어 모드도 쓴다. 상태 표시(`com.hkmc.Feature`·`persist.sys.dipo.state`)는 PD에서 "확인 불가"로 나올 수 있다. OFF를 누르면 ADB가 끊긴다.
 - 강제 재시작(`REBOOT`), 다른 앱 위 표시(`SYSTEM_ALERT_WINDOW`, `TYPE_PHONE`)는 platform 키 서명이라 권한이 있다.
 
-빌드·설치(노트북, 위 "재현"과 같은 클론·도구):
+빌드·설치(노트북, 위 "빌드"와 같은 클론·도구):
 
 ```sh
 python -X utf8 scripts/build.py hub --java "$JAVA"   --android-jar /d/Android/sdk/platforms/android-17/android.jar   --aapt2 /d/Android/sdk/build-tools/34.0.0/aapt2.exe   --r8-jar /d/Android/sdk/build-tools/34.0.0/lib/d8.jar --out build/hub
@@ -135,7 +135,7 @@ adb shell am start -n com.veloster.carplayhub/.HubActivity
 
 복원은 버튼만 되고 앱 화면은 자동으로 열리지 않는다(업스트림 설계).
 
-## 4단계 — 실차 설치·실행 (2026-10-29 설치·실행 성공)
+## ADB로 직접 설치·확인 (2026-10-29 첫 실차 설치·실행 성공)
 
 ```sh
 export MSYS_NO_PATHCONV=1
@@ -146,7 +146,6 @@ adb logcat -s VehicleDash NDashboard             # 5초 주기 진단: 0:RPM 7:�
 ```
 
 - 설치 거절(`INSTALL_PARSE_FAILED_INCONSISTENT_CERTIFICATES`)은 서명 키 문제 → platform 키로 서명했는지 확인(위 주의).
-- **2차 빌드(66,824B, 페달·부스트 잠정·TPMS·속도 가드)**는 19:19 `adb install -r` `Success`까지 확인했으나 사용자가 시동을 꺼야 해서 **화면·로그 검증은 다음 세션**: ACC 바가 페달 따라 움직이는지, BOOST가 공회전 −0.5 부근·가속 시 상승하는지, 공기압 4칸이 33~35인지.
 - 첫 실행 logcat(2026-10-29): `VehicleDash` 진단 `0:64/6ms/valid 7:68 8:64 10:64 11:64 12:64 13:64 26:64 27:64 30:64/valid` — 5초에 64프레임(~13Hz), RPM·차속·기어·브레이크압·횡/종G·조향각·전압·조향속도·변속 레버 모두 valid. `NDashboard: Subscription unavailable` 로그 없음.
 - `NDashboard: Subscription unavailable: power/NMode/speed` 로그는 PD에 해당 OEM 서비스가 없다는 뜻이며 hscan 값과 무관(폴백으로 계속).
 - 화면에 값이 안 뜨면: `adb shell ps | grep veloster`로 실행 확인 → hscan 소켓은 `car_session.sh`로 별도 확인 → logcat `VehicleDash` 진단 줄에서 카운트가 0이면 게이트(product/incremental)부터 의심.

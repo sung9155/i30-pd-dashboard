@@ -9,6 +9,7 @@ import java.util.Locale;
 /** Night minimal: one dim speed number, a thin rpm line, the gear; warnings light their slot only while on. */
 final class NightCluster extends ClusterKit {
     private static final int SP=0xffa9b6be,DIM=0xff3a4248,ACC=0xff3f86d9;
+    { themed=true; }   // the minimal night layout follows the theme's accent
 
     @Override protected void draw(Canvas c){
         float v=v(7),rpm=v(0),cool=v(2);

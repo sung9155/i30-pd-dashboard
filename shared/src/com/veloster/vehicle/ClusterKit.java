@@ -41,6 +41,8 @@ abstract class ClusterKit {
     protected abstract void draw(Canvas c);
     /** A tap on the body while this layout shows; true when it used it. */
     boolean tap(float x,float y){return false;}
+    /** True while the layout shows the now-playing track itself, so the track-change bar stays off. */
+    boolean showsMusic(){return false;}
 
     /** Display text in the selected language (Korean source strings, translations/en.json). */
     protected static String t(String ko){return com.veloster.i18n.UiText.t(ko);}

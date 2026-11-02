@@ -28,6 +28,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/Theme.java",
                ROOT / "shared/src/com/veloster/vehicle/HeaderTabs.java",
                ROOT / "shared/src/com/veloster/vehicle/ClusterPicker.java",
+               ROOT / "shared/src/com/veloster/vehicle/SettingsLayout.java",
                ROOT / "shared/src/com/veloster/vehicle/SparkRetard.java",
                ROOT / "shared/src/com/veloster/vehicle/DayPhase.java",
                ROOT / "shared/src/com/veloster/vehicle/TaxiFare.java",

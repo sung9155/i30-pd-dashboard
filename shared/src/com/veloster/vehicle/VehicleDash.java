@@ -39,8 +39,14 @@ public final class VehicleDash extends View implements Runnable {
     private int hidden;
     /** Screen list open (long press on the Cluster tab), and its edit mode where a tile tap shows or hides it. */
     private boolean picker,editing;
-    /** The language chooser opened from the list, dismissed with the dashboard like the gauge/graph editors. */
-    private android.app.Dialog langDialog;
+    /** Options: accent colour follows the drive mode; SPORT/ECO open their screen (ClusterPicker.onMode). */
+    private boolean modeColor,modeScreen;
+    private int lastMode=-1,modeBack=-1;
+    /** Settings category open on the left of the gear's settings (SettingsLayout). */
+    private int settingsCat=SettingsLayout.SCREENS;
+    /** Screen per ClusterPicker.MODES slot (-1 = 원래 화면), and the slot being chosen in settings (-1 none). */
+    private final int[] modeTargets=ClusterPicker.MODE_DEFAULT.clone();
+    private int pickSlot=-1;
     private final HeaderTabs header=renderer.header();
     private boolean lapRunning;
     private long lapStart, lapMs;
@@ -96,6 +102,9 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){Theme.select("n");/* Incompatible saved value: open in N. */}
         try{CarPaint.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("car_paint","blue"));}
         catch(ClassCastException e){CarPaint.select("blue");}
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);modeColor=p.getBoolean("mode_color",false);modeScreen=p.getBoolean("mode_screen",false);
+            for(int k=0;k<modeTargets.length;k++)modeTargets[k]=ClusterPicker.validTarget(p.getInt("mode_screen_"+ClusterPicker.MODE_NAMES[k].toLowerCase(java.util.Locale.US),ClusterPicker.MODE_DEFAULT[k]));}
+        catch(ClassCastException e){/* Both options off for an incompatible saved value. */}
         try{
             SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);
             int v=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);
@@ -139,7 +148,7 @@ public final class VehicleDash extends View implements Runnable {
         d.gaugeEditor.dismiss();d.graphEditor.dismiss();d.dismissList();d.mediaReceiver.stop();d.artwork.close();
     }
     /** Close the screen list and anything it opened (language chooser). */
-    private void dismissList(){picker=false;editing=false;if(langDialog!=null&&langDialog.isShowing())langDialog.dismiss();langDialog=null;}
+    private void dismissList(){picker=false;editing=false;}
     private void showDashboard(){setVisibility(VISIBLE);if(entry!=null)entry.setVisibility(GONE);bringToFront();}
     private void close() { entryRequestUntil=0;removeCallbacks(editHold);touching=false;gaugeEditor.dismiss();graphEditor.dismiss();dismissList();setVisibility(GONE); if(entry!=null) entry.setVisibility(blocked?GONE:VISIBLE); }
     public static void consumeEntryIntent(Activity a){entryIntent(a,a.getIntent());}
@@ -228,7 +237,15 @@ public final class VehicleDash extends View implements Runnable {
         renderer.setGraphLayout(graphs?graphLayout:null);
         renderer.setSymmetric(symmetric);
         renderer.setPage(page);
+        Telemetry.Sample ms=DATA.sample(Telemetry.DRIVE_MODE,now);int mode=ms.valid?(int)ms.value:-1;
+        Theme.mode(modeColor?mode:-1);
+        if(mode!=lastMode){
+            if(modeScreen&&!picker){int[] st=ClusterPicker.onMode(lastMode,mode,screen,modeBack,hidden,modeTargets);modeBack=st[1];if(st[0]!=screen){screen=st[0];showCluster();}}
+            lastMode=mode;
+        }
         renderer.setPicker(picker,editing,hidden);
+        renderer.setModeOptions(modeColor,modeScreen);
+        if(picker&&editing)renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);
         renderer.setLap(lapRunning?now-lapStart:lapMs,lapRunning);
         renderer.setOverviewLayout(overviewLayout);
         long drawStart=System.nanoTime();
@@ -279,24 +296,38 @@ public final class VehicleDash extends View implements Runnable {
         if(tap&&!blocked&&HeaderTabs.gear(x,y)&&HeaderTabs.gear(downX,downY)){   // gear: edit the screen list, again to close it
             boolean open=!(picker&&editing);picker=open;editing=open;if(open)showCluster();invalidate();return true;
         }
-        if(picker){   // a tile picks that screen (in edit mode turns it on or off, or sets car paint/language/theme), any other tap (완료 too) closes the list
+        if(picker&&editing){   // settings: a category on the left opens its choices (완료 closes); a choice applies at once
+            if(!tap)return true;
+            int k=SettingsLayout.cat(x,y);
+            if(k>=0&&k==SettingsLayout.cat(downX,downY)){pickSlot=-1;if(k==SettingsLayout.DONE){picker=false;editing=false;}else settingsCat=k;invalidate();return true;}
+            int pane=pickSlot>=0?SettingsLayout.PICK:settingsCat,i=SettingsLayout.item(pane,x,y);
+            if(i<0||i!=SettingsLayout.item(pane,downX,downY))return true;
+            SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();
+            if(pickSlot>=0){   // chooser: a screen (or 원래 화면, the last tile) for that mode, then back to the mode rows
+                modeTargets[pickSlot]=i<ClusterPicker.COUNT?i:-1;modeBack=-1;
+                e.putInt("mode_screen_"+ClusterPicker.MODE_NAMES[pickSlot].toLowerCase(java.util.Locale.US),modeTargets[pickSlot]);pickSlot=-1;
+            }
+            else switch(settingsCat){
+                case SettingsLayout.SCREENS:hidden=ClusterPicker.toggle(hidden,i);showCluster();break;
+                case SettingsLayout.THEME:Theme.select(Theme.IDS[i]);e.putString("theme",Theme.current().id);break;
+                case SettingsLayout.PAINT:CarPaint.select(i);e.putString("car_paint",CarPaint.id());break;
+                case SettingsLayout.MODE:
+                    if(i==SettingsLayout.MODE_COLOR)modeColor=!modeColor;
+                    else if(i==SettingsLayout.MODE_SCREEN){modeScreen=!modeScreen;modeBack=-1;}
+                    else pickSlot=i-SettingsLayout.MODE_FIRST;
+                    e.putBoolean("mode_color",modeColor).putBoolean("mode_screen",modeScreen);break;
+                case SettingsLayout.LANG:
+                    if(LanguageSettings.save(activity,SettingsLayout.LANGS[i])&&entry!=null)entry.setText(UiText.t("N 계기판"));   // the OEM screen's entry button follows the language too
+                    break;
+                case SettingsLayout.DIAG:DtcDialog.show(activity);break;   // read-only trouble codes
+            }
+            e.apply();invalidate();return true;
+        }
+        if(picker){   // a tile picks that screen, any other tap closes the list
             if(!tap)return true;
             int i=ClusterPicker.hit(x,y),slot=i==ClusterPicker.hit(downX,downY)?i:-1;
-            int[] list=ClusterPicker.slots(hidden,editing);
-            if(editing&&slot==ClusterPicker.LANG)langDialog=LanguageSettings.show(activity,new Runnable(){public void run(){
-                if(entry!=null)entry.setText(UiText.t("N 계기판"));   // the OEM screen's entry button follows the language too
-                invalidate();}});
-            else if(editing&&slot==ClusterPicker.DIAG)DtcDialog.show(activity);   // read-only trouble codes
-            else if(editing&&slot==ClusterPicker.CAR){
-                CarPaint.next();
-                activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("car_paint",CarPaint.id()).apply();
-            }
-            else if(editing&&slot==ClusterPicker.THEME){
-                Theme.select(Theme.next(Theme.current().id));
-                activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("theme",Theme.current().id).apply();
-            }
-            else if(slot>=0&&slot<list.length&&editing){hidden=ClusterPicker.toggle(hidden,list[slot]);showCluster();}
-            else if(slot>=0&&slot<list.length){screen=list[slot];showCluster();picker=false;}
+            int[] list=ClusterPicker.slots(hidden,false);
+            if(slot>=0&&slot<list.length){screen=list[slot];showCluster();picker=false;}
             else{picker=false;editing=false;}
             invalidate();return true;
         }

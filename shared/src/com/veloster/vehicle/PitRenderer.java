@@ -31,7 +31,7 @@ public final class PitRenderer {
     private long frameTime;
     private ShiftGuide.Cue cue;
     private VehicleProfile profile=VehicleProfile.PETROL_DCT;
-    private boolean mediaPage;
+    private boolean mediaPage,raceMedia;
     private MediaState.Snapshot music;
     private Bitmap artwork;
     private final GaugeRenderer gaugeRenderer=new GaugeRenderer();
@@ -47,6 +47,16 @@ public final class PitRenderer {
     private int hidden;
     /** Screen list over the body while open, its edit mode and the hidden screens (VehicleDash owns the gesture). */
     public void setPicker(boolean open,boolean edit,int hiddenScreens){picker=open;editing=edit;hidden=hiddenScreens;}
+    /** Drive-mode options shown on their edit tiles: accent colour by mode, screen by mode. */
+    private boolean modeColor,modeScreen;
+    public void setModeOptions(boolean color,boolean screen){modeColor=color;modeScreen=screen;}
+    /** Settings category open on the left (SettingsLayout) and the saved language choice, for the gear's settings. */
+    private int settingsCat,pickSlot=-1;
+    private String langSel="auto";
+    private int[] modeTargets=ClusterPicker.MODE_DEFAULT.clone();
+    /** pick = the ClusterPicker.MODES slot whose screen is being chosen, or -1; targets = each mode's screen (-1 원래 화면). */
+    public void setSettings(int cat,String language,int pick,int[] targets){settingsCat=cat;langSel=language;pickSlot=pick;modeTargets=targets;}
+    private static String screenName(int s){return s>=0&&s<ClusterPicker.COUNT?ClusterPicker.NAMES[s]:"원래 화면";}
     /** Body tap on a Cluster layout (taxi meter button and the like); true when it was used. */
     public boolean clusterTap(float x,float y){return symmetric&&isCluster(page)&&clusterRenderer.tap(page-PAGE_CLASSIC,x,y);}
     private final HeaderTabs header=new HeaderTabs();
@@ -103,7 +113,7 @@ public final class PitRenderer {
         draw(c,width,height,cluster,model,now,target,false,null);
     }
     public void draw(Canvas c,int width,int height,boolean cluster,Telemetry model,long now,int target,boolean media,MediaState.Snapshot track){
-        mediaPage=cluster && media;music=track;
+        mediaPage=cluster && media;raceMedia=media;music=track;
         frameTime=now;samples=model.snapshot(now);profile=model.profile();
         clusterRenderer.tick(samples,now);   // trip totals of the layouts count on every page
         // The profile's range, so the "목표" label shows the target the cue really uses (a diesel's is 2100-4700).
@@ -146,7 +156,7 @@ public final class PitRenderer {
             paint.setStyle(Paint.Style.FILL);
         }
         if(picker)drawPicker(c,screen(cluster));
-        else if(graphLayout==null&&!mediaPage && music!=null && music.notice)drawMedia(c,true);
+        else if(graphLayout==null&&!mediaPage && music!=null && music.notice && !showsMusic())drawMedia(c,true);
         if(cluster&&!picker&&gaugeLayout==null&&graphLayout==null)drawArtworkToggle(c);
         c.restore();
     }
@@ -162,11 +172,9 @@ public final class PitRenderer {
         paint.setColor(T(ink));c.drawCircle(cx,cy,8,paint);
         paint.setColor(T(on?0xff233b46:0xff111415));c.drawCircle(cx,cy,3.5f,paint);
     }
-    /**
-     * Screen list: 6 x 5 tiles over a dimmed body, the current screen outlined. Normally only the shown screens; in edit
-     * mode (the gear) all of them, each marked 사용 or 미사용, then the language and theme tiles and 완료.
-     */
+    /** Screen list: 6 x 5 tiles of the shown screens over a dimmed body, the current one outlined. The gear opens settings instead. */
     private void drawPicker(Canvas c,int cur){
+        if(editing){drawSettings(c);return;}
         box(c,0,52,800,480,0xe6040506);
         int[] list=ClusterPicker.slots(hidden,editing);
         for(int i=0;i<list.length;i++){
@@ -175,26 +183,49 @@ public final class PitRenderer {
             box(c,l,t,l+w,t+h,s==cur?0xff1c303b:off?0xff08090a:0xff101315);
             if(s==cur){box(c,l,t,l+w,t+3,BLUE);box(c,l,t+h-3,l+w,t+h,BLUE);box(c,l,t,l+3,t+h,BLUE);box(c,l+w-3,t,l+w,t+h,BLUE);}
             centered(c,UiText.t(ClusterPicker.NAMES[s]),l+w/2,t+35,20,off?MUTED:s==cur?BLUE:WHITE,true);
-            if(editing)centered(c,UiText.t(off?"미사용":"사용"),l+w/2,t+60,14,off?MUTED:BLUE,true);
-            else centered(c,UiText.t(ClusterPicker.DESC[s]),l+w/2,t+58,11,MUTED,false);
+            centered(c,UiText.t(ClusterPicker.DESC[s]),l+w/2,t+58,11,MUTED,false);
         }
-        if(!editing)return;
-        setting(c,ClusterPicker.DIAG,"진단",UiText.t("고장코드"));
-        setting(c,ClusterPicker.CAR,"차량 색",UiText.t(CarPaint.label()));
-        setting(c,ClusterPicker.LANG,"언어",UiText.language().toUpperCase(Locale.US));
-        setting(c,ClusterPicker.THEME,"테마",Theme.current().label);
-        float l=ClusterPicker.left(ClusterPicker.EDIT),t=ClusterPicker.top(ClusterPicker.EDIT),w=ClusterPicker.TILE_W,h=ClusterPicker.TILE_H;
-        box(c,l,t,l+w,t+h,0xff16232b);
-        box(c,l,t,l+w,t+3,BLUE);box(c,l,t+h-3,l+w,t+h,BLUE);box(c,l,t,l+3,t+h,BLUE);box(c,l+w-3,t,l+w,t+h,BLUE);
-        centered(c,UiText.t("완료"),l+w/2,t+35,20,BLUE,true);
-        centered(c,UiText.t("눌러서 사용·미사용"),l+w/2,t+58,11,MUTED,false);
     }
-    /** Setting tile in edit mode: name, current value in the accent. */
-    private void setting(Canvas c,int slot,String name,String value){
-        float l=ClusterPicker.left(slot),t=ClusterPicker.top(slot),w=ClusterPicker.TILE_W,h=ClusterPicker.TILE_H;
-        box(c,l,t,l+w,t+h,0xff16232b);
-        centered(c,UiText.t(name),l+w/2,t+35,20,WHITE,true);
-        centered(c,value,l+w/2,t+60,14,BLUE,true);
+    /** Settings (the gear): categories on the left, the open category's choices on the right, the chosen ones outlined. */
+    private void drawSettings(Canvas c){
+        box(c,0,52,800,480,0xf2040506);
+        for(int i=0;i<SettingsLayout.CATS.length;i++){
+            float l=SettingsLayout.CAT_L,t=SettingsLayout.catTop(i);boolean on=i==settingsCat,done=i==SettingsLayout.DONE;
+            box(c,l,t,l+SettingsLayout.CAT_W,t+SettingsLayout.CAT_H,on?0xff1c303b:done?0xff16232b:0xff101315);
+            if(on)box(c,l,t,l+4,t+SettingsLayout.CAT_H,BLUE);
+            text(c,UiText.t(SettingsLayout.CATS[i]),l+16,t+SettingsLayout.CAT_H/2+7,18,on||done?BLUE:WHITE,true);
+        }
+        box(c,SettingsLayout.PANE_L-8,SettingsLayout.TOP,SettingsLayout.PANE_L-7,SettingsLayout.BOTTOM,LINE);
+        int cat=pickSlot>=0?SettingsLayout.PICK:settingsCat;float w=SettingsLayout.itemW(cat),h=SettingsLayout.itemH(cat);
+        if(pickSlot>=0)text(c,ClusterPicker.MODE_NAMES[pickSlot]+" "+UiText.t("모드 화면"),SettingsLayout.PANE_L,SettingsLayout.TOP+20,16,BLUE,true);
+        for(int i=0;i<SettingsLayout.count(cat);i++){
+            float l=SettingsLayout.left(cat,i),t=SettingsLayout.top(cat,i);
+            String name,sub=null,value=null;boolean sel=false,dim=false;int swatch=0,swatchBg=0xff000000;
+            switch(cat){
+                case SettingsLayout.SCREENS:dim=(hidden&(1<<i))!=0;name=ClusterPicker.NAMES[i];sub=dim?"미사용":"사용";break;
+                case SettingsLayout.THEME:{Theme th=Theme.of(Theme.IDS[i]);sel=th==Theme.current();name=SettingsLayout.THEME_NAMES[i];sub=th.label;swatch=th.accent;swatchBg=th.map(0xff101315);break;}
+                case SettingsLayout.PAINT:sel=i==CarPaint.index();name=CarPaint.LABELS[i];swatch=CarPaint.color(i);break;
+                case SettingsLayout.MODE:
+                    if(i<SettingsLayout.MODE_FIRST){sel=i==0?modeColor:modeScreen;name=i==0?"모드 색":"모드 화면";
+                        sub=i==0?"ECO 초록 · SPORT 주황":"모드를 바꾸면 아래 화면으로";value=sel?"켬":"끔";}
+                    else{int k=i-SettingsLayout.MODE_FIRST;name=ClusterPicker.MODE_NAMES[k];dim=!modeScreen;sub="눌러서 화면 고르기";value=screenName(modeTargets[k]);}
+                    break;
+                case SettingsLayout.PICK:{int s=i<ClusterPicker.COUNT?i:-1;sel=modeTargets[pickSlot]==s;name=screenName(s);
+                    if(s>=0&&(hidden&(1<<s))!=0){dim=true;sub="미사용";}break;}
+                case SettingsLayout.LANG:sel=SettingsLayout.LANGS[i].equals(langSel);name=SettingsLayout.LANG_NAMES[i];break;
+                default:name="고장코드 읽기";sub="엔진·변속기·제동·조향·에어백·바디 (읽기만)";
+            }
+            box(c,l,t,l+w,t+h,sel?0xff1c303b:dim?0xff08090a:0xff101315);
+            if(sel){box(c,l,t,l+w,t+3,BLUE);box(c,l,t+h-3,l+w,t+h,BLUE);box(c,l,t,l+3,t+h,BLUE);box(c,l+w-3,t,l+w,t+h,BLUE);}
+            float tx=l+16;
+            if(swatch!=0){float s=30,sy=t+(h-s)/2;   // the real colours, not remapped by the current theme
+                paint.setColor(0xff303638);c.drawRect(l+14,sy,l+14+s,sy+s,paint);paint.setColor(swatchBg);c.drawRect(l+15,sy+1,l+13+s,sy+s-1,paint);
+                paint.setColor(swatch);c.drawRect(l+19,sy+5,l+9+s,sy+s-5,paint);tx=l+56;}
+            int ink=dim?MUTED:sel?BLUE:WHITE;
+            if(sub==null)text(c,UiText.t(name),tx,t+h/2+7,18,ink,true);
+            else{text(c,UiText.t(name),tx,t+h/2-3,18,ink,true);text(c,UiText.t(sub),tx,t+h/2+17,12,cat==SettingsLayout.SCREENS&&!dim?BLUE:MUTED,cat==SettingsLayout.SCREENS);}
+            if(value!=null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);String v=UiText.t(value);text(c,v,l+w-20-paint.measureText(v),t+h/2+7,18,sel||cat==SettingsLayout.MODE&&i>=SettingsLayout.MODE_FIRST&&!dim?BLUE:MUTED,true);}
+        }
     }
     /** Pixel width of a header tab: its label plus side padding, with a sensible minimum. */
     private float tabWidth(String label){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(14);return Math.max(56f,paint.measureText(label)+24f);}
@@ -241,6 +272,10 @@ public final class PitRenderer {
             s=s.substring(0,end)+"…";
         }
         text(c,s,x,y,size,color,false);
+    }
+    /** The page already shows the track (race tab music panel, taxi radio, cassette): no track-change bar over it. */
+    private boolean showsMusic(){
+        return gaugeLayout==null&&symmetric&&(page==PAGE_RACE&&raceMedia||isCluster(page)&&clusterRenderer.showsMusic(page-PAGE_CLASSIC));
     }
     private void drawMedia(Canvas c,boolean notice){
         long age=music==null?0:music.noticeAgeMs;

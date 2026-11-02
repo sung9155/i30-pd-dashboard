@@ -61,6 +61,11 @@ public final class Theme {
         new Theme("copper","CU",SHAPE_HEX,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x070504,0x0e0a08,0x3a2c22,0x241b15,0xf8ece2,0xa69282,0xe08a52,0x33200f,0xc0502a}),
     };
     private static volatile Theme current=ALL[0];
+    /** Drive-mode accent (option): ECO green, SPORT red-orange over any theme's accent; 0 = the theme's own. */
+    private static final int ECO_ACCENT=0x6fe39a,ECO_DIM=0x103a22,SPORT_ACCENT=0xff5a36,SPORT_DIM=0x3a160c;
+    private static volatile int modeAccent,modeDim;
+    /** CLU13 drive mode code (0 NORMAL, 1 SPORT, 3 ECO), or -1 to drop the mode accent. */
+    public static void mode(int code){modeAccent=code==3?ECO_ACCENT:code==1?SPORT_ACCENT:0;modeDim=code==3?ECO_DIM:code==1?SPORT_DIM:0;}
 
     public static Theme current(){return current;}
     /** Unknown or null ids fall back to N (a corrupt saved preference must still open). */
@@ -69,6 +74,8 @@ public final class Theme {
         for(int i=0;i<IDS.length;i++)if(IDS[i].equals(id))return IDS[(i+1)%IDS.length];
         return IDS[1];
     }
+    /** The theme with this id (N for an unknown one), without selecting it: the settings list draws every theme's swatch. */
+    public static Theme of(String id){return byId(id);}
     private static Theme byId(String id){for(Theme t:ALL)if(t.id.equals(id))return t;return ALL[0];}
 
     /** WCAG contrast ratio of two opaque colours (1..21). */
@@ -85,6 +92,9 @@ public final class Theme {
 
     /** Theme colour for an N palette colour; alpha comes from the input. Colours outside the table pass through. */
     public int map(int nColor){
+        if(modeAccent!=0){int rgb=nColor&0xffffff;
+            for(int k:N_ROLES[ACCENT])if(k==rgb)return (nColor&0xff000000)|modeAccent;
+            for(int k:N_ROLES[ACCENT_DIM])if(k==rgb)return (nColor&0xff000000)|modeDim;}
         if(keys==null)return nColor;
         int i=Arrays.binarySearch(keys,nColor&0xffffff);
         return i<0?nColor:(nColor&0xff000000)|values[i];

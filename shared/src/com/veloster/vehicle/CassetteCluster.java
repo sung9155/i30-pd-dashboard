@@ -10,6 +10,7 @@ import java.util.Locale;
  * reels spinning with rpm, two VU needles (accelerator, boost), a mechanical counter (odometer tenths) and a VFD speed.
  */
 final class CassetteCluster extends ClusterKit {
+    @Override boolean showsMusic(){return true;}   // the label is the track
     private static final int VF=0xff5effc0,VF_OFF=0xff0b2a20,INK=0xff1f3a8a,FACE=0xffefe3c2;
     private float rot,needleL,needleR;
     private long last;

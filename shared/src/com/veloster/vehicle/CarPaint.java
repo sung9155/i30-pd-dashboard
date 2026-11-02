@@ -26,6 +26,9 @@ public final class CarPaint {
     public static String label(){return LABELS[current];}
     /** Body, highlight, dark side, shadow line. */
     public static int[] body(){return BODY[current].clone();}
+    /** Body colour of paint i (the settings swatch). */
+    public static int color(int i){return BODY[i][0];}
+    public static void select(int i){if(i>=0&&i<IDS.length)current=i;}
     /** Unknown or null ids fall back to Performance Blue (a corrupt saved preference must still open). */
     public static void select(String id){int n=0;for(int i=0;i<IDS.length;i++)if(IDS[i].equals(id))n=i;current=n;}
     public static void next(){current=(current+1)%IDS.length;}

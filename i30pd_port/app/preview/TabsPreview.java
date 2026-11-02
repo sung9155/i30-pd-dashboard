@@ -47,10 +47,16 @@ public final class TabsPreview {
         save(out,"4c_race_music",rec,model,now,false,true);   // race tab with the music panel toggled on
         rec.setPage(PitRenderer.PAGE_RECORDS);save(out,"4d_records",rec,model,now,false,false);
         String[] layouts={"9a_cluster_classic","9b_cluster_retro","9c_cluster_rally","9d_cluster_taxi","9e_cluster_80s","9f_cluster_hud","9g_cluster_8bit","9g_cluster_8bit_chase",
-            "9h_cluster_eco","9i_cluster_gcircle","9j_cluster_night","9k_cluster_drag","9l_cluster_engine","9m_cluster_cassette","9n_cluster_warp","9o_cluster_scope","9p_cluster_knock"};
+            "9h_cluster_eco","9i_cluster_gcircle","9j_cluster_night","9k_cluster_drag","9l_cluster_engine","9m_cluster_cassette","9n_cluster_warp"};
         for(int i=0;i<layouts.length;i++){rec.setPage(PitRenderer.PAGE_CLASSIC+i);save(out,layouts[i],rec,model,now,false,false);}
         rec.setPicker(true,false,0);save(out,"9_cluster_list",rec,model,now,false,false);
-        rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<23));save(out,"9_cluster_list_edit",rec,model,now,false,false);rec.setPicker(false,false,0);
+        String[] cats={"screens","theme","paint","mode","lang","diag"};   // settings (the gear), one shot per category
+        rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<20));rec.setModeOptions(true,false);
+        int[] targets={ClusterPicker.F1+2,ClusterPicker.ECO,-1};   // SPORT set to the race page
+        for(int k=0;k<cats.length;k++){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k],rec,model,now,false,false);}
+        rec.setModeOptions(true,true);rec.setSettings(3,"auto",-1,targets);save(out,"9_settings_mode_on",rec,model,now,false,false);
+        rec.setSettings(3,"auto",0,targets);save(out,"9_settings_mode_pick",rec,model,now,false,false);
+        rec.setPicker(false,false,0);rec.setModeOptions(false,false);
         // Missing signals (empty model) and a 6MT profile, drawn straight through ClusterRenderer.
         Telemetry none=new Telemetry();
         for(int i=0;i<layouts.length;i++)cluster(out,"x_"+layouts[i].substring(3)+"_empty",i,none,now,new DriveStats(),VehicleProfile.PETROL_DCT);

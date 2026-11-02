@@ -15,7 +15,7 @@ public final class ClusterPicker {
     public static final String[] DESC={"모든 값 한눈에","고른 값 게이지","시간 그래프","F1 스타일 계기판","랩 타이머","변속 표시·음악","주행 기록","쇼 화면",
         "계단 회전 곡선","주황 LCD","흰 네모 숫자","택시 미터기","80년대 디지털","전투기 HUD","8비트 게임","8비트 추격 시점","에코 코치","마찰원","야간 미니멀","드래그 출발 트리",
         "비행기 엔진 계기판","카세트 데크","우주선 워프"};
-    public static final int OVERVIEW=0,GAUGES=1,GRAPHS=2,F1=3,CLASSIC=8,COUNT=NAMES.length,COLS=6,SLOTS=30,DIAG=SLOTS-5,CAR=SLOTS-4,LANG=SLOTS-3,THEME=SLOTS-2,EDIT=SLOTS-1;
+    public static final int OVERVIEW=0,GAUGES=1,GRAPHS=2,F1=3,CLASSIC=8,COUNT=NAMES.length,COLS=6,SLOTS=30,ECO=16;
     public static final float LEFT=17,TOP=60,TILE_W=121,TILE_H=76,GAP=8;
     private ClusterPicker(){}
     /** PitRenderer page of a screen after F1. */
@@ -39,6 +39,32 @@ public final class ClusterPicker {
     public static int prev(int cur,int hidden){
         for(int i=1;i<=COUNT;i++){int s=((cur-i)%COUNT+COUNT)%COUNT;if((hidden&(1<<s))==0)return s;}
         return cur;
+    }
+    /** Drive modes with a screen of their own, in settings order (CLU13 codes), and their default screens (-1 = 원래 화면). */
+    public static final int[] MODES={1,3,0},MODE_DEFAULT={F1,ECO,-1};
+    public static final String[] MODE_NAMES={"SPORT","ECO","NORMAL"};
+    /** Slot of a CLU13 mode code in MODES, or -1. */
+    public static int modeSlot(int mode){for(int i=0;i<MODES.length;i++)if(MODES[i]==mode)return i;return -1;}
+    /** A saved mode screen: a screen index, or -1 (원래 화면) when out of range. */
+    public static int validTarget(int s){return s>=0&&s<COUNT?s:-1;}
+    /**
+     * Mode screen option: a change of drive mode opens that mode's screen (targets[modeSlot], when shown); a mode set to
+     * 원래 화면 (-1) brings back the screen from before the first jump, unless the driver moved off the mode screen
+     * meanwhile. state = {screen, back (-1 none)}; mode codes are CLU13's (0 NORMAL, 1 SPORT, 3 ECO, -1 unknown).
+     * Only a change between two known modes moves anything.
+     */
+    public static int[] onMode(int prev,int mode,int screen,int back,int hidden,int[] targets){
+        if(prev<0||mode<0||prev==mode)return new int[]{screen,back};
+        int from=target(prev,hidden,targets),to=target(mode,hidden,targets);
+        if(back>=0&&from>=0&&screen!=from)back=-1;   // driver left the screen a jump opened: keep their choice
+        if(to>=0)return new int[]{to,back>=0?back:screen};
+        if(back>=0)return new int[]{shown(back,hidden),-1};
+        return new int[]{screen,back};
+    }
+    /** The mode's screen, or -1 for 원래 화면, an unknown mode or a hidden screen. */
+    private static int target(int mode,int hidden,int[] targets){
+        int k=modeSlot(mode),s=k<0?-1:validTarget(targets[k]);
+        return s>=0&&(hidden&(1<<s))==0?s:-1;
     }
     /** s when shown, else the next shown screen. */
     public static int shown(int s,int hidden){return (hidden&(1<<s))==0?s:next(s,hidden);}

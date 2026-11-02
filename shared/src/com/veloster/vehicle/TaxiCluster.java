@@ -166,6 +166,7 @@ final class TaxiCluster extends ClusterKit {
         for(int i=0,x=(int)l+30;x<rr-30;i++){int bw=1+((i*7)%3);fill(c,x,t+310,x+bw,t+344,ink);x+=bw+1+((i*5)%2);}
         text(c,t("누르면 음악으로"),(l+rr)/2,t+370,12,soft,Paint.Align.CENTER,Typeface.DEFAULT);
     }
+    @Override boolean showsMusic(){return !ended;}   // the radio panel, until a receipt replaces it
     @Override boolean tap(float x,float y){
         if(x>=34&&x<=268&&y>=388&&y<=450&&hired){hired=false;ended=true;waitStop=true;return true;}
         if(x>=538&&x<=784&&y>=64&&y<=452&&ended){ended=false;return true;}   // receipt back to the radio

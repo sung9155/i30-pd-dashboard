@@ -33,6 +33,13 @@ public final class ThemeTest {
             check(t.calm(0xffa4d9ef)!=t.danger,id+": calm state is not the danger colour");}
         Theme.select("n");check(Theme.current().readableOn(0xffa4d9ef,0xffff4059)==0xffff4059,"N keeps today's colours (pixel-identical)");
         check(Theme.current().calm(0xffa4d9ef)==0xffa4d9ef,"N calm colour unchanged");
+        // Drive-mode accent: over every theme, ECO and SPORT recolour the accent and its dim; NORMAL / off restore it.
+        for(String id:Theme.IDS){Theme.select(id);Theme t=Theme.current();int own=t.map(0xffa4d9ef),ownDim=t.map(0xff233b46),bg=t.map(0xff040506);
+            Theme.mode(3);check(t.map(0x80a4d9ef)==0x806fe39a&&t.map(0xff233b46)==0xff103a22,id+": ECO accent keeps alpha");
+            Theme.mode(1);check(t.map(0xff8fd0f0)==0xffff5a36&&(0xff5a36)!=(t.danger&0xffffff),id+": SPORT accent, not the danger red");
+            check(t.map(0xff040506)==bg&&t.map(t.danger)==t.danger,id+": mode leaves the rest alone");
+            Theme.mode(0);check(t.map(0xffa4d9ef)==own&&t.map(0xff233b46)==ownDim,id+": NORMAL keeps the theme accent");
+            Theme.mode(-1);check(t.map(0xffa4d9ef)==own,id+": off keeps the theme accent");}
         System.out.println("PASS "+checks+" theme checks");
     }
 }

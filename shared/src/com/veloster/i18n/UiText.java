@@ -39,6 +39,7 @@ public final class UiText {
         EN.put("CH2 종G 0.2 g/div","CH2 long G 0.2 g/div");
         EN.put("DiPlay 연결을 먼저 종료하세요. 시험 AP를 끄고 백업한 AP 설정과 Wi-Fi 켜짐 상태를 복원합니다.","Disconnect DiPlay first. The test AP will be turned off and the backed-up AP settings and Wi-Fi state restored.");
         EN.put("DiPlay와 iPhone에 입력","Enter in DiPlay and iPhone");
+        EN.put("ECO 초록 · SPORT 주황","ECO green · SPORT orange");
         EN.put("EMS 기어","EMS gear");
         EN.put("F1 스타일 계기판","F1-style cluster");
         EN.put("G 원","G circle");
@@ -88,6 +89,7 @@ public final class UiText {
         EN.put("계단 회전 곡선","Stepped rev curve");
         EN.put("고른 값 게이지","Your chosen gauges");
         EN.put("고장코드","Trouble codes");
+        EN.put("고장코드 읽기","Read trouble codes");
         EN.put("고장코드 조회","Trouble codes");
         EN.put("곡이 나오면 라벨에 적힙니다","The playing track shows on the label");
         EN.put("곧 출발","Get ready");
@@ -120,6 +122,8 @@ public final class UiText {
         EN.put("기존 설정 복구","Restore original settings");
         EN.put("기존 핫스팟 설정을 읽지 못했습니다. 백업 불가로 변경하지 않았습니다.","Could not read the existing hotspot configuration. No backup or changes were made.");
         EN.put("기존 핫스팟이 이미 켜져 있습니다. 설정을 변경하지 않았습니다.","The existing hotspot is already on. No settings were changed.");
+        EN.put("끔","Off");
+        EN.put("나이트","Night");
         EN.put("내 앱","My Apps");
         EN.put("내 앱 / My Apps","My Apps");
         EN.put("내 앱 열기 · 길게 끌어서 위치 변경 / My Apps","Open My Apps; drag to move");
@@ -136,6 +140,7 @@ public final class UiText {
         EN.put("누르면 음악으로","Tap for music");
         EN.put("눌러서 N 계기판과 앱 목록 열기","Tap to open N Dashboard and your app list");
         EN.put("눌러서 사용·미사용","Tap to turn on/off");
+        EN.put("눌러서 화면 고르기","Tap to choose a screen");
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
         EN.put("다른 칸과 위치 바꾸기","Swap with another slot");
         EN.put("다시 조회","Read again");
@@ -153,13 +158,19 @@ public final class UiText {
         EN.put("드래그","Drag");
         EN.put("드래그 출발 트리","Drag start tree");
         EN.put("라바 오렌지","Lava Orange");
+        EN.put("람보","Lambo");
         EN.put("랠리","Rally");
         EN.put("랩 타이머","Lap timer");
         EN.put("레이스","Race");
         EN.put("레트로","Retro");
+        EN.put("로즈","Rose");
         EN.put("마찰 토크","Friction torque");
         EN.put("마찰원","Friction circle");
         EN.put("막대","Bar");
+        EN.put("모노","Mono");
+        EN.put("모드 색","Mode colour");
+        EN.put("모드 화면","Mode screen");
+        EN.put("모드를 바꾸면 아래 화면으로","Changing mode opens the screen below");
         EN.put("모든 값 한눈에","Every value at a glance");
         EN.put("모든 게이지의 항목과 모양을 초기화합니다.","Reset all gauge signals and styles to their defaults.");
         EN.put("목록 편집","Edit app list");
@@ -244,6 +255,7 @@ public final class UiText {
         EN.put("시간 30초 × ","Time 30 s × ");
         EN.put("시간 그래프","Values over time");
         EN.put("시간 요금 · 30초당 100원","Time fare · 100 won per 30 s");
+        EN.put("시스템","System");
         EN.put("시험 접속정보 보기","Show test credentials");
         EN.put("시험 핫스팟 켜기","Test hotspot");
         EN.put("실행 가능한 기본 앱이 더 없습니다.","No other system apps are available to open.");
@@ -252,6 +264,7 @@ public final class UiText {
         EN.put("실행 실패: ","Launch failed: ");
         EN.put("심야 할증","Night surcharge");
         EN.put("심야 할증 ","Night surcharge ");
+        EN.put("아이스","Ice");
         EN.put("아이언 그레이","Iron Grey");
         EN.put("안드로이드 기본앱","Android utilities");
         EN.put("안드로이드 블루투스 어댑터가 없습니다.","No Android Bluetooth adapter is available.");
@@ -263,6 +276,7 @@ public final class UiText {
         EN.put("앞 오른쪽 휠","Front-right wheel");
         EN.put("앞 왼쪽 공기압","Front-left pressure");
         EN.put("앞 왼쪽 휠","Front-left wheel");
+        EN.put("앰버","Amber");
         EN.put("앱","Apps");
         EN.put("앱 관리","Manage apps");
         EN.put("앱 화면을 열지 못했습니다. 알림에서 다시 시도하세요.","Could not open My Apps. Try the notification.");
@@ -282,6 +296,7 @@ public final class UiText {
         EN.put("엔진 부하","Engine load");
         EN.put("엔진 회전 주파수 = RPM ÷ 60","Crank frequency = RPM ÷ 60");
         EN.put("엔진 회전수","Engine speed");
+        EN.put("엔진·변속기·제동·조향·에어백·바디 (읽기만)","Engine, transmission, brakes, steering, airbag, body (read only)");
         EN.put("연결 점검","Connections");
         EN.put("연료 L/h","Fuel L/h");
         EN.put("연료 차단","Fuel cut");
@@ -311,6 +326,7 @@ public final class UiText {
         EN.put("운행을 마치면 영수증이 나옵니다","The receipt appears when the trip ends");
         EN.put("워프","Warp");
         EN.put("원","won");
+        EN.put("원래 화면","Previous screen");
         EN.put("원형","Dial");
         EN.put("위치를 바꿀 칸","Choose a slot to swap");
         EN.put("유온","Oil");
@@ -432,7 +448,9 @@ public final class UiText {
         EN.put("카세트 데크","Cassette deck");
         EN.put("켜기","Enable");
         EN.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","When enabled, reboot restores only the shortcut, not the full app screen. Drag the edge button to move it.\n\nIf overlays are denied, the notification remains. If the factory UI also hides notifications, use another entry point. Force-stop may prevent restoration until My Apps is opened again.");
+        EN.put("켬","On");
         EN.put("코치","Coach");
+        EN.put("코퍼","Copper");
         EN.put("클래식","Classic");
         EN.put("클러스터","Cluster");
         EN.put("타이어 공기압","Tire pressure");
@@ -450,6 +468,7 @@ public final class UiText {
         EN.put("트렁크 열림","Trunk open");
         EN.put("트립 평균","Trip average");
         EN.put("트립 평균 ","Trip average ");
+        EN.put("틸","Teal");
         EN.put("파이어리 레드","Fiery Red");
         EN.put("팬텀 블랙","Phantom Black");
         EN.put("퍼포먼스","Perf");
@@ -469,6 +488,7 @@ public final class UiText {
         EN.put("표시할 설치 앱이 없습니다. 앱 설치 뒤 다시 열거나 목록 편집에서 선택하세요.","No installed apps to show. Reopen after installing an app or select one in Edit app list.");
         EN.put("풀부하 기준","Full-load line");
         EN.put("풀부하에서 점화가 기준선보다","Spark later than the full-load line");
+        EN.put("한국어","Korean");
         EN.put("할증","Night");
         EN.put("할증 22~04시 · 23~02시 40%","Night 22-04 h · 23-02 h 40%");
         EN.put("합계","Total");
@@ -480,6 +500,7 @@ public final class UiText {
         EN.put("현재 재생 소스에서 음악을 제어할 수 없습니다","Playback control is unavailable for this source");
         EN.put("현재 차량 표시 제한으로 N 계기판을 열 수 없습니다.","N Dashboard is unavailable under the current vehicle display restriction.");
         EN.put("호출","Call");
+        EN.put("화면","Screens");
         EN.put("화면 잠금 상태를 추적할 수 없어 알림만 표시합니다.","Screen lock state cannot be tracked. Only the notification is shown.");
         EN.put("확인","OK");
         EN.put("활성 시험 백업이 없습니다. 기존 핫스팟 접속정보는 차량 설정에서 확인하세요.","No active test backup. Check existing hotspot credentials in the vehicle settings.");

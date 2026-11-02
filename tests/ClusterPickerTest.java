@@ -5,10 +5,10 @@ public final class ClusterPickerTest {
     private static int checks;
     private static void check(boolean b,String s){checks++;if(!b)throw new AssertionError(s);}
     public static void main(String[] args){
-        check(ClusterPicker.COUNT==23&&ClusterPicker.NAMES.length==23&&ClusterPicker.DESC.length==23,"23 screens, one name and line each");
+        check(ClusterPicker.COUNT==22&&ClusterPicker.NAMES.length==22&&ClusterPicker.DESC.length==22,"22 screens, one name and line each");
         check(ClusterPicker.NAMES[ClusterPicker.OVERVIEW].equals("전체 조망")&&ClusterPicker.NAMES[ClusterPicker.GAUGES].equals("게이지")&&ClusterPicker.NAMES[ClusterPicker.GRAPHS].equals("그래프"),"overview, gauges, graphs first");
         check(ClusterPicker.NAMES[ClusterPicker.F1].equals("F1")&&ClusterPicker.NAMES[ClusterPicker.CLASSIC].equals("클래식"),"then F1, the symmetric pages, the drawn layouts");
-        check(ClusterPicker.page(ClusterPicker.F1+1)==1&&ClusterPicker.page(ClusterPicker.CLASSIC)==5&&ClusterPicker.page(ClusterPicker.COUNT-1)==19,"screen after F1 maps to its PitRenderer page");
+        check(ClusterPicker.page(ClusterPicker.F1+1)==1&&ClusterPicker.page(ClusterPicker.CLASSIC)==5&&ClusterPicker.page(ClusterPicker.COUNT-1)==18,"screen after F1 maps to its PitRenderer page");
         for(int i=0;i<ClusterPicker.SLOTS;i++){
             float x=ClusterPicker.left(i)+10,y=ClusterPicker.top(i)+10;
             check(ClusterPicker.hit(x,y)==i,"tile "+i+" hits itself");
@@ -35,25 +35,23 @@ public final class ClusterPickerTest {
         check(list.length==ClusterPicker.COUNT-3&&list[0]==0&&list[1]==3&&list[list.length-1]==ClusterPicker.COUNT-2,"list shows only the shown screens, in order");
         check(ClusterPicker.slots(hidden,true).length==ClusterPicker.COUNT,"edit mode shows every screen");
         check(ClusterPicker.valid(-1)==0&&ClusterPicker.valid(1<<25)==0&&ClusterPicker.valid((1<<25)-1)==0&&ClusterPicker.valid(hidden)==hidden,"bad saved masks show everything");
-        check(ClusterPicker.NAMES[ClusterPicker.ECO].equals("에코"),"eco index");
-        // Mode screen, defaults: SPORT -> F1, ECO -> eco, NORMAL -> the screen from before.
+        // Mode screen, defaults: SPORT -> F1, ECO -> 원래 화면 (stay), NORMAL -> 원래 화면 (stay).
         int[] def=ClusterPicker.MODE_DEFAULT;
+        check(def[0]==ClusterPicker.F1&&def[1]==-1&&def[2]==-1,"default mode screens: SPORT opens F1, the rest stay");
         check(ClusterPicker.modeSlot(1)==0&&ClusterPicker.modeSlot(3)==1&&ClusterPicker.modeSlot(0)==2&&ClusterPicker.modeSlot(2)==-1,"mode slots");
         check(ClusterPicker.validTarget(-1)==-1&&ClusterPicker.validTarget(ClusterPicker.COUNT)==-1&&ClusterPicker.validTarget(4)==4,"saved targets checked");
         int[] st=ClusterPicker.onMode(-1,1,5,-1,0,def);check(st[0]==5,"first known mode moves nothing");
         st=ClusterPicker.onMode(0,1,5,-1,0,def);check(st[0]==ClusterPicker.F1&&st[1]==5,"SPORT opens F1, remembers the screen");
-        st=ClusterPicker.onMode(1,3,st[0],st[1],0,def);check(st[0]==ClusterPicker.ECO&&st[1]==5,"SPORT -> ECO keeps the screen to return to");
-        st=ClusterPicker.onMode(3,0,st[0],st[1],0,def);check(st[0]==5&&st[1]==-1,"NORMAL returns to it");
-        st=ClusterPicker.onMode(0,1,5,-1,0,def);st=ClusterPicker.onMode(1,0,7,st[1],0,def);check(st[0]==7&&st[1]==-1,"driver moved off F1: NORMAL keeps their screen");
+        st=ClusterPicker.onMode(1,0,st[0],st[1],0,def);check(st[0]==5&&st[1]==-1,"SPORT -> NORMAL returns to the remembered screen");
+        st=ClusterPicker.onMode(0,3,5,-1,0,def);check(st[0]==5&&st[1]==-1,"ECO has no default screen: it stays put");
         st=ClusterPicker.onMode(0,1,5,-1,1<<ClusterPicker.F1,def);check(st[0]==5&&st[1]==-1,"hidden F1: SPORT stays put");
         st=ClusterPicker.onMode(1,1,3,5,0,def);check(st[0]==3&&st[1]==5,"same mode: nothing");
         st=ClusterPicker.onMode(1,-1,3,5,0,def);check(st[0]==3&&st[1]==5,"mode lost: nothing");
-        // Customised: SPORT -> race (5 + F1), ECO -> 원래 화면, NORMAL -> overview.
-        int race=ClusterPicker.F1+2;int[] mine={race,-1,ClusterPicker.OVERVIEW};
+        // Customised: SPORT -> race (F1+2), ECO -> a chosen screen, NORMAL -> overview.
+        int race=ClusterPicker.F1+2;int[] mine={race,ClusterPicker.GAUGES,ClusterPicker.OVERVIEW};
         st=ClusterPicker.onMode(0,1,9,-1,0,mine);check(st[0]==race&&st[1]==9,"SPORT opens the chosen screen");
-        st=ClusterPicker.onMode(1,3,st[0],st[1],0,mine);check(st[0]==9&&st[1]==-1,"ECO set to 원래 화면 returns to the screen from before");
-        st=ClusterPicker.onMode(3,0,9,-1,0,mine);check(st[0]==ClusterPicker.OVERVIEW,"NORMAL opens its chosen screen");
-        st=ClusterPicker.onMode(0,1,st[0],st[1],0,mine);st=ClusterPicker.onMode(1,0,st[0],st[1],0,mine);check(st[0]==ClusterPicker.OVERVIEW,"NORMAL with a screen goes there again");
+        st=ClusterPicker.onMode(1,3,st[0],st[1],0,mine);check(st[0]==ClusterPicker.GAUGES&&st[1]==9,"ECO opens its chosen screen, keeps the return");
+        st=ClusterPicker.onMode(3,0,st[0],st[1],0,mine);check(st[0]==ClusterPicker.OVERVIEW,"NORMAL opens its chosen screen");
         st=ClusterPicker.onMode(0,1,4,-1,0,new int[]{ClusterPicker.COUNT+3,-1,-1});check(st[0]==4,"a bad saved target moves nothing");
         System.out.println("PASS "+checks+" cluster picker checks");
     }

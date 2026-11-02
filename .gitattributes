@@ -1,0 +1,8 @@
+# Windows installer scripts must ship with CRLF line endings on every platform:
+# cmd.exe is fussy about LF-only .cmd files, and this keeps them correct even when
+# the repo is cloned or zipped on Linux/macOS. install.ps1 also keeps its UTF-8 BOM
+# (needed so Windows PowerShell 5.1 reads its Korean text correctly); eol conversion
+# does not touch the BOM.
+i30pd_port/installer/*.cmd text eol=crlf
+i30pd_port/installer/*.ps1 text eol=crlf
+i30pd_port/installer/*.command text eol=lf

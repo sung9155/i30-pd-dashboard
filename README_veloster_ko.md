@@ -1,6 +1,6 @@
 # Veloster N Dashboard — 독립 N 계기판
 
-[English](README.md) | **한국어**
+[English](README_veloster.md) | **한국어**
 
 벨로스터 N 순정 내비게이션에서 차량 정보를 표시하는 독립 Android 앱입니다. 순정 N 모드 APK를 교체하지 않고 설치하며, 앱 실행 도우미 **‘내 앱’**도 포함합니다. 자체 코드·문서는 [MIT](LICENSE)로 수정·재배포할 수 있습니다.
 

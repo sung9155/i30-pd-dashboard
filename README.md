@@ -1,138 +1,63 @@
-# Veloster N Dashboard
+# i30 PD Dashboard
 
-**English** | [한국어](README_ko.md)
+현대 i30 PD 순정 내비(D-Audio Plus)에 올리는 실시간 차량 정보 대시보드입니다. 벨로스터 N용 [reikop/veloster-n-dashboard](https://github.com/reikop/veloster-n-dashboard)를 i30 PD(1.6 T-GDI)에 맞게 포팅했습니다. 이 레포는 원작의 포크라 앱 소스가 그대로 들어 있습니다.
 
-A standalone Android dashboard for the Veloster N factory head unit, with a companion **My Apps** launcher. It installs as a separate package without replacing the factory N Mode APK. Project-authored code and documentation are available under the [MIT License](LICENSE).
+차량 값은 내비가 원래 받고 있는 데이터를 읽기만 합니다. 차에 아무것도 보내지 않습니다.
 
-**Tested target:** Korean JSN head unit, Android API 17, build `eng.vmadmin.20250902.081552`. Compatibility with other model years, regions, newer N vehicles, or ordinary Android devices is not established. Perform installation and screen interaction while parked.
+![실차 전체 조망 탭](i30pd_port/app/screens/1_overview_incar_20261030.png)
 
-## In the car
+> **현대자동차 공식 앱이 아닙니다.** 순정 시스템에 앱을 설치하는 작업이라 보증·AS에서 불이익이 있을 수 있고, 책임은 사용자에게 있습니다. 주행 중에는 화면을 조작하지 마세요. 지금까지 차 1대에서만 확인했습니다.
 
-<img src="docs/images/dashboard-overview-in-car.jpg" alt="N Dashboard overview running on the factory head unit in a Korean-spec Veloster N" width="480">
+## 표시되는 값
 
-Actual owner-provided photo of the overview screen on the factory head unit. Unavailable readings remain marked with a dash. Location and camera metadata have been removed; the image pixels are unchanged.
+| 분류 | 값 |
+|---|---|
+| 엔진 | RPM, 부스트(bar), 부하율, 스로틀 개도, 가속 페달, 점화 시기, 냉각수·흡기 온도, 보정·마찰 토크 |
+| 변속 | P/R/N/D, D에서 현재 단수, 수동 모드 M1~M7. 6단 수동차는 RPM ÷ 속도로 계산한 단수(클러치를 밟는 동안 유지, 중립은 N, 후진은 R)와 계기판 변속 권장(`▲4`, 화살표는 실차 미확인) |
+| 주행 | 속도, 횡G·종G(G볼), 요레이트, 조향각·조향 속도·조향 토크 |
+| 제동 | 브레이크 압력, 브레이크 스위치, 전자식 주차 브레이크 |
+| 연비 | 순간 연료소모(L/h), 트립 평균 연비(km/L), 주행가능거리 |
+| 차체 | 운전석·조수석 문, 트렁크, 후드(열림/닫힘), 와이퍼, 좌우 방향지시등 |
+| 기타 | 타이어 공기압 4개, 배터리 전압, 주행 모드(ECO/NORMAL/SPORT), 주행거리 |
 
-[Open the full-resolution photo](docs/images/dashboard-overview-in-car.jpg)
+- **유온**: 이 엔진(감마 1.6 T-GDI)에는 엔진오일 온도 센서가 없습니다. F1·퍼포먼스 탭은 그 자리에 흡기 온도를 보여 주고, 게이지·그래프 목록의 유온 항목은 실린더 헤드 냉각수 센서 값을 "대체"라고 표시해 보여 줍니다.
+- **없는 값**: 실제 오일·미션오일 온도, 바퀴별 휠속, TCS/ESC 개입 표시, 뒷문 2개, 안전벨트는 내비로 들어오는 데이터에 없습니다.
 
-## Download
+탭별 기능과 화면은 [`i30pd_port/app/TABS.md`](i30pd_port/app/TABS.md)에 있습니다. 헤더 버튼으로 화면 테마 8가지(기본 N, 람보, BMW, 그리고 완전 검정 배경의 아이스·모노·앰버·틸·나이트)를 고를 수 있고, 클러스터 탭에는 계기판식 화면 3가지(클래식·레트로·랠리)가 있습니다.
 
-[Download the complete v2026.10.26-i18n installation ZIP](https://github.com/reikop/veloster-n-dashboard/releases/download/v2026.10.26-i18n/veloster-n-dashboard-v2026.10.26-i18n.zip) — includes both apps, the installer and guides. **Prerelease: v6/v10 vehicle/reboot testing is still pending.**
+## 설치
 
-| APK | Purpose | Verification scope |
-| --- | --- | --- |
-| [N Dashboard v6](apks/N-Dashboard-v6-API17.apk) | Current Korean/English dashboard | Host/build/signature checked; v6 vehicle test pending |
-| [My Apps v10 — prerelease](apks/My-Apps-v10-API17.apk) | Opt-in floating/notification shortcut, app list, head-unit controls | Signed and host-checked; not yet tested on a vehicle or emulator |
-| [My Apps v8](apks/My-Apps-v8-API17.apk) | Historical app without the new shortcut | Previously installed on the target vehicle; not the current source version |
-| [N Dashboard v3](apks/rollback/N-Dashboard-v3-API17.apk) | Previous release for recovery | Previously tested; downgrade and data retention require care |
+차주용 순서는 [`INSTALL.md`](INSTALL.md)를 보세요. [Releases](https://github.com/sung9155/i30-pd-dashboard/releases)의 `i30pd-installer.zip`(Windows) 또는 `i30pd-installer-mac.zip`(맥)과 USB 케이블이면 됩니다. 차 화면에서 엔지니어 모드와 Factory Test를 한 뒤 압축을 풀고 `설치.cmd`(맥은 `설치.command`)를 더블클릭하면 APK 내려받기, 연결 확인, 설치를 대신 해 줍니다. ADB 명령으로 직접 설치하는 방법도 같은 문서에 있습니다.
 
-Download the complete latest repository or the `v2026.10.26-i18n` release bundle on your computer and follow the [installation guide](docs/INSTALL_EN.md). The original `v2026.10.23` ZIP remains unchanged and does not include the new tooling. **A working ADB connection is required for initial installation.** Copying an APK to an SD card does not install it. Check file integrity before proceeding:
+**적용 조건:** 순정 D-Audio Plus(`pd_kr`). 1.6 T-GDI 7단 DCT와 6단 수동(N Line)에서 확인했고, 1.6 디젤은 화면 눈금을 자동으로 맞추지만 실차 미확인입니다. 내비 소프트웨어 빌드 `eng.vmadmin.20260114.084130`(블루링크)과 `eng.vmadmin.20260114.084725`(블루링크 없음)에서 확인했습니다. 다른 빌드에서도 동작하지만 데이터 배치가 다르면 값이 틀릴 수 있으니, 결과를 [Issues](https://github.com/sung9155/i30-pd-dashboard/issues)에 알려 주세요.
 
-```sh
-python3 scripts/verify_release.py
-```
+## 직접 빌드
 
-Package identities, versions, sizes, and SHA-256 hashes are recorded in [release.json](release.json) and [SHA256SUMS](SHA256SUMS). The bundled APKs are signed; the source builder produces unsigned APKs. The public AOSP test certificate used by these releases is not a private publisher identity or an OTA signing key. See [NOTICE.md (Korean)](NOTICE.md).
+이 레포를 받아 바로 빌드·서명합니다. 원작 대비 바뀐 내용 전체는 `git diff 2be141b`로 볼 수 있습니다. 절차는 [`i30pd_port/app/README.md`](i30pd_port/app/README.md)의 "빌드"와 "내 앱" 절에, 도구 설치는 [`i30pd_port/SETUP_laptop.md`](i30pd_port/SETUP_laptop.md)에 있습니다.
 
-## Install, then make it reachable
+브랜치: `main` = 안정화(Releases의 Latest), `test` = 테스트 빌드(실차 검증 전, `test` 사전 배포). v1.6.9 이전 릴리스와 패치 파일 시절 기록은 [i30-pd-dashboard-legacy](https://github.com/sung9155/i30-pd-dashboard-legacy/releases)에 있습니다.
 
-1. Establish [ADB access](docs/ADB_EN.md) while parked and run the guarded [installer](docs/INSTALL_EN.md). It creates a fresh backup, installs/readback-verifies both apps, and requests opening My Apps. No source compilation is needed.
-2. In the opened My Apps screen, choose **실행 바로가기 / Quick entry → Floating + notification → Save**.
-3. Return to HOME and tap the small edge button to reopen My Apps, then **N 계기판**. Verify this on your screen before disconnecting.
-4. If overlays are blocked, the service retains a notification. If your factory UI cannot expose that notification either, use an existing launcher or the **optional, build-specific [OEM menu procedure](docs/MENU_ENTRY.md)**.
+## 레포 구성
 
-From the complete project directory, using your actual serial from `adb devices -l`:
+| 경로 | 내용 |
+|---|---|
+| `apps/` · `shared/` · `tests/` · `scripts/` · `translations/` | 앱 소스와 빌드·시험 도구 (원작 구조 그대로, i30 PD 포팅 적용) |
+| `apks/` · `menu-entry/` · `README_veloster*.md` · `NOTICE_veloster.md` | 원작(벨로스터 N) 그대로. **`apks/`의 APK는 벨로스터 N용이라 i30 PD에 설치하지 마세요** |
+| `INSTALL.md` | 차주용 설치 안내 |
+| `i30pd_port/app/` | 포팅 설명, 탭 설명, 화면 이미지, PC에서 화면을 그리는 미리보기 도구 |
+| `i30pd_port/HSCAN_DECODE.md` | 내비가 받는 차량 데이터(hscan 슬롯)를 CAN 메시지·신호로 해석한 기록과 근거 |
+| `i30pd_port/tools/` | 슬롯 해석 도구 (DBC 대조, 캡처 비교, 비트 지문) |
+| `i30pd_port/logs/` | 실차 캡처 로그 (정차 상황별, 10분 주행) |
+| `i30pd_port/installer/` | 설치 · 삭제 스크립트(Windows `설치.cmd` · `삭제.cmd` + `install.ps1`, 맥 `설치.command` · `삭제.command`) |
+| `i30pd_port/cluster/` | 예전 대칭 탭(클러스터 화면) 소스, 보관용(앱에서는 삭제) |
+| `i30pd_port/car_session.sh` 등 | ADB로 실차 데이터를 덤프·태깅하는 스크립트 |
 
-```sh
-python3 scripts/install.py --serial YOUR_DEVICE_SERIAL --parked
-```
+## 라이선스
 
-Use `--check` instead of `--parked` for inspection/backups without installing or launching. An accepted launch request is not a completed screen check. Verify HOME → edge button → My Apps → N Dashboard before disconnecting; separately check reopening after a normal full reboot while parked.
+MIT. 원작의 저작권 표시를 함께 담았습니다. 출처, 상표, 이 레포에 넣지 않은 것은 [`NOTICE.md`](NOTICE.md)를 보세요.
 
-The new shortcut uses standard Android facilities without modifying OEM menus. It defaults to OFF and must be enabled explicitly. A general design does **not** establish compatibility with every head unit; v10 is an untested-on-vehicle prerelease. [Quick-entry setup and limitations](docs/QUICK_ENTRY.md)
+---
 
-## Language
+## English
 
-Korean and English are included in both apps. System language selects the default; each app also saves a manual choice. Use **Language / 언어** in My Apps, or **KO / EN** beside the dashboard clock. [Language and update guide](docs/LANGUAGES.md). Installation and ADB entry are unchanged.
-
-## Features
-
-- F1 dashboard with compact album artwork; tap the artwork to toggle media controls, including previous, next, and play/pause.
-- A 20-card overview, per-card number/bar/arc display options, editable 6-slot or 12-slot gauges, graphs, and a clock. Display settings persist locally.
-- RPM, speed, temperatures, throttle, brake, steering, and other available vehicle data. Four TPMS pressures share one card; they are not tire temperatures.
-- Additional v5 decoding for intake temperature, battery voltage/SOC, steering speed, TCS/ESC/ABS state, and wheel speeds from an existing head-unit data stream. Missing data is not fabricated.
-- My Apps v10: opt-in movable edge button and notification for reopening the app, dashboard shortcut, editable app list, engineering mode shortcut, USB debugging controls, Android utilities, Classic Bluetooth discovery/pairing, and restart with confirmation.
-
-Vehicle telemetry uses existing receive paths without issuing new ECU diagnostic requests. Media controls and explicit settings actions in My Apps do change playback or device state.
-
-## My Apps companion
-
-My Apps opens N Dashboard, other installed apps, and available head-unit settings. It provides an editable app list, USB debugging controls, engineering and Android utilities shortcuts, Classic Bluetooth pairing, and a restart confirmation dialog. It does not replace the factory home screen or add an OEM entry point automatically.
-
-<img src="docs/images/my-apps-v8-main-preview.png" alt="My Apps v8 PC preview, not an in-car screenshot" width="640">
-
-*Historical v8 layout preview; v10 adds Quick entry above these controls. This image is not the current v10 screen or an Android/in-car capture.*
-
-[My Apps guide and screenshots](docs/MY_APPS.md) · [한국어 설명](docs/MY_APPS_ko.md). The guide also includes list editing, restart confirmation, and a clearly labelled earlier real vehicle screenshot.
-
-## Important limitations
-
-- **The factory home screen may not show newly installed apps.** Configure and verify the v10 quick-entry button/notification after the first ADB launch. OEM menus are not changed by this feature. If neither shortcut is accessible, an alternative entry is still required.
-- The dashboard requires the OEM `automotive` library. Its additional HSCAN receiver only connects on the exact product/build listed above.
-- Readings expire 60 seconds after the last received update. Repeated reception of an unchanged value refreshes that timer; sensor-level freshness cannot always be determined.
-- Exhaust temperature and e-LSD values remain unverified. Wireless CarPlay, GPS track timing, and automatic updates are not implemented. My Apps retains an experimental hotspot screen; this does not provide wireless CarPlay.
-- Earlier v5 initial operation was checked. New v6/v10 UI versions have host checks only; cold boot, extended operation and active ABS/TCS/ESC transitions remain unverified.
-
-## Launching after disconnecting or rebooting
-
-Once installed, the dashboard reads vehicle data inside the head unit; a PC or USB debugging connection is not required for normal use. Unplugging the cable does not uninstall the app. After a reboot, the enabled v10 shortcut service requests restoration of the button/notification; it does not automatically open a full-screen app. Tap the available shortcut to open My Apps and the dashboard. Force-stop or device policy can block restoration; v10 boot behavior has not been vehicle-validated.
-
-On our research vehicle, with its separately configured OEM menu entry, the route is **HOME → All menus → page 2 → Information (정보) → My Apps (내 앱) → N Dashboard (N 계기판)**. That menu route was checked during prior vehicle work; v5 cold-boot operation remains unverified. A compatible launcher can also open N Dashboard directly.
-
-**The public APKs do not create the OEM Information/My Apps entry.** That path is optional when the v10 shortcut works. If no entry is available, reconnect ADB; reinstalling the same APK does not add a home icon. See the [disconnect/reboot procedure and ADB fallback](docs/INSTALL_EN.md#after-reboot).
-
-## How this project started
-
-We started from the Veloster N BlueLink update package and used open-source tooling to investigate the firmware catalog, Android apps, and vehicle data paths. [Read the download and research walkthrough](docs/RESEARCH.md) for `nudl` commands, the exact model/version and package hashes, extraction stages, ADB findings, and the move to a standalone app. [한국어 과정 설명](docs/RESEARCH_ko.md)
-
-## Documentation
-
-The main installation and entry guides are available in English and Korean. The research walkthrough is also [English](docs/RESEARCH.md) / [한국어](docs/RESEARCH_ko.md).
-
-- [ADB access and USB troubleshooting](docs/ADB_EN.md): menu entry, command format, cable limitations, and evidence scope. Includes analyzed password candidates for device calendar years 2026 and 2027.
-- [Installation, launch, and recovery](docs/INSTALL_EN.md): backups, signature errors, home-screen limitations, and removal.
-- [Quick entry](docs/QUICK_ENTRY.md), [optional OEM menu entry](docs/MENU_ENTRY.md), and [installation audit](docs/INSTALL_AUDIT.md).
-- [Compatibility and limitations (Korean)](docs/LIMITATIONS.md): telemetry interpretation, missing features, SD updates, and signing.
-- [Building and testing (Korean)](docs/BUILD.md): external SDK tools, unsigned builds, and synthetic host tests.
-- [Release provenance and verification (Korean)](docs/RELEASE.md), [license and dependency notice](NOTICE.md).
-
-## Source and tests
-
-| Directory | Contents |
-| --- | --- |
-| `apps/` | Dashboard and My Apps sources and manifests |
-| `shared/` | Dashboard UI, telemetry, media, and shared utility code |
-| `compile-stubs/` | Minimal OEM API declarations for compilation only; excluded from APKs |
-| `tests/` | Synthetic host tests; no private vehicle logs required |
-| `scripts/` | Build/test/integrity tools and guarded ADB installation/menu operations |
-| `apks/` | Signed installable releases and the previous dashboard APK |
-
-Run host tests with Python 3.9+ and JDK 17:
-
-```sh
-python3 scripts/test.py --java /path/to/jdk17/bin/java
-```
-
-To build, supply your own Android API 16/17 `android.jar`, AAPT2, and R8/D8 tools. Replace the paths below with your local paths:
-
-```sh
-python3 scripts/build.py dashboard \
-  --java /path/to/jdk17/bin/java \
-  --android-jar /path/to/android.jar \
-  --aapt2 /path/to/aapt2 \
-  --r8-jar /path/to/r8.jar \
-  --out build/dashboard
-```
-
-Use `hub` instead of `dashboard` and a different output directory for My Apps. Builds are unsigned and not installable as-is. API 17-compatible signing and acceptance by the target head unit require separate verification; no private keys are distributed. Byte-for-byte reproduction of the bundled APKs is not promised.
-
-OEM firmware, extracted APKs/ODEX, decompiled vendor implementations, private vehicle logs, device identifiers, signing private keys, and third-party apps are excluded. This is an unofficial project with no manufacturer affiliation.
+A live vehicle-data dashboard for the Hyundai i30 PD factory head unit (D-Audio Plus), ported from [reikop/veloster-n-dashboard](https://github.com/reikop/veloster-n-dashboard); this repository is a fork of it with the port as commits on top. It only reads the data the head unit already receives and never writes to the car. Not an official Hyundai app; install at your own risk. Install steps (Korean): [`INSTALL.md`](INSTALL.md). Signal decoding notes: [`i30pd_port/HSCAN_DECODE.md`](i30pd_port/HSCAN_DECODE.md). License: MIT, see [`NOTICE.md`](NOTICE.md).

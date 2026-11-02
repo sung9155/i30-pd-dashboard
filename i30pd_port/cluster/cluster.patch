@@ -1,0 +1,117 @@
+diff --git a/shared/src/com/veloster/vehicle/PitRenderer.java b/shared/src/com/veloster/vehicle/PitRenderer.java
+index fe97791..ba6f3ed 100644
+--- a/shared/src/com/veloster/vehicle/PitRenderer.java
++++ b/shared/src/com/veloster/vehicle/PitRenderer.java
+@@ -26,6 +26,8 @@ public final class PitRenderer {
+     private Bitmap artwork;
+     private final GaugeRenderer gaugeRenderer=new GaugeRenderer();
+     private final GraphRenderer graphRenderer=new GraphRenderer();
++    private final ClusterRenderer clusterRenderer=new ClusterRenderer();
++    private boolean symmetric;
+     private GraphLayout graphLayout;
+     private GaugeLayout gaugeLayout;
+     private OverviewLayout overviewLayout=new OverviewLayout();
+@@ -40,6 +42,7 @@ public final class PitRenderer {
+     public void setArtwork(Bitmap value){artwork=value;}
+     public void setGaugeLayout(GaugeLayout value){gaugeLayout=value;}
+     public void setGraphLayout(GraphLayout value){graphLayout=value;}
++    public void setSymmetric(boolean value){symmetric=value;}
+     public void setOverviewLayout(OverviewLayout value){if(value!=null)overviewLayout=value;}
+     private static final String[] PREFIX={"엔진 RPM","오일 온도","냉각수 온도","앞 왼쪽 휠","앞 오른쪽 휠","뒤 왼쪽 휠","뒤 오른쪽 휠","속도 km/h","현재 기어","스로틀 %","브레이크 압력 bar","횡가속","종가속","조향각","외기 온도","출력 (계산)","토크 (계산)","부스트 (계산)","앞 왼쪽 공기압","앞 오른쪽 공기압","뒤 왼쪽 공기압","뒤 오른쪽 공기압","TCS","ESC","ABS","배터리 SOC","배터리 전압","조향 속도","e-LSD 수치","흡기 온도"};
+     private int index(String prefix){for(int i=0;i<PREFIX.length;i++)if(PREFIX[i].equals(prefix))return i;return -1;}
+@@ -64,15 +67,17 @@ public final class PitRenderer {
+         box(c,0,0,800,52,0xff090b0c);box(c,18,51,782,52,LINE);
+         stroke(c,19,16,13,35,RED,4);stroke(c,27,16,21,35,BLUE,4);
+         text(c,"N / PIT",36,33,23,WHITE,true);
+-        button(c,UiText.t("전체 조망"),144,8,100,38,!cluster&&gaugeLayout==null&&graphLayout==null,BLUE);
+-        button(c,"F1",250,8,72,38,cluster&&gaugeLayout==null&&graphLayout==null,BLUE);
+-        button(c,UiText.t("게이지"),328,8,84,38,gaugeLayout!=null,BLUE);
+-        button(c,UiText.t("그래프"),418,8,110,38,graphLayout!=null,BLUE);
++        button(c,UiText.t("전체 조망"),144,8,88,38,!cluster&&!symmetric&&gaugeLayout==null&&graphLayout==null,BLUE);
++        button(c,"F1",238,8,54,38,cluster&&gaugeLayout==null&&graphLayout==null,BLUE);
++        button(c,UiText.t("대칭"),298,8,60,38,symmetric&&gaugeLayout==null&&graphLayout==null,BLUE);
++        button(c,UiText.t("게이지"),364,8,66,38,gaugeLayout!=null,BLUE);
++        button(c,UiText.t("그래프"),436,8,92,38,graphLayout!=null,BLUE);
+         button(c,UiText.language().toUpperCase(Locale.US),534,8,48,38,false,BLUE);
+         centered(c,clock(),620,33,22,WHITE,true);
+         button(c,UiText.t("돌아가기"),666,8,116,38,false,BLUE);
+         if(graphLayout!=null)graphRenderer.draw(c,model,now,graphLayout);
+         else if(gaugeLayout!=null)gaugeRenderer.draw(c,model,now,gaugeLayout);
++        else if(symmetric)clusterRenderer.draw(c,samples);
+         else if(mediaPage)drawCombined(c);else if(cluster)drawCluster(c);else drawDashboard(c);
+         if(graphLayout==null&&!mediaPage && music!=null && music.notice)drawMedia(c,true);
+         if(cluster&&gaugeLayout==null&&graphLayout==null)drawArtworkToggle(c);
+diff --git a/shared/src/com/veloster/vehicle/VehicleDash.java b/shared/src/com/veloster/vehicle/VehicleDash.java
+index 1147093..5c8a087 100644
+--- a/shared/src/com/veloster/vehicle/VehicleDash.java
++++ b/shared/src/com/veloster/vehicle/VehicleDash.java
+@@ -29,7 +29,7 @@ public final class VehicleDash extends View implements Runnable {
+     private final GraphEditor graphEditor;
+     private final OverviewLayout overviewLayout=new OverviewLayout();
+     private int overviewDown=-1;
+-    private boolean cluster, media, gauges, graphs, touching;
++    private boolean cluster, media, gauges, graphs, symmetric, touching;
+     private float downX,downY;
+     private long lastDiagnostic;
+     private long lastPolicyCheck;
+@@ -170,6 +170,7 @@ public final class VehicleDash extends View implements Runnable {
+         renderer.setArtwork(artwork.bitmap());
+         renderer.setGaugeLayout(gauges?gaugeLayout:null);
+         renderer.setGraphLayout(graphs?graphLayout:null);
++        renderer.setSymmetric(symmetric);
+         renderer.setOverviewLayout(overviewLayout);
+         renderer.draw(c,getWidth(),getHeight(),cluster,DATA,now,shiftTarget,media,track);
+     }
+@@ -193,7 +194,7 @@ public final class VehicleDash extends View implements Runnable {
+         float x=event.getX()*800/getWidth(), y=event.getY()*480/getHeight();
+         if(event.getAction()==MotionEvent.ACTION_DOWN) {
+             removeCallbacks(editHold);touching=true;downX=x;downY=y;
+-            overviewDown=!cluster&&!gauges&&!graphs&&!blocked&&!overviewCovered(y)?overviewLayout.hit(x,y):-1;
++            overviewDown=!cluster&&!gauges&&!graphs&&!symmetric&&!blocked&&!overviewCovered(y)?overviewLayout.hit(x,y):-1;
+             if(!blocked&&((gauges&&gaugeEditor.hit(x,y)>=0)||(graphs&&graphLayout.hit(x,y)>=0)))postDelayed(editHold,600);
+             return true;
+         }
+@@ -204,7 +205,7 @@ public final class VehicleDash extends View implements Runnable {
+         boolean tap=touching && Math.abs(x-downX)<16 && Math.abs(y-downY)<16;
+         touching=false;
+         if(standalone&&tap&&x>=666&&x<=782&&downX>=666&&downX<=782&&y>=8&&y<=46&&downY>=8&&downY<=46){activity.finish();return true;}
+-        if(tap&&!blocked&&!cluster&&!gauges&&!graphs&&overviewDown>=0&&overviewLayout.hit(x,y)==overviewDown&&!overviewCovered(y)){
++        if(tap&&!blocked&&!cluster&&!gauges&&!graphs&&!symmetric&&overviewDown>=0&&overviewLayout.hit(x,y)==overviewDown&&!overviewCovered(y)){
+             overviewLayout.cycle(overviewDown);
+             activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("overview_style_"+overviewDown,overviewLayout.style(overviewDown)).apply();
+             invalidate();return true;
+@@ -234,10 +235,11 @@ public final class VehicleDash extends View implements Runnable {
+         }
+         if(!tap || blocked || y<8 || y>46 || downY<8 || downY>46)return true;
+         gaugeEditor.dismiss();graphEditor.dismiss();
+-        if(x>=144 && x<=244 && downX>=144 && downX<=244) { cluster=false;gauges=false;graphs=false;invalidate(); }
+-        else if(x>=250 && x<=322 && downX>=250 && downX<=322) { cluster=true;gauges=false;graphs=false;invalidate(); }
+-        else if(x>=328 && x<=412 && downX>=328 && downX<=412) { gauges=true;cluster=false;graphs=false;invalidate(); }
+-        else if(x>=418 && x<=528 && downX>=418 && downX<=528) { graphs=true;gauges=false;cluster=false;invalidate(); }
++        if(x>=144 && x<=232 && downX>=144 && downX<=232) { cluster=false;gauges=false;graphs=false;symmetric=false;invalidate(); }
++        else if(x>=238 && x<=292 && downX>=238 && downX<=292) { cluster=true;gauges=false;graphs=false;symmetric=false;invalidate(); }
++        else if(x>=298 && x<=358 && downX>=298 && downX<=358) { symmetric=true;cluster=false;gauges=false;graphs=false;invalidate(); }
++        else if(x>=364 && x<=430 && downX>=364 && downX<=430) { gauges=true;cluster=false;graphs=false;symmetric=false;invalidate(); }
++        else if(x>=436 && x<=528 && downX>=436 && downX<=528) { graphs=true;gauges=false;cluster=false;symmetric=false;invalidate(); }
+         else if(x>=534 && x<=582 && downX>=534 && downX<=582){LanguageSettings.show(activity,new Runnable(){public void run(){invalidate();}});}
+         else if(x>=666 && x<=782 && downX>=666 && downX<=782)close();
+         return true;
+diff --git a/translations/en.json b/translations/en.json
+index 46d25e8..218a350 100644
+--- a/translations/en.json
++++ b/translations/en.json
+@@ -218,5 +218,13 @@
+   "게이지를 길게 눌러 항목 · 모양 · 위치 편집": "Hold a gauge to edit its signal, style or position",
+   "3 × 2 보기": "3 x 2 grid",
+   "4 × 3 보기": "4 x 3 grid",
+-  "언어 설정을 저장하지 못했습니다.": "Could not save the language setting."
++  "언어 설정을 저장하지 못했습니다.": "Could not save the language setting.",
++  "대칭": "Sym",
++  "부하율": "LOAD",
++  "G-볼 1.2g": "G-ball 1.2g",
++  "유온": "Oil",
++  "냉각수": "Coolant",
++  "미션유온": "Trans",
++  "흡기온": "Intake",
++  "점화시기": "Timing"
+ }

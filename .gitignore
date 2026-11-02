@@ -3,7 +3,7 @@ __pycache__/
 *.pyc
 build/
 private-backups/
-logs/
+/logs/
 .env
 .env.*
 *.p12
@@ -14,3 +14,11 @@ logs/
 *.pk8
 *.odex
 .menu-venv/
+
+# i30 PD
+i30pd_port/out/
+i30pd_port/hscandump.jar
+i30pd_port/**/*.apk
+i30pd_port/**/*.exe
+i30pd_port/app/preview/fonts/
+i30pd_port/installer/android/build/

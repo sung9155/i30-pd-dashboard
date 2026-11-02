@@ -1,0 +1,37 @@
+[session] 20261029_125156   log=logs/session_20261029_125156.log
+------------------------------------------------------------
+== adb devices -l
+List of devices attached
+ABC-0123456789         device product:pd_kr model:daudioplus device:daudioplus_pd_kr transport_id:1
+
+선택 장치: ABC-0123456789  상태: device
+------------------------------------------------------------
+== 기기 식별 (getprop)
+  ro.product.name                  pd_kr
+  ro.product.device                daudioplus_pd_kr
+  ro.product.model                 daudioplus
+  ro.build.version.sdk             17
+  ro.build.version.incremental     eng.vmadmin.20260114.084130
+  ro.build.fingerprint             
+  ro.build.type                    user
+  ro.secure                        1
+  ro.adb.secure                    
+  ro.debuggable                    0
+  persist.sys.usb.config           iap2,ncm
+  sys.usb.config                   adb
+  sys.usb.state                    adb
+  id: uid=2000(shell) gid=2000(shell) groups=1003(graphics),1004(input),1007(log),1009(mount),1011(adb),1015(sdcard_rw),1028(sdcard_r),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats)
+OK: product=pd_kr / API17 — 문서 기대값과 일치.
+------------------------------------------------------------
+== hscan 관련 프로세스
+USER     PID   PPID  VSIZE  RSS     WCHAN    PC         NAME
+root      960   1     1300   552   ffffffff 00000000 S /system/bin/hscand
+------------------------------------------------------------
+== hscandump.jar 푸시
+hscandump.jar: 1 file pushed, 0 skipped. 5.9 MB/s (3464 bytes in 0.001s)
+== 덤프 실행 (30s)  → logs/hscandump_20261029_125156.log
+   시동 ON 상태여야 프레임이 흐른다. 가능하면 공회전/주행.
+Segmentation fault 
+------------------------------------------------------------
+덤프 저장: logs/hscandump_20261029_125156.log
+읽는 법: APPLY_i30pd.md 1단계 표 — 0x07/0x23/0x53/0x6e 보이면 OK, 0x5a 없으면 예상대로.

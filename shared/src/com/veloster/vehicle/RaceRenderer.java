@@ -257,10 +257,7 @@ public final class RaceRenderer {
     private void steering(Canvas c){
         box(c,RC,STEER_TOP,R,BOT,PANEL);
         float angle=v(Telemetry.STEERING);
-        // ponytail: the icon turns 2 deg less than the reading (no jump at 2 deg). Straight ahead the SAS wobbles +-1-2 deg,
-        // and a wheel tilted that little only looks crooked; the number below keeps the exact angle.
-        float icon=Float.isNaN(angle)?0:angle>0?Math.max(0,angle-2):Math.min(0,angle+2);
-        wheel(c,RC+58,(STEER_TOP+BOT)/2f+4,44,icon);
+        wheel(c,RC+58,(STEER_TOP+BOT)/2f+4,44,Float.isNaN(angle)?0:angle);
         text(c,"STEER",RC+8,STEER_TOP+16,12,MUTED,Paint.Align.LEFT);
         // Centre-zero bar to +-540 deg: past half a turn the wheel icon alone cannot show which way.
         float bl=RC+118,br=R-8,mid=(bl+br)/2,by=STEER_TOP+10;

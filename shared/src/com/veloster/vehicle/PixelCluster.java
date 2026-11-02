@@ -70,7 +70,8 @@ final class PixelCluster extends ClusterKit {
     private int phase;
     /** The car's lamps from CGW1, independent of the sky: low beam (HeadLampLow), tail/position (미등), high beam (상향). */
     private boolean lamps,tail,high;
-    private float scroll,curve,bgX,coinSec,bumpE,prevG;
+    private float scroll,curve,bgX,coinSec,bumpE;
+    private final RoadJolt jolt=new RoadJolt();
     private int coins;
     private long last,shiftAt=Long.MIN_VALUE/2,modeAt=Long.MIN_VALUE/2,pedHiAt=Long.MIN_VALUE/2,fireAt=Long.MIN_VALUE/2;
     /** CLU13 drive mode (0 NORMAL, 1 SPORT, 3 ECO, -1 unknown) and the last known one, for the change banner. */
@@ -107,9 +108,11 @@ final class PixelCluster extends ClusterKit {
             // first 2 deg are the SAS wobble straight ahead; past ~30 deg it stays at 6 px.
             float sv=Float.isNaN(steer)?0:steer,dz=sv>0?Math.max(0,sv-2):Math.min(0,sv+2);
             sway+=(6*(float)Math.tanh(dz/12f)-sway)*Math.min(1,dt*4);
-            float lo=Float.isNaN(lon)?0:lon,gmag=(float)Math.hypot(la,lo);   // G is the ride: a sharp change jolts the camera, then settles
-            bumpE=bumpE*Math.max(0f,1-dt*3.5f)+Math.abs(gmag-prevG)*7f;prevG=gmag;
-            float bump=Math.min(6f,bumpE)*(float)Math.sin(now/38.0);
+            float lo=Float.isNaN(lon)?0:lon;
+            // A road jolt (a G spike no shift, pedal, brake or steering explains) bounces the car and camera, then settles;
+            // braking and shifts still show only as the horizon and lean.
+            bumpE=bumpE*Math.max(0f,1-dt*3.5f)+jolt.update(now,lat,lon,v(9),v(10),steer,v(8))*15f;
+            float bump=Math.min(4f,bumpE)*(float)Math.sin(now/38.0);
             chaseScene(c,turn,lo,bump,brake,left,right,boost,rpm);
         }
         else{scroll+=vk*dt*1.4f;sideScene(c,vk,brake,left,boost,rpm);}

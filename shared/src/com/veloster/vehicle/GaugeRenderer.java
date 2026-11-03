@@ -37,7 +37,7 @@ public final class GaugeRenderer {
         if(i!=Telemetry.STEER_TORQUE&&("Nm".equals(u)||"N·m".equals(u)))return 500;if("kPa".equals(u))return 250;
         if("bar".equals(u))return i==10?100:2.5f;if(i==Telemetry.STEERING)return 540;
         if(i==Telemetry.RANGE)return 800;if(i==Telemetry.SPARK)return 50;if(i==Telemetry.STEER_TORQUE)return 5;if(i==Telemetry.BRAKE_SWITCH||i>=Telemetry.DOOR_DRIVER)return i==Telemetry.WIPER?2:1;if("L/h".equals(u))return 40;if("km/L".equals(u))return 30;
-        if(i==Telemetry.YAW)return 50;if(i==Telemetry.SHIFT_HINT)return 7;if(i==Telemetry.ODOMETER)return 999999;
+        if(i==Telemetry.DPF_SINCE_KM||i==Telemetry.DPF_AVG_KM)return 1000;if(i==Telemetry.YAW)return 50;if(i==Telemetry.SHIFT_HINT)return 7;if(i==Telemetry.ODOMETER)return 999999;
         return i==8?7:100;   // gear: the 7DCT has 7 forward gears
     }
     private static String axis(float value){return String.format(Locale.US,value==(int)value?"%.0f":"%.1f",value);}

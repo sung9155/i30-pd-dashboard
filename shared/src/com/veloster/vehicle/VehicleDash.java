@@ -67,7 +67,8 @@ public final class VehicleDash extends View implements Runnable {
     private long lastPolicyCheck;
     private boolean resumed;
     private long entryRequestUntil;
-    private int shiftTarget,redline;   // as saved, 0 = the profile's default
+    private int shiftTarget,redline;
+    private float regenEnd=Float.NaN;   // odometer at the last DPF regeneration's end, saved when Telemetry moves it   // as saved, 0 = the profile's default
     private final java.util.concurrent.atomic.AtomicBoolean mediaPending=new java.util.concurrent.atomic.AtomicBoolean();
     private Button entry;
     private boolean blocked;
@@ -103,6 +104,8 @@ public final class VehicleDash extends View implements Runnable {
         // Kept as saved (0 = never set); the renderer and the -/+ buttons resolve it with the detected powertrain.
         shiftTarget=a.getSharedPreferences("pit_vehicle_ui",0).getInt("shift_target",0);
         redline=a.getSharedPreferences("pit_vehicle_ui",0).getInt("redline",0);VehicleProfile.setRedline(redline);
+        try{regenEnd=a.getSharedPreferences("pit_vehicle_ui",0).getFloat("dpf_regen_end_odo",Float.NaN);DATA.dpfRegenEnd(regenEnd);}
+        catch(ClassCastException e){/* Incompatible saved value: count from the next regeneration. */}
         try{Theme.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("theme","n"));}
         catch(ClassCastException e){Theme.select("n");/* Incompatible saved value: open in N. */}
         try{CarPaint.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("car_paint","blue"));}
@@ -235,6 +238,8 @@ public final class VehicleDash extends View implements Runnable {
             else if(!(cluster&&media&&!gauges) && mediaState.snapshot(now).notice)delay=16;
             if(introStart>0&&now-introStart<1500)delay=Math.min(delay,33);   // smooth the welcome sweep
             if(header.flinging())delay=16;   // a flicked tab strip coasts
+            float re=DATA.dpfRegenEnd();
+            if(Float.compare(re,regenEnd)!=0){regenEnd=re;activity.getSharedPreferences("pit_vehicle_ui",0).edit().putFloat("dpf_regen_end_odo",re).apply();}
             if(now-lastDiagnostic>=5000) { lastDiagnostic=now;android.util.Log.i("VehicleDash",DATA.diagnostics(now)+drawStats()); }
         }
         postDelayed(this,delay);

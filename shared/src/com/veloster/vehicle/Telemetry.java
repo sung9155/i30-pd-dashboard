@@ -9,8 +9,9 @@ public final class Telemetry {
     public static final int THROTTLE_POS=36,FUEL_RATE=37,RANGE=38,AVG_FUEL=39,TORQUE_CORR=40,TORQUE_FRICTION=41;
     public static final int SPARK=42,BRAKE_SWITCH=43,STEER_TORQUE=44,DOOR_DRIVER=45,WIPER=46,DOOR_PASSENGER=47,TRUNK=48,HOOD=49,TURN_LEFT=50,TURN_RIGHT=51,SHIFT_HINT=52,HEAD_LAMP=53,TAIL_LAMP=54,HIGH_BEAM=55,CLUTCH=56,FUEL_LEVEL=57,CAT_TEMP=58,ABS_LOAD=59;
     public static final int DPF_DP=60,DPF_TEMP=61,DPF_REGEN=62,DPF_TRIGGER=63;   // diesel, standard OBD PIDs 0x7A/0x7C/0x8B
-    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거"};
-    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%"};
+    public static final int DPF_SINCE_KM=64,DPF_AVG_KM=65;   // km since the last regeneration the app saw end; ECU average between regenerations
+    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격"};
+    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%", "km", "km"};
     public static final long STALE_MS = 60000; // UI freshness threshold, not an OEM timeout.
     public static final long HISTORY_MS=300000,HISTORY_STEP_MS=250;
     private final History[] history=new History[LABELS.length];
@@ -225,14 +226,26 @@ public final class Telemetry {
                 if(n>=3&&(d[0]&1)!=0)put(DPF_TEMP,u16(d,1)/10f-40,true,now);
                 else if(n>=5&&(d[0]&2)!=0)put(DPF_TEMP,u16(d,3)/10f-40,true,now);
                 break;
-            case 0x8b:
-                if(n>=2&&(d[0]&1)!=0)put(DPF_REGEN,d[1]&1,true,now);
+            case 0x8b:{
+                Sample odo=sample(ODOMETER,now);
+                if(n>=2&&(d[0]&1)!=0){
+                    int r=d[1]&1;put(DPF_REGEN,r,true,now);
+                    if(lastRegen==1&&r==0&&odo.valid)regenEndOdo=odo.value;   // a regeneration just ended: count from here
+                    lastRegen=r;
+                }
                 if(n>=3&&(d[0]&0x10)!=0)put(DPF_TRIGGER,(d[2]&255)*100f/255,true,now);
-                break;
+                if(n>=7&&(d[0]&0x40)!=0)put(DPF_AVG_KM,u16(d,5),true,now);   // average distance between regenerations, km
+                if(odo.valid&&!Float.isNaN(regenEndOdo)&&odo.value>=regenEndOdo)put(DPF_SINCE_KM,odo.value-regenEndOdo,true,now);
+                break;}
             default: obd(pid,n>0?d[0]&255:0,n>1?d[1]&255:0,now);
         }
     }
     private static int u16(byte[] d,int i){return (d[i]&255)<<8|(d[i+1]&255);}
+    private int lastRegen=-1;
+    private float regenEndOdo=Float.NaN;
+    /** Odometer (km) where the last regeneration the app saw ended, NaN before the first; VehicleDash keeps it in prefs. */
+    public synchronized float dpfRegenEnd(){return regenEndOdo;}
+    public synchronized void dpfRegenEnd(float odo){regenEndOdo=odo;}
     /** Text for enumerated signals; null means a plain number. */
     public static String label(int signal,float value) {
         if(signal==8)return gearLabel((int)value);

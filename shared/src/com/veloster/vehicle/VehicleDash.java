@@ -68,6 +68,9 @@ public final class VehicleDash extends View implements Runnable {
     private boolean resumed;
     private long entryRequestUntil;
     private int shiftTarget,redline;
+    /** Virtual engine sound (settings 사운드): on/off, EngineSound route and volume percent; plays while the dashboard is shown. */
+    private boolean soundOn;private int soundRoute,soundVolume=70;
+    private EngineSound sound;
     private float regenEnd=Float.NaN;   // odometer at the last DPF regeneration's end, saved when Telemetry moves it   // as saved, 0 = the profile's default
     private final java.util.concurrent.atomic.AtomicBoolean mediaPending=new java.util.concurrent.atomic.AtomicBoolean();
     private Button entry;
@@ -104,6 +107,11 @@ public final class VehicleDash extends View implements Runnable {
         // Kept as saved (0 = never set); the renderer and the -/+ buttons resolve it with the detected powertrain.
         shiftTarget=a.getSharedPreferences("pit_vehicle_ui",0).getInt("shift_target",0);
         redline=a.getSharedPreferences("pit_vehicle_ui",0).getInt("redline",0);VehicleProfile.setRedline(redline);
+        sound=new EngineSound(a.getApplicationContext(),DATA);
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);soundOn=p.getBoolean("engine_sound",false);
+            soundRoute=Math.max(0,Math.min(SettingsLayout.SOUND_ROUTES.length-1,p.getInt("engine_sound_route",0)));soundVolume=Math.max(10,Math.min(100,p.getInt("engine_sound_volume",70)));}
+        catch(ClassCastException e){/* Sound off for an incompatible saved value. */}
+        sound.volume(soundVolume);
         try{regenEnd=a.getSharedPreferences("pit_vehicle_ui",0).getFloat("dpf_regen_end_odo",Float.NaN);DATA.dpfRegenEnd(regenEnd);}
         catch(ClassCastException e){/* Incompatible saved value: count from the next regeneration. */}
         try{Theme.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("theme","n"));}
@@ -224,12 +232,13 @@ public final class VehicleDash extends View implements Runnable {
     public static void hscanPd(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanPd(cid,funcLow,data,receivedAt);}
     public static void obd(int pid,byte[] d){DATA.obd(pid,d,SystemClock.elapsedRealtime());}
     protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity); post(this); }
-    protected void onDetachedFromWindow() { removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(clusterHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();mediaReceiver.stop();artwork.close();super.onDetachedFromWindow(); }
+    protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(clusterHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();mediaReceiver.stop();artwork.close();super.onDetachedFromWindow(); }
     public void run() {
         long delay=100;
         long tick=SystemClock.elapsedRealtime();
         if(resumed&&!standalone&&tick-lastPolicyCheck>=1000){lastPolicyCheck=tick;int status=RegulationState.read(activity);if(status>=0)policy(status==1,"service");}
         tryRequestedEntry();
+        sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);
         if(getVisibility()==VISIBLE) {
             invalidate();long now=SystemClock.elapsedRealtime();
             if(graphs)delay=250;
@@ -261,7 +270,7 @@ public final class VehicleDash extends View implements Runnable {
         }
         renderer.setPicker(picker,editing,hidden);renderer.setOrder(order,settingsScroll);
         renderer.setModeOptions(modeColor,modeScreen);
-        if(picker&&editing)renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);
+        if(picker&&editing){renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);renderer.setSound(soundOn,soundRoute,soundVolume);}
         renderer.setLap(lapRunning?now-lapStart:lapMs,lapRunning);
         renderer.setOverviewLayout(overviewLayout);
         long drawStart=System.nanoTime();
@@ -360,6 +369,13 @@ public final class VehicleDash extends View implements Runnable {
                     if(i==SettingsLayout.RPM_SHIFT){shiftTarget=d==0?0:ShiftGuide.clamp(ShiftGuide.target(shiftTarget,prof)+d,prof.shiftMin,prof.shiftTop());e.putInt("shift_target",shiftTarget);}
                     else{redline=d==0?0:ShiftGuide.clamp((int)prof.redline+d,prof.redlineMin,prof.redlineMax);VehicleProfile.setRedline(redline);e.putInt("redline",redline);}
                     break;}
+                case SettingsLayout.SOUND:
+                    if(i==SettingsLayout.SOUND_ON)soundOn=!soundOn;
+                    else if(i==SettingsLayout.SOUND_ROUTE)soundRoute=(soundRoute+1)%SettingsLayout.SOUND_ROUTES.length;
+                    else{int z=SettingsLayout.screenZone(x);if(z!=SettingsLayout.screenZone(downX))break;   // − / + step 10 %, the rest of the row 70 %
+                        soundVolume=z==1?Math.max(10,soundVolume-10):z==2?Math.min(100,soundVolume+10):70;sound.volume(soundVolume);}
+                    e.putBoolean("engine_sound",soundOn).putInt("engine_sound_route",soundRoute).putInt("engine_sound_volume",soundVolume);
+                    sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);break;
                 case SettingsLayout.DIAG:DtcDialog.show(activity);break;   // read-only trouble codes
             }
             e.apply();invalidate();return true;

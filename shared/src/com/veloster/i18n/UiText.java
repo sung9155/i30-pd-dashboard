@@ -61,6 +61,7 @@ public final class UiText {
         EN.put("R · 부스트","R · boost");
         EN.put("RED ALERT · 급제동","RED ALERT · hard braking");
         EN.put("RPM","RPM");
+        EN.put("RPM·페달·부스트로 합성 · 계기판이 열려 있을 때 · 후진 무음","Made from rpm, pedal and boost · while the dashboard is open · silent in reverse");
         EN.put("SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값","SHIFT warnings · red zones · tap the name for the default");
         EN.put("USB 디버깅","USB debugging");
         EN.put("USB 디버깅 ","USB debugging ");
@@ -130,6 +131,7 @@ public final class UiText {
         EN.put("기기 페어링 상태를 확인할 수 없습니다.","The pairing state could not be verified.");
         EN.put("기록","Records");
         EN.put("기록은 앱을 닫으면 초기화","Records reset when the app closes");
+        EN.put("기본 (예전)","Plain (old)");
         EN.put("기본 4,800원 (1.6 km)","Base 4,800 won (1.6 km)");
         EN.put("기본 배치로 복원","Reset layout");
         EN.put("기본요금 1.6 km","Base fare 1.6 km");
@@ -162,6 +164,7 @@ public final class UiText {
         EN.put("노킹 센서 값은 버스에 없어","No knock-sensor value on the bus:");
         EN.put("누르면 음악으로","Tap for music");
         EN.put("눌러서 N 계기판과 앱 목록 열기","Tap to open N Dashboard and your app list");
+        EN.put("눌러서 바꾸기 · 소리가 나는 경로를 찾는 시험","Tap to change · a test to find the route that plays");
         EN.put("눌러서 사용·미사용","Tap to turn on/off");
         EN.put("눌러서 화면 고르기","Tap to choose a screen");
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
@@ -207,8 +210,11 @@ public final class UiText {
         EN.put("문 열림","Door open");
         EN.put("미드나이트 퍼플","Midnight Purple");
         EN.put("미등","Position lamps");
+        EN.put("미디어 소스","Media source");
         EN.put("미리 발을 떼면 더 아낍니다","Lift off earlier to save more");
         EN.put("미사용","Off");
+        EN.put("믹스 · 내비","Mix · navi");
+        EN.put("믹스 · 알림","Mix · alert");
         EN.put("바디 (BCM)","Body (BCM)");
         EN.put("바로가기 끄기","Turn shortcut off");
         EN.put("바로가기 서비스 종료 요청에 실패했습니다.","Could not request shortcut service shutdown.");
@@ -259,6 +265,7 @@ public final class UiText {
         EN.put("사용 안 함","Off");
         EN.put("사용 안 함 / Off","Off");
         EN.put("사용 연료","Fuel used");
+        EN.put("사운드","Sound");
         EN.put("상태 새로 확인","Refresh status");
         EN.put("상태 확인 실패: ","Status check failed: ");
         EN.put("상향등","High beam");
@@ -328,6 +335,7 @@ public final class UiText {
         EN.put("엔진 (EMS)","Engine (EMS)");
         EN.put("엔진 RPM","Engine RPM");
         EN.put("엔진 부하","Engine load");
+        EN.put("엔진 사운드","Engine sound");
         EN.put("엔진 회전 주파수 = RPM ÷ 60","Crank frequency = RPM ÷ 60");
         EN.put("엔진 회전수","Engine speed");
         EN.put("엔진·변속기·제동·조향·에어백·바디 (읽기만)","Engine, transmission, brakes, steering, airbag, body (read only)");
@@ -367,6 +375,7 @@ public final class UiText {
         EN.put("유온","Oil");
         EN.put("유온 (냉각수 대체)","Oil (coolant sub)");
         EN.put("유온(대체)","Oil (ECT)");
+        EN.put("음량","Volume");
         EN.put("음악","Music");
         EN.put("음악 제어 요청을 보낼 수 없습니다","Could not send the playback command");
         EN.put("응답 없음 (미장착일 수 있음)","no reply (may not be fitted)");
@@ -460,6 +469,7 @@ public final class UiText {
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
         EN.put("진단","DTC");
         EN.put("진단 서비스에 연결하지 못했습니다.","Could not connect to the diagnostic service.");
+        EN.put("차 음량 노브와 함께 · 이름을 누르면 기본값","Works with the car volume knob · tap the name for the default");
         EN.put("차량 계산값","From the car");
         EN.put("차량 색","Car colour");
         EN.put("차량 속도","Vehicle speed");
@@ -480,6 +490,7 @@ public final class UiText {
         EN.put("최근 60초","Last 60 s");
         EN.put("최대 횡G","Max lat G");
         EN.put("출력 (계산)","Power (calc.)");
+        EN.put("출력 경로","Output route");
         EN.put("출발하면 미터가 켜집니다","The meter starts when you drive off");
         EN.put("출발하세요","Go");
         EN.put("취소","Cancel");

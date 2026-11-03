@@ -547,5 +547,16 @@
   "DPF 재생 후 거리": "DPF km since regeneration",
   "DPF 평균 재생 간격": "DPF average km between regenerations",
   "레드": "Red",
-  "그린": "Green"
+  "그린": "Green",
+  "사운드": "Sound",
+  "엔진 사운드": "Engine sound",
+  "RPM·페달·부스트로 합성 · 계기판이 열려 있을 때 · 후진 무음": "Made from rpm, pedal and boost · while the dashboard is open · silent in reverse",
+  "출력 경로": "Output route",
+  "눌러서 바꾸기 · 소리가 나는 경로를 찾는 시험": "Tap to change · a test to find the route that plays",
+  "음량": "Volume",
+  "차 음량 노브와 함께 · 이름을 누르면 기본값": "Works with the car volume knob · tap the name for the default",
+  "믹스 · 알림": "Mix · alert",
+  "믹스 · 내비": "Mix · navi",
+  "미디어 소스": "Media source",
+  "기본 (예전)": "Plain (old)"
 }

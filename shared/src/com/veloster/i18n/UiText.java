@@ -290,6 +290,7 @@ public final class UiText {
         EN.put("심야 할증 ","Night surcharge ");
         EN.put("아이스","Ice");
         EN.put("아이언 그레이","Iron Grey");
+        EN.put("아케이드","Arcade");
         EN.put("안드로이드 기본앱","Android utilities");
         EN.put("안드로이드 블루투스 어댑터가 없습니다.","No Android Bluetooth adapter is available.");
         EN.put("안드로이드 설정","Android settings");
@@ -469,7 +470,6 @@ public final class UiText {
         EN.put("최근 30초","Last 30 s");
         EN.put("최근 60초","Last 60 s");
         EN.put("최대 횡G","Max lat G");
-        EN.put("추격","Chase");
         EN.put("출력 (계산)","Power (calc.)");
         EN.put("출발하면 미터가 켜집니다","The meter starts when you drive off");
         EN.put("출발하세요","Go");

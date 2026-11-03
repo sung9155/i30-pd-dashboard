@@ -465,7 +465,7 @@ final class PixelCluster extends ClusterKit {
         sh(c,"TURBO",20,ty,13,hot?(blink(now,300)?0xffff8a3a:Y):0xff7a7a8a);
         float bx=chase?20:84,by=chase?ty+8:ty-12;
         for(int i=0;i<12;i++){fill(c,bx+i*10,by,bx+9+i*10,by+14,0xff000000);fill(c,bx+1+i*10,by+1,bx+8+i*10,by+13,i<tb?(i>8?0xffff8a3a:0xff3ad8ff):0xff2a2a3a);}
-        sh(c,Float.isNaN(boost)?"-.-BAR":String.format(Locale.US,"%+.1fBAR",boost),chase?146:210,chase?by+12:ty,11,hot?W:0xff9a9aaa);   // the pressure now (vacuum below 0)
+        sh(c,Float.isNaN(boost)?"-.-BAR":String.format(Locale.US,"%+.1fBAR",Math.abs(boost)<0.05f?0f:boost),chase?146:210,chase?by+12:ty,11,hot?W:0xff9a9aaa);   // the pressure now (vacuum below 0)
         String sp=Float.isNaN(v)?"---":String.format(Locale.US,"%03d",Math.round(v));
         if(chase){sh(c,sp,720,464,36,W,Paint.Align.RIGHT);sh(c,"KM/H",780,464,13,W,Paint.Align.RIGHT);}
         else{sh(c,sp,720,214,40,W,Paint.Align.RIGHT);sh(c,"KM/H",780,214,13,W,Paint.Align.RIGHT);}

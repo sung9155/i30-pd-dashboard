@@ -48,7 +48,7 @@
 </tr>
 <tr>
 <td><img src="i30pd_port/app/screens/9g_cluster_8bit.png" alt="8비트"><br><b>8비트</b> — 속도·부스트가 게임 화면으로</td>
-<td><img src="i30pd_port/app/screens/9g_cluster_8bit_chase.png" alt="추격"><br><b>8비트 추격 시점</b> — 핸들에 따라 휘는 길</td>
+<td><img src="i30pd_port/app/screens/9g_cluster_8bit_chase.png" alt="아케이드"><br><b>8비트 아케이드</b> — 핸들에 따라 휘는 길</td>
 </tr>
 <tr>
 <td><img src="i30pd_port/app/screens/9d_cluster_taxi.png" alt="택시"><br><b>택시</b> — 미터기 요금</td>

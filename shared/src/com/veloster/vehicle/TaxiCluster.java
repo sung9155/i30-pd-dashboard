@@ -8,13 +8,23 @@ import java.util.Calendar;
 import java.util.Locale;
 
 /**
- * Taxi meter: red seven-segment fare, lamps, the classic running horse in an LED window, and a receipt. The fare is
+ * Taxi meter: seven-segment fare in the theme's accent, lamps, the classic running horse in an LED window, and a receipt. The fare is
  * TaxiFare (Seoul medium taxi, distance and time combined). The trip starts when the car moves and ends with the 빈차
  * button; it keeps counting while another page is up (tick runs every frame). The right panel is
  * the car radio (now playing) until a trip ends; then it is that trip's receipt until tapped or the next trip starts.
  */
 final class TaxiCluster extends ClusterKit {
-    private static final int RED=0xffff3622,RED_OFF=0xff2b0806,AMB=0xffffb02a,AMB_OFF=0xff251905;
+    // Meter LEDs in the theme's accent (user choice 2026-11-03): the fare, horse and bar; the distance and time cells and
+    // the radio too. Unlit segments and the window tints are the accent scaled toward black (opaque, no blending).
+    private int RED,RED_OFF,AMB,AMB_OFF,WIN_BG,WIN_EDGE,LBL,HINT,WON,HORSE_BG,CELL_BG,ALBL,ALT,RADIO_BG,RADIO_EDGE,ledFor;
+    private static int dim(int c,float f){return 0xff000000|(int)(((c>>16)&255)*f)<<16|(int)(((c>>8)&255)*f)<<8|(int)((c&255)*f);}
+    private void leds(){
+        int a=Theme.current().accent;
+        if(a==ledFor)return;
+        ledFor=a;java.util.Arrays.fill(horseBmp,null);   // the horse stamps carry the LED colour
+        RED=a;RED_OFF=dim(a,0.17f);WIN_BG=dim(a,0.03f);WIN_EDGE=dim(a,0.23f);LBL=dim(a,0.55f);HINT=dim(a,0.64f);WON=a;HORSE_BG=dim(a,0.07f);
+        AMB=a;AMB_OFF=dim(a,0.15f);CELL_BG=dim(a,0.03f);ALBL=dim(a,0.55f);ALT=dim(a,0.78f);RADIO_BG=dim(a,0.07f);RADIO_EDGE=dim(a,0.23f);
+    }
     private boolean hired;
     private final TaxiFare fare=new TaxiFare();
     { fare.start(0); }   // the idle meter shows the base fare
@@ -28,6 +38,7 @@ final class TaxiCluster extends ClusterKit {
     private long last;
     private int frame;
     private long frameAt;
+    private float stride;   // gallop phase in frames
     /**
      * One gallop stride (10 frames, 0.4 s at 25 fps) traced from a video of a horse running on a beach: the dark
      * silhouette above the waterline, lined up on the torso and averaged into 48x28 cells (lit when 38 % covered).
@@ -67,8 +78,11 @@ final class TaxiCluster extends ClusterKit {
         if(dt>0&&dt<2000&&hired&&!Float.isNaN(v)){km+=v*dt/3600000f;tripSec+=dt/1000f;if(v<=15)slowSec+=dt/1000f;fare.add(v,dt/1000f,sur);}
     }
     @Override protected void draw(Canvas c){
-        float v=v(7),sur=sur();
-        if(hired&&!Float.isNaN(v)&&v>0.5f&&now-frameAt>Math.max(40,260-v*2.2f)){frame=(frame+1)%HORSE.length;frameAt=now;}
+        leds();float v=v(7),sur=sur();
+        // Gallop phase by elapsed time, so frames step at the right rate between 50 ms redraws: 95 ms a frame (0.95 s a
+        // stride) at a walk, down to the source video's 40 ms (0.4 s) from 60 km/h.
+        if(hired&&!Float.isNaN(v)&&v>0.5f&&frameAt>0)stride+=Math.min(500,now-frameAt)/Math.max(40f,100-v);
+        stride%=HORSE.length;frameAt=now;frame=(int)stride;
         int total=fare.total();
 
         fill(c,0,52,800,480,0xff14110e);
@@ -78,24 +92,24 @@ final class TaxiCluster extends ClusterKit {
         String[] ln={t("빈차"),t("주행"),t("할증"),t("예약"),t("호출")};boolean[] on={!hired,hired,sur>0,false,false};int[] lc={0xffff3b2f,0xff2fe06a,0xffffb020,0xff3fa2ff,0xffff3b2f};
         for(int i=0;i<5;i++){float x=34+i*94;round(c,x,98,x+84,128,5,on[i]?lc[i]:0xff1a1a1c);bold(c,ln[i],x+42,119,16,on[i]?0xff111111:0xff4a4a50,Paint.Align.CENTER);}
         // fare window: horse + fare
-        round(c,34,140,502,290,8,0xff070000);outline(c,34,140,502,290,8,1.5f,0xff3a1310);
-        bold(c,v>0.5f?t("요금 · 주행"):t("요금 · 정차"),46,162,13,0xff8a2a20,Paint.Align.LEFT);
+        round(c,34,140,502,290,8,WIN_BG);outline(c,34,140,502,290,8,1.5f,WIN_EDGE);
+        bold(c,v>0.5f?t("요금 · 주행"):t("요금 · 정차"),46,162,13,LBL,Paint.Align.LEFT);
         boolean[] dots=HORSE[hired&&v>0.5f?frame:3];
-        fill(c,44,174,154,240,0xff120302);   // ponytail: lit dots only (about 250 squares), no ghost grid: cheap in software
+        fill(c,44,174,154,240,HORSE_BG);   // ponytail: lit dots only (about 250 squares), no ghost grid: cheap in software
         int hf=hired&&v>0.5f?frame:3;
         if(horseBmp[hf]==null){Bitmap b=bitmap(108,63);Canvas bc=new Canvas(b);
             for(int y=0;y<28;y++)for(int x=0;x<48;x++)if(dots[y*48+x])fill(bc,x*2.25f,y*2.25f,1.8f+x*2.25f,1.8f+y*2.25f,RED);horseBmp[hf]=b;}
         blit(c,horseBmp[hf],0,0,108,63,46,176,154,239);
         String shown=String.valueOf(total);while(shown.length()<5)shown=" "+shown;
         seg7(c,shown,452,160,90,RED,RED_OFF,false);
-        bold(c,t("원"),494,252,22,0xffff4a36,Paint.Align.RIGHT);
+        bold(c,t("원"),494,252,22,WON,Paint.Align.RIGHT);
         boolean slowNow=!Float.isNaN(v)&&v<=15;
-        text(c,!hired?t("출발하면 미터가 켜집니다"):slowNow?t("시간 요금 · 30초당 100원"):String.format(Locale.US,t("다음 100원까지 %.0f m"),Math.ceil(fare.toNext())),46,280,12,0xffa3413a,Paint.Align.LEFT,Typeface.DEFAULT);
+        text(c,!hired?t("출발하면 미터가 켜집니다"):slowNow?t("시간 요금 · 30초당 100원"):String.format(Locale.US,t("다음 100원까지 %.0f m"),Math.ceil(fare.toNext())),46,280,12,HINT,Paint.Align.LEFT,Typeface.DEFAULT);
         fill(c,290,272,490,280,RED_OFF);fill(c,290,272,290+200*fare.progress(),280,RED);
         // distance / time / slow time
         String[] lab={t("주행 거리 km"),t("주행 시간"),t("저속 시간")};
         String[] val={String.format(Locale.US,"%.2f",km),mmss(tripSec),mmss(slowSec)};
-        for(int i=0;i<3;i++){float x=34+i*158;round(c,x,302,x+148,374,6,0xff070300);text(c,lab[i],x+10,320,12,0xff8a6a3a,Paint.Align.LEFT,Typeface.DEFAULT);
+        for(int i=0;i<3;i++){float x=34+i*158;round(c,x,302,x+148,374,6,CELL_BG);text(c,lab[i],x+10,320,12,ALBL,Paint.Align.LEFT,Typeface.DEFAULT);
             seg7(c,val[i],x+138,330,34,AMB,AMB_OFF,false);}
         // end-trip button
         round(c,34,388,268,450,8,0xff232326);round(c,38,392,264,446,6,hired?0xff3a1d1b:0xff1d1d20);
@@ -106,28 +120,28 @@ final class TaxiCluster extends ClusterKit {
     }
     /** Taxi dash radio: source, play state, title over two lines, artist, progress, in the meter's amber. */
     private void radio(Canvas c){
-        float l=538,tp=64,rr=784,b=452;
+        leds();float l=538,tp=64,rr=784,b=452;
         round(c,l,tp,rr,b,12,0xff1d1d20);round(c,l+4,tp+4,rr-4,b-4,9,0xff0c0c0d);
         boolean has=music!=null&&music.title!=null&&!music.title.isEmpty();
         text(c,"CAR AUDIO",l+16,tp+26,12,0xff5d5d63,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
         if(has&&music.source!=null)bold(c,music.source,rr-16,tp+26,12,AMB,Paint.Align.RIGHT);
-        round(c,l+14,tp+40,rr-14,tp+250,6,0xff120c04);outline(c,l+14,tp+40,rr-14,tp+250,6,1.5f,0xff3a2a10);
+        round(c,l+14,tp+40,rr-14,tp+250,6,RADIO_BG);outline(c,l+14,tp+40,rr-14,tp+250,6,1.5f,RADIO_EDGE);
         if(!has){
-            bold(c,t("재생 중인 곡 없음"),(l+rr)/2,tp+140,17,0xff8a6a3a,Paint.Align.CENTER);
+            bold(c,t("재생 중인 곡 없음"),(l+rr)/2,tp+140,17,ALBL,Paint.Align.CENTER);
         }else{
             boolean playing=music.playState==1;
             if(music.playState>=0){   // -1: the source never said; show neither
                 bold(c,playing?"▶":"❚❚",l+30,tp+72,16,AMB,Paint.Align.LEFT);
-                text(c,playing?t("재생 중"):t("일시정지"),l+54,tp+71,12,0xff8a6a3a,Paint.Align.LEFT,Typeface.DEFAULT);
+                text(c,playing?t("재생 중"):t("일시정지"),l+54,tp+71,12,ALBL,Paint.Align.LEFT,Typeface.DEFAULT);
             }
             String[] lines=wrap(music.title,20,rr-l-56);
             for(int i=0;i<lines.length;i++)bold(c,lines[i],l+28,tp+108+i*28,20,AMB,Paint.Align.LEFT);
-            if(music.artist!=null&&!music.artist.isEmpty())text(c,wrap(music.artist,14,rr-l-56)[0],l+28,tp+108+lines.length*28+4,14,0xffc89a50,Paint.Align.LEFT,Typeface.DEFAULT);
+            if(music.artist!=null&&!music.artist.isEmpty())text(c,wrap(music.artist,14,rr-l-56)[0],l+28,tp+108+lines.length*28+4,14,ALT,Paint.Align.LEFT,Typeface.DEFAULT);
             long pos=Math.min(music.durationMs,music.positionMs+(playing?music.timeAgeMs:0));
             if(music.hasProgress()){   // position and duration both known
                 float f=clamp(pos/(float)music.durationMs,0,1);
                 fill(c,l+28,tp+214,rr-28,tp+218,AMB_OFF);fill(c,l+28,tp+214,l+28+(rr-l-56)*f,tp+218,AMB);
-                mono(c,clock(pos),l+28,tp+238,13,0xffc89a50,Paint.Align.LEFT);mono(c,clock(music.durationMs),rr-28,tp+238,13,0xff8a6a3a,Paint.Align.RIGHT);
+                mono(c,clock(pos),l+28,tp+238,13,ALT,Paint.Align.LEFT);mono(c,clock(music.durationMs),rr-28,tp+238,13,ALBL,Paint.Align.RIGHT);
             }
         }
         // volume and tune knobs

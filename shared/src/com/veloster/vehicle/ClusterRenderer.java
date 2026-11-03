@@ -251,7 +251,7 @@ public final class ClusterRenderer {
     private int temp(float t,float warn,float crit){return Float.isNaN(t)?WHITE:t>=crit?D():t>=warn?AMBER:WHITE;}
 
     private float v(int i){return i>=0&&i<s.length&&s[i].valid&&!Float.isNaN(s[i].value)&&!Float.isInfinite(s[i].value)?Telemetry.displayValue(i,s[i].value):Float.NaN;}
-    private static String fmt(String f,float x){return Float.isNaN(x)?"—":String.format(Locale.US,f,x);}
+    private static String fmt(String f,float x){return Float.isNaN(x)?"—":Telemetry.format(f,x);}
     private void fill(Canvas c,float l,float t,float rr,float b,int color){p.setStyle(Paint.Style.FILL);p.setColor(col(color));c.drawRect(l,t,rr,b,p);}
     private void bigItalic(Canvas c,String str,float x,float y,float size,int color,Paint.Align align){
         text(c,str,x,y,size,color,align,Typeface.DEFAULT_BOLD,1,-0.2f);

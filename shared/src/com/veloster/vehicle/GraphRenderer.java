@@ -18,7 +18,7 @@ public final class GraphRenderer {
     private static final int BLUE=0xffa4d9ef,WHITE=0xffe1edf2,MUTED=0xff8299a4,LINE=0xff293943;
     private void text(Canvas c,String s,float x,float y,float size,int color){p.setStyle(Paint.Style.FILL);p.setTypeface(Typeface.DEFAULT);p.setTextAlign(Paint.Align.LEFT);p.setTextSize(size);p.setColor(T(color));c.drawText(s,x,y,p);}
     private void line(Canvas c,float x,float y,float xx,float yy,int color){p.setStyle(Paint.Style.STROKE);p.setColor(T(color));p.setStrokeWidth(1);c.drawLine(x,y,xx,yy,p);p.setStyle(Paint.Style.FILL);}
-    private static String number(int i,float value){return String.format(Locale.US,i==0||i==7||i>=3&&i<=6||i==8?"%.0f":i==11||i==12||i==17?"%+.2f":i==13?"%+.1f":"%.1f",value);}
+    private static String number(int i,float value){return Telemetry.format(i==0||i==7||i>=3&&i<=6||i==8?"%.0f":i==11||i==12||i==17?"%+.2f":i==13?"%+.1f":"%.1f",value);}
     private static float span(int signal){return signal==0?100:signal==11||signal==12?0.1f:signal==17?0.1f:signal==13?10:2;}
     public void draw(Canvas c,Telemetry model,long now,GraphLayout layout){
         text(c,UiText.t("그래프를 길게 눌러 항목 변경"),22,72,13,MUTED);

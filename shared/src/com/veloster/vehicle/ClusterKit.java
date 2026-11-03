@@ -49,7 +49,7 @@ abstract class ClusterKit {
     protected int col(int c){return themed?Theme.current().map(c):c;}
     protected static int danger(){return Theme.current().danger;}
     protected float v(int i){return i>=0&&i<s.length&&s[i].valid&&!Float.isNaN(s[i].value)&&!Float.isInfinite(s[i].value)?Telemetry.displayValue(i,s[i].value):Float.NaN;}
-    protected static String fmt(String f,float x){return Float.isNaN(x)?"—":String.format(Locale.US,f,x);}
+    protected static String fmt(String f,float x){return Float.isNaN(x)?"—":Telemetry.format(f,x);}
     protected static float clamp(float x,float a,float b){return Math.max(a,Math.min(b,x));}
     protected float boostTop(){return st==null?DriveStats.boostTop(Float.NaN):st.boostTop();}
     protected String gear(){return Telemetry.gearText(v(8),v(Telemetry.GEAR_SELECTOR),prof);}

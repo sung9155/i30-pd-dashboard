@@ -15,7 +15,7 @@ final class GCircleCluster extends ClusterKit {
     { themed=true; }
 
     @Override protected void draw(Canvas c){
-        float lat=v(11),lon=v(12),v=v(7),pedal=v(9),brake=v(10),steer=v(Telemetry.STEERING),yaw=v(Telemetry.YAW);
+        float lat=v(11),lon=v(12),pin=Float.isNaN(lat)||Float.isNaN(lon)?1:Telemetry.pinG(lat,lon,1),v=v(7),pedal=v(9),brake=v(10),steer=v(Telemetry.STEERING),yaw=v(Telemetry.YAW);
         fill(c,0,52,800,480,0xff040506);
         for(float g:new float[]{0.25f,0.5f,0.75f,1f}){ring(c,CX,CY,R*g,g==1?2:1,g==1?RING:LN);
             text(c,String.format(java.util.Locale.US,"%.2f",g),CX+R*g*0.707f+4,CY-R*g*0.707f-4,12,MU,Paint.Align.LEFT,Typeface.DEFAULT);}
@@ -29,16 +29,16 @@ final class GCircleCluster extends ClusterKit {
             for(int i=0;i<n;i++){
                 if(!hl.valid[i]||!ho.valid[i]){px=Float.NaN;continue;}
                 float a=hl.values[i],o=ho.values[i];peaks(a,o);
-                float x=CX-a*R,y=CY-o*R,age=(now-hl.times[i])/4000f;
+                float k=Telemetry.pinG(a,o,1),x=CX-a*k*R,y=CY-o*k*R,age=(now-hl.times[i])/4000f;
                 if(!Float.isNaN(px))line(c,px,py,x,y,3+(1-age)*3,fade(heat((float)Math.hypot(a,o)),1-age));
                 px=x;py=y;
             }
-            if(!Float.isNaN(px)&&!Float.isNaN(lat)&&!Float.isNaN(lon))line(c,px,py,CX-lat*R,CY-lon*R,6,heat((float)Math.hypot(lat,lon)));
+            if(!Float.isNaN(px)&&!Float.isNaN(lat)&&!Float.isNaN(lon))line(c,px,py,CX-lat*pin*R,CY-lon*pin*R,6,heat((float)Math.hypot(lat,lon)));
         }
         if(!Float.isNaN(lat)&&!Float.isNaN(lon))peaks(lat,lon);
         mark(c,0,pkAcc,"+"+f2(pkAcc),8,-6,Paint.Align.LEFT);mark(c,0,pkBrk,f2(pkBrk),8,16,Paint.Align.LEFT);
         mark(c,pkL,0,f2(pkL),0,-10,Paint.Align.CENTER);mark(c,pkR,0,f2(Math.abs(pkR)),0,-10,Paint.Align.CENTER);
-        if(!Float.isNaN(lat)&&!Float.isNaN(lon)){float x=CX-lat*R,y=CY-lon*R;dot(c,x,y,9,0xffffffff);ring(c,x,y,15,2,ACC);}
+        if(!Float.isNaN(lat)&&!Float.isNaN(lon)){float x=CX-lat*pin*R,y=CY-lon*pin*R;dot(c,x,y,9,0xffffffff);ring(c,x,y,15,2,ACC);}
         // right panel
         float x0=490,g=Float.isNaN(lat)||Float.isNaN(lon)?Float.NaN:(float)Math.hypot(lat,lon);
         bold(c,t("합성 G"),x0,88,13,MU,Paint.Align.LEFT);
@@ -59,7 +59,7 @@ final class GCircleCluster extends ClusterKit {
     private void peaks(float a,float o){pkAcc=Math.max(pkAcc,o);pkBrk=Math.min(pkBrk,o);pkL=Math.max(pkL,a);pkR=Math.min(pkR,a);}
     private void mark(Canvas c,float a,float o,String s,float dx,float dy,Paint.Align al){
         if(Math.abs(a)<0.1f&&Math.abs(o)<0.1f)return;   // tiny peaks would pile up on the centre
-        float x=CX-a*R,y=CY-o*R;dot(c,x,y,4,PEAK);bold(c,s,x+dx,y+dy,14,PEAK,al);
+        float k=Telemetry.pinG(a,o,1),x=CX-a*k*R,y=CY-o*k*R;dot(c,x,y,4,PEAK);bold(c,s,x+dx,y+dy,14,PEAK,al);   // a peak past 1 g sits on the rim, its label still reads the value
     }
     private void bar(Canvas c,float y,String label,float f,String txt,int color,boolean centre){
         float x0=490;bold(c,label,x0,y,13,MU,Paint.Align.LEFT);bold(c,txt,790,y,15,TX,Paint.Align.RIGHT);

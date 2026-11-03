@@ -38,7 +38,7 @@ public final class RaceRenderer {
     private Bitmap artwork;
 
     private float v(int i){return i>=0&&i<s.length&&s[i].valid&&!Float.isNaN(s[i].value)&&!Float.isInfinite(s[i].value)?Telemetry.displayValue(i,s[i].value):Float.NaN;}
-    private static String fmt(String f,float x){return Float.isNaN(x)?"—":String.format(Locale.US,f,x);}
+    private static String fmt(String f,float x){return Float.isNaN(x)?"—":Telemetry.format(f,x);}
 
     /** cue/target come from the F1 tab's shift target (ShiftGuide); now drives the blink and the upshift pop. */
     public void draw(Canvas c,Telemetry.Sample[] samples,ShiftGuide.Cue shiftCue,long frameTime,DriveStats stats,VehicleProfile profile,boolean media,MediaState.Snapshot track,Bitmap cover){
@@ -282,9 +282,14 @@ public final class RaceRenderer {
         text(c,fmt("%+.1f",angle),R-20,STEER_TOP+62,40,WHITE,Paint.Align.RIGHT);
         box(c,bl,STEER_TOP+74,mid-2,BOT-8,TRACK);box(c,mid+2,STEER_TOP+74,br,BOT-8,TRACK);
         text(c,"RATE",bl+6,STEER_TOP+88,11,MUTED,Paint.Align.LEFT);text(c,"°/s",mid-8,BOT-14,11,MUTED,Paint.Align.RIGHT);
-        text(c,fmt("%.0f",v(Telemetry.STEERING_SPEED)),mid-28,BOT-14,22,WHITE,Paint.Align.RIGHT);
+        String rate=fmt("%.0f",v(Telemetry.STEERING_SPEED)),torque=fmt("%+.1f",v(Telemetry.STEER_TORQUE));
+        text(c,rate,mid-28,BOT-14,fit(rate,22,mid-28-(bl+5)),WHITE,Paint.Align.RIGHT);
         text(c,"TORQUE",mid+8,STEER_TOP+88,11,MUTED,Paint.Align.LEFT);text(c,"Nm",br-6,BOT-14,11,MUTED,Paint.Align.RIGHT);
-        text(c,fmt("%+.1f",v(Telemetry.STEER_TORQUE)),br-28,BOT-14,22,WHITE,Paint.Align.RIGHT);
+        text(c,torque,br-28,BOT-14,fit(torque,22,br-28-(mid+7)),WHITE,Paint.Align.RIGHT);
+    }
+    /** Text size at most size that keeps s within width (a 4-digit -1016 °/s or +12.7 Nm in the steer cells). */
+    private float fit(String s,float size,float width){
+        p.setTypeface(Typeface.DEFAULT);p.setTextSize(size);float w=p.measureText(s);return w>width?size*width/w:size;
     }
     // Wheel icon geometry in wheel units (x right, y down, rim radius 1), rotated clockwise by wa about (wx,wy).
     private float wx,wy,wr,wa;

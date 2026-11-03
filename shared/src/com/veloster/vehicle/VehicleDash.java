@@ -231,12 +231,14 @@ public final class VehicleDash extends View implements Runnable {
             else if(symmetric&&page>=PitRenderer.PAGE_RACE)delay=50;  // shift blink, upshift pop, live run timers
             else if(!(cluster&&media&&!gauges) && mediaState.snapshot(now).notice)delay=16;
             if(introStart>0&&now-introStart<1500)delay=Math.min(delay,33);   // smooth the welcome sweep
+            if(header.flinging())delay=16;   // a flicked tab strip coasts
             if(now-lastDiagnostic>=5000) { lastDiagnostic=now;android.util.Log.i("VehicleDash",DATA.diagnostics(now)+drawStats()); }
         }
         postDelayed(this,delay);
     }
     protected void onDraw(Canvas c) {
         long now=SystemClock.elapsedRealtime();
+        header.step(SystemClock.uptimeMillis());   // MotionEvent times are uptime
         MediaState.Snapshot track=mediaState.snapshot(now);artwork.request(track);
         renderer.setArtwork(artwork.bitmap());
         renderer.setGaugeLayout(gauges?gaugeLayout:null);
@@ -296,12 +298,12 @@ public final class VehicleDash extends View implements Runnable {
             if(Math.abs(y-downY)>=10)touching=false;   // a drag that scrolls is not a tap
             invalidate();return true;
         }
-        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y)){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);invalidate();return true;}
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y,event.getEventTime())){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);invalidate();return true;}
         if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);}return true;}
         if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);header.up();return true; }
         if(event.getAction()!=MotionEvent.ACTION_UP)return true;
         removeCallbacks(editHold);removeCallbacks(clusterHold);
-        if(header.up()){touching=false;return true;}   // a strip scroll is never a tap
+        if(header.up(event.getEventTime())){touching=false;return true;}   // a strip scroll is never a tap
         boolean tap=touching && Math.abs(x-downX)<16 && Math.abs(y-downY)<16;
         touching=false;
         if(tap&&!blocked&&HeaderTabs.gear(x,y)&&HeaderTabs.gear(downX,downY)){   // gear: edit the screen list, again to close it

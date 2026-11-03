@@ -64,6 +64,76 @@ final class PixelCluster extends ClusterKit {
     /** Paints art once into a bitmap at 1 pixel per scene pixel. */
     private Bitmap bake(int w,int h,Art a){Bitmap b=bitmap(w,h);float s=pxScale,t=pxTop;pxScale=1;pxTop=0;a.paint(new Canvas(b));pxScale=s;pxTop=t;return b;}
     /** Stamps a baked bitmap at scene position x,y (4x, no smoothing). */
+    // ---- weather (Weather.java): colour swaps, clouds by day, rain and snow ------------------------------------------
+    private static final Weather WEATHER=new Weather();   // one tracker for both views, so they agree
+    private int wx=Weather.CLEAR,remapWx=-1,remapPh=-1;
+    /** Colour pairs (from, to) the weather swaps in px(), or null; baked strips are redone when it changes. */
+    private int[] remap,bakedRemap;
+    private static final int[] SKY_DAY={0xff3f8fe0,0xff4f9ae4,0xff60a6e8,0xff72b2ec,0xff86bef0,0xff9acaf2,0xffb0d6f4,0xffc8e2f6},
+        SIDE_DAY={0xff4f9ee6,0xff63aaea,0xff79b8ee,0xff90c6f1,0xffa8d4f4,0xffc2e2f6},
+        SKY_GREY={0xff8994a2,0xff929caa,0xff9ba5b1,0xffa4adb8,0xffadb5bf,0xffb6bdc6,0xffbfc5cd,0xffc8cdd4},
+        SKY_RAIN={0xff5b6470,0xff626b77,0xff69727e,0xff707985,0xff77808c,0xff7e8793,0xff858e9a,0xff8c95a1},
+        SKY_SNOW={0xffb9c2cc,0xffc1c9d2,0xffc9d0d8,0xffd0d6dd,0xffd7dce2,0xffdee2e7,0xffe5e8ec,0xffeceef1},
+        SKY_BLEAK={0xff6f9ccc,0xff7ba5d0,0xff88aed4,0xff95b7d8,0xffa3c1dc,0xffb1cbe0,0xffbfd4e4,0xffcddde8};
+    private static final int[] SIDE_FROM={0,1,3,4,6,7};   // which of the eight chase bands each side band takes
+    /** The swaps for weather w under sky phase ph. */
+    private static int[] remapFor(int w,int ph){
+        if(w==Weather.CLEAR)return null;
+        java.util.ArrayList<Integer> m=new java.util.ArrayList<>();
+        int ground=Weather.ground(w);boolean day=ph==DayPhase.DAY;
+        if(day){
+            int[] sky=w==Weather.RAIN||w==Weather.STORM?SKY_RAIN:w==Weather.SNOW?SKY_SNOW:Weather.overcast(w)?SKY_GREY:w==Weather.BLEAK?SKY_BLEAK:null;
+            if(sky!=null){for(int i=0;i<8;i++){m.add(SKY_DAY[i]);m.add(sky[i]);}for(int i=0;i<6;i++){m.add(SIDE_DAY[i]);m.add(sky[SIDE_FROM[i]]);}}
+            int a=0,b=0;   // grass bands A and B (and the side view's verge, as A)
+            if(ground==Weather.SNOWY){a=0xffe9edf2;b=0xffd6dde5;}else if(ground==Weather.DRY){a=0xff8a7d4c;b=0xff7d7044;}
+            else if(ground==Weather.WET){a=0xff307037;b=0xff2a6631;}else if(Weather.overcast(w)){a=0xff37853f;b=0xff30793a;}
+            if(a!=0){m.add(GRASS_A[0]);m.add(a);m.add(GRASS_B[0]);m.add(b);m.add(VERGE[0]);m.add(a);}
+            int hf=0,hc=0;   // far hills (side, chase)
+            if(w==Weather.SNOW||ground==Weather.SNOWY){hf=0xffc9d0d8;hc=0xffd0d6dd;}else if(ground==Weather.WET){hf=0xff646d7a;hc=0xff6b7481;}
+            else if(Weather.overcast(w)){hf=0xff8f9aa8;hc=0xff98a2ae;}else if(ground==Weather.DRY){hf=0xff8aa3bc;hc=0xff96aec4;}
+            if(hf!=0){m.add(FAR_HILL[0]);m.add(hf);m.add(MOUNT_FAR[0]);m.add(hc);}
+            if(ground==Weather.WET){int[][] city={{0xff6d7f99,0xff58657a},{0xff5f7190,0xff4d5a70},{0xff8ea6c0,0xff6f7e93},{0xffa9bfd6,0xff8494a8}};
+                for(int[] k:city){m.add(k[0]);m.add(k[1]);}}
+        }else{   // twilight and night keep their skies; only the ground changes
+            int i=ph==DayPhase.TWILIGHT?1:2;
+            if(ground==Weather.SNOWY){int a=i==1?0xff8a90a8:0xff5a6274,b=i==1?0xff7a8098:0xff4e5666;m.add(GRASS_A[i]);m.add(a);m.add(GRASS_B[i]);m.add(b);m.add(VERGE[i]);m.add(a);}
+            else if(ground==Weather.DRY){int a=i==1?0xff3a3424:0xff2a2619,b=i==1?0xff332e20:0xff241f15;m.add(GRASS_A[i]);m.add(a);m.add(GRASS_B[i]);m.add(b);m.add(VERGE[i]);m.add(a);}
+        }
+        if(ground==Weather.WET){m.add(0xff3b3b48);m.add(0xff30303b);m.add(0xff363642);m.add(0xff2c2c36);m.add(0xff2b2b36);m.add(0xff23232c);}   // wet asphalt
+        if(m.isEmpty())return null;
+        int[] out=new int[m.size()];for(int i=0;i<out.length;i++)out[i]=m.get(i);return out;
+    }
+    /** Clouds by day when overcast, behind the hills and skyline; drift is in scene pixels. */
+    private static final String[] CLOUD={".....oooo.........","...oooooooo..ooo..",".ooooooooooooooooo.","oooooooooooooooooooo",".dddddddddddddddddd."};
+    private void clouds(Canvas c,float drift){
+        if(phase!=DayPhase.DAY||!Weather.overcast(wx))return;
+        boolean wet=wx==Weather.RAIN||wx==Weather.STORM;
+        int lite=wet?0xff8a929d:wx==Weather.SNOW?0xffeef0f3:0xffcfd4db,dark=wet?0xff4f5762:wx==Weather.SNOW?0xffc3cad3:0xffa7afb9;
+        int[][] at=wet?new int[][]{{57,0},{77,4},{99,1},{121,5},{143,0},{175,3}}:new int[][]{{67,3},{103,0},{133,6},{8,2}};
+        for(int[] k:at){int x0=(int)(((k[0]+drift)%220+220)%220)-20;
+            for(int r=0;r<CLOUD.length;r++){String row=CLOUD[r];int run=-1;
+                for(int i=0;i<=row.length();i++){boolean on=i<row.length()&&row.charAt(i)!='.';   // runs, so a row is a few rects
+                    if(on&&run<0)run=i;if(!on&&run>=0){px(c,x0+run,k[1]+r,i-run,1,row.charAt(run)=='d'?dark:lite);run=-1;}}}}
+    }
+    /** Rain and snow: solid scene pixels that fall, rain splashing where it lands (from groundTop down). */
+    private final java.util.Random rnd=new java.util.Random(7);
+    private final float[] dropX=new float[140],dropY=new float[140],dropG=new float[140],dropT=new float[140];
+    private int dropN,dropKind=Weather.CLEAR;
+    private void precip(Canvas c,float dt,int groundTop){
+        int kind=Weather.fall(wx);
+        if(kind!=dropKind){dropKind=kind;dropN=kind==Weather.STORM?140:kind==Weather.RAIN?60:kind==Weather.SNOW?75:0;
+            for(int i=0;i<dropN;i++){dropX[i]=rnd.nextFloat()*200;dropY[i]=rnd.nextFloat()*107;dropG[i]=groundTop+rnd.nextFloat()*(107-groundTop);dropT[i]=0;}}
+        boolean snow=kind==Weather.SNOW,storm=kind==Weather.STORM;float v=storm?80:60;
+        for(int i=0;i<dropN;i++){
+            if(snow){dropY[i]+=dt*6;dropT[i]+=dt*3;dropX[i]+=(float)Math.sin(dropT[i])*dt*4;if(dropY[i]>107){dropY[i]=-1;dropX[i]=rnd.nextFloat()*200;}
+                px(c,dropX[i],dropY[i],1,1,W);continue;}
+            if(dropT[i]>0){dropT[i]-=dt;px(c,dropX[i]-1,dropG[i],3,1,0xffc9d5e1);   // splash
+                if(dropT[i]<=0){dropY[i]=-4;dropX[i]=rnd.nextFloat()*200;}continue;}
+            dropY[i]+=dt*v;dropX[i]-=dt*v*0.15f;if(dropX[i]<0)dropX[i]+=200;
+            if(dropY[i]>=dropG[i]){dropT[i]=0.12f;continue;}
+            px(c,dropX[i],dropY[i],1,storm?4:3,storm?0xffb7c6d5:0xff9fb2c6);
+        }
+    }
     private void put(Canvas c,Bitmap b,float x,float y){int xi=Math.round(x),yi=Math.round(y);blit(c,b,0,0,b.getWidth(),b.getHeight(),xi*4,52+yi*4,(xi+b.getWidth())*4,52+(yi+b.getHeight())*4);}
     /** Draws the car yawed into a bend: horizontal bands shifted by whole pixels toward the top, so a sliver of the far
      * side shows as it turns. shear is in scene pixels across the car's height (+ = turning that way). */
@@ -81,7 +151,7 @@ final class PixelCluster extends ClusterKit {
     private int phase;
     /** The car's lamps from CGW1, independent of the sky: low beam (HeadLampLow), tail/position (미등), high beam (상향). */
     private boolean lamps,tail,high;
-    private float scroll,curve,bgX,coinSec,bumpE;
+    private float scroll,curve,bgX,coinSec,bumpE,frameDt;
     private final RoadJolt jolt=new RoadJolt();
     private int coins;
     private long last,shiftAt=Long.MIN_VALUE/2,modeAt=Long.MIN_VALUE/2,pedHiAt=Long.MIN_VALUE/2,fireAt=Long.MIN_VALUE/2;
@@ -96,6 +166,7 @@ final class PixelCluster extends ClusterKit {
 
     /** A rectangle of scene pixels, snapped to the grid: edges round to whole pixels, and anything with size keeps at least one. */
     private void px(Canvas c,float x,float y,float w,float h,int color){
+        if(remap!=null)for(int i=0;i<remap.length;i+=2)if(remap[i]==color){color=remap[i+1];break;}
         int x0=Math.round(x),y0=Math.round(y),x1=Math.round(x+w),y1=Math.round(y+h);if(w>0&&x1==x0)x1++;if(h>0&&y1==y0)y1++;
         fill(c,x0*pxScale,pxTop+y0*pxScale,x1*pxScale,pxTop+y1*pxScale,color);}
     /** Half the scene pixels of a rectangle, in a checkerboard fixed to the grid: the 8-bit way to show light or haze. */
@@ -109,9 +180,12 @@ final class PixelCluster extends ClusterKit {
     @Override protected void draw(Canvas c){
         if(paint!=CarPaint.index()){paint=CarPaint.index();int[] b=CarPaint.body();B=b[0];BH=b[1];BD=b[2];BS=b[3];Arrays.fill(sideCar,null);Arrays.fill(rearCar,null);}
         float v=v(7),rpm=v(0),boost=v(Telemetry.BOOST),fuel=v(Telemetry.FUEL_RATE),lat=v(11),lon=v(12);
-        float dt=last==0||now-last>2000?0:(now-last)/1000f;last=now;
+        float dt=last==0||now-last>2000?0:(now-last)/1000f;last=now;frameDt=dt;
         Calendar cal=Calendar.getInstance();
         phase=DayPhase.of(cal.get(Calendar.MONTH)+1,cal.get(Calendar.HOUR_OF_DAY)*60+cal.get(Calendar.MINUTE));lamps=v(Telemetry.HEAD_LAMP)>0;tail=v(Telemetry.TAIL_LAMP)>0;high=v(Telemetry.HIGH_BEAM)>0;
+        wx=WEATHER.update(now,v(Telemetry.WIPER),v(Telemetry.AMBIENT),lamps,phase==DayPhase.DAY);
+        if(wx!=remapWx||phase!=remapPh){remapWx=wx;remapPh=phase;remap=remapFor(wx,phase);}
+        if(!Arrays.equals(remap,bakedRemap)){bakedRemap=remap;Arrays.fill(cityStrip,null);Arrays.fill(cityChase,null);Arrays.fill(hillStrip,null);}
         float vk=Float.isNaN(v)?0:v,la=Float.isNaN(lat)?0:lat;
         float dm=v(Telemetry.DRIVE_MODE);mode=Float.isNaN(dm)?-1:(int)dm;
         if(mode>=0&&mode!=lastMode){if(lastMode>=0)modeAt=now;lastMode=mode;}
@@ -143,8 +217,10 @@ final class PixelCluster extends ClusterKit {
     private void sideScene(Canvas c,float v,boolean brake,boolean left,float boost,float rpm){
         int[] sky=SKY_SIDE[phase];
         for(int i=0;i<sky.length;i++)px(c,0,i*9,200,i==sky.length-1?58-i*9:9,sky[i]);   // the last band reaches the verge: no gap between buildings
-        if(phase==DayPhase.NIGHT)for(int i=0;i<24;i++){int x=200-(int)((i*37+scroll*0.02f)%200),y=(i*13)%28;if((i+now/500)%5!=0)px(c,x,y,1,1,W);}
-        if(phase==DayPhase.NIGHT){px(c,120,8,8,8,0xffffe7a8);px(c,119,10,10,4,0xffffe7a8);px(c,123,9,4,4,sky[1]);}          // moon
+        boolean clear=!Weather.overcast(wx);
+        if(phase==DayPhase.NIGHT&&clear)for(int i=0;i<24;i++){int x=200-(int)((i*37+scroll*0.02f)%200),y=(i*13)%28;if((i+now/500)%5!=0)px(c,x,y,1,1,W);}
+        if(!clear)clouds(c,scroll*0.03f);
+        else if(phase==DayPhase.NIGHT){px(c,120,8,8,8,0xffffe7a8);px(c,119,10,10,4,0xffffe7a8);px(c,123,9,4,4,sky[1]);}     // moon
         else if(phase==DayPhase.DAY){px(c,115,16,10,10,0xfffff2a8);px(c,113,18,14,6,0xfffff2a8);}                            // sun
         else for(int dy=-9;dy<=0;dy++){float w=(float)Math.sqrt(81-dy*dy);px(c,110-w,33+dy,w*2,1,dy<-5?0xffffd27a:0xffff8a5c);}   // setting sun
         final int ph=phase;
@@ -178,6 +254,7 @@ final class PixelCluster extends ClusterKit {
         if(!Float.isNaN(ped)&&ped>20)for(int i=0;i<2+(int)(ped/40);i++){float ag=((now/70+i*5)%14)/14f;if(ag<0.66f)px(c,cx-4-ag*18,cy+11-ag*2,2+ag*3,2+ag*2,smoke(ag));}
         if(now-fireAt<450){boolean big=(now/60)%2==0;px(c,cx-(big?9:7),cy+(big?10:11),big?6:4,big?3:2,0xffff7a1a);px(c,cx-(big?6:5),cy+11,big?3:2,1,0xffffe14a);}   // backfire pop
         if(mode==ECO&&v>5)for(int i=0;i<3;i++){float ag=((now/90+i*8)%24)/24f;leaf(c,cx-2-ag*26,cy+8-ag*12+(float)Math.sin(ag*9+i)*2,i);}   // ECO: leaves blow off behind
+        precip(c,frameDt,62);
     }
     /** The car's side view, sprite origin cx,cy (wheels spun to spin radians). */
     private void sideCarArt(Canvas c,float cx,float wy,boolean brake,boolean left,double spin,int drop){
@@ -235,7 +312,9 @@ final class PixelCluster extends ClusterKit {
         int hz=Math.round(46-lon*7+bump),bottom=107;
         int[] sky=SKY_CHASE[phase];float bh=hz/(float)sky.length;
         for(int i=0;i<sky.length;i++)px(c,0,i*bh,200,bh+1,sky[i]);
-        if(phase==DayPhase.NIGHT){for(int i=0;i<22;i++){int x=(int)((i*53+bgX*0.3f)%200+200)%200,y=(i*7)%Math.max(4,hz-24);if((i+now/500)%6!=0)px(c,x,y,1,1,W);}
+        boolean clear=!Weather.overcast(wx);
+        if(!clear)clouds(c,bgX*0.2f);
+        else if(phase==DayPhase.NIGHT){for(int i=0;i<22;i++){int x=(int)((i*53+bgX*0.3f)%200+200)%200,y=(i*7)%Math.max(4,hz-24);if((i+now/500)%6!=0)px(c,x,y,1,1,W);}
             px(c,150,8,8,8,0xffffe7a8);px(c,149,10,10,4,0xffffe7a8);px(c,153,9,4,4,sky[1]);}
         else if(phase==DayPhase.DAY){px(c,122,14,10,10,0xfffff2a8);px(c,120,16,14,6,0xfffff2a8);}
         else for(int dy=-16;dy<=0;dy++){if(dy>-8&&dy%3==0)continue;float w=(float)Math.sqrt(256-dy*dy);px(c,100-w,hz-4+dy,w*2,1,dy<-9?0xffffd27a:0xffff8a5c);}
@@ -281,6 +360,7 @@ final class PixelCluster extends ClusterKit {
             int col=t<0.2f||t>0.8f?0xff5a5a6a:0xff9a9eaa;   // dim at both ends instead of a fade
             for(int j=0;j<len;j++)px(c,100+dx/n*(r+j),hz+dy/n*(r+j),1,1,col);}
         rear(c,lat,bump,brake,left,right,boost,rpm);
+        precip(c,frameDt,hz);
     }
     /** i30 N from straight behind, 49 x 39 lo-res pixels traced from Hyundai's rear view (width : height 1.24). */
     private void rear(Canvas c,float lat,float bump,boolean brake,boolean left,boolean right,float boost,float rpm){

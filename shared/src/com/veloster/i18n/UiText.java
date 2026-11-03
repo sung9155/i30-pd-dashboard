@@ -36,6 +36,7 @@ public final class UiText {
         EN.put("8비트","8-bit");
         EN.put("8비트 게임","8-bit game");
         EN.put("8비트 추격 시점","8-bit chase view");
+        EN.put("8비트 하늘","8-bit sky");
         EN.put("AP 상태 13 확인. IP 주소와 iPhone의 SSID 검색을 다음으로 확인하세요.","AP state 13 confirmed. Next check the IP address and whether the iPhone sees the SSID.");
         EN.put("CH1 횡G 0.2 g/div","CH1 lat G 0.2 g/div");
         EN.put("CH2 종G 0.2 g/div","CH2 long G 0.2 g/div");
@@ -181,9 +182,11 @@ public final class UiText {
         EN.put("레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값","Race SHIFT ▲ · F1 LEDs · tap the name for the default");
         EN.put("레트로","Retro");
         EN.put("로즈","Rose");
+        EN.put("마리나 블루","Marina Blue");
         EN.put("마찰 토크","Friction torque");
         EN.put("마찰원","Friction circle");
         EN.put("막대","Bar");
+        EN.put("맑음","Clear");
         EN.put("모노","Mono");
         EN.put("모드 색","Mode colour");
         EN.put("모드 화면","Mode screen");
@@ -193,6 +196,7 @@ public final class UiText {
         EN.put("목록 편집","Edit app list");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
+        EN.put("미드나이트 퍼플","Midnight Purple");
         EN.put("미등","Position lamps");
         EN.put("미리 발을 떼면 더 아낍니다","Lift off earlier to save more");
         EN.put("미사용","Off");
@@ -371,13 +375,16 @@ public final class UiText {
         EN.put("이전 시험 백업이 남아 있습니다. 먼저 원상복구하세요.","A previous test backup remains. Restore the original settings first.");
         EN.put("이제 ☆ 버튼을 짧게 누르면 계기판이 열립니다.","A short press of ☆ now opens the dashboard.");
         EN.put("인텐스 블루","Intense Blue");
+        EN.put("인텐스 카퍼","Intense Copper");
         EN.put("일반 블루투스(Classic)를 사용합니다. BLE 검색과 GPS 데이터 수신 기능은 포함하지 않습니다.","Uses Classic Bluetooth. BLE discovery and GPS data reception are not included.");
         EN.put("일반 설치 앱은 자동 표시됩니다. 목록에서 숨겨도 앱은 삭제되지 않습니다.","Ordinary installed apps appear automatically. Hiding an app does not uninstall it.");
         EN.put("일시정지","Paused");
         EN.put("읽기 거부","refused");
         EN.put("읽기만 합니다. 고장코드 삭제는 정비소 진단기로 하세요.","Read only. Clear codes with a workshop scan tool.");
         EN.put("잎 1개 = 20점","1 leaf = 20 points");
+        EN.put("자동","Auto");
         EN.put("자동 확인","confirmed automatically");
+        EN.put("자동: 와이퍼·외기온·낮 전조등","Auto: wipers, outside temp, daytime lamps");
         EN.put("작동","Active");
         EN.put("잔상 3 s","3 s glow");
         EN.put("재생 중","Playing");
@@ -471,6 +478,7 @@ public final class UiText {
         EN.put("측정 중","timing");
         EN.put("카세트","Cassette");
         EN.put("카세트 데크","Cassette deck");
+        EN.put("카키","Khaki");
         EN.put("켜기","Enable");
         EN.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","When enabled, reboot restores only the shortcut, not the full app screen. Drag the edge button to move it.\n\nIf overlays are denied, the notification remains. If the factory UI also hides notifications, use another entry point. Force-stop may prevent restoration until My Apps is opened again.");
         EN.put("켜짐 (짧게 누르면 계기판)","On (short press opens the dashboard)");
@@ -515,6 +523,7 @@ public final class UiText {
         EN.put("표시할 설치 앱이 없습니다. 앱 설치 뒤 다시 열거나 목록 편집에서 선택하세요.","No installed apps to show. Reopen after installing an app or select one in Edit app list.");
         EN.put("풀부하 기준","Full-load line");
         EN.put("풀부하에서 점화가 기준선보다","Spark later than the full-load line");
+        EN.put("플래티넘 실버","Platinum Silver");
         EN.put("한국어","Korean");
         EN.put("할증","Night");
         EN.put("할증 22~04시 · 23~02시 40%","Night 22-04 h · 23-02 h 40%");
@@ -537,6 +546,7 @@ public final class UiText {
         EN.put("횡가속","Lateral G");
         EN.put("후드","Hood");
         EN.put("후드 열림","Hood open");
+        EN.put("흐림","Overcast");
         EN.put("흡기","Intake");
         EN.put("흡기 온도","Intake temperature");
         EN.put("흡기온","Intake");

@@ -528,5 +528,15 @@
   "변속 목표": "Shift target",
   "레드라인": "Redline",
   "레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값": "Race SHIFT ▲ · F1 LEDs · tap the name for the default",
-  "SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값": "SHIFT warnings · red zones · tap the name for the default"
+  "SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값": "SHIFT warnings · red zones · tap the name for the default",
+  "마리나 블루": "Marina Blue",
+  "플래티넘 실버": "Platinum Silver",
+  "인텐스 카퍼": "Intense Copper",
+  "미드나이트 퍼플": "Midnight Purple",
+  "카키": "Khaki",
+  "8비트 하늘": "8-bit sky",
+  "자동: 와이퍼·외기온·낮 전조등": "Auto: wipers, outside temp, daytime lamps",
+  "자동": "Auto",
+  "맑음": "Clear",
+  "흐림": "Overcast"
 }

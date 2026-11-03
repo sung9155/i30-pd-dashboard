@@ -208,7 +208,9 @@ public final class PitRenderer {
             switch(cat){
                 case SettingsLayout.SCREENS:dim=(hidden&(1<<i))!=0;name=ClusterPicker.NAMES[i];sub=dim?"미사용":"사용";break;
                 case SettingsLayout.THEME:{Theme th=Theme.of(Theme.IDS[i]);sel=th==Theme.current();name=SettingsLayout.THEME_NAMES[i];sub=th.label;swatch=th.accent;swatchBg=th.map(0xff101315);break;}
-                case SettingsLayout.PAINT:sel=i==CarPaint.index();name=CarPaint.LABELS[i];swatch=CarPaint.color(i);break;
+                case SettingsLayout.PAINT:
+                    if(i==CarPaint.IDS.length){name="8비트 하늘";sub="자동: 와이퍼·외기온·낮 전조등";value=Weather.skyLabel();break;}
+                    sel=i==CarPaint.index();name=CarPaint.LABELS[i];swatch=CarPaint.color(i);break;
                 case SettingsLayout.MODE:
                     if(i<SettingsLayout.MODE_FIRST){sel=i==0?modeColor:modeScreen;name=i==0?"모드 색":"모드 화면";
                         sub=i==0?"ECO 초록 · SPORT 주황":"모드를 바꾸면 아래 화면으로";value=sel?"켬":"끔";}

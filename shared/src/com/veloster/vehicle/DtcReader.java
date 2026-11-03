@@ -56,7 +56,7 @@ public final class DtcReader {
                 if(progress!=null)progress.step(name);
                 out.add(r.read(svc,name,ecu,(Integer)e[2]));
             }
-        }finally{call(svc,2,listener,token);ObdLive.diagBusy=false;}   // unregisterHscanMicomListener
+        }finally{try{call(svc,2,listener,token);}finally{ObdLive.diagBusy=false;}}   // unregisterHscanMicomListener; a failed unregister must not leave the OBD poller paused
         return out;
     }
 

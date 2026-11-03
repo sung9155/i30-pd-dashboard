@@ -220,7 +220,7 @@ final class PixelCluster extends ClusterKit {
             // braking and shifts still show only as the horizon and lean.
             bumpE=bumpE*Math.max(0f,1-dt*3.5f)+jolt.update(now,lat,lon,v(9),v(10),steer,v(8))*15f;
             float bump=Math.min(4f,bumpE)*(float)Math.sin(now/38.0);
-            chaseScene(c,turn,lo,bump,brake,left,right,boost,rpm);
+            chaseScene(c,curve/1.7f,lo,bump,brake,left,right,boost,rpm);   // the eased bend: road and car turn together
         }
         else{scroll+=vk*dt*1.4f;sideScene(c,vk,brake,left,boost,rpm);}
         hud(c,g,rpm,boost,v);
@@ -343,7 +343,11 @@ final class PixelCluster extends ClusterKit {
         for(int y=hz;y<=bottom;y++){   // grass first, merged into runs of one band
             float p=(y-hz)/(float)(bottom-hz);float z=1/Math.max(p,0.001f);
             bands[y]=((int)Math.floor(z*3+scroll))%2==0;
-            rowX[y]=100+curve*(1-p)*(1-p)*80+lat*12*p;rowW[y]=6+184*p;
+            // The road is pinned under the car: on the car's ground row it runs through the car's centre, leaving in
+            // the car's heading (60 px at the horizon per unit bend), and ahead it bends as a perspective arc. Behind the
+            // car it continues that line, so the near road never slides against the car.
+            float pc=Math.max(0.3f,(105+bump-hz)/(float)(bottom-hz)),sd=1/Math.max(p,0.016f)-1/pc;
+            rowX[y]=100+sway+lat*60*(1-p/pc)+lat*1.3f*p*sd*sd;rowW[y]=6+184*p;
             if(y>hz&&bands[y]!=bands[y-1]){px(c,0,runAt,200,y-runAt,bands[y-1]?GRASS_A[phase]:GRASS_B[phase]);runAt=y;}
         }
         px(c,0,runAt,200,bottom+1-runAt,bands[bottom]?GRASS_A[phase]:GRASS_B[phase]);
@@ -386,8 +390,9 @@ final class PixelCluster extends ClusterKit {
         if(phase!=DayPhase.DAY){   // lamp glow only after dark, as a dither beside each lamp
             if(tail||lamps||brake){int red=brake?0xffa02018:0xff5a1410;dither(c,ox-5,oy+12,6,5,red);dither(c,ox+48,oy+12,6,5,red);}
             if(left)dither(c,ox-7,oy+10,7,6,0xff8a5a10);if(right)dither(c,ox+49,oy+10,7,6,0xff8a5a10);}
-        // lat here is the road's bend from the wheel; the car yaws 20 times that (30 deg wheel -> 4 deg, 90 -> 16, max 24)
-        final int fi=ArcadeCarFrames.frameFor(lat*20);final boolean b0=brake,l0=left,r0=right,lp=tail||lamps;
+        // lat here is the eased road bend (the same value the road uses, so both turn together); the car yaws 20 times
+        // that into the bend (30 deg wheel -> 4 deg, 90 -> 16, max 24)
+        final int fi=ArcadeCarFrames.frameFor(-lat*20);final boolean b0=brake,l0=left,r0=right,lp=tail||lamps;
         int key=fi|(brake?32:0)|(left?64:0)|(right?128:0)|(lp?256:0);Bitmap car=arcadeCar.get(key);
         if(car==null){car=bake(ArcadeCarFrames.W,ArcadeCarFrames.H,new Art(){public void paint(Canvas b){arcadeArt(b,fi,b0,l0,r0,lp);}});arcadeCar.put(key,car);}
         put(c,car,ox+ArcadeCarFrames.DX,oy+ArcadeCarFrames.DY);

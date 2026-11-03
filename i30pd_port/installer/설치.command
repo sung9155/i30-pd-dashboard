@@ -4,19 +4,21 @@
 # 빌드 확인 → 두 앱 설치(서명 충돌 시 지우고 재설치) → '내 앱' 실행. 차가 아닌 기기에는 아무것도 하지 않는다.
 # 기본 macOS bash 3.2 에서 돌아가야 하므로 bash 4 기능(연관 배열 등)은 쓰지 않는다.
 #
-# 버전: 시작할 때 안정화(최신 정식 릴리스, 실차 확인) / 테스트('test' 사전 배포, 실차 검증 전) 중 고른다.
+# 버전: 시작할 때 안정화(최신 정식 릴리스, 실차 확인) / 테스트('test' 사전 배포, 실차 검증 전) / 진단 기록 모으기 중 고른다.
 # 테스트 인자: --adb <adb 경로>  --apk-base <URL>  --channel stable|test  --yes(확인 모두 예, 대기/프롬프트 생략, 안정화)  --uninstall(두 앱 삭제)
+#              --diag(설치하지 않고 진단 기록 파일만 만든다)
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-INSTALLER_VERSION='2026-11-01b'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+INSTALLER_VERSION='2026-11-02d'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 VERIFIED_BUILD='eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 LOW_BUILD='eng.vmadmin.20260114.084725'        # 블루링크 없는 D-Audio Plus LOW — 2026-10-31 실차 설치·동작 확인
 PT_URL='https://dl.google.com/android/repository/platform-tools-latest-darwin.zip'
 # 안정화 = 최신 정식 릴리스, 테스트 = 'test' 사전 배포(덮어쓰며 갱신). --apk-base 를 주면 그 주소를 그대로 쓴다.
 RELEASES='https://github.com/sung9155/i30-pd-dashboard/releases'
+RAW='https://raw.githubusercontent.com/sung9155/i30-pd-dashboard'   # 새 설치기 확인용(main = 안정화, beta = 테스트)
 APK_BASE=''
 APKS='dashboard-i30pd-platform.apk myapps-i30pd-platform.apk'
-ADB=''; YES=''; UNINSTALL=''; CHANNEL=''
+ADB=''; YES=''; UNINSTALL=''; CHANNEL=''; DIAG=''
 while [ $# -gt 0 ]; do
   case "$1" in
     --adb) ADB="$2"; shift ;;
@@ -24,6 +26,7 @@ while [ $# -gt 0 ]; do
     --channel) CHANNEL="$2"; shift ;;
     --yes) YES=1 ;;
     --uninstall) UNINSTALL=1 ;;
+    --diag) DIAG=1 ;;
   esac
   shift
 done
@@ -43,12 +46,15 @@ warn() { printf '\033[33m%s\033[0m\n' "$1"; printf '%s\n' "$1" >> "$LOG"; }
 finish() { [ -z "$YES" ] && { echo; read -r -p '창을 닫으려면 Enter' _; }; exit "$1"; }
 die()  { printf '\n\033[31m%s\033[0m\n' "$1"; log "ERROR: $1"
          warn "기록 파일: $LOG"
-         warn '문제를 알릴 때 이 파일을 Issues(github.com/sung9155/i30-pd-dashboard/issues)에 올려 주세요.'
+         warn '문제를 알릴 때 이 기록 파일을 함께 보내 주세요.'
          [ -z "$YES" ] && open -R "$LOG" 2>/dev/null
          finish "$2"; }
 ask()  { [ -n "$YES" ] && return 0; read -r -p "$1 [Y/n] " r; case "$r" in ''|[Yy]*) return 0 ;; *) return 1 ;; esac; }
 usb_off() { note 'USB 디버깅 끄기: 시동을 껐다 켜면 저절로 꺼집니다. 바로 끄려면 Factory Test에서  0A 01 → 65 00 → 0A 02'
             note "  (또는 '내 앱' → USB 디버깅 → OFF). 끄면 노트북 연결이 끊깁니다."; }
+# 진단 기록에서 사람을 가릴 수 있는 것: MAC 주소, 휴대폰 번호, 메일 주소, adb 기기 번호, 경로 속 사용자 이름($HOME). perl은 macOS 기본, 바이트 단위(ASCII 패턴만이라 충분).
+mask() { S="$SERIAL" perl -pe 's/\b(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b/<MAC>/g; s/\b01[016789][-. ]?\d{3,4}[-. ]?\d{4}\b/<전화번호>/g;
+  s/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/<메일>/g; s/\Q$ENV{S}\E/<기기번호>/g if length $ENV{S}; s/\Q$ENV{HOME}\E/~/g if length $ENV{HOME}' ; }
 adb_() { local o; o="$("$ADB" "$@" 2>&1)"; printf '> adb %s\n%s\n' "$*" "$o" >> "$LOG"; printf '%s' "$o"; }
 # 오래 걸릴 수 있는 adb(전송·설치)는 제한 시간 안에서 돌리고 기다리는 동안 경과 초를 같은 줄에 찍는다:
 # 멈춘 화면의 스크린샷만 봐도 어느 단계에서 몇 초째 멈췄는지 보이게. 결과는 $OUT, 시간 초과면 return 1.
@@ -76,7 +82,9 @@ stuck() {
 PM_HINT='내비가 설치를 끝내지 않았습니다. 차 화면에 확인 창이 떠 있으면 누르고, 없으면 시동을 껐다 켠 뒤 다시 실행하세요.'
 
 echo
-[ -n "$UNINSTALL" ] && echo "  i30 PD 대시보드 삭제   (설치기 $INSTALLER_VERSION)" || echo "  i30 PD 대시보드 설치   (설치기 $INSTALLER_VERSION)"
+if [ -n "$UNINSTALL" ]; then echo "  i30 PD 대시보드 삭제   (설치기 $INSTALLER_VERSION)"
+elif [ -n "$DIAG" ]; then echo "  i30 PD 대시보드 진단 기록   (설치기 $INSTALLER_VERSION)"
+else echo "  i30 PD 대시보드 설치   (설치기 $INSTALLER_VERSION)"; fi
 echo '  ----------------------'
 warn '현대자동차 공식 앱이 아닙니다. 순정 시스템에 앱을 설치하는 작업이라 보증/AS 불이익이 있을 수 있고,'
 warn '책임은 본인에게 있습니다. 모든 작업은 정차 · 시동 켠 상태에서 하세요.'
@@ -101,23 +109,36 @@ note "adb: $ADB"
 log "환경: macOS $(sw_vers -productVersion 2>/dev/null) / $(uname -m) / $("$ADB" version 2>&1 | head -1)"
 
 # --- 버전 고르기 --------------------------------------------------------------
-if [ -z "$UNINSTALL" ] && [ -z "$APK_BASE" ]; then
+if [ -z "$UNINSTALL" ] && [ -z "$DIAG" ] && [ -z "$APK_BASE" ]; then
   if [ "$CHANNEL" != stable ] && [ "$CHANNEL" != test ]; then
     if [ -n "$YES" ]; then CHANNEL=stable; else
       head_ '받을 버전'
       note '  1) 안정화 (권장) — 실차에서 확인된 버전'
       note '  2) 테스트 — 새 기능, 아직 실차 검증 전. 문제가 있으면 안정화로 다시 설치하면 됩니다'
+      note '  3) 진단 기록 모으기 — 설치하지 않고, 문제를 알릴 때 보낼 파일만 만듭니다'
       read -r -p '번호를 입력하고 Enter [1] ' r
-      if [ "$(printf '%s' "$r" | tr -d ' ')" = 2 ]; then CHANNEL=test; else CHANNEL=stable; fi
+      case "$(printf '%s' "$r" | tr -d ' ')" in 2) CHANNEL=test ;; 3) DIAG=1 ;; *) CHANNEL=stable ;; esac
     fi
   fi
-  if [ "$CHANNEL" = test ]; then APK_BASE="$RELEASES/download/test"; note '버전: 테스트 (실차 검증 전)'
-  else APK_BASE="$RELEASES/latest/download"; note '버전: 안정화'; fi
+  if [ -z "$DIAG" ]; then
+    if [ "$CHANNEL" = test ]; then APK_BASE="$RELEASES/download/test"; note '버전: 테스트 (실차 검증 전)'
+    else APK_BASE="$RELEASES/latest/download"; note '버전: 안정화'; fi
+  fi
 fi
 
+# --- 새 설치기 확인 (막지는 않는다) ---------------------------------------------
+# 레포에 올라간 설치.command의 INSTALLER_VERSION과 비교한다. 테스트를 고른 사람에게만 beta(테스트) 설치기도 알린다.
+for b in main $([ "$CHANNEL" = test ] && echo beta); do
+  v="$(curl -fsS --max-time 5 "$RAW/$b/i30pd_port/installer/%EC%84%A4%EC%B9%98.command" 2>>"$LOG" | sed -n "s/^INSTALLER_VERSION='\([^']*\)'.*/\1/p" | head -1)"
+  if [ -n "$v" ] && [ "$(printf '%s\n%s\n' "$v" "$INSTALLER_VERSION" | LC_ALL=C sort | tail -1)" != "$INSTALLER_VERSION" ]; then
+    [ $b = main ] && where="안정화 $v — $RELEASES/latest" || where="테스트 $v — $RELEASES/tag/test"
+    warn "새 설치기가 있습니다($where). 그 ZIP을 다시 받아 쓰세요. 이번에는 그대로 계속합니다."
+  fi
+done
+
 # --- APK 준비 (폴더에 있으면 쓰고, 없으면 공개 레포에서 받기) -----------------
-[ -z "$UNINSTALL" ] && head_ '0) 앱 파일 준비'
-for apk in $([ -z "$UNINSTALL" ] && echo $APKS); do
+[ -z "$UNINSTALL$DIAG" ] && head_ '0) 앱 파일 준비'
+for apk in $([ -z "$UNINSTALL$DIAG" ] && echo $APKS); do
   # 브라우저로 받은 GitHub 페이지(HTML)가 .apk 이름으로 저장된 경우가 있어, 'PK'로 시작할 때만 폴더 것을 쓴다.
   if [ -f "$ROOT/$apk" ] && [ "$(head -c 2 "$ROOT/$apk")" = 'PK' ]; then warn "$apk: 설치기 폴더에 있는 파일을 씁니다 (위에서 고른 버전과 상관없이 이 파일이 설치됩니다)"; continue; fi
   [ -f "$ROOT/$apk" ] && warn "$apk: 폴더 파일이 APK가 아니라 무시하고 내려받습니다."
@@ -140,18 +161,24 @@ note '  (4) USB 케이블 연결 (USB-C 맥이면 USB-A 어댑터 필요)'
 head_ '3) 차 연결 확인'
 "$ADB" start-server >/dev/null 2>&1
 SERIAL=''; tries=0
+# 기다리는 동안 같은 안내를 5초마다 다시 찍지 않는다: 바뀔 때만 새 줄, 같으면 그 줄 끝의 경과 초만 고친다.
+WAIT_MSG=''; WAIT_T0=$(date +%s)
+wait_() { if [ "$1" != "$WAIT_MSG" ]; then [ -n "$WAIT_MSG" ] && echo; log "$1"; WAIT_MSG="$1"; fi
+          printf '\r\033[%sm%s  %s초 \033[0m' "${2:-0}" "$1" $(( $(date +%s) - WAIT_T0 )); }
+wait_end() { [ -n "$WAIT_MSG" ] && echo; WAIT_MSG=''; }
 while [ -z "$SERIAL" ]; do
   dl="$("$ADB" devices -l 2>&1)"; printf '%s\n' "$dl" >> "$LOG"
   SERIAL="$(printf '%s\n' "$dl" | awk '$2=="device" && /product:pd_kr( |$)/ {print $1; exit}')"   # exactly pd_kr, not pd_kr2
   [ -n "$SERIAL" ] && break
   [ -n "$YES" ] && die '차(pd_kr)를 찾지 못했습니다.' 1
-  if printf '%s' "$dl" | grep -q unauthorized; then warn '→ 차 화면에 "USB 디버깅 허용" 창이 뜨면 [항상 허용] 하세요.'
-  elif printf '%s\n' "$dl" | awk '$2=="device"' | grep -q .; then warn '→ 차가 아닌 기기만 보입니다(휴대폰 등). 그 기기는 건드리지 않습니다.'
-  else note '→ 차를 기다리는 중... USB 디버깅/Factory Test(0A 01/65 01/0A 02) 다시 확인.'; fi
+  if printf '%s' "$dl" | grep -q unauthorized; then wait_ '→ 차 화면에 "USB 디버깅 허용" 창이 뜨면 [항상 허용] 하세요.' 33
+  elif printf '%s\n' "$dl" | awk '$2=="device"' | grep -q .; then wait_ '→ 차가 아닌 기기만 보입니다(휴대폰 등). 그 기기는 건드리지 않습니다.' 33
+  else wait_ '→ 차를 기다리는 중... USB 디버깅/Factory Test(0A 01/65 01/0A 02) 다시 확인.'; fi
   tries=$((tries + 1))
   # 5초 간격으로 1분. 차 화면에서 허용을 눌러야 하는 상태면 3분까지 기다린다.
   limit=12; printf '%s' "$dl" | grep -q unauthorized && limit=36
   if [ $tries -ge $limit ]; then
+    wait_end
     # 못 찾음: 맥이 본 USB 장치 목록을 기록에 남긴다(차가 USB에 아예 안 나타났는지 가르는 근거).
     log "== USB 장치 목록 (system_profiler) =="; system_profiler SPUSBDataType 2>/dev/null >> "$LOG"
     if printf '%s' "$dl" | grep -q unauthorized; then warn '마지막 상태: 차 화면에서 USB 디버깅 허용을 누르지 않음'
@@ -163,6 +190,7 @@ while [ -z "$SERIAL" ]; do
   fi
   sleep 5
 done
+wait_end
 ok "차 연결됨: $SERIAL"
 
 # --- 내비 정보 · 빌드 확인 -------------------------------------------------------
@@ -176,6 +204,35 @@ case "$device" in
   *)               board="확인 안 됨 ($device)" ;;
 esac
 note "내비: $board / 빌드 $build / USB $usbst"
+
+# --- 진단 기록 모드: 읽기만 한다 -------------------------------------------------
+# 정해 둔 속성, 두 앱의 버전, 우리 앱 태그·충돌·설치 기록만. 차 기록 전체에는 블루투스로 붙은 폰 이름·번호·연락처가 섞인다.
+if [ -n "$DIAG" ]; then
+  head_ '진단 기록 모으기 (차에는 아무것도 바꾸지 않습니다)'
+  TAGS='VehicleDash:V VNCarPlayHub:V VNQuickEntry:V NDashboard:V DtcDialog:V AndroidRuntime:E PackageManager:I'
+  desk="$HOME/Desktop"; [ -d "$desk" ] || desk="$LOGDIR"
+  out="$desk/i30pd_진단기록_$(date +%Y%m%d_%H%M%S).txt"
+  {
+    echo "i30 PD 진단 기록 — $(date '+%Y-%m-%d %H:%M') / PC 설치기 $INSTALLER_VERSION (macOS $(sw_vers -productVersion 2>/dev/null))"
+    echo; echo '[내비]'
+    for k in ro.product.name ro.product.device ro.build.product ro.build.version.incremental ro.build.fingerprint \
+             sys.usb.config sys.usb.state persist.sys.usb.config persist.sys.dipo.state persist.sys.key.custom; do echo "$k: $(prop $k)"; done
+    echo "시각: $(adb_ -s "$SERIAL" shell date | tr -d '\r')"
+    echo; echo '[앱]'
+    for apk in $APKS; do
+      echo "$(name_of $apk) ($(pkg_of $apk))"
+      v="$(adb_ -s "$SERIAL" shell dumpsys package "$(pkg_of $apk)" | tr -d '\r' | grep -E '(versionCode|versionName|firstInstallTime|lastUpdateTime|codePath)=' | sed 's/^ */  /' | awk '!seen[$0]++')"
+      [ -n "$v" ] && printf '%s\n' "$v" || echo '  설치돼 있지 않음'
+    done
+    echo; echo "[기록: $TAGS]"
+    "$ADB" -s "$SERIAL" shell logcat -d -v time -s $TAGS 2>&1 | tr -d '\r' | tail -3000   # 설치기 기록에는 안 남긴다(아래에 그 기록을 붙임)
+    echo; echo '[이 PC 설치기 기록]'; cat "$LOG"
+  } | mask > "$out"
+  ok "만든 파일: $out"
+  note '문제를 알릴 때 이 파일을 보내 주세요. 증상(언제, 어떤 화면에서, 무엇이)도 함께 알려 주세요.'
+  [ -z "$YES" ] && open -R "$out" 2>/dev/null
+  usb_off; finish 0
+fi
 if [ "$build" = "$LOW_BUILD" ]; then
   note '블루링크 없는 내비(LOW 보드) — 설치가 확인된 빌드입니다.'
 elif [ -n "$build" ] && [ "$build" != "$VERIFIED_BUILD" ]; then
@@ -186,6 +243,14 @@ fi
 # --- 삭제 모드 --------------------------------------------------------------
 if [ -n "$UNINSTALL" ]; then
   head_ '앱 삭제'
+  # '내 앱'이 ☆ 버튼을 계기판으로 돌려 놨으면 순정 "없음"으로 되돌린다(앱이 사라지면 ☆가 아무것도 안 하게 됨).
+  # IModeManager.setCustomKey(트랜잭션 34): '내 앱'과 같은 호출, 서비스 쪽 권한 검사 없음.
+  if [ "$(prop persist.sys.key.custom)" = com.veloster.carplayhub.STAR_KEY ]; then
+    adb_ -s "$SERIAL" shell service call com.hkmc.micom.mode 34 s16 com.mobis.intent.action.CUSTOM_SHORTCUT >/dev/null
+    if [ "$(prop persist.sys.key.custom)" = com.veloster.carplayhub.STAR_KEY ]; then
+      warn '☆ 버튼: 되돌리지 못했습니다. 삭제 뒤 ☆를 길게 눌러 설정 화면에서 기능을 다시 고르세요.'
+    else ok '☆ 버튼: 원래대로(없음) 되돌림'; fi
+  fi
   for apk in $APKS; do
     adb_wait 60 "$(name_of $apk) 삭제" -s "$SERIAL" uninstall "$(pkg_of $apk)" || stuck "$(name_of $apk) 삭제(내비)" "$PM_HINT"
     if printf '%s' "$OUT" | grep -q Success; then ok "$(name_of $apk): 삭제됨"; continue; fi
@@ -206,6 +271,12 @@ head_ '4) 앱 설치'
 PUSH_HINT='USB로 파일을 보내다 멈췄습니다. 케이블·포트를 바꾸고 Factory Test부터 다시 한 뒤 실행하세요.'
 for apk in $APKS; do
   p="$ROOT/$apk"; [ "$(head -c 2 "$p" 2>/dev/null)" = 'PK' ] || p="$LOGDIR/$apk"; name="$(name_of $apk)"; remote="/data/local/tmp/$apk"
+  # 내비는 설치한 APK를 바이트 그대로 보관한다: 받아 와서 같으면 같은 버전이니 건너뛴다.
+  have="$LOGDIR/installed_$apk"; rm -f "$have"
+  pp="$(adb_ -s "$SERIAL" shell pm path "$(pkg_of $apk)" | tr -d '\r\n ')"; pp="${pp#package:}"
+  if [ "${pp%.apk}" != "$pp" ] && adb_wait 60 "$name 설치된 파일 비교" -s "$SERIAL" pull "$pp" "$have" && cmp -s "$p" "$have"; then
+    ok "$name: 이미 같은 버전이 설치돼 있습니다 — 건너뜀"; continue
+  fi
   printf '%s (%s KB)\n' "$name" $(( $(wc -c < "$p") / 1024 )); log "$name"
   adb_wait 60 '① 전송 (USB)' -s "$SERIAL" push "$p" "$remote" || stuck "$name ① 전송" "$PUSH_HINT"
   printf '%s' "$OUT" | grep -qiE 'error|failed|No such' && die "$name 전송 실패:

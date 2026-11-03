@@ -25,8 +25,6 @@ final class EngineSound implements Runnable {
     private volatile Thread thread;
     private volatile float volume=.7f;
     private int route=-1;
-    /** elapsedRealtime when the latest flame-worthy pop (EngineSynth.flames) leaves the speaker; PixelCluster shows it. */
-    static volatile long flameAt=Long.MIN_VALUE/2;
     EngineSound(Context context,Telemetry data){this.context=context;this.data=data;}
     void volume(int percent){volume=Math.max(0,Math.min(100,percent))/100f;}
     /** Engine and exhaust (EngineSynth tables), pop rate / turbo whistle / blow-off in percent of the voice's own, and
@@ -71,7 +69,7 @@ final class EngineSound implements Runnable {
                 if(voice!=playing){playing=voice;synth.use(playing);}
                 synth.popRate=popRate;synth.turboVol=turboVol;synth.bovVol=bovVol;synth.lead=lead;
                 synth.render(f,0,BLOCK,volume);
-                if(synth.flames!=flames){flames=synth.flames;if(volume>0)flameAt=now+aheadMs;}
+                if(synth.flames!=flames){flames=synth.flames;if(volume>0)EngineSynth.flameAt=now+aheadMs;}
                 for(int i=0;i<BLOCK;i++)pcm[i]=(short)Math.round(f[i]*32000);
                 // MODE_STREAM write blocks on a full buffer and paces the loop; a negative return is an error, not
                 // back-pressure, so stop rather than spin the CPU rewriting a dead track.

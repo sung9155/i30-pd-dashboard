@@ -204,7 +204,7 @@ final class PixelCluster extends ClusterKit {
         if(!Float.isNaN(fuel)&&fuel==0&&vk>0){coinSec+=dt;while(coinSec>=1){coinSec-=1;coins+=mode==ECO?2:1;}}
         float ped=v(9);   // backfire: the pedal let go from 40 %+ within 0.7 s while the engine is above 3000 rpm
         if(!Float.isNaN(ped)){if(ped>=40)pedHiAt=now;else if(ped<10&&now-pedHiAt<700&&!Float.isNaN(rpm)&&rpm>3000){fireAt=now;pedHiAt=Long.MIN_VALUE/2;}}
-        long fa=EngineSound.flameAt;if(fa!=seenFlame&&now>=fa){seenFlame=fa;if(now-fa<300)popAt=now;}   // a big overrun pop of the engine sound: a short flame
+        long fa=EngineSynth.flameAt;if(fa!=seenFlame&&now>=fa){seenFlame=fa;if(now-fa<300)popAt=now;}   // a big overrun pop of the engine sound: a short flame
         String g=gear();if(!g.equals(lastGear)){if(!lastGear.isEmpty())shiftAt=now;lastGear=g;}
         boolean brake=v(10)>5,left=v(Telemetry.TURN_LEFT)>0,right=v(Telemetry.TURN_RIGHT)>0;   // the bits blink with the real lamps
         if(chase){

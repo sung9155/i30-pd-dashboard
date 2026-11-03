@@ -116,6 +116,9 @@ public final class EngineSynth {
     public volatile double popRate=1,turboVol=1,bovVol=1;
     /** Big pops that earn a flame on screen (PixelCluster): only early in a lift and at most one per FLAME_GAP s. */
     public volatile int flames;
+    /** elapsedRealtime when the latest of those pops leaves the speaker (set by EngineSound); PixelCluster shows it.
+     *  Here, not in EngineSound, so the screens build without android.media (preview.sh). */
+    static volatile long flameAt=Long.MIN_VALUE/2;
     static final double FLAME_GAP=.5;
     private double flameHold;
     /** Latency compensation in seconds (0 = off). */

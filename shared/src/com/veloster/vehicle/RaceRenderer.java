@@ -58,8 +58,13 @@ public final class RaceRenderer {
         cell(c,"COOLANT",fmt("%.0f",v(2)),"°C",L,320,L+w,320+h,26,v(2)>=110?D():v(2)>=100?AMBER:WHITE);
         cell(c,"INTAKE",fmt("%.0f",v(Telemetry.INTAKE)),"°C",L+w+4,320,LC,320+h,26,v(Telemetry.INTAKE)>=80?D():v(Telemetry.INTAKE)>=60?AMBER:WHITE);
         cell(c,"THROTTLE",fmt("%.0f",v(Telemetry.THROTTLE_POS)),"%",L,324+h,L+w,BOT,26,WHITE);
-        // A diesel has no ignition timing: the slot is kept for the DPF soot load, a dash until a source is confirmed.
-        if(prof.fuel==VehicleProfile.Fuel.DIESEL)cell(c,"DPF","—","g",L+w+4,324+h,LC,BOT,26,WHITE);
+        // A diesel has no ignition timing: the slot shows the DPF from the standard OBD PIDs — the regeneration trigger
+        // (how close the next regeneration is), else the delta pressure; amber with REGEN while one runs. Unconfirmed
+        // on a PD diesel: a dash until the ECU answers.
+        if(prof.fuel==VehicleProfile.Fuel.DIESEL){
+            float tr=v(Telemetry.DPF_TRIGGER),dp=v(Telemetry.DPF_DP);boolean regen=v(Telemetry.DPF_REGEN)>0;
+            cell(c,regen?"DPF REGEN":"DPF",!Float.isNaN(tr)?fmt("%.0f",tr):fmt("%.1f",dp),!Float.isNaN(tr)?"%":Float.isNaN(dp)?"":"kPa",L+w+4,324+h,LC,BOT,26,regen?AMBER:WHITE);
+        }
         else cell(c,"SPARK",fmt("%.0f",v(Telemetry.SPARK)),"°",L+w+4,324+h,LC,BOT,26,WHITE);
         gear(c);gforce(c);
         // Shift point reached: the whole page edge blinks with the bar and the gear box.

@@ -87,7 +87,7 @@ final class VehicleDataClient implements Runnable {
         if(hscan!=null&&(ignition||ignitionUnknown))hscan.start();
         if(obd==null)try{obd=new com.veloster.vehicle.ObdLive();}catch(RuntimeException e){obd=null;log("OBD",e);}catch(LinkageError e){obd=null;log("OBD",e);}
         if(obd!=null&&(ignition||ignitionUnknown))obd.start(
-            new com.veloster.vehicle.ObdLive.Sink(){public void value(int pid,int a,int b){if(accepts(token))VehicleDash.obd(pid,a,b);}},
+            new com.veloster.vehicle.ObdLive.Sink(){public void value(int pid,byte[] d){if(accepts(token))VehicleDash.obd(pid,d);}},
             new com.veloster.vehicle.ObdLive.Gate(){public boolean open(){return accepts(token);}});
     }
     synchronized void stop(){

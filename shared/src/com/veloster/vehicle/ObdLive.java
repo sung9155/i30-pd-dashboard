@@ -12,9 +12,11 @@ import java.util.List;
  * temperature (0x46), fuel level (0x2F), catalyst temperature (0x3C) and absolute load (0x43) — a couple of times a
  * second and feeds them to a sink. Only on pd_kr, only while the gate is open (ignition on), and it steps aside while
  * a trouble-code read runs (the channel is shared). The engine ECU answered these in the 2026-11-02 probe.
+ * It also asks the diesel DPF PIDs 0x7A/0x7C/0x8B; a PID that gets no positive reply three times in a row (a petrol
+ * engine) is dropped for the session, and their raw replies are logged at most every 10 s for a diesel owner's record.
  */
 public final class ObdLive {
-    public interface Sink { void value(int pid,int a,int b); }
+    public interface Sink { void value(int pid,byte[] data); }   // data: the reply bytes after the PID
     public interface Gate { boolean open(); }
     /** DtcReader raises this while it reads trouble codes; the poller pauses so the two never share the channel. */
     public static volatile boolean diagBusy;
@@ -23,7 +25,10 @@ public final class ObdLive {
     private static final String SIFACE="com.hkmc.hscan.IHscanMicomService";
     private static final String LIFACE="com.hkmc.hscan.IHscanMicomListener";
     private static final int EMS=0x27;
-    private static final int[] PIDS={0x46,0x2f,0x3c,0x43};
+    private static final int[] PIDS={0x46,0x2f,0x3c,0x43,0x7a,0x7c,0x8b};
+    private static final int FIRST_DPF=4,DPF_MISSES=3;
+    private final int[] misses=new int[PIDS.length];
+    private final long[] logged=new long[PIDS.length];
     private static final long REPLY_MS=300;
 
     private final Object lock=new Object();
@@ -50,17 +55,30 @@ public final class ObdLive {
         try{
             while(running){
                 if(diagBusy||gate==null||!gate.open()){nap(500);continue;}
-                for(int pid:PIDS){
+                for(int k=0;k<PIDS.length;k++){
                     if(!running)return;
                     if(diagBusy)break;
+                    if(k>=FIRST_DPF&&misses[k]>=DPF_MISSES)continue;   // not a diesel (or not answering): stop asking
+                    int pid=PIDS[k];
                     byte[] r=ask(svc,EMS,new byte[]{0x01,(byte)pid});
-                    if(r!=null&&r.length>=3&&(r[0]&255)==0x41&&(r[1]&255)==pid)
-                        sink.value(pid,r[2]&255,r.length>3?r[3]&255:0);
+                    boolean ok=r!=null&&r.length>=3&&(r[0]&255)==0x41&&(r[1]&255)==pid;
+                    if(k>=FIRST_DPF)dpfLog(k,pid,ok?r:null);
+                    if(ok){misses[k]=0;byte[] d=new byte[r.length-2];System.arraycopy(r,2,d,0,d.length);sink.value(pid,d);}
+                    else misses[k]++;
                     nap(220);
                 }
                 nap(500);
             }
         }finally{try{call(svc,2,listener,token);}catch(Throwable e){}}
+    }
+    /** Raw DPF replies (and the drop) into the log, so a diesel owner's diagnostics record shows what the ECU sends. */
+    private void dpfLog(int k,int pid,byte[] r){
+        long now=System.currentTimeMillis();
+        if(r!=null&&now-logged[k]<10000)return;
+        if(r==null&&misses[k]!=DPF_MISSES-1)return;   // log only the miss that drops it
+        logged[k]=now;StringBuilder b=new StringBuilder();
+        if(r!=null)for(byte x:r)b.append(String.format("%02X ",x&255));
+        android.util.Log.i("VehicleDash","OBD "+String.format("%02X",pid)+(r==null?": no reply "+DPF_MISSES+"x, dropped":": "+b.toString().trim()));
     }
     private void nap(long ms){try{Thread.sleep(ms);}catch(InterruptedException e){}}
 

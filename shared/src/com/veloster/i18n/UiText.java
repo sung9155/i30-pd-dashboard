@@ -40,6 +40,10 @@ public final class UiText {
         EN.put("AP 상태 13 확인. IP 주소와 iPhone의 SSID 검색을 다음으로 확인하세요.","AP state 13 confirmed. Next check the IP address and whether the iPhone sees the SSID.");
         EN.put("CH1 횡G 0.2 g/div","CH1 lat G 0.2 g/div");
         EN.put("CH2 종G 0.2 g/div","CH2 long G 0.2 g/div");
+        EN.put("DPF 온도","DPF temperature");
+        EN.put("DPF 재생","DPF regeneration");
+        EN.put("DPF 재생 트리거","DPF regeneration trigger");
+        EN.put("DPF 차압","DPF delta pressure");
         EN.put("DiPlay 연결을 먼저 종료하세요. 시험 AP를 끄고 백업한 AP 설정과 Wi-Fi 켜짐 상태를 복원합니다.","Disconnect DiPlay first. The test AP will be turned off and the backed-up AP settings and Wi-Fi state restored.");
         EN.put("DiPlay와 iPhone에 입력","Enter in DiPlay and iPhone");
         EN.put("ECO 초록 · SPORT 주황","ECO green · SPORT orange");

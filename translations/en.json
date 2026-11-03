@@ -538,5 +538,9 @@
   "자동: 와이퍼·외기온·낮 전조등": "Auto: wipers, outside temp, daytime lamps",
   "자동": "Auto",
   "맑음": "Clear",
-  "흐림": "Overcast"
+  "흐림": "Overcast",
+  "DPF 차압": "DPF delta pressure",
+  "DPF 온도": "DPF temperature",
+  "DPF 재생": "DPF regeneration",
+  "DPF 재생 트리거": "DPF regeneration trigger"
 }

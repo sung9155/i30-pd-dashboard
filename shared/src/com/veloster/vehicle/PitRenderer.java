@@ -131,27 +131,8 @@ public final class PitRenderer {
         // The profile's range, so the "목표" label shows the target the cue really uses (a diesel's is 2100-4700).
         shiftTarget=ShiftGuide.target(target,profile);
         cue=ShiftGuide.evaluate(samples,shiftTarget,profile);stats.update(samples,now);
-        c.save();c.scale(width/800f,height/480f);c.drawColor(T(BG));
-        paint.setShader(background());c.drawRect(0,0,800,480,paint);paint.setShader(null);
-        for(int y=56;y<480;y+=8)stroke(c,0,y,800,y,0x063f4948,1);
-        box(c,0,0,800,52,0xff090b0c);box(c,18,51,782,52,LINE);
-        if(Theme.current().mStripe){box(c,0,0,267,3,0xff5bc2e7);box(c,267,0,533,3,0xff1c69d4);box(c,533,0,800,3,0xffe22718);}  // BMW M stripe (not in the remap table)
-        stroke(c,19,16,13,35,RED,4);stroke(c,27,16,21,35,BLUE,4);
-        text(c,"i30 PD",36,33,23,WHITE,true);
-        // Tab strip: every shown screen is a button; PitRenderer measures the labels and feeds HeaderTabs, which
-        // scrolls sideways when they overflow and keeps the current tab in view.
-        int[] shownTabs=ClusterPicker.slots(order,hidden,false);int cur=screen(cluster),curTab=-1;
-        float[] tabW=new float[shownTabs.length];
-        for(int i=0;i<shownTabs.length;i++){tabW[i]=tabWidth(UiText.t(ClusterPicker.NAMES[shownTabs[i]]));if(shownTabs[i]==cur)curTab=i;}
-        header.setTabs(shownTabs,tabW,curTab);
-        c.save();c.clipRect(HeaderTabs.LEFT,0,HeaderTabs.RIGHT,52);
-        for(int i=0;i<header.count();i++)button(c,UiText.t(ClusterPicker.NAMES[header.screenAt(i)]),header.x(i),HeaderTabs.TOP,header.width(i),HeaderTabs.H,i==curTab,BLUE);
-        c.restore();
-        if(header.moreLeft())arrow(c,HeaderTabs.LEFT+5,-1);
-        if(header.moreRight())arrow(c,HeaderTabs.RIGHT-5,1);
-        gearButton(c,picker&&editing);
-        centered(c,clock(),667,32,20,WHITE,true);
-        button(c,UiText.t("돌아가기"),698,8,84,38,false,BLUE);
+        c.save();c.scale(width/800f,height/480f);
+        chrome(c,width,height,cluster);
         if(graphLayout!=null)graphRenderer.draw(c,model,now,graphLayout);
         else if(gaugeLayout!=null)gaugeRenderer.draw(c,model,now,gaugeLayout);
         else if(symmetric&&page==PAGE_PERFORMANCE)performanceRenderer.draw(c,samples,lapMs,lapRunning,profile);
@@ -171,6 +152,56 @@ public final class PitRenderer {
         else if(graphLayout==null&&!mediaPage && music!=null && music.notice && !showsMusic())drawMedia(c,true);
         if(cluster&&!picker&&gaugeLayout==null&&graphLayout==null)drawArtworkToggle(c);
         c.restore();
+    }
+    // Page background and header strip, painted into two bitmaps and repainted only when they change. On Android 4.2's
+    // GPU renderer each drawPath (every chamfered tab and its outline: ~50 a frame) is rasterised on the UI thread every
+    // frame, and the gradient, 53 scan lines and header fill were redrawn too; a cached bitmap is one texture, uploaded
+    // again only after a repaint. eraseColor first marks the pixels changed so the renderer re-uploads them.
+    // ponytail: the keys are int hashes; a collision would keep the old strip until the next change.
+    private Bitmap body,head;private int bodyKey,headKey;
+    private static Bitmap canvasBitmap(Bitmap old,int w,int h){
+        if(old!=null&&old.getWidth()==w&&old.getHeight()==h){old.eraseColor(0);return old;}
+        return Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);
+    }
+    private void chrome(Canvas c,int width,int height,boolean cluster){
+        int k=System.identityHashCode(Theme.current());k=k*31+T(BG);k=k*31+T(0xff111315);k=k*31+width;k=k*31+height;
+        if(body==null||k!=bodyKey){
+            body=canvasBitmap(body,width,height);Canvas b=new Canvas(body);b.scale(width/800f,height/480f);
+            b.drawColor(T(BG));paint.setShader(background());b.drawRect(0,0,800,480,paint);paint.setShader(null);
+            for(int y=56;y<480;y+=8)stroke(b,0,y,800,y,0x063f4948,1);
+            bodyKey=k;
+        }
+        cellRect.set(0,0,800,480);c.drawBitmap(body,null,cellRect,null);
+        // Tab strip: every shown screen is a button; PitRenderer measures the labels and feeds HeaderTabs, which
+        // scrolls sideways when they overflow and keeps the current tab in view.
+        int[] shownTabs=ClusterPicker.slots(order,hidden,false);int cur=screen(cluster),curTab=-1;
+        float[] tabW=new float[shownTabs.length];
+        for(int i=0;i<shownTabs.length;i++){tabW[i]=tabWidth(UiText.t(ClusterPicker.NAMES[shownTabs[i]]));if(shownTabs[i]==cur)curTab=i;}
+        header.setTabs(shownTabs,tabW,curTab);
+        boolean gearOn=picker&&editing;String time=clock(),back=UiText.t("돌아가기");
+        int hh=Math.max(1,Math.round(height*52/480f));
+        k=System.identityHashCode(Theme.current());k=k*31+T(BLUE);k=k*31+T(0xff233b46);k=k*31+T(MUTED);k=k*31+T(WHITE);k=k*31+T(RED);k=k*31+T(LINE);
+        k=k*31+width;k=k*31+hh;k=k*31+(gearOn?1:0);k=k*31+time.hashCode();k=k*31+back.hashCode();k=k*31+curTab;
+        k=k*31+(header.moreLeft()?1:0)+(header.moreRight()?2:0);
+        for(int i=0;i<header.count();i++){k=k*31+UiText.t(ClusterPicker.NAMES[header.screenAt(i)]).hashCode();
+            k=k*31+Float.floatToIntBits(header.x(i));k=k*31+Float.floatToIntBits(header.width(i));}
+        if(head==null||k!=headKey){
+            head=canvasBitmap(head,width,hh);Canvas h=new Canvas(head);h.scale(width/800f,hh/52f);
+            box(h,0,0,800,52,0xff090b0c);box(h,18,51,782,52,LINE);
+            if(Theme.current().mStripe){box(h,0,0,267,3,0xff5bc2e7);box(h,267,0,533,3,0xff1c69d4);box(h,533,0,800,3,0xffe22718);}  // BMW M stripe (not in the remap table)
+            stroke(h,19,16,13,35,RED,4);stroke(h,27,16,21,35,BLUE,4);
+            text(h,"i30 PD",36,33,23,WHITE,true);
+            h.save();h.clipRect(HeaderTabs.LEFT,0,HeaderTabs.RIGHT,52);
+            for(int i=0;i<header.count();i++)button(h,UiText.t(ClusterPicker.NAMES[header.screenAt(i)]),header.x(i),HeaderTabs.TOP,header.width(i),HeaderTabs.H,i==curTab,BLUE);
+            h.restore();
+            if(header.moreLeft())arrow(h,HeaderTabs.LEFT+5,-1);
+            if(header.moreRight())arrow(h,HeaderTabs.RIGHT-5,1);
+            gearButton(h,gearOn);
+            centered(h,time,667,32,20,WHITE,true);
+            button(h,back,698,8,84,38,false,BLUE);
+            headKey=k;
+        }
+        cellRect.set(0,0,800,52);c.drawBitmap(head,null,cellRect,null);
     }
     /** Screen now showing (ClusterPicker index). */
     private int screen(boolean cluster){

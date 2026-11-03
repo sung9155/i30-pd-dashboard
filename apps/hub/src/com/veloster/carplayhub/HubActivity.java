@@ -296,7 +296,7 @@ public final class HubActivity extends Activity {
                 result=!UsbDebugControl.request(HubActivity.this,on)?UiText.t("USB 모드 전환 요청이 거부되었습니다.")
                     :now?UiText.t("USB 디버깅 ")+(on?"ON":"OFF")+UiText.t(" 전환 요청 완료. 실제 PC 연결은 별도로 확인하세요.")
                     :on?UiText.t("USB 디버깅 ON 명령을 보냈습니다(엔지니어 모드 Factory Test와 같은 명령). 몇 초 뒤 PC를 연결하세요. 내비게이션을 재시작하면 일반 USB(CarPlay)로 돌아갑니다.")
-                    :UiText.t("USB 디버깅 OFF 명령을 보냈습니다. PC 연결이 끊기지 않으면 시동을 다시 거세요.");}
+                    :UiText.t("USB 디버깅 OFF 명령을 보냈습니다(엔지니어 모드 Factory Test 0A 01 → 65 00 → 0A 02와 같은 명령). PC 연결이 끊기지 않으면 시동을 다시 거세요.");}
             catch(Exception e){result=UiText.t("USB 모드 전환 실패: ")+e.getClass().getSimpleName();}
             final String answer=result;usbBusy=false;
             runOnUiThread(new Runnable(){public void run(){if(!isFinishing())new AlertDialog.Builder(HubActivity.this).setMessage(UiText.t(answer)).setPositiveButton(UiText.t("확인"),null).show();}});

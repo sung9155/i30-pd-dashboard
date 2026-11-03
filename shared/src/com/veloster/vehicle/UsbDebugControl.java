@@ -10,7 +10,7 @@ import android.content.Intent;
  * stores persist.sys.dipo.state, which rsd applies at the next boot (and keeps applying: CarPlay stays off). So there
  * both buttons send the Engineer Mode Factory Test lines (65 01 on, 65 00 off): the system's MicomFactoryService passes
  * each one to the micom, which flips the port at once, and nothing persistent changes, so a restart returns to CarPlay.
- * OFF also stores carplay through setSystem(6), undoing a debug state an older build of this button saved.
+ * OFF calls setSystem(6) there only when a debug boot an older build of this button saved is still pending.
  */
 public final class UsbDebugControl {
     /** The PD procedure's Factory Test lines: enter factory mode, USB debug on (65 01) or off (65 00), leave factory mode. */
@@ -22,7 +22,7 @@ public final class UsbDebugControl {
                 context.sendBroadcast(new Intent("intent.action.FACTORY_TEST").putExtra("intent.extra.FACTORY_TEST",line));
                 Thread.sleep(800);   // the engineer menu sends one typed line at a time
             }
-            if(enabled)return true;
+            if(enabled||!"debug".equals(prop("persist.sys.dipo.state")))return true;
         }
         Class<?> type=Class.forName("com.hkmc.misc.MiscManager");
         Object manager=type.getConstructor(Context.class).newInstance(context);

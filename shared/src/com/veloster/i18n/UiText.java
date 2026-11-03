@@ -121,6 +121,7 @@ public final class UiText {
         EN.put("그래프","Graphs");
         EN.put("그래프 ","Graph ");
         EN.put("그래프를 길게 눌러 항목 변경","Hold a graph to change its signal");
+        EN.put("그린","Green");
         EN.put("급가속","Hard acceleration");
         EN.put("급제동","Hard braking");
         EN.put("기기 검색 요청이 거부되었습니다.","The discovery request was denied.");
@@ -184,6 +185,7 @@ public final class UiText {
         EN.put("람보","Lambo");
         EN.put("랠리","Rally");
         EN.put("랩 타이머","Lap timer");
+        EN.put("레드","Red");
         EN.put("레드라인","Redline");
         EN.put("레이스","Race");
         EN.put("레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값","Race SHIFT ▲ · F1 LEDs · tap the name for the default");

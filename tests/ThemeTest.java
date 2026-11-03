@@ -12,9 +12,9 @@ public final class ThemeTest {
         check(Theme.current().map(0xff3ddc84)==0xff3ddc84,"semantic green is shared");
         check(Theme.current().map(0xff123456)==0xff123456,"unknown color passes through");
         Theme.select("redblack");check(Theme.current().id.equals("n"),"removed red-black falls back to N");
-        check(Theme.next("n").equals("lambo")&&Theme.next("lambo").equals("bmw")&&Theme.next("bmw").equals("ice")&&Theme.next("night").equals("rose")&&Theme.next("rose").equals("copper")&&Theme.next("copper").equals("n")&&Theme.next("bogus").equals("lambo"),"cycle order");
+        check(Theme.next("n").equals("lambo")&&Theme.next("lambo").equals("bmw")&&Theme.next("bmw").equals("ice")&&Theme.next("night").equals("rose")&&Theme.next("rose").equals("copper")&&Theme.next("copper").equals("red")&&Theme.next("bogus").equals("lambo"),"cycle order");
         // Car-cluster themes: true black background so the screen does not glow at night.
-        for(String id:new String[]{"ice","mono","amber","teal","night","rose","copper"}){Theme.select(id);
+        for(String id:new String[]{"ice","mono","amber","teal","night","rose","copper","red","green"}){Theme.select(id);
             check(Theme.current().id.equals(id)&&Theme.current().map(0xff040506)==0xff000000,id+": true black background");}
         Theme.select("bogus");check(Theme.current().id.equals("n"),"unknown id falls back to N");
         Theme.select(null);check(Theme.current().id.equals("n"),"null falls back to N");
@@ -25,6 +25,15 @@ public final class ThemeTest {
         Theme.select("rose");check(Theme.current().label.equals("RS")&&Theme.current().shape==Theme.SHAPE_ROUND&&!Theme.current().mStripe,"rose label and round cells without the M stripe");
         Theme.select("copper");check(Theme.current().label.equals("CU")&&Theme.current().shape==Theme.SHAPE_HEX,"copper label and hex cells");
         Theme.select("n");check(Theme.current().shape==Theme.SHAPE_CUT&&!Theme.current().mStripe,"N keeps today's cut corner");
+        // Red and green: true black; red warns in yellow with the ring (its accent is red), green's lime stays apart from
+        // the shared semantic green and the ECO accent.
+        check(Theme.next("copper").equals("red")&&Theme.next("red").equals("green")&&Theme.next("green").equals("n"),"red and green come after copper");
+        Theme.select("red");Theme red=Theme.current();
+        check(red.label.equals("RD")&&red.map(0xff040506)==0xff000000&&red.dangerRing,"red: label, true black, danger ring");
+        check(((red.danger>>16)&0xff)>0xe0&&((red.danger>>8)&0xff)>0xb0&&(red.accent&0xffffff)!=(red.danger&0xffffff),"red: warnings are yellow, not the red accent");
+        Theme.select("green");Theme green=Theme.current();
+        check(green.label.equals("GR")&&green.map(0xff040506)==0xff000000,"green: label, true black");
+        check((green.accent&0xffffff)!=0x3ddc84&&(green.accent&0xffffff)!=0x6fe39a&&((green.accent>>16)&0xff)>0x80,"green: a lime accent, not the semantic or ECO green");
         for(String id:Theme.IDS){Theme.select(id);Theme t=Theme.current();check(t.map(t.danger)==t.danger,id+": danger is never remapped");}
         // A warning written on the accent-filled gear box must stay readable (WARM-UP / COOL-DOWN), and a calm
         // state must never be drawn in the danger colour (overview ESC/ABS/TCS "off").

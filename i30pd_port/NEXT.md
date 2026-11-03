@@ -21,6 +21,26 @@
    - **기본 시작 화면 = 레이스(screen index 5)**: `VehicleDash` 로드부 `p.getInt("cluster_screen",ClusterPicker.OVERVIEW)` 의 기본값을 레이스로. 깔끔하게 `ClusterPicker`에 `RACE=F1+2`(=5) 상수 추가해 쓰면 좋다. (SPORT 모드 기본도 이미 `F1+2`=레이스.)
    - 주의: 저장된 `cluster_order`/`cluster_screen` 가 있으면 사용자 설정 우선(기존 동작 유지). 기본값만 바꾸는 것.
 
+5. ~~**RED 테마 경고 램프 테두리 흰색 → 테마색**~~ — 2026-11-03 끝냄(아래 수정 그대로 적용, `ThemeShapes.ring`). — RED 테마 클래식에서 PARK(상단 띠)·PARK BRAKE(하단 경고줄)에 켜질 때 **흰색 테두리**가 생겨 빨간 팔레트와 안 어울림.
+   - 현상: 켜진 경고 램프 = danger색(RED 테마는 노랑 `0xffffd21f`) 채움 + 흰색 2px 링. 흰 링이 빨강 테마에서 튄다.
+   - 원인: `ThemeShapes.ring()`(shared/.../vehicle/ThemeShapes.java:31)이 링 색을 `0xffffffff`로 하드코딩. 링은 `Theme.dangerRing`인 테마에서만 그림 = amber·red 둘뿐(Theme.java:56,64). amber는 흰 링이 맞지만(앰버 UI에서 danger와 accent가 가까워 흰색으로 구분), red는 danger가 노랑이라 흰 링이 불필요하게 튄다. 주석(Theme.java:62)이 "red는 amber의 링을 유지"라 **삭제 말고 색만 교체**가 의도에 맞음.
+   - 적용할 수정(ThemeShapes.java, 검증 완료 — 로컬에선 되돌려 둠, 다른 PC에서 적용):
+     ```java
+     /**
+      * 2px ring that marks a warning when the danger colour is close to the accent. Amber frames it in white;
+      * red's danger lamp is yellow on a red field, where a white ring clashes, so red frames it in the accent red.
+      */
+     static void ring(Canvas c,Paint p,float l,float t,float rr,float b){
+         Theme th=Theme.current();
+         if(!th.dangerRing)return;
+         int col="red".equals(th.id)?th.accent:0xffffffff;
+         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(col);c.drawRect(l+2,t+2,rr-2,b-2,p);p.setStyle(Paint.Style.FILL);
+     }
+     ```
+     RED accent = `0xffff3b30`(Theme.java:64). 같은 `ring()`을 PARK(상단)·PARK BRAKE(하단)·기타 danger 램프가 공유하므로 한 곳 고치면 전부 적용.
+   - 검증: 프리뷰로 RED+클래식+PARK_BRAKE 강제 점등 렌더 → 노랑 램프에 **빨간 링**(흰색 아님) 확인. 테스트 영향 없음(ThemeShapes 단독, 상수/카운트 안 건드림). 적용 후 `preview.sh`로 재확인 + 실차 1회 확인 권장.
+   - 미결: amber 테마는 그대로 흰 링 유지. 다른 danger색 테마(없음)는 해당 없음.
+
 ## 이번 세션에 끝낸 것 (beta)
 - `fdffe10` 능동 OBD 폴러(ObdLive): 외기온·연료잔량·촉매온도·절대부하 — 2026-11-03 실차 검증(게이지 실시간 표시, 값 정상)
 - `f2623f7` 추격 차량 커브 각도(yaw)

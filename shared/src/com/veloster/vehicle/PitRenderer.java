@@ -500,6 +500,12 @@ public final class PitRenderer {
         float fraction=Math.max(0,Math.min(1,numericAt(9)/100));
         for(int i=0;i<20;i++)box(c,x+148+i*10.6f,403,x+155+i*10.6f,421,fraction>i/20f?BLUE:LINE);
     }
+    /** 6MT clutch switch as a chip: filled with the accent and IN while pressed, OUT outlined, a dash with no signal. */
+    private void clutchChip(Canvas c,float x,float y){
+        Telemetry.Sample k=samples[Telemetry.CLUTCH];boolean seen=k.valid,in=seen&&k.value>0;
+        panel(c,x,y,132,18,in?BLUE:0xff111516,in?BLUE:LINE);
+        centered(c,"CLUTCH "+(!seen?"—":in?"IN":"OUT"),x+66,y+13,10,in?BG:MUTED,true);
+    }
     private void pedal(Canvas c,String label,String prefix,String unit,int x,int color,float maximum){
         panel(c,x,377,376,57,0xff111516,LINE);
         text(c,label,x+14,396,10,MUTED,true);
@@ -545,6 +551,7 @@ public final class PitRenderer {
         text(c,"°C",760,310,11,MUTED,false);
         accelPedal(c,18);
         pedal(c,"BRAKE PRESSURE", "브레이크 압력 bar", "bar",406,RED,100);
+        if(profile.trans==VehicleProfile.Trans.MT)clutchChip(c,406+230,382);   // 6MT: the clutch beside the brake (EMS12 CLU_ACK)
         button(c,"−",548,452,42,27,false,BLUE);
         text(c,UiText.t("목표 ")+shiftTarget+" rpm",604,471,12,BLUE,true);
         button(c,"+",740,452,42,27,false,BLUE);

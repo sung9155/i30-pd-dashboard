@@ -24,7 +24,9 @@ final class EngineCluster extends ClusterKit {
         fill(c,20,254,540,255,0xff1d2328);
         row(c,0,"FF",fmt("%.1f",fuel),"L/h",Float.isNaN(fuel)?Float.NaN:fuel/40,WH,Float.NaN);
         row(c,1,"MAP",fmt("%+.2f",boost),"bar",Float.isNaN(boost)?Float.NaN:(boost+1)/(top+1),!Float.isNaN(boost)&&boost>top*0.9f?AM:WH,(top*0.9f+1)/(top+1));
-        row(c,2,"SPK",fmt("%+.1f",spark),"°",Float.isNaN(spark)?Float.NaN:(spark+15)/55,WH,Float.NaN);
+        if(prof.fuel==VehicleProfile.Fuel.DIESEL){float tr=v(Telemetry.DPF_TRIGGER);   // no ignition timing: the DPF regeneration trigger
+            row(c,2,"DPF",fmt("%.0f",tr),"%",Float.isNaN(tr)?Float.NaN:tr/100,v(Telemetry.DPF_REGEN)>0?AM:WH,Float.NaN);}
+        else row(c,2,"SPK",fmt("%+.1f",spark),"°",Float.isNaN(spark)?Float.NaN:(spark+15)/55,WH,Float.NaN);
         row(c,3,"IAT",fmt("%.0f",iat),"°C",Float.isNaN(iat)?Float.NaN:(iat-20)/60,!Float.isNaN(iat)&&iat>60?AM:WH,Float.NaN);
         row(c,4,"SPD",fmt("%.0f",spd),"km/h",Float.isNaN(spd)?Float.NaN:spd/260,WH,Float.NaN);
         mono(c,String.format(Locale.US,"%.1f",top),522,284+38-18,11,SUB,Paint.Align.RIGHT);
@@ -39,6 +41,7 @@ final class EngineCluster extends ClusterKit {
         if(v(Telemetry.DOOR_DRIVER)>0||v(Telemetry.DOOR_PASSENGER)>0)n=msg(c,n,"DOOR OPEN",AM);
         if(v(Telemetry.PARK_BRAKE)>0)n=msg(c,n,"PARK BRAKE",AM);
         if(v(10)>35)n=msg(c,n,"HARD BRAKING",AM);
+        if(v(Telemetry.DPF_REGEN)>0)n=msg(c,n,"DPF REGEN",AM);
         for(int i=Telemetry.TPMS_FL;i<=Telemetry.TPMS_RR;i++){float t=v(i);if(!Float.isNaN(t)&&t<30){n=msg(c,n,"TIRE PRESS",AM);break;}}
         if(!Float.isNaN(boost)&&boost>0.4f)n=msg(c,n,"TURBO BOOST",CY);
         if(!Float.isNaN(fuel)&&fuel==0&&!Float.isNaN(spd)&&spd>0)n=msg(c,n,"FUEL CUT",CY);

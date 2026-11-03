@@ -94,6 +94,19 @@ public final class TabsPreview {
         p=new PitRenderer();p.setGraphLayout(new GraphLayout());save(out,"7_graph",p,model,now,false,false);
         GraphLayout picked=new GraphLayout();picked.signal(0,0);picked.signal(1,7);picked.signal(2,Telemetry.STEERING);picked.window(300000);
         p.setGraphLayout(picked);save(out,"8_graph_rpm_speed_steer_5min",p,model,now,false,false);
+        // 6MT clutch on F1 and performance, diesel DPF on engine/night/classic/retro (synthetic values on top of the log).
+        Telemetry mt=new Telemetry();
+        for(int k=0;k<31;k++)mt.hscanPd(0xc7,0x1d,new byte[]{0,0,0,0,0,0,0,0},now-40+k);   // frozen lever slot: a 6MT
+        mt.hscanPd(0xc7,0x0c,new byte[]{0,0,0,0,0,0,0x66,0},now);mt.hscanPd(0xc7,0x08,new byte[]{5,11,(byte)0xe0,0x2e,11,10,0,0x7f},now);
+        mt.hscanPd(0xc7,0x09,new byte[]{0,(byte)0xaf,0,(byte)0x8c,0,0,0,0x10},now);   // EMS12 clutch IN
+        save(out,"x_f1_mt_clutch",new PitRenderer(),mt,now,true,false);
+        Telemetry.Sample[] ps=model.snapshot(now);ps[Telemetry.CLUTCH]=new Telemetry.Sample(1,true,false,true,false,0);
+        {BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas pc=new android.graphics.Canvas(img.createGraphics());
+         perf.draw(pc,800,480,false,model,now,0,false,null);android.graphics.Paint bg=new android.graphics.Paint(1);bg.setColor(Theme.current().map(0xff040506));pc.drawRect(0,53,800,480,bg);
+         new PerformanceRenderer().draw(pc,ps,83456,false,VehicleProfile.PETROL_MT);ImageIO.write(img,"png",new File(out,"x_perf_mt_clutch.png"));}
+        model.obd(0x8b,new byte[]{0x11,0x01,(byte)0x9e,0,0,0,0},now);   // regenerating, trigger 62 %
+        int[] dl={11,9,0,2};String[] dn={"engine","night","classic","rally"};   // classic and rally carry the warning-lamp row
+        for(int k=0;k<dl.length;k++)cluster(out,"x_"+dn[k]+"_diesel_regen",dl[k],model,now,rec.stats(),VehicleProfile.DIESEL_DCT);
     }
     private static void feed(Telemetry model,String hex,long now){
         byte[] b=new byte[hex.length()/2];

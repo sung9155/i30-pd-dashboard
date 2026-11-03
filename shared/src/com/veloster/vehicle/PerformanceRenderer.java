@@ -35,6 +35,8 @@ public final class PerformanceRenderer {
         value(c,UiText.t("냉각수 온도"),fmt("%.0f",v(2)),"°C",LL,T2,LR,B2);
         rpmCard(c);
         value(c,UiText.t("브레이크 압력"),fmt("%.1f",v(10)),"bar",CL,T2,CR,B2);
+        if(prof.trans==VehicleProfile.Trans.MT){float k=v(Telemetry.CLUTCH);   // 6MT: the clutch switch under the brake caption
+            text(c,"CLUTCH "+(Float.isNaN(k)?"—":k>0?"IN":"OUT"),CL+14,T2+46,12,k>0?BLUE:MUTED,Paint.Align.LEFT);}
         gforce(c);
         long cs=lapMs/10;
         String lap=String.format(Locale.US,"%02d:%02d:%02d",cs/6000%100,cs/100%60,cs%100);

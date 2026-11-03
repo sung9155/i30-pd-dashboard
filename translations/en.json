@@ -542,5 +542,6 @@
   "DPF 차압": "DPF delta pressure",
   "DPF 온도": "DPF temperature",
   "DPF 재생": "DPF regeneration",
-  "DPF 재생 트리거": "DPF regeneration trigger"
+  "DPF 재생 트리거": "DPF regeneration trigger",
+  "DPF 재생 중": "DPF regenerating"
 }

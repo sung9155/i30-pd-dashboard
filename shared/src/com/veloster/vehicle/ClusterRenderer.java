@@ -230,12 +230,13 @@ public final class ClusterRenderer {
     private void warnings(Canvas c,float t,float b){
         boolean low=false,tpms=false;for(int i=Telemetry.TPMS_FL;i<=Telemetry.TPMS_RR;i++){float x=v(i);if(!Float.isNaN(x)){tpms=true;if(x<TIRE_LOW)low=true;}}
         int[] sig={Telemetry.PARK_BRAKE,Telemetry.ESC,Telemetry.ABS,Telemetry.TCS};
-        String[] name={"PARK BRAKE","ESC","ABS","TCS","TPMS"};
-        float l=12,rr=788,gap=4,w=(rr-l-gap*4)/5;
-        for(int i=0;i<5;i++){
-            float x=l+i*(w+gap),val=i<4?v(sig[i]):!tpms?Float.NaN:low?1:0;boolean on=!Float.isNaN(val)&&val>0,seen=!Float.isNaN(val);
-            fill(c,x,t,x+w,b,on?D():PANEL);
-            if(on)ThemeShapes.ring(c,p,x,t,x+w,b);
+        String[] name={"PARK BRAKE","ESC","ABS","TCS","TPMS","DPF"};
+        int n=prof.fuel==VehicleProfile.Fuel.DIESEL?6:5;   // a diesel adds the DPF lamp, amber while regenerating
+        float l=12,rr=788,gap=4,w=(rr-l-gap*(n-1))/n;
+        for(int i=0;i<n;i++){
+            float x=l+i*(w+gap),val=i<4?v(sig[i]):i==4?(!tpms?Float.NaN:low?1:0):v(Telemetry.DPF_REGEN);boolean on=!Float.isNaN(val)&&val>0,seen=!Float.isNaN(val);
+            fill(c,x,t,x+w,b,on?(i==5?AMBER:D()):PANEL);
+            if(on&&i<5)ThemeShapes.ring(c,p,x,t,x+w,b);
             text(c,name[i],x+w/2,b-11,13,on?BG:seen?MUTED:TRACK,Paint.Align.CENTER,Typeface.DEFAULT_BOLD,1,0);
         }
     }

@@ -9,6 +9,7 @@ public class Bitmap {
     Bitmap(BufferedImage img){this.img=img;}
     public Bitmap(){img=null;}
     public static Bitmap createBitmap(int w,int h,Config c){return new Bitmap(new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB));}
+    public void eraseColor(int c){if(img==null)return;for(int y=0;y<img.getHeight();y++)for(int x=0;x<img.getWidth();x++)img.setRGB(x,y,c);}
     public int getWidth(){return img==null?0:img.getWidth();}
     public int getHeight(){return img==null?0:img.getHeight();}
 }

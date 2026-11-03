@@ -115,6 +115,11 @@ final class PixelCluster extends ClusterKit {
                 for(int i=0;i<=row.length();i++){boolean on=i<row.length()&&row.charAt(i)!='.';   // runs, so a row is a few rects
                     if(on&&run<0)run=i;if(!on&&run>=0){px(c,x0+run,k[1]+r,i-run,1,row.charAt(run)=='d'?dark:lite);run=-1;}}}}
     }
+    /** Spray off the tyres on a wet road above walking pace: a flickering dither, bigger in a storm (two spots, width w). */
+    private void spray(Canvas c,float x1,float y1,float x2,float y2,int w){
+        float sp=v(7);if(Weather.ground(wx)!=Weather.WET||Float.isNaN(sp)||sp<20)return;
+        int k=(int)(now/70%2),h=wx==Weather.STORM?5:3,ww=wx==Weather.STORM?w+3:w;
+        dither(c,x1-k,y1+k,ww,h,0xffa7b1bf);if(x2!=x1)dither(c,x2+k,y2+k,ww,h,0xffa7b1bf);}
     /** Rain and snow: solid scene pixels that fall, rain splashing where it lands (from groundTop down). */
     private final java.util.Random rnd=new java.util.Random(7);
     private final float[] dropX=new float[140],dropY=new float[140],dropG=new float[140],dropT=new float[140];
@@ -123,15 +128,21 @@ final class PixelCluster extends ClusterKit {
         int kind=Weather.fall(wx);
         if(kind!=dropKind){dropKind=kind;dropN=kind==Weather.STORM?140:kind==Weather.RAIN?60:kind==Weather.SNOW?75:0;
             for(int i=0;i<dropN;i++){dropX[i]=rnd.nextFloat()*200;dropY[i]=rnd.nextFloat()*107;dropG[i]=groundTop+rnd.nextFloat()*(107-groundTop);dropT[i]=0;}}
-        boolean snow=kind==Weather.SNOW,storm=kind==Weather.STORM;float v=storm?80:60;
+        boolean snow=kind==Weather.SNOW,storm=kind==Weather.STORM,side=!chase;float v=storm?80:60,vx=v*0.5f;   // side view: the rain blows back past the car
+        float sp=v(7),speedK=Float.isNaN(sp)?0:sp/60f;
         for(int i=0;i<dropN;i++){
             if(snow){dropY[i]+=dt*6;dropT[i]+=dt*3;dropX[i]+=(float)Math.sin(dropT[i])*dt*4;if(dropY[i]>107){dropY[i]=-1;dropX[i]=rnd.nextFloat()*200;}
                 px(c,dropX[i],dropY[i],1,1,W);continue;}
-            if(dropT[i]>0){dropT[i]-=dt;px(c,dropX[i]-1,dropG[i],3,1,0xffc9d5e1);   // splash
+            if(dropT[i]>0){dropT[i]-=dt;px(c,dropX[i]-1,dropG[i],2,1,0xff7d8798);   // splash: a dark ripple on the wet road, not a road mark
                 if(dropT[i]<=0){dropY[i]=-4;dropX[i]=rnd.nextFloat()*200;}continue;}
-            dropY[i]+=dt*v;dropX[i]-=dt*v*0.15f;if(dropX[i]<0)dropX[i]+=200;
-            if(dropY[i]>=dropG[i]){dropT[i]=0.12f;continue;}
-            px(c,dropX[i],dropY[i],1,storm?4:3,storm?0xffb7c6d5:0xff9fb2c6);
+            // chase view: driving into the rain, the drops fly out from the middle the further out they are
+            float sx=side?-vx:(dropX[i]-100)*0.9f*Math.min(1,speedK);
+            dropY[i]+=dt*v;dropX[i]+=dt*sx;
+            if(dropX[i]<0||dropX[i]>=200){if(side)dropX[i]+=dropX[i]<0?200:-200;else{dropX[i]=rnd.nextFloat()*200;dropY[i]=-4;}}   // chase: a new drop at the top
+            if(dropY[i]>=dropG[i]){dropT[i]=0.1f;continue;}
+            int col=storm?0xffd2dde7:0xffb4c4d4,n=storm?4:3;   // lighter than the rainy skyline, so the drops show in front of it
+            float len=(float)Math.hypot(sx,v),ux=sx/len,uy=v/len;   // a streak along its own motion, one scene pixel per step
+            for(int j=0;j<n;j++)px(c,dropX[i]-ux*j,dropY[i]-uy*j,1,1,col);
         }
     }
     private void put(Canvas c,Bitmap b,float x,float y){int xi=Math.round(x),yi=Math.round(y);blit(c,b,0,0,b.getWidth(),b.getHeight(),xi*4,52+yi*4,(xi+b.getWidth())*4,52+(yi+b.getHeight())*4);}
@@ -254,6 +265,7 @@ final class PixelCluster extends ClusterKit {
         if(!Float.isNaN(ped)&&ped>20)for(int i=0;i<2+(int)(ped/40);i++){float ag=((now/70+i*5)%14)/14f;if(ag<0.66f)px(c,cx-4-ag*18,cy+11-ag*2,2+ag*3,2+ag*2,smoke(ag));}
         if(now-fireAt<450){boolean big=(now/60)%2==0;px(c,cx-(big?9:7),cy+(big?10:11),big?6:4,big?3:2,0xffff7a1a);px(c,cx-(big?6:5),cy+11,big?3:2,1,0xffffe14a);}   // backfire pop
         if(mode==ECO&&v>5)for(int i=0;i<3;i++){float ag=((now/90+i*8)%24)/24f;leaf(c,cx-2-ag*26,cy+8-ag*12+(float)Math.sin(ag*9+i)*2,i);}   // ECO: leaves blow off behind
+        spray(c,cx-8,cy+14,cx-8,cy+14,9);   // rear tyre only, thrown back
         precip(c,frameDt,62);
     }
     /** The car's side view, sprite origin cx,cy (wheels spun to spin radians). */
@@ -380,6 +392,7 @@ final class PixelCluster extends ClusterKit {
         float ped=v(9);   // exhaust smoke from both tailpipes under throttle (more gas, more smoke)
         if(!Float.isNaN(ped)&&ped>20){int puffs=1+(int)(ped/35);for(int ex:new int[]{8,37})for(int i=0;i<puffs;i++){float ag=((now/80+i*4)%12)/12f;if(ag<0.66f)px(c,ox+ex-(int)(ag*5),oy+34+(int)(ag*10),2+(int)(ag*3),2+(int)(ag*2),smoke(ag));}}
         if(now-fireAt<450){boolean big=(now/60)%2==0;for(int ex:new int[]{8,37}){px(c,ox+ex-(big?1:0),oy+34,big?6:4,big?4:3,0xffff7a1a);px(c,ox+ex+1,oy+34,2,big?2:1,0xffffe14a);}}   // backfire pop
+        spray(c,ox-4,oy+34,ox+41,oy+34,12);   // a wet road throws spray off both rear tyres
         if(mode==ECO)for(int i=0;i<3;i++){float ag=((now/90+i*11)%32)/32f;int side=i%2==0?-1:1;   // ECO: leaves kicked off the rear wheels: a hop, then out and toward the camera (growing)
             leaf(c,ox+24+side*(20+ag*60),oy+34-(float)Math.sin(ag*Math.PI)*12+ag*6,i,ag<0.5f?1:2);}
     }
@@ -452,7 +465,7 @@ final class PixelCluster extends ClusterKit {
         sh(c,"TURBO",20,ty,13,hot?(blink(now,300)?0xffff8a3a:Y):0xff7a7a8a);
         float bx=chase?20:84,by=chase?ty+8:ty-12;
         for(int i=0;i<12;i++){fill(c,bx+i*10,by,bx+9+i*10,by+14,0xff000000);fill(c,bx+1+i*10,by+1,bx+8+i*10,by+13,i<tb?(i>8?0xffff8a3a:0xff3ad8ff):0xff2a2a3a);}
-        sh(c,String.format(Locale.US,"%.1fBAR",boostTop()),chase?146:210,chase?by+12:ty,11,0xff9a9aaa);
+        sh(c,Float.isNaN(boost)?"-.-BAR":String.format(Locale.US,"%+.1fBAR",boost),chase?146:210,chase?by+12:ty,11,hot?W:0xff9a9aaa);   // the pressure now (vacuum below 0)
         String sp=Float.isNaN(v)?"---":String.format(Locale.US,"%03d",Math.round(v));
         if(chase){sh(c,sp,720,464,36,W,Paint.Align.RIGHT);sh(c,"KM/H",780,464,13,W,Paint.Align.RIGHT);}
         else{sh(c,sp,720,214,40,W,Paint.Align.RIGHT);sh(c,"KM/H",780,214,13,W,Paint.Align.RIGHT);}

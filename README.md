@@ -77,7 +77,7 @@
 
 차주용 순서는 [`INSTALL.md`](INSTALL.md)를 보세요. [Releases](https://github.com/sung9155/i30-pd-dashboard/releases)의 `i30pd-installer.zip`(Windows) 또는 `i30pd-installer-mac.zip`(맥)과 USB 케이블이면 됩니다. 차 화면에서 엔지니어 모드와 Factory Test를 한 뒤 압축을 풀고 `설치.cmd`(맥은 `설치.command`)를 더블클릭하면 APK 내려받기, 연결 확인, 설치를 대신 해 줍니다. ADB 명령으로 직접 설치하는 방법도 같은 문서에 있습니다.
 
-**적용 조건:** 순정 D-Audio Plus(`pd_kr`). 1.6 T-GDI 7단 DCT와 6단 수동(N Line)에서 확인했고, 1.6 디젤은 화면 눈금을 자동으로 맞추지만 실차 미확인입니다. 내비 소프트웨어 빌드 `eng.vmadmin.20260114.084130`(블루링크)과 `eng.vmadmin.20260114.084725`(블루링크 없음)에서 확인했습니다. 다른 빌드에서도 동작하지만 데이터 배치가 다르면 값이 틀릴 수 있으니, 결과를 [Issues](https://github.com/sung9155/i30-pd-dashboard/issues)에 알려 주세요.
+**적용 조건:** 순정 D-Audio Plus(`pd_kr`). 1.6 T-GDI 7단 DCT와 6단 수동(N Line)에서 확인했고, 1.6 디젤은 화면 눈금을 자동으로 맞추지만 실차 미확인입니다. 내비 소프트웨어 빌드 `eng.vmadmin.20260114.084130`(블루링크), `eng.vmadmin.20260114.084725`(블루링크 없음), `eng.vmadmin.20240205.105401`(블루링크, 2024-02 빌드)에서 확인했습니다. 다른 빌드에서도 동작하지만 데이터 배치가 다르면 값이 틀릴 수 있으니, 결과를 [Issues](https://github.com/sung9155/i30-pd-dashboard/issues)에 알려 주세요.
 
 ## 직접 빌드
 

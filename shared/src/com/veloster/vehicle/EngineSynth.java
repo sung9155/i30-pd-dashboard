@@ -83,7 +83,7 @@ public final class EngineSynth {
             if(fire!=firing){
                 firing=fire;
                 pulse=CYLINDER[fire&3]*(1+.12*noise());
-                if(liftTimer>0&&pedal<.05&&rpm>2200&&noise()>.86)pop=1;   // about one firing in 14
+                if(liftTimer>0&&pedal<.05&&rpm>2200&&noise()>.97)pop=1;   // about one firing in 33: a few pops a second
             }
             // Orders: sin(m*phase) for m = 1..16 by the Chebyshev recurrence, one sin and one cos per sample.
             double c2=2*Math.cos(phase),prev=0,cur=Math.sin(phase),v=0;

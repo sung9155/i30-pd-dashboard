@@ -49,7 +49,8 @@ final class WarpCluster extends ClusterKit {
         path.reset();path.moveTo(0,342);for(int x=0;x<=800;x+=40){float y=342-40*(1-((x-400)/400f)*((x-400)/400f));path.lineTo(x,y);}path.lineTo(800,480);path.lineTo(0,480);path.close();poly(c,0xff10131a);
         // warp stage + energy
         round(c,24,352,262,466,8,PANEL);outline(c,24,352,262,466,8,1,EDGE);
-        mono(c,"WARP",40,376,14,MU,Paint.Align.LEFT);bold(c,gear(),40,442,66,AC,Paint.Align.LEFT);
+        String g=gear();boolean m=manualGate(g);   // manual gate: a small M after the digit, clear of the caption
+        mono(c,"WARP",40,376,14,MU,Paint.Align.LEFT);bold(c,m?g.substring(1):g,40,442,66,AC,Paint.Align.LEFT);if(m)bold(c,"M",80,404,18,AC,Paint.Align.LEFT);
         text(c,t("단 = 워프 단계"),92,442,12,MU,Paint.Align.LEFT,Typeface.DEFAULT);
         mono(c,"ENERGY",150,376,12,MU,Paint.Align.LEFT);
         float ef=Float.isNaN(boost)?0:clamp((boost+0.7f)/(top+0.7f),0,1);

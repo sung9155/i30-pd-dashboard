@@ -45,8 +45,10 @@ final class VfdCluster extends ClusterKit {
         seg7(c,fmt("%.0f",range).replace("—","---"),154,426,24,ON,GHOST,false);mono(c,"km",38,448,12,DIM,Paint.Align.LEFT);
         hbar(c,182,Float.isNaN(cool)?0:(cool-40)/80,-1,13);mono(c,"C",182,422,12,DIM,Paint.Align.LEFT);mono(c,"H",298,422,12,DIM,Paint.Align.RIGHT);
         seg7(c,fmt("%.0f",cool).replace("—","--"),302,426,24,ON,GHOST,false);mono(c,"°C",186,448,12,DIM,Paint.Align.LEFT);
-        String g=gear();seg7(c,g.length()==1&&Character.isDigit(g.charAt(0))?g:" ",392,386,64,AMB,AMB_GHOST,false);
-        if(!(g.length()==1&&Character.isDigit(g.charAt(0))))bold(c,g,368,446,40,AMB,Paint.Align.CENTER);
+        String g=gear();boolean m=manualGate(g);if(m)g=g.substring(1);   // manual gate: the digit in segments, a small M beside it
+        seg7(c,g.length()==1&&Character.isDigit(g.charAt(0))?g:" ",392,386,64,AMB,AMB_GHOST,false);
+        if(m)mono(c,"M",398,386,18,AMB,Paint.Align.LEFT);
+        else if(!(g.length()==1&&Character.isDigit(g.charAt(0))))bold(c,g,368,446,40,AMB,Paint.Align.CENTER);
         // boost bar: -0.7 .. top, zero tick, TURBO lamp past 0.4 bar
         float span=top+0.7f,bf=Float.isNaN(boost)?0:(boost+0.7f)/span,z=434+0.7f/span*150;
         for(int i=0;i<20;i++){float val=-0.7f+(i+.5f)*span/20;boolean isOn=i<Math.round(bf*20);fill(c,434+i*7.5f,388,439.5f+i*7.5f,406,isOn?(val>top*0.8f?AMB:ON):GHOST);}

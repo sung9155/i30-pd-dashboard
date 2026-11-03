@@ -17,8 +17,45 @@ param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switc
 # script mid-install. Cmdlets that need try/catch get -ErrorAction Stop explicitly.
 $ErrorActionPreference = 'Continue'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch {}
+# 긴 한글 줄이 겹쳐 찍히던 문제: UTF-8 코드 페이지의 구형 Windows 콘솔은 창 끝에서 줄을 넘길 때 한글(2칸)을 1칸으로 세어,
+# 넘어간 부분을 앞 글자 위에 겹쳐 찍고 다음 줄까지 밀어 겹친다(2026-11-03 Windows 10 PC 사진, 노란 경고 두 줄).
+# 그래서 이 스크립트의 Write-Host는 모두 아래를 거친다. 창 폭보다 긴 줄은 화면 칸(한글·기호 2칸)으로 세어 띄어쓰기에서
+# 직접 나눈 뒤 찍으므로 콘솔이 줄을 넘길 일이 없다. -NoNewline(진행 표시)은 그대로 넘긴다.
+function CellWidth([char]$ch){
+  $n = [int]$ch
+  if($n -eq 0xB7){ return 2 }   # 가운뎃점: 한국어 콘솔 글꼴에서 2칸
+  if($n -lt 0x1100){ return 1 }
+  if($n -le 0x115F -or ($n -ge 0x2010 -and $n -le 0x2BFF) -or ($n -ge 0x2E80 -and $n -le 0xA4CF) -or ($n -ge 0xAC00 -and $n -le 0xD7A3) -or
+     ($n -ge 0xF900 -and $n -le 0xFAFF) -or ($n -ge 0xFE30 -and $n -le 0xFE4F) -or ($n -ge 0xFF00 -and $n -le 0xFF60) -or ($n -ge 0xFFE0 -and $n -le 0xFFE6)){ return 2 }
+  return 1
+}
+function Fit([string]$m, [int]$max = 0){
+  if($max -le 0){ $max = 78; try { $w = [Console]::WindowWidth; if($w -ge 40){ $max = $w - 2 } } catch {} }
+  $out = New-Object System.Collections.Generic.List[string]
+  $indent = ''; if($m -match '^( +)'){ $indent = $Matches[1] + '  ' }   # 이어지는 줄은 원래 들여쓰기 + 2칸
+  $line = ''; $cells = 0; $space = -1
+  foreach($ch in $m.ToCharArray()){
+    $cw = CellWidth $ch
+    if($cells + $cw -gt $max -and $line.Length -gt $indent.Length){
+      if($space -gt $indent.Length){ $out.Add($line.Substring(0, $space)); $line = $indent + $line.Substring($space + 1) }
+      else { $out.Add($line); $line = $indent }
+      $cells = 0; foreach($c in $line.ToCharArray()){ $cells += CellWidth $c }
+      $space = $line.LastIndexOf(' '); if($space -le $indent.Length){ $space = -1 }
+    }
+    if($ch -eq ' ' -and $line.Length -gt $indent.Length){ $space = $line.Length }
+    $line += $ch; $cells += $cw
+  }
+  $out.Add($line)
+  return ,$out.ToArray()
+}
+function Write-Host {
+  param([Parameter(Position=0)][object]$Object = '', [ConsoleColor]$ForegroundColor, [switch]$NoNewline)
+  $p = @{}; if($PSBoundParameters.ContainsKey('ForegroundColor')){ $p['ForegroundColor'] = $ForegroundColor }
+  if($NoNewline){ Microsoft.PowerShell.Utility\Write-Host $Object -NoNewline @p; return }
+  foreach($part in ([string]$Object -split "`r?`n")){ foreach($l in (Fit $part)){ Microsoft.PowerShell.Utility\Write-Host $l @p } }
+}
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-02d'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-03'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
 # 위와 같고, 2026-10-31 실차 설치·동작 확인(다른 LOW 차 한 대는 USB "장치 설명자 요청 실패" — 그 차 포트·배선 문제로 봄).

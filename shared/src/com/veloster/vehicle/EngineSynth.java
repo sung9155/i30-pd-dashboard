@@ -19,8 +19,16 @@ package com.veloster.vehicle;
  * Mono, -1..1 floats.
  */
 public final class EngineSynth {
-    public static final int RATE=22050;
+    public static final int RATE=11025;   // 11.025 kHz: engine content is under ~5 kHz, and the head unit cannot afford 22 kHz of synthesis
     static final double PUNCH=3;   // weight of the 3x band next to the thump (burble about 80 % below 150 Hz)
+
+    /**
+     * Fast tanh-like soft clip, |out| < 1. The audio thread runs this twice per sample; on this head unit Math.tanh
+     * was a top cost. Padé approximation, clamped to +/-1 at |x| >= 3 (where the approximation already reaches 1).
+     */
+    static double softclip(double x){
+        if(x<=-3)return -1;if(x>=3)return 1;double x2=x*x;return x*(27+x2)/(27+9*x2);
+    }
 
     static final class Engine {
         final double[] cyl,coast,full,pulse;final double jitter,fScale,popMul,popRpm,flow,whistle,blowoff;
@@ -228,8 +236,8 @@ public final class EngineSynth {
             popSt[1]=popSt[0];popSt[0]=x;popSt[3]=popSt[2];popSt[2]=body;
             double punch=punchBq[0]*x+punchBq[1]*punchSt[0]+punchBq[2]*punchSt[1]-punchBq[3]*punchSt[2]-punchBq[4]*punchSt[3];
             punchSt[1]=punchSt[0];punchSt[0]=x;punchSt[3]=punchSt[2];punchSt[2]=punch;
-            s+=(Math.tanh((body*1.7+punch*PUNCH)*1.3)*.85+cr)*P.popGain*master;
-            out[off+i]=(float)(Math.tanh(s*P.drive)*volume);
+            s+=(softclip((body*1.7+punch*PUNCH)*1.3)*.85+cr)*P.popGain*master;
+            out[off+i]=(float)(softclip(s*P.drive)*volume);
         }
     }
     public boolean running(){return running;}

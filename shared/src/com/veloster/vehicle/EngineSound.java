@@ -19,7 +19,7 @@ final class EngineSound implements Runnable {
     private static final int STREAM_NAVI=12;   // android.media.AudioSystem.STREAM_NAVI on this firmware
     private static final int[] ROUTE_STREAM={STREAM_NAVI,STREAM_NAVI,AudioManager.STREAM_MUSIC,AudioManager.STREAM_MUSIC};
     private static final int[] ROUTE_MICOM={0x41,0x40,0x31,-1};   // SYSTEM_ALARM, NAVI_SOUNDEFFECT, MY_MUSIC, none
-    private static final int BLOCK=512;   // about 23 ms at 22.05 kHz on top of the 40..80 ms hscan rate
+    private static final int BLOCK=512;   // about 46 ms at 11.025 kHz on top of the 40..80 ms hscan rate
     private final Context context;
     private final Telemetry data;
     private volatile Thread thread;
@@ -46,7 +46,9 @@ final class EngineSound implements Runnable {
     }
 
     public void run(){
-        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
+        // Default, not THREAD_PRIORITY_AUDIO: on this head unit the audio band (-16) preempted the cluster's own
+        // drawing and the whole UI stuttered. The stream buffer below is large enough to ride out the lower priority.
+        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DEFAULT);
         int r=route,micom=ROUTE_MICOM[r];
         Object router=null;AudioTrack track=null;
         try{
@@ -71,7 +73,10 @@ final class EngineSound implements Runnable {
                 synth.render(f,0,BLOCK,volume);
                 if(synth.flames!=flames){flames=synth.flames;if(volume>0)flameAt=now+aheadMs;}
                 for(int i=0;i<BLOCK;i++)pcm[i]=(short)Math.round(f[i]*32000);
-                track.write(pcm,0,BLOCK);
+                // MODE_STREAM write blocks on a full buffer and paces the loop; a negative return is an error, not
+                // back-pressure, so stop rather than spin the CPU rewriting a dead track.
+                int w=track.write(pcm,0,BLOCK);
+                if(w<0){android.util.Log.w("VehicleDash","Engine sound: AudioTrack.write "+w+", stopping");break;}
             }
         }catch(RuntimeException e){android.util.Log.e("VehicleDash","Engine sound stopped",e);}
         finally{

@@ -272,7 +272,18 @@ public final class HscanPdTelemetryTest {
         t.obd(0x2f,0x7f,0,3401);check(Math.abs(t.sample(Telemetry.FUEL_LEVEL,3401).value-49.8f)<0.5f,"fuel level ~50%");
         t.obd(0x3c,0x0b,0x54,3402);check(Math.abs(t.sample(Telemetry.CAT_TEMP,3402).value-250f)<1f,"catalyst temp ~250 C");
         t.obd(0x43,0x00,0x31,3403);check(Math.abs(t.sample(Telemetry.ABS_LOAD,3403).value-19.2f)<0.5f,"absolute load ~19%");
-        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.ABS_LOAD+1,"label/unit tables cover the added signals");
+        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.DPF_TRIGGER+1,"label/unit tables cover the added signals");
+        // diesel DPF PIDs (J1979-DA): a support byte first, only marked fields published; other PIDs fall through
+        t.obd(0x7a,new byte[]{0x07,0x05,(byte)0xdc,0,0,0,0},3410);check(Math.abs(t.sample(Telemetry.DPF_DP,3410).value-15f)<0.01f,"DPF delta pressure 1500 x 0.01 = 15 kPa");
+        t.obd(0x7a,new byte[]{0x07,(byte)0xff,(byte)0x9c,0,0,0,0},3411);check(Math.abs(t.sample(Telemetry.DPF_DP,3411).value+1f)<0.01f,"delta pressure is signed (-1 kPa)");
+        t.obd(0x7c,new byte[]{0x03,0x19,0x64,0,0,0,0,0,0},3412);check(Math.abs(t.sample(Telemetry.DPF_TEMP,3412).value-610f)<0.1f,"DPF inlet temperature 6500/10-40 = 610 C");
+        t.obd(0x7c,new byte[]{0x02,0,0,0x0f,(byte)0xa0,0,0,0,0},3413);check(Math.abs(t.sample(Telemetry.DPF_TEMP,3413).value-360f)<0.1f,"outlet temperature when only the outlet is supported");
+        t.obd(0x8b,new byte[]{0x11,0x01,(byte)0x80,0,0,0,0},3414);
+        check(t.sample(Telemetry.DPF_REGEN,3414).value==1&&Math.abs(t.sample(Telemetry.DPF_TRIGGER,3414).value-50.2f)<0.2f,"regeneration active, trigger ~50 %");
+        check("REGEN".equals(Telemetry.label(Telemetry.DPF_REGEN,1)),"regeneration label");
+        {Telemetry dpf0=new Telemetry();dpf0.obd(0x8b,new byte[]{0x00,0x01,(byte)0x80,0,0,0,0},3415);
+        check(!dpf0.sample(Telemetry.DPF_REGEN,3415).valid&&!dpf0.sample(Telemetry.DPF_TRIGGER,3415).valid,"unsupported fields stay unpublished");
+        dpf0.obd(0x2f,new byte[]{0x7f},3416);check(Math.abs(dpf0.sample(Telemetry.FUEL_LEVEL,3416).value-49.8f)<0.5f,"single-byte PIDs still decode through the byte[] path");}
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
 }

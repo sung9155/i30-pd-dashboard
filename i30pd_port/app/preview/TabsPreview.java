@@ -48,6 +48,8 @@ public final class TabsPreview {
         race(out,"4c_race_mt",rec,model,now,VehicleProfile.PETROL_MT,1);       // 6MT: clutch cell left of the brake, pressed
         race(out,"4c_race_mt_out",rec,model,now,VehicleProfile.PETROL_MT,0);   // and released
         race(out,"4c_race_diesel",rec,model,now,VehicleProfile.DIESEL_DCT,-1); // DPF slot instead of SPARK
+        model.obd(0x8b,new byte[]{0x11,0x01,(byte)0x9e,0,0,0,0},now);model.obd(0x7a,new byte[]{0x01,0x05,(byte)0xdc,0,0,0,0},now);   // standard DPF PIDs: regenerating, trigger 62 %
+        race(out,"4c_race_diesel_regen",rec,model,now,VehicleProfile.DIESEL_DCT,-1);
         rec.setPage(PitRenderer.PAGE_RECORDS);save(out,"4d_records",rec,model,now,false,false);
         String[] layouts={"9a_cluster_classic","9b_cluster_retro","9c_cluster_rally","9d_cluster_taxi","9e_cluster_80s","9f_cluster_hud","9g_cluster_8bit","9g_cluster_8bit_chase",
             "9i_cluster_gcircle","9j_cluster_night","9k_cluster_drag","9l_cluster_engine","9m_cluster_cassette","9n_cluster_warp"};

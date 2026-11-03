@@ -21,7 +21,11 @@ public final class Telemetry {
      * (+0.00 under a '+' flag), not -0.00. */
     public static String format(String f,float x){
         String s=String.format(java.util.Locale.US,f,x);
-        return s.matches("-0(\\.0*+)?+(?![0-9]).*")?(f.contains("%+")?"+":"")+s.substring(1):s;
+        if(s.length()<2||s.charAt(0)!='-'||s.charAt(1)!='0')return s;
+        // A character scan, not a regex: this runs for most numbers on screen every frame (String.matches compiles a Pattern per call).
+        int i=2;if(i<s.length()&&s.charAt(i)=='.')for(i++;i<s.length()&&s.charAt(i)=='0';i++);
+        if(i<s.length()&&s.charAt(i)>='0'&&s.charAt(i)<='9')return s;
+        return (f.contains("%+")?"+":"")+s.substring(1);
     }
     /** Factor that pulls a G point (lat, lon) back onto a circle of radius edge g, so a spike past the plot's rim
      * stays on it instead of landing on the panel beside it. */

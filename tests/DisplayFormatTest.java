@@ -14,6 +14,9 @@ public final class DisplayFormatTest {
         same(Telemetry.format("%.0f",-12f),"-12");
         same(Telemetry.format("%+.2f",-1.004f),"-1.00");
         same(Telemetry.format("%+.2f",0.004f),"+0.00");
+        same(Telemetry.format("%.1f",-0.5f),"-0.5");
+        same(Telemetry.format("%.0f",-0.6f),"-1");
+        same(Telemetry.format("%.2f",-0.001f)+"x","0.00x");
         check(Telemetry.pinG(0.6f,0.6f,1)==1,"inside the rim stays put");
         float k=Telemetry.pinG(-1.48f,-1.48f,1);
         check(Math.abs(Math.hypot(-1.48f*k,-1.48f*k)-1)<1e-4,"a 2.09 g spike lands on the 1 g rim");

@@ -36,10 +36,12 @@ final class VehicleDataClient implements Runnable {
     private long retryMs=2000;
     synchronized void start(){if(active)return;active=true;generation++;ignition=false;VehicleDash.ignition(false);retryMs=2000;run();}
     private boolean accepts(int token){return active&&token==generation&&(ignition||ignitionUnknown);}
+    /** i30 PD has no BCM service: after the first miss, stop asking (the lookup runs on the UI thread). */
+    private boolean bcmAbsent(){return ignitionUnknown&&"pd_kr".equals(android.os.Build.PRODUCT);}
     public synchronized void run(){
         if(!active)return;
         final int token=generation;
-        if(power==null)try{
+        if(power==null&&!bcmAbsent())try{
             power=(BCMManager)com.hkmc.VehicleInfoManager.getInstance(context).getService(com.hkmc.VehicleInfoManager.BCM_SERVICE);
             if(power==null)throw new IllegalStateException("BCM service unavailable");
             ignition=power.getIGNStatus();ignitionUnknown=false;
@@ -80,7 +82,7 @@ final class VehicleDataClient implements Runnable {
             rlistener=new PgsStatusListener(){public void onRVMViewStatusChanged(int view){if(accepts(token))VehicleDash.rearView(view);}};
             rear.registerPgsStatusListener(rlistener);
         }catch(RuntimeException e){rear=null;log("rear view",e);}catch(LinkageError e){rear=null;log("rear view",e);}
-        if(power==null||nmode==null||vehicle==null){handler.postDelayed(this,retryMs);retryMs=Math.min(30000,retryMs*2);}
+        if((power==null&&!bcmAbsent())||nmode==null||vehicle==null){handler.postDelayed(this,retryMs);retryMs=Math.min(30000,retryMs*2);}
         if(hscan==null)try{
             hscan=new HscanDataClient(new HscanDataClient.Gate(){public boolean accepts(){return VehicleDataClient.this.accepts(token);}});
         }catch(RuntimeException e){hscan=null;log("HSCAN",e);}catch(LinkageError e){hscan=null;log("HSCAN",e);}

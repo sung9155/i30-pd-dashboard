@@ -43,8 +43,14 @@
 
 6. **지도 반 + 계기판 반 (순정 분할 칸)** — 실차 확인 필요. 순정 "내비 반 + 음악 반" 화면이 framework의 분할 창(창 종류 2040, 오른쪽 480 px)을 쓰는지 노트북에서 확인한다: `bash i30pd_port/split_capture.sh on` → `off` → (필요하면) `pull <패키지명>`. 배경·읽는 법·구현 계획은 [`SPLIT_SCREEN.md`](SPLIT_SCREEN.md). 결과는 그 문서 맨 아래 "실차 결과"에 적는다.
 
-## 이번 세션에 끝낸 것 (beta)
-- 엔진사운드 ON 시 심한 UI 렉 해결 — 2026-11-03 실차 검증(렉 사라짐). 원인은 per-frame 렌더 비용 + 오디오 과부하 합쳐진 것:
+7. **엔진사운드 오디오 라우팅 — 전대역 출력 경로 찾기** (2026-11-03 실차 확인) — 현재 4개 경로 중 **`믹스 · 알림`(route 0, micom SYSTEM_ALARM `0x41`, STREAM_NAVI)만 소리가 난다.** 그런데 이건 경고음/차임 채널이라 **전면 스피커만·모노·베이스 없음** → 음질 나쁨. 나머지는 전부 무음:
+   - `믹스 · 내비`(route 1, micom NAVI_SOUNDEFFECT `0x40`) — 무음
+   - `미디어 소스`(route 2, micom MY_MUSIC `0x31`, STREAM_MUSIC) — 무음
+   - `기본 (예전)`(route 3, plain STREAM_MUSIC, micom 없음) — 무음
+   필요: **전스피커+서브우퍼로 나가는 micom 오디오 타입**을 찾기. `EngineSound.ROUTE_MICOM`/`ROUTE_STREAM`에 추가해 시험.
+   - 조사: 순정 `com.hkmc.media.MicomAudioManager.startAudio(int type)`의 유효 타입 상수 전체를 펌웨어에서 추출(공개 펌웨어 또는 기기 `/system/framework` 의 hkmc media jar 디컴파일). 지금까지 아는 값: `0x41`(알림, 유일하게 울림)·`0x40`(내비효과음)·`0x31`(마이뮤직). 엔터테인먼트 믹스(미디어/AUX/라인인)에 해당하는 타입을 찾는다.
+   - 가설: `0x31`(MY_MUSIC)이 무음인 건 micom만으론 부족하고 **음악 앱이 활성 소스**여야 하거나, STREAM_MUSIC AudioTrack이 amp까지 가려면 다른 micom "media/AUX" 경로를 열어야 할 수 있음. 알림만 되는 건 안전 차임이라 항상 열려서일 것.
+   - 그때까지: 엔진사운드는 얇은 알림 채널에서만 가청 → 기본 OFF 유지, 경로 선택은 실험적 표시. 전대역 경로 찾으면 그걸 기본 route로. — 2026-11-03 실차 검증(렉 사라짐). 원인은 per-frame 렌더 비용 + 오디오 과부하 합쳐진 것:
   - `e300012` 숫자 표시에서 per-call 정규식 제거, `e969711` 배경·헤더 스트립 캐시 비트맵화 (매 프레임 재그리기 제거) — 이 둘이 체감 대부분
   - `b8ad9b3` 엔진 합성 경량화: RATE 22050→11025, `Math.tanh`→softclip, audio 스레드 우선순위 AUDIO(-16)→DEFAULT, `AudioTrack.write`<0 시 정지
 - `fdffe10` 능동 OBD 폴러(ObdLive): 외기온·연료잔량·촉매온도·절대부하 — 2026-11-03 실차 검증(게이지 실시간 표시, 값 정상)

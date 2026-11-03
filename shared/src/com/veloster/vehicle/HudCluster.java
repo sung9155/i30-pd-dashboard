@@ -51,7 +51,7 @@ final class HudCluster extends ClusterKit {
         String[][] tl={{"MODE",Float.isNaN(mode)?"—":Telemetry.driveModeLabel((int)mode)},{"GEAR",gear()},{"THR",fmt("%.0f",pedal)+"%"},{"BST",fmt("%+.2f",boost)}};
         for(int i=0;i<4;i++){mono(c,tl[i][0],168,126+i*22,14,GD,Paint.Align.LEFT);mono(c,tl[i][1],208,126+i*22,16,G,Paint.Align.LEFT);}
         float gsum=Float.isNaN(lat)||Float.isNaN(lon)?Float.NaN:(float)Math.hypot(lat,lon);
-        String[][] tr={{"G",fmt("%.2f",gsum)},{"BRK",fmt("%.0f",brake)+" bar"},{"STR",Float.isNaN(steer)?"—":(steer>0?"L":"R")+Math.abs(Math.round(steer))},{"TMP",fmt("%.0f",cool)+"C"}};
+        String[][] tr={{"G",fmt("%.2f",gsum)},{"BRK",fmt("%.0f",brake)+" bar"},{"STR",Float.isNaN(steer)?"—":(steer>0?"R":"L")+Math.abs(Math.round(steer))},{"TMP",fmt("%.0f",cool)+"C"}};
         for(int i=0;i<4;i++){mono(c,tr[i][0],576,126+i*22,14,GD,Paint.Align.RIGHT);mono(c,tr[i][1],636,126+i*22,16,G,Paint.Align.RIGHT);}
         Calendar k=Calendar.getInstance();
         mono(c,String.format(Locale.US,"%02d:%02d:%02d",k.get(Calendar.HOUR_OF_DAY),k.get(Calendar.MINUTE),k.get(Calendar.SECOND)),740,470,15,GD,Paint.Align.RIGHT);

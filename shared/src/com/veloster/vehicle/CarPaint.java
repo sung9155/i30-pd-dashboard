@@ -3,12 +3,12 @@ package com.veloster.vehicle;
 /**
  * Body paint of the pixel i30 N in the 8-bit views: Performance Blue (the N colour, the default), then the i30 (PD)
  * colours sold in Korea, launch colours first, then the later additions, then the three launch colours of September
- * 2016 that came in last (new ids go at the end so saved choices keep their place). Each paint is body, highlight,
- * dark side and shadow line. No Android: host-tested.
+ * 2016 that came in last, then a deep metallic purple of the kind tuned cars wear (new ids go at the end so saved
+ * choices keep their place). Each paint is body, highlight, dark side and shadow line. No Android: host-tested.
  */
 public final class CarPaint {
-    public static final String[] IDS={"blue","white","red","black","grey","navy","brown","intense","orange","marina","silver","copper"};
-    public static final String[] LABELS={"퍼포먼스 블루","폴라 화이트","파이어리 레드","팬텀 블랙","아이언 그레이","스타게이징 블루","데미타스 브라운","인텐스 블루","라바 오렌지","마리나 블루","플래티넘 실버","인텐스 카퍼"};
+    public static final String[] IDS={"blue","white","red","black","grey","navy","brown","intense","orange","marina","silver","copper","purple"};
+    public static final String[] LABELS={"퍼포먼스 블루","폴라 화이트","파이어리 레드","팬텀 블랙","아이언 그레이","스타게이징 블루","데미타스 브라운","인텐스 블루","라바 오렌지","마리나 블루","플래티넘 실버","인텐스 카퍼","미드나이트 퍼플"};
     private static final int[][] BODY={
         {0xffb3c9ea,0xffdce8f7,0xff8ea8d0,0xff6f88b4},
         {0xffeef0f1,0xffffffff,0xffc9cdd2,0xffa2a8b0},
@@ -22,6 +22,7 @@ public final class CarPaint {
         {0xff3a6ea5,0xff6b97c8,0xff2c5683,0xff204166},   // ponytail: these three are eyeballed, tune from a daylight photo
         {0xffb4b8bd,0xffdde0e3,0xff8f949a,0xff6e737a},
         {0xffa0532f,0xffcc8058,0xff7d3f23,0xff5c2e19},
+        {0xff6a32a6,0xff9a68d2,0xff4f237f,0xff3a1860},   // not a factory colour: tuning purple
     };
     private static volatile int current;
     private CarPaint(){}

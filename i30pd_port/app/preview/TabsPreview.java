@@ -19,7 +19,7 @@ public final class TabsPreview {
         for(String line:Files.readAllLines(new File(a[0]).toPath(),StandardCharsets.UTF_8))if(line.startsWith("RAW "))raw.add(line.substring(4).replace(" ","").trim());
         File out=new File(a[1]);out.mkdirs();
         Theme.select(System.getProperty("preview.theme","n"));   // PREVIEW_THEME=lambo|bmw|ice|mono|amber|teal|night|rose|copper in preview.sh
-        CarPaint.select(System.getProperty("preview.paint","blue"));   // PREVIEW_PAINT=white|red|black|grey|navy|brown|intense|orange|marina|silver|copper
+        CarPaint.select(System.getProperty("preview.paint","blue"));   // PREVIEW_PAINT=white|red|black|grey|navy|brown|intense|orange|marina|silver|copper|purple
         float at=a.length>2?Float.parseFloat(a[2]):1f;   // 0..1 position in the log
         long secs=600_000;for(String line:Files.readAllLines(new File(a[0]).toPath(),StandardCharsets.UTF_8))
             if(line.startsWith("# PC_START")&&line.contains("SECS="))secs=Long.parseLong(line.replaceAll(".*SECS=(\\d+).*","$1"))*1000;

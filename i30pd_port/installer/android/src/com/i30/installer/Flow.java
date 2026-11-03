@@ -44,10 +44,11 @@ final class Flow {
     /** A failure the user should read as is (no stack trace). */
     static final class Stop extends Exception { Stop(String m) { super(m); } }
 
-    static final String VERSION = "2026-11-02c";   // shown on screen and compared with the published source; raise on every change
+    static final String VERSION = "2026-11-03";   // shown on screen and compared with the published source; raise on every change
     static final String RELEASES = "https://github.com/sung9155/i30-pd-dashboard/releases";
     static final String RAW = "https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/";
-    static final String VERIFIED_BUILD = "eng.vmadmin.20260114.084130", LOW_BUILD = "eng.vmadmin.20260114.084725";
+    static final String VERIFIED_BUILD = "eng.vmadmin.20260114.084130", LOW_BUILD = "eng.vmadmin.20260114.084725",
+        OLD_BUILD = "eng.vmadmin.20240205.105401";   // Blue Link D-Audio Plus, 2024-02 build: installed and values checked in the same model 2026-11-03
     static final String[][] APPS = {
             {"dashboard-i30pd-platform.apk", "com.veloster.dashboard", "대시보드"},
             {"myapps-i30pd-platform.apk", "com.veloster.carplayhub", "'내 앱'"}};
@@ -92,7 +93,7 @@ final class Flow {
                     : device.contains("daudioplus") ? "D-Audio Plus (블루링크)" : "확인 안 됨 (" + device + ")";
             ui.say("차 연결됨: " + board + " / 빌드 " + build);
             if (mode == Mode.DIAG) return diag(adb, dir, ui);
-            if (!build.isEmpty() && !build.equals(VERIFIED_BUILD) && !build.equals(LOW_BUILD)
+            if (!build.isEmpty() && !build.equals(VERIFIED_BUILD) && !build.equals(LOW_BUILD) && !build.equals(OLD_BUILD)
                     && !ui.ask("검증된 빌드(" + VERIFIED_BUILD + ")와 다릅니다. 값이 틀릴 수 있습니다. 그래도 계속할까요?"))
                 throw new Stop("사용자 취소.");
 

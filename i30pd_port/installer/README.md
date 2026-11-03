@@ -50,7 +50,7 @@
 - **ADB** 를 이 순서로 찾는다: 폴더 옆 `platform-tools\adb.exe` → `adb.exe` → `PATH`. 셋 다 없으면 묻고 나서 Google 공식 주소(`dl.google.com/.../platform-tools-latest-windows.zip`)에서 받아 같은 폴더에 푼다. platform-tools 는 레포에 재배포하지 않는다.
 - **차에만 설치.** `adb devices -l` 에서 `product:pd_kr` 이고 상태가 `device` 인 기기만 쓴다. 휴대폰 등 다른 기기는 "차가 아닌 기기만 보입니다" 라고 알리고 건드리지 않는다.
 - **"알 수 없는 장치"로 뜰 때.** 차를 기다리는 동안 Windows 장치 목록(`Win32_PnPEntity`)도 본다. 차는 USB 디버깅을 켜면 `USB\VID_18D1&PID_D00D`로 잡히는데 Google USB 드라이버 INF에 `D00D`가 없어 드라이버가 자동으로 안 붙는다. 이 장치가 오류 상태면 드라이버를 직접 지정하는 순서를 보여 주고, 묻고 나서 Google 공식 드라이버(`usb_driver_r13-windows.zip`)를 `%LOCALAPPDATA%\i30pd-installer\usb_driver\`에 받아 풀고 장치 관리자를 연다(지정은 사람이: 드라이버 업데이트 → 직접 선택 → 디스크 있음 → `android_winusb.inf` → Android ADB Interface). `USB\VID_0000&PID_0002`("장치 설명자 요청 실패", 코드 43)만 보이면 드라이버가 아니라 연결 문제라 케이블·포트를 바꾸라고 안내한다. 맥은 드라이버가 필요 없다.
-- **빌드 확인.** 내비 빌드가 검증본(`eng.vmadmin.20260114.084130`)과 다르면 "값이 틀릴 수 있다" 고 묻고 진행.
+- **빌드 확인.** 내비 빌드가 검증본(`eng.vmadmin.20260114.084130`, LOW `…084725`, 2024-02 `eng.vmadmin.20240205.105401` — 2026-11-03 같은 차종 실차에서 설치·값 확인)과 다르면 "값이 틀릴 수 있다" 고 묻고 진행.
 - **서명 충돌.** 예전에 다른 서명으로 깔린 앱이 있어 `INCONSISTENT_CERTIFICATES` 가 나면, 묻고 나서 지우고 다시 설치한다.
 - **삭제.** `삭제.cmd`(= `설치.cmd -Uninstall`)로 두 앱을 지운다. 이때는 APK 를 받지 않는다. '내 앱'이 ☆ 버튼을 계기판으로 돌려 놨으면(`persist.sys.key.custom` = `com.veloster.carplayhub.STAR_KEY`) 먼저 `service call com.hkmc.micom.mode 34 s16 com.mobis.intent.action.CUSTOM_SHORTCUT`으로 순정 "없음"으로 되돌리고 다시 읽어 확인한다.
 - **폴더 APK 확인.** 폴더 옆 APK 가 `PK` 로 시작하지 않으면(브라우저가 GitHub 페이지를 `.apk` 이름으로 저장한 경우) 무시하고 릴리스에서 받는다. 설치가 실패하면 adb 의 실패 이유를 화면에 같이 보여 준다.

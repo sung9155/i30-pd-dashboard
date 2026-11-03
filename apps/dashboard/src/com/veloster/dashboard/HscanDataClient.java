@@ -17,11 +17,13 @@ final class HscanDataClient {
     HscanDataClient(Gate gate) { this.gate = gate; }
 
     synchronized void start() {
-        // i30 PD (D-Audio Plus KR). Slots verified on build eng.vmadmin.20260114.084130 (adb getprop, 2026-10-29);
+        // i30 PD (D-Audio Plus KR). Slots verified on build eng.vmadmin.20260114.084130 (adb getprop, 2026-10-29); values also
+        // checked on the Blue Link-less LOW build 20260114.084725 (2026-10-31) and the 2024-02 build 20240205.105401 (2026-11-03);
         // other pd_kr builds are read too (read-only, nothing is sent) and flagged so mismatched slots get reported.
         if (session != null || !"pd_kr".equals(android.os.Build.PRODUCT)) return;
-        if (!"eng.vmadmin.20260114.084130".equals(android.os.Build.VERSION.INCREMENTAL))
-            android.util.Log.w("VehicleDash", "Unverified pd_kr build " + android.os.Build.VERSION.INCREMENTAL + ": hscan slots may differ");
+        String build = android.os.Build.VERSION.INCREMENTAL;
+        if (!"eng.vmadmin.20260114.084130".equals(build) && !"eng.vmadmin.20260114.084725".equals(build) && !"eng.vmadmin.20240205.105401".equals(build))
+            android.util.Log.w("VehicleDash", "Unverified pd_kr build " + build + ": hscan slots may differ");
         session = new Session();
         session.decoder.start();
         session.reader.start();

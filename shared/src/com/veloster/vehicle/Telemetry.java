@@ -17,6 +17,15 @@ public final class Telemetry {
     private final History[] history=new History[LABELS.length];
     /** Display orientation follows the driver's reported left/right convention. Raw SAS stays unchanged. */
     public static float displayValue(int signal,float raw){return signal==STEERING?(raw==0?0:-raw):raw;}
+    /** String.format(Locale.US,f,x), but a value that rounds to zero loses its minus: idle boost -0.004 reads 0.00
+     * (+0.00 under a '+' flag), not -0.00. */
+    public static String format(String f,float x){
+        String s=String.format(java.util.Locale.US,f,x);
+        return s.matches("-0(\\.0*+)?+(?![0-9]).*")?(f.contains("%+")?"+":"")+s.substring(1):s;
+    }
+    /** Factor that pulls a G point (lat, lon) back onto a circle of radius edge g, so a spike past the plot's rim
+     * stays on it instead of landing on the panel beside it. */
+    public static float pinG(float lat,float lon,float edge){float g=(float)Math.hypot(lat,lon);return g>edge?edge/g:1;}
     public static final class Series {
         public final long[] times;
         public final float[] values;

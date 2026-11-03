@@ -40,7 +40,7 @@ public final class ShowRenderer {
     private long turnLAt=Long.MIN_VALUE/2,turnRAt=Long.MIN_VALUE/2;
 
     private float v(int i){return i>=0&&i<s.length&&s[i].valid&&!Float.isNaN(s[i].value)&&!Float.isInfinite(s[i].value)?Telemetry.displayValue(i,s[i].value):Float.NaN;}
-    private static String fmt(String f,float x){return Float.isNaN(x)?"—":String.format(Locale.US,f,x);}
+    private static String fmt(String f,float x){return Float.isNaN(x)?"—":Telemetry.format(f,x);}
     private int accent(){float m=v(Telemetry.DRIVE_MODE);int mode=Float.isNaN(m)?-1:(int)m;return !Theme.current().id.equals("n")?BLUE:mode==1?RED:mode==3?GREEN:BLUE;}  // drive-mode colours only in N
 
     public void draw(Canvas c,Telemetry.Sample[] samples,long frameTime,VehicleProfile profile){
@@ -172,9 +172,10 @@ public final class ShowRenderer {
         }
         p.setColor(T(PANEL));c.drawCircle(cx,cy,20,p);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(T(accent));c.drawCircle(cx,cy,20,p);p.setStyle(Paint.Style.FILL);
         // numeric readout
-        text(c,Float.isNaN(boost)?"—":String.format(Locale.US,"%+.2f",boost),cx,cy+rad*0.62f,40,WHITE,Paint.Align.CENTER);
-        text(c,"bar",cx,cy+rad*0.62f+20,13,MUTED,Paint.Align.CENTER);
-        if(peakBoost!=Float.NEGATIVE_INFINITY)text(c,"PEAK "+String.format(Locale.US,"%+.2f",peakBoost),cx,b-16,12,AMBER,Paint.Align.CENTER);
+        // numeric readout below the arc's end labels (-1.0 and the top), which it overlapped at cy + 0.62 rad
+        text(c,fmt("%+.2f",boost),cx,cy+rad*0.83f,40,WHITE,Paint.Align.CENTER);
+        text(c,"bar",cx,cy+rad*0.83f+20,13,MUTED,Paint.Align.CENTER);
+        if(peakBoost!=Float.NEGATIVE_INFINITY)text(c,"PEAK "+fmt("%+.2f",peakBoost),cx,b-16,12,AMBER,Paint.Align.CENTER);
     }
 
     // ---- D: traction circle with a fading trail ------------------------------------------------
@@ -192,7 +193,7 @@ public final class ShowRenderer {
         text(c,"1.2g",cx+rad-14,cy-6,9,MUTED,Paint.Align.RIGHT);
         // push current point into the trail
         if(!Float.isNaN(lat)&&!Float.isNaN(lon)){
-            float px=cx+lat*scale,py=cy-lon*scale;   // +lon (accel) up, +lat (left) ... keep lat right-positive visual
+            float k=Telemetry.pinG(lat,lon,1.2f),px=cx+lat*k*scale,py=cy-lon*k*scale;   // +lon (accel) up, +lat (left) ... keep lat right-positive visual
             tx[tHead]=px;ty[tHead]=py;tAt[tHead]=now;tHead=(tHead+1)%TRAIL;if(tCount<TRAIL)tCount++;
             float g=(float)Math.hypot(lat,lon);if(g>peakG)peakG=g;
         }
@@ -204,7 +205,7 @@ public final class ShowRenderer {
         }
         // current point
         if(!Float.isNaN(lat)&&!Float.isNaN(lon)){
-            float px=cx+lat*scale,py=cy-lon*scale;
+            float k=Telemetry.pinG(lat,lon,1.2f),px=cx+lat*k*scale,py=cy-lon*k*scale;
             p.setColor(T(withAlpha(accent,0x55)));c.drawCircle(px,py,10,p);
             p.setColor(T(accent));c.drawCircle(px,py,5,p);
             p.setColor(T(0xffffffff));c.drawCircle(px,py,2,p);

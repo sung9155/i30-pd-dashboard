@@ -59,7 +59,7 @@ public final class GaugeRenderer {
             boolean ok=s.valid&&!Float.isNaN(s.value)&&!Float.isInfinite(s.value);
             float displayed=Telemetry.displayValue(i,s.value);
             String named=ok?Telemetry.label(i,s.value):null;
-            String value=ok?(named!=null?named:String.format(Locale.US,"rpm".equals(u)||"km/h".equals(u)||"km".equals(u)?"%.0f":"G".equals(u)?"%+.2f":i==Telemetry.STEERING?"%+.1f":"%.1f",displayed)):"—";
+            String value=ok?(named!=null?named:Telemetry.format("rpm".equals(u)||"km/h".equals(u)||"km".equals(u)?"%.0f":"G".equals(u)?"%+.2f":i==Telemetry.STEERING?"%+.1f":"%.1f",displayed)):"—";
             float lo=min(i,u),hi=max(i,u),f=ok?Math.max(0,Math.min(1,(displayed-lo)/(hi-lo))):0;
             if(style==0){
                 float cy=t+107,r=63;

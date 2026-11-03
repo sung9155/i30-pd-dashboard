@@ -26,7 +26,7 @@ public final class PerformanceRenderer {
     private Telemetry.Sample[] s;
 
     private float v(int i){return i>=0&&i<s.length&&s[i].valid&&!Float.isNaN(s[i].value)&&!Float.isInfinite(s[i].value)?Telemetry.displayValue(i,s[i].value):Float.NaN;}
-    private static String fmt(String f,float x){return Float.isNaN(x)?"—":String.format(Locale.US,f,x);}
+    private static String fmt(String f,float x){return Float.isNaN(x)?"—":Telemetry.format(f,x);}
 
     public void draw(Canvas c,Telemetry.Sample[] samples,long lapMs,boolean lapRunning,VehicleProfile profile){
         s=samples;prof=profile;
@@ -101,7 +101,7 @@ public final class PerformanceRenderer {
         c.drawLine(cx-rad,cy,cx+rad,cy,p);c.drawLine(cx,cy-rad,cx,cy+rad,p);
         p.setStyle(Paint.Style.FILL);
         float gx=v(11),gy=v(12);boolean ok=!Float.isNaN(gx)&&!Float.isNaN(gy);
-        float x=ok?Math.max(-1,Math.min(1,gx/1.2f))*rad:0,y=ok?-Math.max(-1,Math.min(1,gy/1.2f))*rad:0;
+        float k=ok?Telemetry.pinG(gx,gy,1.2f)/1.2f:0,x=ok?gx*k*rad:0,y=ok?-gy*k*rad:0;   // pinned to the rim, not to the square around it
         p.setColor(T(0x55ff4059));c.drawCircle(cx+x,cy+y,12,p);p.setColor(T(RED));c.drawCircle(cx+x,cy+y,7,p);
         text(c,ok?String.format(Locale.US,"%.2f g",(float)Math.sqrt(gx*gx+gy*gy)):"— g",RR-14,B1-14,15,TEXT,Paint.Align.RIGHT);
     }

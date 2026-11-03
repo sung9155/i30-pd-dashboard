@@ -141,8 +141,12 @@ final class PixelCluster extends ClusterKit {
             if(dropX[i]<0||dropX[i]>=200){if(side)dropX[i]+=dropX[i]<0?200:-200;else{dropX[i]=rnd.nextFloat()*200;dropY[i]=-4;}}   // chase: a new drop at the top
             if(dropY[i]>=dropG[i]){dropT[i]=0.1f;continue;}
             int col=storm?0xffd2dde7:0xffb4c4d4,n=storm?4:3;   // lighter than the rainy skyline, so the drops show in front of it
-            float len=(float)Math.hypot(sx,v),ux=sx/len,uy=v/len;   // a streak along its own motion, one scene pixel per step
-            for(int j=0;j<n;j++)px(c,dropX[i]-ux*j,dropY[i]-uy*j,1,1,col);
+            float len=(float)Math.hypot(sx,v),ux=sx/len,uy=v/len;   // a streak along its own motion, one scene pixel per step,
+            int runX=Math.round(dropX[i]),runY=Math.round(dropY[i]),runH=0;   // pixels in the same column merged into one rect
+            for(int j=0;j<n;j++){int qx=Math.round(dropX[i]-ux*j),qy=Math.round(dropY[i]-uy*j);
+                if(qx==runX&&(runH==0||qy==runY-runH)){runH++;continue;}
+                px(c,runX,runY-runH+1,1,runH,col);runX=qx;runY=qy;runH=1;}
+            px(c,runX,runY-runH+1,1,runH,col);
         }
     }
     private void put(Canvas c,Bitmap b,float x,float y){int xi=Math.round(x),yi=Math.round(y);blit(c,b,0,0,b.getWidth(),b.getHeight(),xi*4,52+yi*4,(xi+b.getWidth())*4,52+(yi+b.getHeight())*4);}
@@ -182,8 +186,14 @@ final class PixelCluster extends ClusterKit {
         fill(c,x0*pxScale,pxTop+y0*pxScale,x1*pxScale,pxTop+y1*pxScale,color);}
     /** Half the scene pixels of a rectangle, in a checkerboard fixed to the grid: the 8-bit way to show light or haze. */
     private void dither(Canvas c,float x,float y,float w,float h,int color){
-        int x0=Math.round(x),y0=Math.round(y),x1=Math.round(x+w),y1=Math.round(y+h);
-        for(int yy=y0;yy<y1;yy++)for(int xx=x0+((x0+yy)&1);xx<x1;xx+=2)px(c,xx,yy,1,1,color);}
+        int x0=Math.round(x),y0=Math.round(y),x1=Math.round(x+w),y1=Math.round(y+h);if(x1<=x0||y1<=y0)return;
+        if(pxScale==1){for(int yy=y0;yy<y1;yy++)for(int xx=x0+((x0+yy)&1);xx<x1;xx+=2)px(c,xx,yy,1,1,color);return;}   // baking: pixel by pixel
+        final int ww=x1-x0,hh=y1-y0,odd=(x0+y0)&1,col=color;   // on screen: one stamp of a baked pattern instead of a rect per pixel
+        String key=ww+"x"+hh+"/"+odd+"/"+col;Bitmap b=ditherCache.get(key);
+        if(b==null){b=bake(ww,hh,new Art(){public void paint(Canvas d){for(int yy=0;yy<hh;yy++)for(int xx=(odd+yy)&1;xx<ww;xx+=2)px(d,xx,yy,1,1,col);}});ditherCache.put(key,b);}
+        put(c,b,x0,y0);}
+    /** Dither stamps by size, grid parity and colour: a few lamp glows and spray sizes, so it stays small. */
+    private final java.util.HashMap<String,Bitmap> ditherCache=new java.util.HashMap<>();
     /** 4 x 4 ordered-dither thresholds (0..15), for light that thins out with distance in baked art. */
     private static final int[] BAYER={0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5};
     private void run(Canvas c,int color,float ox,float oy,int y,int x1,int x2){px(c,ox+x1,oy+y,x2-x1+1,1,color);}

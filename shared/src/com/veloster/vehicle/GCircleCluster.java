@@ -45,7 +45,8 @@ final class GCircleCluster extends ClusterKit {
         String gs=fmt("%.2f",g);bold(c,gs,x0,150,72,!Float.isNaN(g)&&g>0.7f?0xffff8a5a:TX,Paint.Align.LEFT);
         bold(c,"g",x0+8+width(gs,72,Typeface.DEFAULT_BOLD),150,26,MU,Paint.Align.LEFT);
         bold(c,fmt("%.0f",v),790,122,44,TX,Paint.Align.RIGHT);bold(c,"km/h",790,142,13,MU,Paint.Align.RIGHT);
-        bold(c,gear(),700,122,44,ACC,Paint.Align.RIGHT);
+        String gr=gear();boolean m=manualGate(gr);   // the M sits small above the digit, clear of the big G's "g"
+        bold(c,m?gr.substring(1):gr,700,122,44,ACC,Paint.Align.RIGHT);if(m)bold(c,"M",700,82,16,ACC,Paint.Align.RIGHT);
         bar(c,182,t("가속 페달"),Float.isNaN(pedal)?Float.NaN:pedal/100,fmt("%.0f",pedal)+" %",0xff3ddc84,false);
         bar(c,220,t("브레이크 압력"),Float.isNaN(brake)?Float.NaN:brake/60,fmt("%.0f",brake)+" bar",danger(),false);
         bar(c,258,t("조향각"),Float.isNaN(steer)?Float.NaN:steer/360,Float.isNaN(steer)?"—":(steer>0?t("왼쪽 "):steer<0?t("오른쪽 "):"")+Math.abs(Math.round(steer))+"°",ACC,true);

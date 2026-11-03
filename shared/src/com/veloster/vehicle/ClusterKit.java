@@ -53,6 +53,8 @@ abstract class ClusterKit {
     protected static float clamp(float x,float a,float b){return Math.max(a,Math.min(b,x));}
     protected float boostTop(){return st==null?DriveStats.boostTop(Float.NaN):st.boostTop();}
     protected String gear(){return Telemetry.gearText(v(8),v(Telemetry.GEAR_SELECTOR),prof);}
+    /** DCT manual gate ("M3"): layouts with a one-digit gear slot draw the digit there and a small M beside it. */
+    protected static boolean manualGate(String g){return g.length()>1&&g.charAt(0)=='M';}
     protected static boolean blink(long now,long period){return now%period<period/2;}
 
     protected void fill(Canvas c,float l,float t,float rr,float b,int color){p.setStyle(Paint.Style.FILL);p.setColor(col(color));c.drawRect(l,t,rr,b,p);}

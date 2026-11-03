@@ -49,7 +49,11 @@ public final class TabsPreview {
         String[] layouts={"9a_cluster_classic","9b_cluster_retro","9c_cluster_rally","9d_cluster_taxi","9e_cluster_80s","9f_cluster_hud","9g_cluster_8bit","9g_cluster_8bit_chase",
             "9h_cluster_eco","9i_cluster_gcircle","9j_cluster_night","9k_cluster_drag","9l_cluster_engine","9m_cluster_cassette","9n_cluster_warp"};
         for(int i=0;i<layouts.length;i++){rec.setPage(PitRenderer.PAGE_CLASSIC+i);save(out,layouts[i],rec,model,now,false,false);}
-        rec.setPicker(true,false,0);save(out,"9_cluster_list",rec,model,now,false,false);
+        rec.setPicker(true,false,0);save(out,"9_cluster_list",rec,model,now,false,false);rec.setPicker(false,false,0);
+        Telemetry.Sample sel=model.sample(Telemetry.GEAR_SELECTOR,now);   // G circle in the DCT manual gate (S -> "M" + gear), then the lever back
+        model.hscanPd(0xc7,0x1d,new byte[]{0,8,0,0,0,0,0,0},now);rec.setPage(PitRenderer.PAGE_CLASSIC+java.util.Arrays.asList(layouts).indexOf("9i_cluster_gcircle"));
+        save(out,"9i_cluster_gcircle_m",rec,model,now,false,false);
+        int back=!sel.valid?5:sel.value==0?0:sel.value==1?7:sel.value==2?6:sel.value==4?8:5;model.hscanPd(0xc7,0x1d,new byte[]{0,(byte)back,0,0,0,0,0,0},now);
         String[] cats={"screens","theme","paint","mode","lang","diag"};   // settings (the gear), one shot per category
         rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<20));rec.setModeOptions(true,false);
         int[] targets={ClusterPicker.F1+2,ClusterPicker.ECO,-1};   // SPORT set to the race page

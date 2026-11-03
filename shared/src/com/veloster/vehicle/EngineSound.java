@@ -25,6 +25,8 @@ final class EngineSound implements Runnable {
     private volatile Thread thread;
     private volatile float volume=.7f;
     private int route=-1;
+    /** elapsedRealtime when the latest flame-worthy pop (EngineSynth.flames) leaves the speaker; PixelCluster shows it. */
+    static volatile long flameAt=Long.MIN_VALUE/2;
     EngineSound(Context context,Telemetry data){this.context=context;this.data=data;}
     void volume(int percent){volume=Math.max(0,Math.min(100,percent))/100f;}
     /** Engine and exhaust (EngineSynth tables), pop rate / turbo whistle / blow-off in percent of the voice's own, and
@@ -49,13 +51,14 @@ final class EngineSound implements Runnable {
         Object router=null;AudioTrack track=null;
         try{
             int min=AudioTrack.getMinBufferSize(EngineSynth.RATE,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT);
+            int bytes=Math.max(min,BLOCK*2*4);long aheadMs=(bytes/2+BLOCK)*1000L/EngineSynth.RATE;   // write blocks on a full buffer: this far ahead
             track=new AudioTrack(ROUTE_STREAM[r],EngineSynth.RATE,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT,
-                Math.max(min,BLOCK*2*4),AudioTrack.MODE_STREAM);
+                bytes,AudioTrack.MODE_STREAM);
             if(track.getState()!=AudioTrack.STATE_INITIALIZED){android.util.Log.w("VehicleDash","Engine sound: AudioTrack not initialised, stream "+ROUTE_STREAM[r]);return;}
             if(micom>=0)router=startMicom(micom);
             track.play();
             android.util.Log.i("VehicleDash","Engine sound on: route "+r+" stream "+ROUTE_STREAM[r]+" micom 0x"+Integer.toHexString(micom)+" min buffer "+min);
-            EngineSynth.Voice playing=voice;EngineSynth synth=new EngineSynth(EngineSynth.RATE,playing);float[] f=new float[BLOCK];short[] pcm=new short[BLOCK];
+            EngineSynth.Voice playing=voice;EngineSynth synth=new EngineSynth(EngineSynth.RATE,playing);float[] f=new float[BLOCK];short[] pcm=new short[BLOCK];int flames=0;
             while(thread==Thread.currentThread()){
                 long now=SystemClock.elapsedRealtime();
                 Telemetry.Sample rpm=data.sample(0,now),pedal=data.sample(9,now),boost=data.sample(Telemetry.BOOST,now),
@@ -66,6 +69,7 @@ final class EngineSound implements Runnable {
                 if(voice!=playing){playing=voice;synth.use(playing);}
                 synth.popRate=popRate;synth.turboVol=turboVol;synth.bovVol=bovVol;synth.lead=lead;
                 synth.render(f,0,BLOCK,volume);
+                if(synth.flames!=flames){flames=synth.flames;if(volume>0)flameAt=now+aheadMs;}
                 for(int i=0;i<BLOCK;i++)pcm[i]=(short)Math.round(f[i]*32000);
                 track.write(pcm,0,BLOCK);
             }

@@ -22,12 +22,13 @@ public final class EngineSynthTest {
         return s1*s1+s2*s2-c*s1*s2;
     }
     /** Energy added by overrun pops over a 2.5 s lift from 4000 rpm: the voice minus the same voice with pops off. */
+    static int lastFlames;
     private static double burble(double popRate){
         EngineSynth a=new EngineSynth(),b=new EngineSynth();a.popRate=popRate;b.popRate=0;
         float[] x=new float[512],y=new float[512];double e=0;
         for(int i=0;i<60;i++){a.set(4500,1,1);b.set(4500,1,1);a.render(x,0,512,1);b.render(y,0,512,1);}
         for(int i=0;i<108;i++){a.set(4000-i*15,0,-.5);b.set(4000-i*15,0,-.5);a.render(x,0,512,1);b.render(y,0,512,1);for(int k=0;k<512;k++){double d=x[k]-y[k];e+=d*d;}}
-        return e;
+        lastFlames=a.flames;return e;
     }
     /** Mean rpm lag (rpm) while accelerating 2000 rpm/s with CAN frames every 50 ms arriving delayMs late, and the
      *  furthest the sound drops below the engine after an upshift. */
@@ -72,7 +73,8 @@ public final class EngineSynthTest {
         float[] v8=run(new EngineSynth(EngineSynth.RATE,EngineSynth.voice(3,0)),3000,1,0,2);
         check(power(v8,200)>power(v8,180)*4,"V8 firing order");
         // Overrun burble follows the pop rate.
-        double b0=burble(0),b1=burble(1),b2=burble(2);
+        double b0=burble(0);int f0=lastFlames;double b1=burble(1);int f1=lastFlames;double b2=burble(2);int f2=lastFlames;
+        check(f0==0&&f1>=1&&f1<=3&&f2<=3,"flames: a few big pops per lift, none with pops off: "+f0+" / "+f1+" / "+f2);
         check(b0==0&&b1>0&&b2>b1*1.3,"burble scales with the pop rate: "+b1+" -> "+b2);
         // Latency compensation: with 50 ms of CAN delay, 80 ms of lead takes most of the lag away and the upshift
         // is held rather than extrapolated.

@@ -106,6 +106,10 @@ public final class EngineSynth {
     private Voice p;
     /** Listener trims on the voice's own values (1 = as designed). */
     public volatile double popRate=1,turboVol=1,bovVol=1;
+    /** Big pops that earn a flame on screen (PixelCluster): only early in a lift and at most one per FLAME_GAP s. */
+    public volatile int flames;
+    static final double FLAME_GAP=.5;
+    private double flameHold;
     /** Latency compensation in seconds (0 = off). */
     public volatile double lead;
     private double lastRaw=Double.NaN,slope,interval;
@@ -160,7 +164,7 @@ public final class EngineSynth {
         if(!running&&master<1e-5){master=0;for(int i=0;i<n;i++)out[off+i]=0;return;}   // fully faded: silence
         double load=pedal;
         for(int m=0;m<16;m++)amp[m]=P.coast[m]+(P.full[m]-P.coast[m])*load;
-        liftTimer=Math.max(0,liftTimer-dt);
+        liftTimer=Math.max(0,liftTimer-dt);flameHold=Math.max(0,flameHold-dt);
         for(int i=0;i<n;i++){
             if(leadN>0&&running&&!Double.isNaN(lastRaw)){   // predicted rpm, never more than 400 rpm from the last sample
                 double ahead=Math.min(sinceNew+leadN,leadN+1.5*interval);
@@ -182,6 +186,7 @@ public final class EngineSynth {
                     popT0=P.popT0*(big?.7:1+.2*noise());
                     popA=(big?1.3:.75+.2*noise())*fade;
                     popB=1.8+.4*noise();popTau=big?.03:.012;popT=0;
+                    if(big&&fade>.7&&flameHold<=0&&master>.3){flames++;flameHold=FLAME_GAP;}   // ponytail: a flame for the odd big pop, not every thud
                 }
             }
             // Orders: sin(m*phase) for m = 1..16 by the Chebyshev recurrence, one sin and one cos per sample.

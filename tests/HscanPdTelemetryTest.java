@@ -60,7 +60,7 @@ public final class HscanPdTelemetryTest {
         check(dsl.shiftMin==2100&&dsl.shiftMax==4700&&dsl.shiftDefault==4200,"diesel shift range scaled by 4600/6500");
         check(com.veloster.vehicle.ShiftGuide.clamp(2500,pet.shiftMin,pet.shiftMax)==3000,"below the range clamps to 3000");
         check(com.veloster.vehicle.ShiftGuide.target(0,dsl)==4200&&com.veloster.vehicle.ShiftGuide.target(0,pet)==6000,"unset target = profile default");
-        check(com.veloster.vehicle.ShiftGuide.target(6000,dsl)==4700&&com.veloster.vehicle.ShiftGuide.target(3500,pet)==3500,"saved target clamps to the profile");
+        check(com.veloster.vehicle.ShiftGuide.target(6000,dsl)==4600&&com.veloster.vehicle.ShiftGuide.target(3500,pet)==3500,"saved target clamps to the profile, never past the redline (diesel 4600)");
         Telemetry sg=new Telemetry();sg.hscanPd(0xc7,0x1d,b(0,0xc5,0x71,0,0,0,0,0),5000);   // lever in D: a DCT
         sg.hscanPd(0xc7,0x02,b(0,100,0,0),5000);sg.hscanPd(0xc7,0x1f,b(0,0xa0,0x30,0,0,0,0,0),5000);
         int[][] cases={{6000,4499,0},{6000,4500,1},{6000,5950,15},{3000,2000,0},{3000,2250,1},{3000,2990,15}};

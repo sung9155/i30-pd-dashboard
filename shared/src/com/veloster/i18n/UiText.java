@@ -52,6 +52,8 @@ public final class UiText {
         EN.put("N 계기판","N Dashboard");
         EN.put("R · 부스트","R · boost");
         EN.put("RED ALERT · 급제동","RED ALERT · hard braking");
+        EN.put("RPM","RPM");
+        EN.put("SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값","SHIFT warnings · red zones · tap the name for the default");
         EN.put("USB 디버깅","USB debugging");
         EN.put("USB 디버깅 ","USB debugging ");
         EN.put("USB 디버깅 OFF 명령을 보냈습니다(엔지니어 모드 Factory Test 0A 01 → 65 00 → 0A 02와 같은 명령). PC 연결이 끊기지 않으면 시동을 다시 거세요.","USB debugging OFF sent (the same command as Engineer Mode Factory Test 0A 01 → 65 00 → 0A 02). If the PC stays connected, restart the engine.");
@@ -174,7 +176,9 @@ public final class UiText {
         EN.put("람보","Lambo");
         EN.put("랠리","Rally");
         EN.put("랩 타이머","Lap timer");
+        EN.put("레드라인","Redline");
         EN.put("레이스","Race");
+        EN.put("레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값","Race SHIFT ▲ · F1 LEDs · tap the name for the default");
         EN.put("레트로","Retro");
         EN.put("로즈","Rose");
         EN.put("마찰 토크","Friction torque");
@@ -207,6 +211,7 @@ public final class UiText {
         EN.put("범위","Range");
         EN.put("변속 권장","Shift hint");
         EN.put("변속 레버","Shift lever");
+        EN.put("변속 목표","Shift target");
         EN.put("변속 표시·음악","Shift lights, music");
         EN.put("변속기 (TCU)","Transmission (TCU)");
         EN.put("보정 토크","Corrected torque");

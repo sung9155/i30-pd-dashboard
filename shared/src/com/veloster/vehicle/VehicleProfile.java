@@ -16,7 +16,8 @@ public final class VehicleProfile {
 
     public final Fuel fuel;
     public final Trans trans;
-    public final float redline;      // rpm where the red zone / shift urgency begins
+    public float redline;            // rpm where the red zone / shift urgency begins; 설정 → RPM moves it (setRedline)
+    public final int redlineDefault, redlineMin, redlineMax;
     public final float maxRpm;       // full-scale rpm for bars and gauges
     public final int topGear;        // highest gear; the shift cue never asks to upshift out of it
     public final int shiftMin, shiftMax, shiftDefault;  // adjustable shift-light target range
@@ -27,16 +28,17 @@ public final class VehicleProfile {
         this.fuel = fuel; this.trans = trans;
         this.topGear = trans == Trans.MT ? 6 : 7;
         if (fuel == Fuel.DIESEL) {
-            this.redline = 4600; this.maxRpm = 5500;
+            this.redlineDefault = 4600; this.redlineMin = 3500; this.redlineMax = 5000; this.maxRpm = 5500;
             // The petrol shift range scaled by the redline ratio (4600/6500), rounded to 100 rpm.
             this.shiftMin = 2100; this.shiftMax = 4700; this.shiftDefault = 4200;
             this.hasSpark = false;
         } else {
-            this.redline = 6500; this.maxRpm = 8000;
+            this.redlineDefault = 6500; this.redlineMin = 5000; this.redlineMax = 7000; this.maxRpm = 8000;
             // 3000-6700: low enough for everyday shifting on the 1.6 T-GDi (torque plateau 1500-4500), up to the limiter.
             this.shiftMin = 3000; this.shiftMax = 6700; this.shiftDefault = 6000;
             this.hasSpark = true;
         }
+        this.redline = this.redlineDefault;
         this.label = (fuel == Fuel.DIESEL ? "DIESEL" : "PETROL") + " " + (trans == Trans.MT ? "6MT" : "7DCT");
     }
 
@@ -44,6 +46,14 @@ public final class VehicleProfile {
     public static final VehicleProfile PETROL_MT  = new VehicleProfile(Fuel.PETROL, Trans.MT);
     public static final VehicleProfile DIESEL_DCT = new VehicleProfile(Fuel.DIESEL, Trans.DCT);
     public static final VehicleProfile DIESEL_MT  = new VehicleProfile(Fuel.DIESEL, Trans.MT);
+
+    private static final VehicleProfile[] ALL = {PETROL_DCT, PETROL_MT, DIESEL_DCT, DIESEL_MT};
+    /** The user's redline (0 = each profile's default), clamped per profile to 100 rpm steps; every view reads redline. */
+    public static void setRedline(int rpm) {
+        for (VehicleProfile p : ALL) p.redline = rpm <= 0 ? p.redlineDefault : ShiftGuide.clamp(rpm, p.redlineMin, p.redlineMax);
+    }
+    /** Highest shift target: the range top, but never past the redline. */
+    public int shiftTop() { return Math.min(shiftMax, (int) redline); }
 
     public static VehicleProfile of(Fuel fuel, Trans trans) {
         return fuel == Fuel.PETROL ? (trans == Trans.DCT ? PETROL_DCT : PETROL_MT)

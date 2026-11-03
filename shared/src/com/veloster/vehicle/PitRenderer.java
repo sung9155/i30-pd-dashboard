@@ -216,6 +216,8 @@ public final class PitRenderer {
                     break;
                 case SettingsLayout.PICK:{int s=i<ClusterPicker.COUNT?i:-1;sel=modeTargets[pickSlot]==s;name=screenName(s);
                     if(s>=0&&(hidden&(1<<s))!=0){dim=true;sub="미사용";}break;}
+                case SettingsLayout.RPM:name=i==SettingsLayout.RPM_SHIFT?"변속 목표":"레드라인";
+                    sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
                 case SettingsLayout.LANG:sel=SettingsLayout.LANGS[i].equals(langSel);name=SettingsLayout.LANG_NAMES[i];break;
                 default:name="고장코드 읽기";sub="엔진·변속기·제동·조향·에어백·바디 (읽기만)";
             }
@@ -228,6 +230,12 @@ public final class PitRenderer {
             int ink=dim?MUTED:sel?BLUE:WHITE;
             if(sub==null)text(c,UiText.t(name),tx,t+h/2+7,18,ink,true);
             else{text(c,UiText.t(name),tx,t+h/2-3,18,ink,true);text(c,UiText.t(sub),tx,t+h/2+17,12,cat==SettingsLayout.SCREENS&&!dim?BLUE:MUTED,cat==SettingsLayout.SCREENS);}
+            if(cat==SettingsLayout.RPM){   // value, then − and +
+                float by=t+(h-SettingsLayout.SBTN_W)/2;String v=(i==SettingsLayout.RPM_SHIFT?shiftTarget:(int)profile.redline)+" rpm";
+                paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);text(c,v,SettingsLayout.upBtnL()-14-paint.measureText(v),t+h/2+7,18,BLUE,true);
+                button(c,"−",SettingsLayout.upBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,BLUE);
+                button(c,"+",SettingsLayout.downBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,BLUE);
+            }
             if(value!=null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);String v=UiText.t(value);text(c,v,l+w-20-paint.measureText(v),t+h/2+7,18,sel||cat==SettingsLayout.MODE&&i>=SettingsLayout.MODE_FIRST&&!dim?BLUE:MUTED,true);}
         }
     }

@@ -67,7 +67,7 @@ public final class VehicleDash extends View implements Runnable {
     private long lastPolicyCheck;
     private boolean resumed;
     private long entryRequestUntil;
-    private int shiftTarget;
+    private int shiftTarget,redline;   // as saved, 0 = the profile's default
     private final java.util.concurrent.atomic.AtomicBoolean mediaPending=new java.util.concurrent.atomic.AtomicBoolean();
     private Button entry;
     private boolean blocked;
@@ -102,6 +102,7 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){/* Retain default for incompatible preferences. */}
         // Kept as saved (0 = never set); the renderer and the -/+ buttons resolve it with the detected powertrain.
         shiftTarget=a.getSharedPreferences("pit_vehicle_ui",0).getInt("shift_target",0);
+        redline=a.getSharedPreferences("pit_vehicle_ui",0).getInt("redline",0);VehicleProfile.setRedline(redline);
         try{Theme.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("theme","n"));}
         catch(ClassCastException e){Theme.select("n");/* Incompatible saved value: open in N. */}
         try{CarPaint.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("car_paint","blue"));}
@@ -344,6 +345,12 @@ public final class VehicleDash extends View implements Runnable {
                 case SettingsLayout.LANG:
                     if(LanguageSettings.save(activity,SettingsLayout.LANGS[i])&&entry!=null)entry.setText(UiText.t("N 계기판"));   // the OEM screen's entry button follows the language too
                     break;
+                case SettingsLayout.RPM:{   // − / + step 100 rpm; the rest of the row puts the default back
+                    int z=SettingsLayout.screenZone(x);if(z!=SettingsLayout.screenZone(downX))break;
+                    VehicleProfile prof=DATA.profile();int d=z==1?-100:z==2?100:0;
+                    if(i==SettingsLayout.RPM_SHIFT){shiftTarget=d==0?0:ShiftGuide.clamp(ShiftGuide.target(shiftTarget,prof)+d,prof.shiftMin,prof.shiftTop());e.putInt("shift_target",shiftTarget);}
+                    else{redline=d==0?0:ShiftGuide.clamp((int)prof.redline+d,prof.redlineMin,prof.redlineMax);VehicleProfile.setRedline(redline);e.putInt("redline",redline);}
+                    break;}
                 case SettingsLayout.DIAG:DtcDialog.show(activity);break;   // read-only trouble codes
             }
             e.apply();invalidate();return true;
@@ -393,7 +400,7 @@ public final class VehicleDash extends View implements Runnable {
             float minus=media?210:548,plus=media?440:740;
             if(x>=minus && x<=minus+42 && downX>=minus && downX<=minus+42)next-=100;
             if(x>=plus && x<=plus+42 && downX>=plus && downX<=plus+42)next+=100;
-            shiftTarget=ShiftGuide.clamp(next,prof.shiftMin,prof.shiftMax);
+            shiftTarget=ShiftGuide.clamp(next,prof.shiftMin,prof.shiftTop());
             activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("shift_target",shiftTarget).apply();
             invalidate();return true;
         }

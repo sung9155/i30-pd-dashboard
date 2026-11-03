@@ -523,5 +523,10 @@
   "시동 안내 화면: ": "Start-up notice: ",
   "자동 확인": "confirmed automatically",
   "그대로 표시": "shown as usual",
-  "\n\n켜면 내비가 켜질 때 나오는 안내 및 동의 화면을 '내 앱'이 바로 [확인]합니다. 직접 확인 버튼을 누른 것과 같습니다.\n시동을 걸 때마다 동작하려면 실행 바로가기(가장자리 버튼 또는 알림)를 켜 두세요. 꺼져 있으면 내비가 완전히 다시 켜질 때만 동작합니다.": "\n\nWhen on, My Apps confirms the notice and consent screen shown when the head unit starts, the same as pressing its confirm button.\nTo act on every ignition, keep Quick entry (edge button or notification) on. Without it, it only acts when the head unit fully restarts."
+  "\n\n켜면 내비가 켜질 때 나오는 안내 및 동의 화면을 '내 앱'이 바로 [확인]합니다. 직접 확인 버튼을 누른 것과 같습니다.\n시동을 걸 때마다 동작하려면 실행 바로가기(가장자리 버튼 또는 알림)를 켜 두세요. 꺼져 있으면 내비가 완전히 다시 켜질 때만 동작합니다.": "\n\nWhen on, My Apps confirms the notice and consent screen shown when the head unit starts, the same as pressing its confirm button.\nTo act on every ignition, keep Quick entry (edge button or notification) on. Without it, it only acts when the head unit fully restarts.",
+  "RPM": "RPM",
+  "변속 목표": "Shift target",
+  "레드라인": "Redline",
+  "레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값": "Race SHIFT ▲ · F1 LEDs · tap the name for the default",
+  "SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값": "SHIFT warnings · red zones · tap the name for the default"
 }

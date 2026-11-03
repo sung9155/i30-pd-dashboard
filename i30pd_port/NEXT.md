@@ -21,7 +21,7 @@
    - **기본 시작 화면 = 레이스(screen index 5)**: `VehicleDash` 로드부 `p.getInt("cluster_screen",ClusterPicker.OVERVIEW)` 의 기본값을 레이스로. 깔끔하게 `ClusterPicker`에 `RACE=F1+2`(=5) 상수 추가해 쓰면 좋다. (SPORT 모드 기본도 이미 `F1+2`=레이스.)
    - 주의: 저장된 `cluster_order`/`cluster_screen` 가 있으면 사용자 설정 우선(기존 동작 유지). 기본값만 바꾸는 것.
 
-5. **RED 테마 경고 램프 테두리 흰색 → 테마색** — RED 테마 클래식에서 PARK(상단 띠)·PARK BRAKE(하단 경고줄)에 켜질 때 **흰색 테두리**가 생겨 빨간 팔레트와 안 어울림.
+5. ~~**RED 테마 경고 램프 테두리 흰색 → 테마색**~~ — 2026-11-03 끝냄(아래 수정 그대로 적용, `ThemeShapes.ring`). — RED 테마 클래식에서 PARK(상단 띠)·PARK BRAKE(하단 경고줄)에 켜질 때 **흰색 테두리**가 생겨 빨간 팔레트와 안 어울림.
    - 현상: 켜진 경고 램프 = danger색(RED 테마는 노랑 `0xffffd21f`) 채움 + 흰색 2px 링. 흰 링이 빨강 테마에서 튄다.
    - 원인: `ThemeShapes.ring()`(shared/.../vehicle/ThemeShapes.java:31)이 링 색을 `0xffffffff`로 하드코딩. 링은 `Theme.dangerRing`인 테마에서만 그림 = amber·red 둘뿐(Theme.java:56,64). amber는 흰 링이 맞지만(앰버 UI에서 danger와 accent가 가까워 흰색으로 구분), red는 danger가 노랑이라 흰 링이 불필요하게 튄다. 주석(Theme.java:62)이 "red는 amber의 링을 유지"라 **삭제 말고 색만 교체**가 의도에 맞음.
    - 적용할 수정(ThemeShapes.java, 검증 완료 — 로컬에선 되돌려 둠, 다른 PC에서 적용):

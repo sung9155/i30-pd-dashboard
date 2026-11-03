@@ -25,9 +25,14 @@ final class ThemeShapes {
         p.setStyle(Paint.Style.FILL);
         return true;
     }
-    /** White 2px ring that marks a warning when the danger colour is close to the accent (amber). */
+    /**
+     * 2px ring that marks a warning when the danger colour is close to the accent. Amber frames it in white;
+     * red's danger lamp is yellow on a red field, where a white ring clashes, so red frames it in the accent red.
+     */
     static void ring(Canvas c,Paint p,float l,float t,float rr,float b){
-        if(!Theme.current().dangerRing)return;
-        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(0xffffffff);c.drawRect(l+2,t+2,rr-2,b-2,p);p.setStyle(Paint.Style.FILL);
+        Theme th=Theme.current();
+        if(!th.dangerRing)return;
+        int col="red".equals(th.id)?th.accent:0xffffffff;
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(col);c.drawRect(l+2,t+2,rr-2,b-2,p);p.setStyle(Paint.Style.FILL);
     }
 }

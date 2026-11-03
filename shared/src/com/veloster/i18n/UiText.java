@@ -26,6 +26,7 @@ public final class UiText {
         EN.put(" 화면이 없거나 현재 앱에서 실행할 수 없습니다."," is unavailable or cannot be opened by this app.");
         EN.put("%,d원","%,d won");
         EN.put(". 백업이 남아 있으면 원상복구하세요.",". Restore the original settings if a backup remains.");
+        EN.put("1.6 터보 4기통","1.6 turbo I4");
         EN.put("1분","1 min");
         EN.put("201 m (1/8마일)","201 m (1/8 mile)");
         EN.put("3 × 2 보기","3 x 2 grid");
@@ -61,7 +62,6 @@ public final class UiText {
         EN.put("R · 부스트","R · boost");
         EN.put("RED ALERT · 급제동","RED ALERT · hard braking");
         EN.put("RPM","RPM");
-        EN.put("RPM·페달·부스트로 합성 · 계기판이 열려 있을 때 · 후진 무음","Made from rpm, pedal and boost · while the dashboard is open · silent in reverse");
         EN.put("SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값","SHIFT warnings · red zones · tap the name for the default");
         EN.put("USB 디버깅","USB debugging");
         EN.put("USB 디버깅 ","USB debugging ");
@@ -69,6 +69,9 @@ public final class UiText {
         EN.put("USB 디버깅 ON 명령을 보냈습니다(엔지니어 모드 Factory Test와 같은 명령). 몇 초 뒤 PC를 연결하세요. 내비게이션을 재시작하면 일반 USB(CarPlay)로 돌아갑니다.","USB debugging ON sent (the same command as Engineer Mode Factory Test). Connect the PC in a few seconds. Restarting the head unit returns to normal USB (CarPlay).");
         EN.put("USB 모드 전환 실패: ","USB mode request failed: ");
         EN.put("USB 모드 전환 요청이 거부되었습니다.","The USB mode request was denied.");
+        EN.put("V6 트윈터보","V6 twin-turbo");
+        EN.put("V8 크로스플레인","V8 cross-plane");
+        EN.put("V8 플랫플레인","V8 flat-plane");
         EN.put("Wi-Fi 끄기 실패/시간 초과. 백업을 보존했습니다. 원상복구하세요.","Wi-Fi shutdown failed or timed out. Backup retained; restore the original settings.");
         EN.put("Wi-Fi/AP 상태가 안정된 꺼짐/켜짐 상태가 아닙니다. 변경하지 않았습니다.","Wi-Fi/AP is not in a stable on/off state. No changes were made.");
         EN.put("XY · 잔상 3 s","XY · 3 s afterglow");
@@ -164,7 +167,6 @@ public final class UiText {
         EN.put("노킹 센서 값은 버스에 없어","No knock-sensor value on the bus:");
         EN.put("누르면 음악으로","Tap for music");
         EN.put("눌러서 N 계기판과 앱 목록 열기","Tap to open N Dashboard and your app list");
-        EN.put("눌러서 바꾸기 · 소리가 나는 경로를 찾는 시험","Tap to change · a test to find the route that plays");
         EN.put("눌러서 사용·미사용","Tap to turn on/off");
         EN.put("눌러서 화면 고르기","Tap to choose a screen");
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
@@ -222,6 +224,7 @@ public final class UiText {
         EN.put("바로가기 시작 실패. 설정 상태와 시스템 권한을 확인하세요.","Shortcut could not start. Check its settings and system permissions.");
         EN.put("바로가기: ","Shortcut: ");
         EN.put("반응 시간","Reaction");
+        EN.put("배기","Exhaust");
         EN.put("배터리 SOC","Battery SOC");
         EN.put("배터리 전압","Battery voltage");
         EN.put("백업 저장 실패. 무선 설정을 변경하지 않았습니다.","Backup could not be saved. Wireless settings were not changed.");
@@ -251,6 +254,7 @@ public final class UiText {
         EN.put("브레이크 스위치","Brake switch");
         EN.put("브레이크 압력","Brake pressure");
         EN.put("브레이크 압력 bar","Brake pressure bar");
+        EN.put("블로오프","Blow-off");
         EN.put("블루투스 기기 검색·페어링","Bluetooth discovery and pairing");
         EN.put("블루투스 꺼짐 · 차량 설정에서 먼저 켜주세요.","Bluetooth is off. Turn it on in the vehicle settings first.");
         EN.put("블루투스 연결 설정","Bluetooth settings");
@@ -284,11 +288,13 @@ public final class UiText {
         EN.put("쇼 화면","Show screen");
         EN.put("순간 연료소모","Fuel rate");
         EN.put("순간 연비","Instant economy");
+        EN.put("순정","Stock");
         EN.put("숫자","Number");
         EN.put("스로틀","Throttle");
         EN.put("스로틀 %","Throttle %");
         EN.put("스로틀 개도","Throttle position");
         EN.put("스타게이징 블루","Stargazing Blue");
+        EN.put("스포츠 머플러","Sport muffler");
         EN.put("시간  ","Time  ");
         EN.put("시간 30초 × ","Time 30 s × ");
         EN.put("시간 그래프","Values over time");
@@ -462,14 +468,16 @@ public final class UiText {
         EN.put("주행거리","Odometer");
         EN.put("주황 LCD","Orange LCD");
         EN.put("준비 · 정지 상태","Staging · stopped");
+        EN.put("중통 제거","Resonator delete");
         EN.put("지각 (추정)","Retard (est.)");
         EN.put("지각 추정","Est. retard");
         EN.put("지금","Now");
         EN.put("지금 연비 ","Now ");
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
+        EN.put("지연 보정","Latency compensation");
+        EN.put("직렬 6기통 터보","Inline-6 turbo");
         EN.put("진단","DTC");
         EN.put("진단 서비스에 연결하지 못했습니다.","Could not connect to the diagnostic service.");
-        EN.put("차 음량 노브와 함께 · 이름을 누르면 기본값","Works with the car volume knob · tap the name for the default");
         EN.put("차량 계산값","From the car");
         EN.put("차량 색","Car colour");
         EN.put("차량 속도","Vehicle speed");
@@ -515,6 +523,7 @@ public final class UiText {
         EN.put("탭: 시작","Tap: start");
         EN.put("탭: 정지","Tap: stop");
         EN.put("탭: 초기화","Tap: reset");
+        EN.put("터보 휘슬","Turbo whistle");
         EN.put("테마","Theme");
         EN.put("토크 (계산)","Torque (calc.)");
         EN.put("통과 속도","Trap speed");
@@ -525,6 +534,7 @@ public final class UiText {
         EN.put("트립 평균 ","Trip average ");
         EN.put("틸","Teal");
         EN.put("파이어리 레드","Fiery Red");
+        EN.put("팝 빈도","Pop rate");
         EN.put("팬텀 블랙","Phantom Black");
         EN.put("퍼포먼스","Perf");
         EN.put("퍼포먼스 블루","Performance Blue");
@@ -541,6 +551,7 @@ public final class UiText {
         EN.put("폴라 화이트","Polar White");
         EN.put("표시 항목","Signal");
         EN.put("표시할 설치 앱이 없습니다. 앱 설치 뒤 다시 열거나 목록 편집에서 선택하세요.","No installed apps to show. Reopen after installing an app or select one in Edit app list.");
+        EN.put("풀 배기 · 팝앤뱅","Straight pipe · pops");
         EN.put("풀부하 기준","Full-load line");
         EN.put("풀부하에서 점화가 기준선보다","Spark later than the full-load line");
         EN.put("플래티넘 실버","Platinum Silver");

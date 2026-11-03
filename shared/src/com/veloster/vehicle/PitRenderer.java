@@ -59,9 +59,15 @@ public final class PitRenderer {
     private int[] modeTargets=ClusterPicker.MODE_DEFAULT.clone();
     /** pick = the ClusterPicker.MODES slot whose screen is being chosen, or -1; targets = each mode's screen (-1 원래 화면). */
     public void setSettings(int cat,String language,int pick,int[] targets){settingsCat=cat;langSel=language;pickSlot=pick;modeTargets=targets;}
-    /** Virtual engine sound settings: switch, route index (SettingsLayout.SOUND_ROUTES) and volume percent. */
-    private boolean soundOn;private int soundRoute,soundVolume=70;
-    public void setSound(boolean on,int route,int volume){soundOn=on;soundRoute=route;soundVolume=volume;}
+    /** Virtual engine sound settings: switch, route (SettingsLayout.SOUND_ROUTES), engine and exhaust, and the − / + values. */
+    private boolean soundOn;private int soundRoute,soundEngine,soundExhaust;private int[] soundVals=SettingsLayout.SOUND_DEFAULT;
+    public void setSound(boolean on,int route,int engine,int exhaust,int[] vals){soundOn=on;soundRoute=route;soundEngine=engine;soundExhaust=exhaust;soundVals=vals;}
+    /** − / + sound rows from SettingsLayout.SOUND_VOLUME on (the first line is the name, the tap on it the default). */
+    private static final String[] SOUND_ROW_NAMES={"음량","팝 빈도","터보 휘슬","블로오프","지연 보정"};
+    private String soundValue(int row){
+        int v=soundVals[row-SettingsLayout.SOUND_VOLUME];
+        return row==SettingsLayout.SOUND_LEAD?(v==0?UiText.t("끔"):v+" ms"):v+" %";
+    }
     private static String screenName(int s){return s>=0&&s<ClusterPicker.COUNT?ClusterPicker.NAMES[s]:"원래 화면";}
     /** Body tap on a Cluster layout (taxi meter button and the like); true when it was used. */
     public boolean clusterTap(float x,float y){return symmetric&&isCluster(page)&&clusterRenderer.tap(page-PAGE_CLASSIC,x,y);}
@@ -224,9 +230,13 @@ public final class PitRenderer {
                 case SettingsLayout.RPM:name=i==SettingsLayout.RPM_SHIFT?"변속 목표":"레드라인";
                     sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
                 case SettingsLayout.SOUND:
-                    if(i==SettingsLayout.SOUND_ON){sel=soundOn;name="엔진 사운드";sub="RPM·페달·부스트로 합성 · 계기판이 열려 있을 때 · 후진 무음";value=soundOn?"켬":"끔";}
-                    else if(i==SettingsLayout.SOUND_ROUTE){name="출력 경로";dim=!soundOn;sub="눌러서 바꾸기 · 소리가 나는 경로를 찾는 시험";value=SettingsLayout.SOUND_ROUTES[soundRoute];}
-                    else{name="음량";dim=!soundOn;sub="차 음량 노브와 함께 · 이름을 누르면 기본값";}
+                    if(i==SettingsLayout.SOUND_ON){sel=soundOn;name="엔진 사운드";value=soundOn?"켬":"끔";}
+                    else if(i==SettingsLayout.SOUND_ROUTE){name="출력 경로";dim=!soundOn;value=SettingsLayout.SOUND_ROUTES[soundRoute];}
+                    else if(i==SettingsLayout.SOUND_ENGINE){name="엔진";dim=!soundOn;value=SettingsLayout.SOUND_ENGINES[soundEngine];}
+                    else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}
+                    else{name=SOUND_ROW_NAMES[i-SettingsLayout.SOUND_VOLUME];
+                        boolean noTurbo=(i==SettingsLayout.SOUND_TURBO||i==SettingsLayout.SOUND_BOV)&&!SettingsLayout.SOUND_HAS_TURBO[soundEngine];
+                        dim=!soundOn||noTurbo;}   // one line per row: nine rows fill the pane
                     break;
                 case SettingsLayout.LANG:sel=SettingsLayout.LANGS[i].equals(langSel);name=SettingsLayout.LANG_NAMES[i];break;
                 default:name="고장코드 읽기";sub="엔진·변속기·제동·조향·에어백·바디 (읽기만)";
@@ -240,8 +250,8 @@ public final class PitRenderer {
             int ink=dim?MUTED:sel?BLUE:WHITE;
             if(sub==null)text(c,UiText.t(name),tx,t+h/2+7,18,ink,true);
             else{text(c,UiText.t(name),tx,t+h/2-3,18,ink,true);text(c,UiText.t(sub),tx,t+h/2+17,12,cat==SettingsLayout.SCREENS&&!dim?BLUE:MUTED,cat==SettingsLayout.SCREENS);}
-            if(cat==SettingsLayout.RPM||cat==SettingsLayout.SOUND&&i==SettingsLayout.SOUND_VOLUME){   // value, then − and +
-                float by=t+(h-SettingsLayout.SBTN_W)/2;String v=cat==SettingsLayout.SOUND?soundVolume+" %":(i==SettingsLayout.RPM_SHIFT?shiftTarget:(int)profile.redline)+" rpm";
+            if(cat==SettingsLayout.RPM||cat==SettingsLayout.SOUND&&i>=SettingsLayout.SOUND_VOLUME){   // value, then − and +
+                float by=t+(h-SettingsLayout.SBTN_W)/2;String v=cat==SettingsLayout.SOUND?soundValue(i):(i==SettingsLayout.RPM_SHIFT?shiftTarget:(int)profile.redline)+" rpm";
                 paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);text(c,v,SettingsLayout.upBtnL()-14-paint.measureText(v),t+h/2+7,18,BLUE,true);
                 button(c,"−",SettingsLayout.upBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,BLUE);
                 button(c,"+",SettingsLayout.downBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,BLUE);

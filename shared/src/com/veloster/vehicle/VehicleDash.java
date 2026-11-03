@@ -68,8 +68,11 @@ public final class VehicleDash extends View implements Runnable {
     private boolean resumed;
     private long entryRequestUntil;
     private int shiftTarget,redline;
-    /** Virtual engine sound (settings 사운드): on/off, EngineSound route and volume percent; plays while the dashboard is shown. */
-    private boolean soundOn;private int soundRoute,soundVolume=70;
+    /** Virtual engine sound (settings 사운드): on/off, EngineSound route, engine and exhaust, and the − / + values
+     *  (SettingsLayout.SOUND_VOLUME on: volume, pop rate, turbo whistle, blow-off in %, latency compensation in ms). */
+    private boolean soundOn;private int soundRoute,soundEngine,soundExhaust;
+    private final int[] soundVals=SettingsLayout.SOUND_DEFAULT.clone();
+    private static final String[] SOUND_KEYS={"engine_sound_volume","engine_sound_pop","engine_sound_turbo","engine_sound_bov","engine_sound_lead_ms"};
     private EngineSound sound;
     private float regenEnd=Float.NaN;   // odometer at the last DPF regeneration's end, saved when Telemetry moves it   // as saved, 0 = the profile's default
     private final java.util.concurrent.atomic.AtomicBoolean mediaPending=new java.util.concurrent.atomic.AtomicBoolean();
@@ -109,9 +112,12 @@ public final class VehicleDash extends View implements Runnable {
         redline=a.getSharedPreferences("pit_vehicle_ui",0).getInt("redline",0);VehicleProfile.setRedline(redline);
         sound=new EngineSound(a.getApplicationContext(),DATA);
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);soundOn=p.getBoolean("engine_sound",false);
-            soundRoute=Math.max(0,Math.min(SettingsLayout.SOUND_ROUTES.length-1,p.getInt("engine_sound_route",0)));soundVolume=Math.max(10,Math.min(100,p.getInt("engine_sound_volume",70)));}
+            soundRoute=Math.max(0,Math.min(SettingsLayout.SOUND_ROUTES.length-1,p.getInt("engine_sound_route",0)));
+            soundEngine=Math.max(0,Math.min(EngineSynth.engines()-1,p.getInt("engine_sound_engine",0)));
+            soundExhaust=Math.max(0,Math.min(EngineSynth.exhausts()-1,p.getInt("engine_sound_exhaust",0)));
+            for(int k=0;k<soundVals.length;k++)soundVals[k]=Math.max(SettingsLayout.SOUND_MIN[k],Math.min(SettingsLayout.SOUND_MAX[k],p.getInt(SOUND_KEYS[k],SettingsLayout.SOUND_DEFAULT[k])));}
         catch(ClassCastException e){/* Sound off for an incompatible saved value. */}
-        sound.volume(soundVolume);
+        applySound();
         try{regenEnd=a.getSharedPreferences("pit_vehicle_ui",0).getFloat("dpf_regen_end_odo",Float.NaN);DATA.dpfRegenEnd(regenEnd);}
         catch(ClassCastException e){/* Incompatible saved value: count from the next regeneration. */}
         try{Theme.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("theme","n"));}
@@ -132,6 +138,10 @@ public final class VehicleDash extends View implements Runnable {
         }catch(ClassCastException e){/* Open on Overview, everything shown, for an incompatible saved value. */}
         applyScreen();
         setVisibility(GONE); }
+    /** Hands the saved sound choices to the audio thread. */
+    private void applySound(){
+        sound.volume(soundVals[0]);sound.voice(soundEngine,soundExhaust);sound.trims(soundVals[1],soundVals[2],soundVals[3],soundVals[4]);
+    }
     public static void attach(Activity a) {
         try {
             FrameLayout parent=(FrameLayout)a.findViewById(android.R.id.content);
@@ -270,7 +280,7 @@ public final class VehicleDash extends View implements Runnable {
         }
         renderer.setPicker(picker,editing,hidden);renderer.setOrder(order,settingsScroll);
         renderer.setModeOptions(modeColor,modeScreen);
-        if(picker&&editing){renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);renderer.setSound(soundOn,soundRoute,soundVolume);}
+        if(picker&&editing){renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);renderer.setSound(soundOn,soundRoute,soundEngine,soundExhaust,soundVals);}
         renderer.setLap(lapRunning?now-lapStart:lapMs,lapRunning);
         renderer.setOverviewLayout(overviewLayout);
         long drawStart=System.nanoTime();
@@ -372,9 +382,12 @@ public final class VehicleDash extends View implements Runnable {
                 case SettingsLayout.SOUND:
                     if(i==SettingsLayout.SOUND_ON)soundOn=!soundOn;
                     else if(i==SettingsLayout.SOUND_ROUTE)soundRoute=(soundRoute+1)%SettingsLayout.SOUND_ROUTES.length;
-                    else{int z=SettingsLayout.screenZone(x);if(z!=SettingsLayout.screenZone(downX))break;   // − / + step 10 %, the rest of the row 70 %
-                        soundVolume=z==1?Math.max(10,soundVolume-10):z==2?Math.min(100,soundVolume+10):70;sound.volume(soundVolume);}
-                    e.putBoolean("engine_sound",soundOn).putInt("engine_sound_route",soundRoute).putInt("engine_sound_volume",soundVolume);
+                    else if(i==SettingsLayout.SOUND_ENGINE)soundEngine=(soundEngine+1)%EngineSynth.engines();
+                    else if(i==SettingsLayout.SOUND_EXHAUST)soundExhaust=(soundExhaust+1)%EngineSynth.exhausts();
+                    else{int z=SettingsLayout.screenZone(x);if(z!=SettingsLayout.screenZone(downX))break;   // − / +; the rest of the row is the default
+                        int sv=i-SettingsLayout.SOUND_VOLUME;soundVals[sv]=SettingsLayout.soundStep(i,soundVals[sv],z);e.putInt(SOUND_KEYS[sv],soundVals[sv]);}
+                    applySound();
+                    e.putBoolean("engine_sound",soundOn).putInt("engine_sound_route",soundRoute).putInt("engine_sound_engine",soundEngine).putInt("engine_sound_exhaust",soundExhaust);
                     sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);break;
                 case SettingsLayout.DIAG:DtcDialog.show(activity);break;   // read-only trouble codes
             }

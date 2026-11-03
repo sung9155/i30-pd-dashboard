@@ -27,6 +27,12 @@ final class EngineSound implements Runnable {
     private int route=-1;
     EngineSound(Context context,Telemetry data){this.context=context;this.data=data;}
     void volume(int percent){volume=Math.max(0,Math.min(100,percent))/100f;}
+    /** Engine and exhaust (EngineSynth tables), pop rate / turbo whistle / blow-off in percent of the voice's own, and
+     *  the latency compensation in ms. Picked up by the audio thread on its next block. */
+    private volatile EngineSynth.Voice voice=EngineSynth.voice(0,0);
+    private volatile double popRate=1,turboVol=1,bovVol=1,lead=.08;
+    void voice(int engine,int exhaust){voice=EngineSynth.voice(engine,exhaust);}
+    void trims(int popPercent,int turboPercent,int bovPercent,int leadMs){popRate=popPercent/100.0;turboVol=turboPercent/100.0;bovVol=bovPercent/100.0;lead=leadMs/1000.0;}
 
     /** Idempotent. route -1 stops. A new route stops the old thread first, so its endAudio never closes the new path. */
     synchronized void play(int r){
@@ -49,7 +55,7 @@ final class EngineSound implements Runnable {
             if(micom>=0)router=startMicom(micom);
             track.play();
             android.util.Log.i("VehicleDash","Engine sound on: route "+r+" stream "+ROUTE_STREAM[r]+" micom 0x"+Integer.toHexString(micom)+" min buffer "+min);
-            EngineSynth synth=new EngineSynth();float[] f=new float[BLOCK];short[] pcm=new short[BLOCK];
+            EngineSynth.Voice playing=voice;EngineSynth synth=new EngineSynth(EngineSynth.RATE,playing);float[] f=new float[BLOCK];short[] pcm=new short[BLOCK];
             while(thread==Thread.currentThread()){
                 long now=SystemClock.elapsedRealtime();
                 Telemetry.Sample rpm=data.sample(0,now),pedal=data.sample(9,now),boost=data.sample(Telemetry.BOOST,now),
@@ -57,6 +63,8 @@ final class EngineSound implements Runnable {
                 Telemetry.Sample gear=data.sample(8,now);
                 boolean reverse=selector.valid&&(int)selector.value==1||gear.valid&&(int)gear.value==14;   // DCT lever R, or 6MT reverse
                 synth.set(rpm.valid&&rpm.ageMs<=1000&&!reverse?rpm.value:Double.NaN,pedal.valid?pedal.value/100.0:0,boost.valid?boost.value:0);
+                if(voice!=playing){playing=voice;synth.use(playing);}
+                synth.popRate=popRate;synth.turboVol=turboVol;synth.bovVol=bovVol;synth.lead=lead;
                 synth.render(f,0,BLOCK,volume);
                 for(int i=0;i<BLOCK;i++)pcm[i]=(short)Math.round(f[i]*32000);
                 track.write(pcm,0,BLOCK);

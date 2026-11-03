@@ -24,6 +24,22 @@ public final class HeaderTabsTest {
         h.setTabs(ids,w,n-1);
         check(h.maxScroll()>0&&h.moreLeft()&&h.current()==n-1,"overflow scrolls and the last tab is current");
         check(h.x(n-1)+w[n-1]<=HeaderTabs.RIGHT+0.5f,"the current tab is scrolled fully into view");
+        // the current tab is brought into view only when the current screen changes, so a drag can look past it
+        h.setTabs(ids,w,0);check(h.scroll()==0,"a new current screen (first tab) scrolls back to it");
+        h.down(500,20);h.move(300,20);h.up();h.setTabs(ids,w,0);
+        check(h.scroll()==200,"next frame keeps the dragged position though the current tab is off-strip");
+        h.setTabs(ids,w,n-1);check(h.x(n-1)+w[n-1]<=HeaderTabs.RIGHT+0.5f,"switching screens snaps to its tab again");
+        // a drag may start just below the tabs (above the body's swipe zone)
+        h.setTabs(ids,w,0);h.down(400,50);check(h.move(380,50)&&h.scroll()==20&&h.up(),"a drag starting at y 50 scrolls the strip");
+        check(HeaderTabs.GRAB<=52,"the grab zone ends where the body swipe begins (y > 52)");
+        // a quick flick coasts on and stops; a slow drag released at rest does not
+        h.setTabs(ids,w,0);h.down(500,20);h.move(480,20,1000);h.move(460,20,1016);h.move(440,20,1032);
+        float s0=h.scroll();check(h.up(1040)&&h.flinging(),"a flick released while moving coasts");
+        h.step(1100);check(h.scroll()>s0,"the coast keeps scrolling the same way");
+        for(long t=1116;t<4000&&h.flinging();t+=16)h.step(t);
+        check(!h.flinging()&&h.scroll()<=h.maxScroll(),"the coast stops, clamped");
+        h.down(300,20);check(!h.flinging(),"touching stops a coast");
+        h.move(250,20,5000);h.move(250,20,5300);check(h.up(5300)&&!h.flinging(),"a drag that ends at rest does not coast");
         // gear button sits right of the strip, clear of the clock
         float gx=HeaderTabs.GEAR_L+HeaderTabs.GEAR_W/2,gy=HeaderTabs.TOP+HeaderTabs.H/2;
         check(HeaderTabs.gear(gx,gy)&&!HeaderTabs.gear(gx,60)&&!HeaderTabs.gear(130,gy),"gear button hits only itself");

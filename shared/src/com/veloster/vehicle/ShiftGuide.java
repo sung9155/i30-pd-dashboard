@@ -4,7 +4,7 @@ package com.veloster.vehicle;
 public final class ShiftGuide {
     public static int clamp(int rpm,int min,int max) { return Math.max(min,Math.min(max,rpm/100*100)); }
     /** The saved target inside the profile's range; 0 (never set) is the profile's default (diesel 4200, not 6000). */
-    public static int target(int saved,VehicleProfile p) { return saved<=0?p.shiftDefault:clamp(saved,p.shiftMin,p.shiftMax); }
+    public static int target(int saved,VehicleProfile p) { return saved<=0?p.shiftDefault:clamp(saved,p.shiftMin,p.shiftTop()); }
     public static final class Cue {
         public final int leds;
         public final boolean shift;
@@ -12,7 +12,7 @@ public final class ShiftGuide {
     }
     public static Cue evaluate(Telemetry.Sample[] s,int target) { return evaluate(s,target,VehicleProfile.PETROL_DCT); }
     public static Cue evaluate(Telemetry.Sample[] s,int target,VehicleProfile p) {
-        target=clamp(target,p.shiftMin,p.shiftMax);
+        target=clamp(target,p.shiftMin,p.shiftTop());
         boolean fresh=s[0].valid && s[0].ageMs<=500;
         // 15 LEDs over the last quarter below the target: 4500-6000 at 6000 (100 rpm each, as before), 2250-3000 at
         // 3000, so a low everyday target does not light the bar from idle.

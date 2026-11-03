@@ -11,6 +11,14 @@ public final class CarPaintTest {
         for(int i=0;i<CarPaint.IDS.length;i++)CarPaint.next();
         check(CarPaint.id().equals("blue"),"next() wraps after the last paint");
         check(CarPaint.IDS.length==CarPaint.LABELS.length,"one label per paint");
+        // every colour of the 2016 launch (신형 i30 press release) is offered
+        for(String n:new String[]{"팬텀 블랙","폴라 화이트","플래티넘 실버","데미타스 브라운","아이언 그레이","스타게이징 블루","파이어리 레드","마리나 블루","인텐스 카퍼"})
+            check(java.util.Arrays.asList(CarPaint.LABELS).contains(n),"2016 launch paint offered: "+n);
+        check(java.util.Arrays.asList(CarPaint.LABELS).contains("미드나이트 퍼플"),"a tuning purple is offered");
+        check(java.util.Arrays.asList(CarPaint.LABELS).contains("카키"),"khaki is offered");
+        CarPaint.select("marina");int marina=CarPaint.body()[0];CarPaint.select("intense");int intense=CarPaint.body()[0];
+        check((marina&0xff)>(intense&0xff),"Marina Blue is the vivid blue, Intense Blue the deeper one");
+        for(int i=0;i<CarPaint.IDS.length;i++){CarPaint.select(i);check(CarPaint.body().length==4,"four shades for "+CarPaint.id());}
         System.out.println("PASS car paint checks");
     }
 }

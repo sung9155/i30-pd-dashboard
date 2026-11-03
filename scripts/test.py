@@ -33,6 +33,9 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/DayPhase.java",
                ROOT / "shared/src/com/veloster/vehicle/TaxiFare.java",
                ROOT / "shared/src/com/veloster/vehicle/CarPaint.java",
+               ROOT / "shared/src/com/veloster/vehicle/RoadJolt.java",
+               ROOT / "shared/src/com/veloster/vehicle/Weather.java",
+               ROOT / "shared/src/com/veloster/vehicle/ArcadeCarFrames.java",
                ROOT / "shared/src/com/veloster/i18n/UiText.java",
                ROOT / "apps/dashboard/src/com/veloster/dashboard/HscanFrameDecoder.java"]
     sources += [hub / (name + ".java") for name in ("RadioTrial", "BluetoothSession", "RebootRequest", "QuickEntryPolicy")]

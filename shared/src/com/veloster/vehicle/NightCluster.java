@@ -38,6 +38,7 @@ final class NightCluster extends ClusterKit {
         for(int i=Telemetry.TPMS_FL;i<=Telemetry.TPMS_RR;i++){float t=v(i);if(!Float.isNaN(t)&&t<30)return t("타이어 공기압 낮음");}
         if(!Float.isNaN(cool)&&cool>=110)return t("냉각수 과열");
         if(v(Telemetry.PARK_BRAKE)>0&&v(7)>3)return t("주차 브레이크");
+        if(v(Telemetry.DPF_REGEN)>0)return t("DPF 재생 중");
         return null;
     }
     private void arrow(Canvas c,float x,int dir,boolean on){

@@ -55,7 +55,7 @@ final class WarpCluster extends ClusterKit {
         mono(c,"ENERGY",150,376,12,MU,Paint.Align.LEFT);
         float ef=Float.isNaN(boost)?0:clamp((boost+0.7f)/(top+0.7f),0,1);
         for(int i=0;i<10;i++)fill(c,150+i*10,384,158+i*10,408,i<Math.round(ef*10)?(i>7?0xffffb35a:AC):0xff18203a);
-        mono(c,fmt("%+.2f",boost)+String.format(Locale.US," / %.1f bar",top),150,428,13,TX,Paint.Align.LEFT);
+        mono(c,fmt("%+.2f",boost)+String.format(Locale.US," / %.1f bar",top),258,428,12,TX,Paint.Align.RIGHT);   // right-aligned to the bar's end so it stays inside the panel
         // inertia radar
         round(c,282,352,518,466,8,PANEL);outline(c,282,352,518,466,8,1,EDGE);
         float rx=400,ry=410,rad=48;

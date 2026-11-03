@@ -19,7 +19,7 @@ public final class TabsPreview {
         for(String line:Files.readAllLines(new File(a[0]).toPath(),StandardCharsets.UTF_8))if(line.startsWith("RAW "))raw.add(line.substring(4).replace(" ","").trim());
         File out=new File(a[1]);out.mkdirs();
         Theme.select(System.getProperty("preview.theme","n"));   // PREVIEW_THEME=lambo|bmw|ice|mono|amber|teal|night|rose|copper in preview.sh
-        CarPaint.select(System.getProperty("preview.paint","blue"));   // PREVIEW_PAINT=white|red|black|grey|navy|brown|intense|orange
+        CarPaint.select(System.getProperty("preview.paint","blue"));   // PREVIEW_PAINT=white|red|black|grey|navy|brown|intense|orange|marina|silver|copper|purple|khaki
         float at=a.length>2?Float.parseFloat(a[2]):1f;   // 0..1 position in the log
         long secs=600_000;for(String line:Files.readAllLines(new File(a[0]).toPath(),StandardCharsets.UTF_8))
             if(line.startsWith("# PC_START")&&line.contains("SECS="))secs=Long.parseLong(line.replaceAll(".*SECS=(\\d+).*","$1"))*1000;
@@ -47,9 +47,14 @@ public final class TabsPreview {
         save(out,"4c_race_music",rec,model,now,false,true);   // race tab with the music panel toggled on
         race(out,"4c_race_mt",rec,model,now,VehicleProfile.PETROL_MT,1);       // 6MT: clutch cell left of the brake, pressed
         race(out,"4c_race_mt_out",rec,model,now,VehicleProfile.PETROL_MT,0);   // and released
+        race(out,"4c_race_mt_hint",rec,model,now,VehicleProfile.PETROL_MT,0,4); // the ECU's shift hint (▲4) on its red band
         race(out,"4c_race_diesel",rec,model,now,VehicleProfile.DIESEL_DCT,-1); // DPF slot instead of SPARK
-        model.obd(0x8b,new byte[]{0x11,0x01,(byte)0x9e,0,0,0,0},now);model.obd(0x7a,new byte[]{0x01,0x05,(byte)0xdc,0,0,0,0},now);   // standard DPF PIDs: regenerating, trigger 62 %
+        model.obd(0x8b,new byte[]{0x11,0x01,(byte)0x9e,0,0,0,0},now);model.obd(0x7a,new byte[]{0x01,0x05,(byte)0xdc,0,0,0,0},now);model.obd(0x7c,new byte[]{0x01,0x19,0x64,0,0,0,0,0,0},now);   // standard DPF PIDs: regenerating, trigger 62 %, 15 kPa, 610 °C
         race(out,"4c_race_diesel_regen",rec,model,now,VehicleProfile.DIESEL_DCT,-1);
+        // after it: trigger 38 %, 6.5 kPa, 310 °C, 123 km since the regeneration ended (ECU average 480 km, shown in turn)
+        model.obd(0x8b,new byte[]{0x51,0x00,(byte)0x61,0,0,0x01,(byte)0xe0},now);model.dpfRegenEnd(model.sample(Telemetry.ODOMETER,now).value-123);
+        model.obd(0x8b,new byte[]{0x51,0x00,(byte)0x61,0,0,0x01,(byte)0xe0},now);model.obd(0x7a,new byte[]{0x01,0x02,(byte)0x8a,0,0,0,0},now);model.obd(0x7c,new byte[]{0x01,0x0d,(byte)0xac,0,0,0,0,0,0},now);
+        race(out,"4c_race_diesel_dpf",rec,model,now/6000*6000,VehicleProfile.DIESEL_DCT,-1);race(out,"4c_race_diesel_dpf_avg",rec,model,now/6000*6000+3000,VehicleProfile.DIESEL_DCT,-1);
         rec.setPage(PitRenderer.PAGE_RECORDS);save(out,"4d_records",rec,model,now,false,false);
         String[] layouts={"9a_cluster_classic","9b_cluster_retro","9c_cluster_rally","9d_cluster_taxi","9e_cluster_80s","9f_cluster_hud","9g_cluster_8bit","9g_cluster_8bit_chase",
             "9i_cluster_gcircle","9j_cluster_night","9k_cluster_drag","9l_cluster_engine","9m_cluster_cassette","9n_cluster_warp"};
@@ -60,11 +65,11 @@ public final class TabsPreview {
         save(out,"9i_cluster_gcircle_m",rec,model,now,false,false);
         int back=!sel.valid?5:sel.value==0?0:sel.value==1?7:sel.value==2?6:sel.value==4?8:5;model.hscanPd(0xc7,0x1d,new byte[]{0,(byte)back,0,0,0,0,0,0},now);
         // Which layouts follow the theme: render a few under Copper. Night/Engine/Warp (and G-circle/Drag) recolour; 8-bit and HUD keep their own palette.
-        Theme.select("copper");
+        rec.setPicker(false,false,0);Theme.select("copper");
         int[] tl={9,11,13,8,10,6,5};String[] tn={"night","engine","warp","gcircle","drag","8bit","hud"};
         for(int ti=0;ti<tl.length;ti++){rec.setPage(PitRenderer.PAGE_CLASSIC+tl[ti]);save(out,"z_theme_"+tn[ti]+"_copper",rec,model,now,false,false);}
         Theme.select("n");
-        String[] cats={"screens","theme","paint","mode","lang","diag"};   // settings (the gear), one shot per category
+        String[] cats={"screens","theme","paint","mode","rpm","lang","diag"};   // settings (the gear), one shot per category
         rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<20));rec.setModeOptions(true,false);
         int[] targets={ClusterPicker.F1+2,ClusterPicker.GAUGES,-1};   // SPORT set to the race page, ECO to the gauges
         for(int k=0;k<cats.length;k++){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k],rec,model,now,false,false);}
@@ -93,6 +98,19 @@ public final class TabsPreview {
         p=new PitRenderer();p.setGraphLayout(new GraphLayout());save(out,"7_graph",p,model,now,false,false);
         GraphLayout picked=new GraphLayout();picked.signal(0,0);picked.signal(1,7);picked.signal(2,Telemetry.STEERING);picked.window(300000);
         p.setGraphLayout(picked);save(out,"8_graph_rpm_speed_steer_5min",p,model,now,false,false);
+        // 6MT clutch on F1 and performance, diesel DPF on engine/night/classic/retro (synthetic values on top of the log).
+        Telemetry mt=new Telemetry();
+        for(int k=0;k<31;k++)mt.hscanPd(0xc7,0x1d,new byte[]{0,0,0,0,0,0,0,0},now-40+k);   // frozen lever slot: a 6MT
+        mt.hscanPd(0xc7,0x0c,new byte[]{0,0,0,0,0,0,0x66,0},now);mt.hscanPd(0xc7,0x08,new byte[]{5,11,(byte)0xe0,0x2e,11,10,0,0x7f},now);
+        mt.hscanPd(0xc7,0x09,new byte[]{0,(byte)0xaf,0,(byte)0x8c,0,0,0,0x10},now);   // EMS12 clutch IN
+        save(out,"x_f1_mt_clutch",new PitRenderer(),mt,now,true,false);
+        Telemetry.Sample[] ps=model.snapshot(now);ps[Telemetry.CLUTCH]=new Telemetry.Sample(1,true,false,true,false,0);
+        {BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas pc=new android.graphics.Canvas(img.createGraphics());
+         perf.draw(pc,800,480,false,model,now,0,false,null);android.graphics.Paint bg=new android.graphics.Paint(1);bg.setColor(Theme.current().map(0xff040506));pc.drawRect(0,53,800,480,bg);
+         new PerformanceRenderer().draw(pc,ps,83456,false,VehicleProfile.PETROL_MT);ImageIO.write(img,"png",new File(out,"x_perf_mt_clutch.png"));}
+        model.obd(0x8b,new byte[]{0x11,0x01,(byte)0x9e,0,0,0,0},now);   // regenerating, trigger 62 %
+        int[] dl={11,9,0,2};String[] dn={"engine","night","classic","rally"};   // classic and rally carry the warning-lamp row
+        for(int k=0;k<dl.length;k++)cluster(out,"x_"+dn[k]+"_diesel_regen",dl[k],model,now,rec.stats(),VehicleProfile.DIESEL_DCT);
     }
     private static void feed(Telemetry model,String hex,long now){
         byte[] b=new byte[hex.length()/2];
@@ -106,11 +124,13 @@ public final class TabsPreview {
     }
     /** Race tab for a profile the 7DCT log cannot detect: header from PitRenderer, body redrawn with prof and the
      * clutch sample forced (-1 leaves it as logged). */
-    private static void race(File dir,String name,PitRenderer r,Telemetry m,long now,VehicleProfile prof,int clutch) throws Exception {
+    private static void race(File dir,String name,PitRenderer r,Telemetry m,long now,VehicleProfile prof,int clutch) throws Exception {race(dir,name,r,m,now,prof,clutch,0);}
+    private static void race(File dir,String name,PitRenderer r,Telemetry m,long now,VehicleProfile prof,int clutch,int hint) throws Exception {
         BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
         r.draw(c,800,480,false,m,now,0,false,null);
         Telemetry.Sample[] s=m.snapshot(now);
         if(clutch>=0)s[Telemetry.CLUTCH]=new Telemetry.Sample(clutch,true,false,true,false,0);
+        if(hint!=0)s[Telemetry.SHIFT_HINT]=new Telemetry.Sample(hint,true,false,true,false,0);
         android.graphics.Paint bg=new android.graphics.Paint(1);bg.setColor(Theme.current().map(0xff040506));c.drawRect(0,53,800,480,bg);
         new RaceRenderer().draw(c,s,ShiftGuide.evaluate(s,ShiftGuide.target(0,prof),prof),now,r.stats(),prof,false,null,null);
         ImageIO.write(img,"png",new File(dir,name+".png"));

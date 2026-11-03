@@ -42,6 +42,7 @@ public final class QuickEntryService extends Service {
     private String renderedLanguage;
     private final BroadcastReceiver screen=new BroadcastReceiver(){public void onReceive(Context context,Intent intent){
         if(Intent.ACTION_SCREEN_OFF.equals(intent.getAction()))removeOverlay();else refreshOverlay();
+        if(Intent.ACTION_SCREEN_ON.equals(intent.getAction()))ConsentSkip.onWake(context);   // ignition with quick boot: no BOOT_COMPLETED
     }};
     private static SharedPreferences prefs(Context context){return context.getSharedPreferences(PREFS,Context.MODE_PRIVATE);}
     public static int mode(Context context){

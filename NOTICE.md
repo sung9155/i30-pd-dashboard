@@ -8,6 +8,10 @@
 
 CAN 메시지·신호의 배치와 배율은 [commaai/opendbc](https://github.com/commaai/opendbc)(MIT)의 Hyundai DBC(`hyundai_2015_ccan.dbc`, `hyundai_kia_generic.dbc`)를 참고했고, 실차 로그로 확인했습니다. DBC 파일 자체는 이 레포에 넣지 않았습니다. `i30pd_port/tools/`의 도구는 사용자가 받은 DBC 파일 경로를 인자로 받습니다.
 
+## 아케이드 화면의 차 그림
+
+8비트 아케이드 화면의 i30 N 뒷모습(`ArcadeCarFrames`)은 Sketchfab의 3D 모델 [hyundai i30 n](https://sketchfab.com/3d-models/hyundai-i30-n-90c3bd24390b46299cf01c16d5e8091f)(amogusstrikesback2, CC BY 표시)을 13개 각도로 그린 뒤 앱 팔레트의 도트 표(각도마다 81×41칸)로 줄인 것입니다. 모델 파일과 텍스처는 이 레포와 APK에 넣지 않았습니다. 모델 설명에 따르면 게임에서 가져온 모델이라 원래 권리자가 따로 있을 수 있습니다. 권리자가 요청하면 이 그림을 빼겠습니다.
+
 ## 이 레포에 넣지 않은 것
 
 - 현대자동차 순정 펌웨어, 순정 앱, 그 디컴파일 결과. 문서의 "PD 펌웨어 대조"는 공개된 펌웨어를 받아 확인한 사실(클래스·액티비티 이름 등)만 적은 것입니다.

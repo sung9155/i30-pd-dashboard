@@ -208,7 +208,9 @@ public final class PitRenderer {
             switch(cat){
                 case SettingsLayout.SCREENS:dim=(hidden&(1<<i))!=0;name=ClusterPicker.NAMES[i];sub=dim?"미사용":"사용";break;
                 case SettingsLayout.THEME:{Theme th=Theme.of(Theme.IDS[i]);sel=th==Theme.current();name=SettingsLayout.THEME_NAMES[i];sub=th.label;swatch=th.accent;swatchBg=th.map(0xff101315);break;}
-                case SettingsLayout.PAINT:sel=i==CarPaint.index();name=CarPaint.LABELS[i];swatch=CarPaint.color(i);break;
+                case SettingsLayout.PAINT:
+                    if(i==CarPaint.IDS.length){name="8비트 하늘";sub="자동: 와이퍼·외기온·낮 전조등";value=Weather.skyLabel();break;}
+                    sel=i==CarPaint.index();name=CarPaint.LABELS[i];swatch=CarPaint.color(i);break;
                 case SettingsLayout.MODE:
                     if(i<SettingsLayout.MODE_FIRST){sel=i==0?modeColor:modeScreen;name=i==0?"모드 색":"모드 화면";
                         sub=i==0?"ECO 초록 · SPORT 주황":"모드를 바꾸면 아래 화면으로";value=sel?"켬":"끔";}
@@ -216,6 +218,8 @@ public final class PitRenderer {
                     break;
                 case SettingsLayout.PICK:{int s=i<ClusterPicker.COUNT?i:-1;sel=modeTargets[pickSlot]==s;name=screenName(s);
                     if(s>=0&&(hidden&(1<<s))!=0){dim=true;sub="미사용";}break;}
+                case SettingsLayout.RPM:name=i==SettingsLayout.RPM_SHIFT?"변속 목표":"레드라인";
+                    sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
                 case SettingsLayout.LANG:sel=SettingsLayout.LANGS[i].equals(langSel);name=SettingsLayout.LANG_NAMES[i];break;
                 default:name="고장코드 읽기";sub="엔진·변속기·제동·조향·에어백·바디 (읽기만)";
             }
@@ -228,6 +232,12 @@ public final class PitRenderer {
             int ink=dim?MUTED:sel?BLUE:WHITE;
             if(sub==null)text(c,UiText.t(name),tx,t+h/2+7,18,ink,true);
             else{text(c,UiText.t(name),tx,t+h/2-3,18,ink,true);text(c,UiText.t(sub),tx,t+h/2+17,12,cat==SettingsLayout.SCREENS&&!dim?BLUE:MUTED,cat==SettingsLayout.SCREENS);}
+            if(cat==SettingsLayout.RPM){   // value, then − and +
+                float by=t+(h-SettingsLayout.SBTN_W)/2;String v=(i==SettingsLayout.RPM_SHIFT?shiftTarget:(int)profile.redline)+" rpm";
+                paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);text(c,v,SettingsLayout.upBtnL()-14-paint.measureText(v),t+h/2+7,18,BLUE,true);
+                button(c,"−",SettingsLayout.upBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,BLUE);
+                button(c,"+",SettingsLayout.downBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,BLUE);
+            }
             if(value!=null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);String v=UiText.t(value);text(c,v,l+w-20-paint.measureText(v),t+h/2+7,18,sel||cat==SettingsLayout.MODE&&i>=SettingsLayout.MODE_FIRST&&!dim?BLUE:MUTED,true);}
         }
     }
@@ -490,6 +500,12 @@ public final class PitRenderer {
         float fraction=Math.max(0,Math.min(1,numericAt(9)/100));
         for(int i=0;i<20;i++)box(c,x+148+i*10.6f,403,x+155+i*10.6f,421,fraction>i/20f?BLUE:LINE);
     }
+    /** 6MT clutch switch as a chip: filled with the accent and IN while pressed, OUT outlined, a dash with no signal. */
+    private void clutchChip(Canvas c,float x,float y){
+        Telemetry.Sample k=samples[Telemetry.CLUTCH];boolean seen=k.valid,in=seen&&k.value>0;
+        panel(c,x,y,132,18,in?BLUE:0xff111516,in?BLUE:LINE);
+        centered(c,"CLUTCH "+(!seen?"—":in?"IN":"OUT"),x+66,y+13,10,in?BG:MUTED,true);
+    }
     private void pedal(Canvas c,String label,String prefix,String unit,int x,int color,float maximum){
         panel(c,x,377,376,57,0xff111516,LINE);
         text(c,label,x+14,396,10,MUTED,true);
@@ -535,6 +551,7 @@ public final class PitRenderer {
         text(c,"°C",760,310,11,MUTED,false);
         accelPedal(c,18);
         pedal(c,"BRAKE PRESSURE", "브레이크 압력 bar", "bar",406,RED,100);
+        if(profile.trans==VehicleProfile.Trans.MT)clutchChip(c,406+230,382);   // 6MT: the clutch beside the brake (EMS12 CLU_ACK)
         button(c,"−",548,452,42,27,false,BLUE);
         text(c,UiText.t("목표 ")+shiftTarget+" rpm",604,471,12,BLUE,true);
         button(c,"+",740,452,42,27,false,BLUE);

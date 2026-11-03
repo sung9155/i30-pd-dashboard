@@ -14,6 +14,7 @@ public final class UiText {
         EN.put("\n\nAP 켜짐·IP 할당은 상태와 실제 iPhone에서 따로 확인하세요.","\n\nCheck AP state and IP assignment separately in status and on the iPhone.");
         EN.put("\n\n이 기기와 페어링할까요?","\n\nPair with this device?");
         EN.put("\n\n켜면 ☆(사용자 버튼)을 짧게 눌러 계기판을 엽니다. 끄면 원래 기능으로 되돌립니다.\n☆를 길게 눌러 순정 설정 화면을 열면 연결이 풀립니다. 그때는 여기서 다시 켜세요.\n'내 앱'을 강제 종료하면 다시 열 때까지 ☆가 동작하지 않을 수 있습니다.","\n\nWhen on, a short press of ☆ (user button) opens the dashboard. Off puts back the previous function.\nLong-pressing ☆ opens the stock settings screen, which releases it; switch it on here again.\nIf My Apps is force-stopped, ☆ may do nothing until My Apps is opened again.");
+        EN.put("\n\n켜면 내비가 켜질 때 나오는 안내 및 동의 화면을 '내 앱'이 바로 [확인]합니다. 직접 확인 버튼을 누른 것과 같습니다.\n시동을 걸 때마다 동작하려면 실행 바로가기(가장자리 버튼 또는 알림)를 켜 두세요. 꺼져 있으면 내비가 완전히 다시 켜질 때만 동작합니다.","\n\nWhen on, My Apps confirms the notice and consent screen shown when the head unit starts, the same as pressing its confirm button.\nTo act on every ignition, keep Quick entry (edge button or notification) on. Without it, it only acts when the head unit fully restarts.");
         EN.put("\nON: PC 연결용 USB 디버깅 모드\nOFF: 일반 USB 모드로 복귀하며 PC 연결이 끊길 수 있습니다.\n개발자 설정의 일반 USB 토글과는 별개입니다.","\nON: USB debugging mode for a PC connection\nOFF: normal USB mode; the PC connection may disconnect.\nThis is separate from the standard Android developer toggle.");
         EN.put("\n비밀번호: ","\nPassword: ");
         EN.put(" L/h 지금"," L/h now");
@@ -35,13 +36,17 @@ public final class UiText {
         EN.put("8비트","8-bit");
         EN.put("8비트 게임","8-bit game");
         EN.put("8비트 추격 시점","8-bit chase view");
+        EN.put("8비트 하늘","8-bit sky");
         EN.put("AP 상태 13 확인. IP 주소와 iPhone의 SSID 검색을 다음으로 확인하세요.","AP state 13 confirmed. Next check the IP address and whether the iPhone sees the SSID.");
         EN.put("CH1 횡G 0.2 g/div","CH1 lat G 0.2 g/div");
         EN.put("CH2 종G 0.2 g/div","CH2 long G 0.2 g/div");
         EN.put("DPF 온도","DPF temperature");
         EN.put("DPF 재생","DPF regeneration");
+        EN.put("DPF 재생 중","DPF regenerating");
         EN.put("DPF 재생 트리거","DPF regeneration trigger");
+        EN.put("DPF 재생 후 거리","DPF km since regeneration");
         EN.put("DPF 차압","DPF delta pressure");
+        EN.put("DPF 평균 재생 간격","DPF average km between regenerations");
         EN.put("DiPlay 연결을 먼저 종료하세요. 시험 AP를 끄고 백업한 AP 설정과 Wi-Fi 켜짐 상태를 복원합니다.","Disconnect DiPlay first. The test AP will be turned off and the backed-up AP settings and Wi-Fi state restored.");
         EN.put("DiPlay와 iPhone에 입력","Enter in DiPlay and iPhone");
         EN.put("ECO 초록 · SPORT 주황","ECO green · SPORT orange");
@@ -55,6 +60,8 @@ public final class UiText {
         EN.put("N 계기판","N Dashboard");
         EN.put("R · 부스트","R · boost");
         EN.put("RED ALERT · 급제동","RED ALERT · hard braking");
+        EN.put("RPM","RPM");
+        EN.put("SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값","SHIFT warnings · red zones · tap the name for the default");
         EN.put("USB 디버깅","USB debugging");
         EN.put("USB 디버깅 ","USB debugging ");
         EN.put("USB 디버깅 OFF 명령을 보냈습니다(엔지니어 모드 Factory Test 0A 01 → 65 00 → 0A 02와 같은 명령). PC 연결이 끊기지 않으면 시동을 다시 거세요.","USB debugging OFF sent (the same command as Engineer Mode Factory Test 0A 01 → 65 00 → 0A 02). If the PC stays connected, restart the engine.");
@@ -110,6 +117,7 @@ public final class UiText {
         EN.put("공회전 중","Idling");
         EN.put("관성","Inertia");
         EN.put("구간 아래에서 가속하면 측정","starts when you accelerate through the range");
+        EN.put("그대로 표시","shown as usual");
         EN.put("그래프","Graphs");
         EN.put("그래프 ","Graph ");
         EN.put("그래프를 길게 눌러 항목 변경","Hold a graph to change its signal");
@@ -176,12 +184,16 @@ public final class UiText {
         EN.put("람보","Lambo");
         EN.put("랠리","Rally");
         EN.put("랩 타이머","Lap timer");
+        EN.put("레드라인","Redline");
         EN.put("레이스","Race");
+        EN.put("레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값","Race SHIFT ▲ · F1 LEDs · tap the name for the default");
         EN.put("레트로","Retro");
         EN.put("로즈","Rose");
+        EN.put("마리나 블루","Marina Blue");
         EN.put("마찰 토크","Friction torque");
         EN.put("마찰원","Friction circle");
         EN.put("막대","Bar");
+        EN.put("맑음","Clear");
         EN.put("모노","Mono");
         EN.put("모드 색","Mode colour");
         EN.put("모드 화면","Mode screen");
@@ -191,6 +203,7 @@ public final class UiText {
         EN.put("목록 편집","Edit app list");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
+        EN.put("미드나이트 퍼플","Midnight Purple");
         EN.put("미등","Position lamps");
         EN.put("미리 발을 떼면 더 아낍니다","Lift off earlier to save more");
         EN.put("미사용","Off");
@@ -209,6 +222,7 @@ public final class UiText {
         EN.put("범위","Range");
         EN.put("변속 권장","Shift hint");
         EN.put("변속 레버","Shift lever");
+        EN.put("변속 목표","Shift target");
         EN.put("변속 표시·음악","Shift lights, music");
         EN.put("변속기 (TCU)","Transmission (TCU)");
         EN.put("보정 토크","Corrected torque");
@@ -270,6 +284,8 @@ public final class UiText {
         EN.put("시간 30초 × ","Time 30 s × ");
         EN.put("시간 그래프","Values over time");
         EN.put("시간 요금 · 30초당 100원","Time fare · 100 won per 30 s");
+        EN.put("시동 안내 화면 건너뛰기","Skip the start-up notice");
+        EN.put("시동 안내 화면: ","Start-up notice: ");
         EN.put("시스템","System");
         EN.put("시험 접속정보 보기","Show test credentials");
         EN.put("시험 핫스팟 켜기","Test hotspot");
@@ -281,6 +297,7 @@ public final class UiText {
         EN.put("심야 할증 ","Night surcharge ");
         EN.put("아이스","Ice");
         EN.put("아이언 그레이","Iron Grey");
+        EN.put("아케이드","Arcade");
         EN.put("안드로이드 기본앱","Android utilities");
         EN.put("안드로이드 블루투스 어댑터가 없습니다.","No Android Bluetooth adapter is available.");
         EN.put("안드로이드 설정","Android settings");
@@ -366,12 +383,16 @@ public final class UiText {
         EN.put("이전 시험 백업이 남아 있습니다. 먼저 원상복구하세요.","A previous test backup remains. Restore the original settings first.");
         EN.put("이제 ☆ 버튼을 짧게 누르면 계기판이 열립니다.","A short press of ☆ now opens the dashboard.");
         EN.put("인텐스 블루","Intense Blue");
+        EN.put("인텐스 카퍼","Intense Copper");
         EN.put("일반 블루투스(Classic)를 사용합니다. BLE 검색과 GPS 데이터 수신 기능은 포함하지 않습니다.","Uses Classic Bluetooth. BLE discovery and GPS data reception are not included.");
         EN.put("일반 설치 앱은 자동 표시됩니다. 목록에서 숨겨도 앱은 삭제되지 않습니다.","Ordinary installed apps appear automatically. Hiding an app does not uninstall it.");
         EN.put("일시정지","Paused");
         EN.put("읽기 거부","refused");
         EN.put("읽기만 합니다. 고장코드 삭제는 정비소 진단기로 하세요.","Read only. Clear codes with a workshop scan tool.");
         EN.put("잎 1개 = 20점","1 leaf = 20 points");
+        EN.put("자동","Auto");
+        EN.put("자동 확인","confirmed automatically");
+        EN.put("자동: 와이퍼·외기온·낮 전조등","Auto: wipers, outside temp, daytime lamps");
         EN.put("작동","Active");
         EN.put("잔상 3 s","3 s glow");
         EN.put("재생 중","Playing");
@@ -456,7 +477,6 @@ public final class UiText {
         EN.put("최근 30초","Last 30 s");
         EN.put("최근 60초","Last 60 s");
         EN.put("최대 횡G","Max lat G");
-        EN.put("추격","Chase");
         EN.put("출력 (계산)","Power (calc.)");
         EN.put("출발하면 미터가 켜집니다","The meter starts when you drive off");
         EN.put("출발하세요","Go");
@@ -465,6 +485,7 @@ public final class UiText {
         EN.put("측정 중","timing");
         EN.put("카세트","Cassette");
         EN.put("카세트 데크","Cassette deck");
+        EN.put("카키","Khaki");
         EN.put("켜기","Enable");
         EN.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","When enabled, reboot restores only the shortcut, not the full app screen. Drag the edge button to move it.\n\nIf overlays are denied, the notification remains. If the factory UI also hides notifications, use another entry point. Force-stop may prevent restoration until My Apps is opened again.");
         EN.put("켜짐 (짧게 누르면 계기판)","On (short press opens the dashboard)");
@@ -509,6 +530,7 @@ public final class UiText {
         EN.put("표시할 설치 앱이 없습니다. 앱 설치 뒤 다시 열거나 목록 편집에서 선택하세요.","No installed apps to show. Reopen after installing an app or select one in Edit app list.");
         EN.put("풀부하 기준","Full-load line");
         EN.put("풀부하에서 점화가 기준선보다","Spark later than the full-load line");
+        EN.put("플래티넘 실버","Platinum Silver");
         EN.put("한국어","Korean");
         EN.put("할증","Night");
         EN.put("할증 22~04시 · 23~02시 40%","Night 22-04 h · 23-02 h 40%");
@@ -531,6 +553,7 @@ public final class UiText {
         EN.put("횡가속","Lateral G");
         EN.put("후드","Hood");
         EN.put("후드 열림","Hood open");
+        EN.put("흐림","Overcast");
         EN.put("흡기","Intake");
         EN.put("흡기 온도","Intake temperature");
         EN.put("흡기온","Intake");

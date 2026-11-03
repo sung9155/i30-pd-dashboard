@@ -60,7 +60,7 @@ public final class HscanPdTelemetryTest {
         check(dsl.shiftMin==2100&&dsl.shiftMax==4700&&dsl.shiftDefault==4200,"diesel shift range scaled by 4600/6500");
         check(com.veloster.vehicle.ShiftGuide.clamp(2500,pet.shiftMin,pet.shiftMax)==3000,"below the range clamps to 3000");
         check(com.veloster.vehicle.ShiftGuide.target(0,dsl)==4200&&com.veloster.vehicle.ShiftGuide.target(0,pet)==6000,"unset target = profile default");
-        check(com.veloster.vehicle.ShiftGuide.target(6000,dsl)==4700&&com.veloster.vehicle.ShiftGuide.target(3500,pet)==3500,"saved target clamps to the profile");
+        check(com.veloster.vehicle.ShiftGuide.target(6000,dsl)==4600&&com.veloster.vehicle.ShiftGuide.target(3500,pet)==3500,"saved target clamps to the profile, never past the redline (diesel 4600)");
         Telemetry sg=new Telemetry();sg.hscanPd(0xc7,0x1d,b(0,0xc5,0x71,0,0,0,0,0),5000);   // lever in D: a DCT
         sg.hscanPd(0xc7,0x02,b(0,100,0,0),5000);sg.hscanPd(0xc7,0x1f,b(0,0xa0,0x30,0,0,0,0,0),5000);
         int[][] cases={{6000,4499,0},{6000,4500,1},{6000,5950,15},{3000,2000,0},{3000,2250,1},{3000,2990,15}};
@@ -272,7 +272,7 @@ public final class HscanPdTelemetryTest {
         t.obd(0x2f,0x7f,0,3401);check(Math.abs(t.sample(Telemetry.FUEL_LEVEL,3401).value-49.8f)<0.5f,"fuel level ~50%");
         t.obd(0x3c,0x0b,0x54,3402);check(Math.abs(t.sample(Telemetry.CAT_TEMP,3402).value-250f)<1f,"catalyst temp ~250 C");
         t.obd(0x43,0x00,0x31,3403);check(Math.abs(t.sample(Telemetry.ABS_LOAD,3403).value-19.2f)<0.5f,"absolute load ~19%");
-        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.DPF_TRIGGER+1,"label/unit tables cover the added signals");
+        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.DPF_AVG_KM+1,"label/unit tables cover the added signals");
         // diesel DPF PIDs (J1979-DA): a support byte first, only marked fields published; other PIDs fall through
         t.obd(0x7a,new byte[]{0x07,0x05,(byte)0xdc,0,0,0,0},3410);check(Math.abs(t.sample(Telemetry.DPF_DP,3410).value-15f)<0.01f,"DPF delta pressure 1500 x 0.01 = 15 kPa");
         t.obd(0x7a,new byte[]{0x07,(byte)0xff,(byte)0x9c,0,0,0,0},3411);check(Math.abs(t.sample(Telemetry.DPF_DP,3411).value+1f)<0.01f,"delta pressure is signed (-1 kPa)");
@@ -281,6 +281,14 @@ public final class HscanPdTelemetryTest {
         t.obd(0x8b,new byte[]{0x11,0x01,(byte)0x80,0,0,0,0},3414);
         check(t.sample(Telemetry.DPF_REGEN,3414).value==1&&Math.abs(t.sample(Telemetry.DPF_TRIGGER,3414).value-50.2f)<0.2f,"regeneration active, trigger ~50 %");
         check("REGEN".equals(Telemetry.label(Telemetry.DPF_REGEN,1)),"regeneration label");
+        // distance since the last regeneration (counted from the odometer where one ended) and the ECU average
+        {Telemetry k=new Telemetry();k.hscanPd(0xc7,0x03,b(0x15,0xc6,0x0f,0x00),3420);   // odometer 103374.9 km
+        k.obd(0x8b,new byte[]{0x51,0x01,0x40,0,0,0x01,(byte)0xe0},3421);check(!k.sample(Telemetry.DPF_SINCE_KM,3421).valid&&k.sample(Telemetry.DPF_AVG_KM,3421).value==480,"regenerating: no since-km yet, average 480 km");
+        k.obd(0x8b,new byte[]{0x51,0x00,0x05,0,0,0x01,(byte)0xe0},3422);check(Math.abs(k.dpfRegenEnd()-103374.9f)<0.05f&&k.sample(Telemetry.DPF_SINCE_KM,3422).value==0,"the end of a regeneration starts the count");
+        k.hscanPd(0xc7,0x03,b(0x49,0xc6,0x0f,0x00),3423);k.obd(0x8b,new byte[]{0x51,0x00,0x06,0,0,0x01,(byte)0xe0},3424);
+        check(Math.abs(k.sample(Telemetry.DPF_SINCE_KM,3424).value-5.2f)<0.05f,"5.2 km since the regeneration ended");
+        Telemetry r=new Telemetry();r.dpfRegenEnd(103370f);r.hscanPd(0xc7,0x03,b(0x15,0xc6,0x0f,0x00),3425);r.obd(0x8b,new byte[]{0x11,0x00,0x05,0,0,0,0},3426);
+        check(Math.abs(r.sample(Telemetry.DPF_SINCE_KM,3426).value-4.9f)<0.05f,"a saved end point carries over a restart");}
         {Telemetry dpf0=new Telemetry();dpf0.obd(0x8b,new byte[]{0x00,0x01,(byte)0x80,0,0,0,0},3415);
         check(!dpf0.sample(Telemetry.DPF_REGEN,3415).valid&&!dpf0.sample(Telemetry.DPF_TRIGGER,3415).valid,"unsupported fields stay unpublished");
         dpf0.obd(0x2f,new byte[]{0x7f},3416);check(Math.abs(dpf0.sample(Telemetry.FUEL_LEVEL,3416).value-49.8f)<0.5f,"single-byte PIDs still decode through the byte[] path");}

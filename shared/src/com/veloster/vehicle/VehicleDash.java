@@ -67,7 +67,8 @@ public final class VehicleDash extends View implements Runnable {
     private long lastPolicyCheck;
     private boolean resumed;
     private long entryRequestUntil;
-    private int shiftTarget;
+    private int shiftTarget,redline;
+    private float regenEnd=Float.NaN;   // odometer at the last DPF regeneration's end, saved when Telemetry moves it   // as saved, 0 = the profile's default
     private final java.util.concurrent.atomic.AtomicBoolean mediaPending=new java.util.concurrent.atomic.AtomicBoolean();
     private Button entry;
     private boolean blocked;
@@ -102,10 +103,15 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){/* Retain default for incompatible preferences. */}
         // Kept as saved (0 = never set); the renderer and the -/+ buttons resolve it with the detected powertrain.
         shiftTarget=a.getSharedPreferences("pit_vehicle_ui",0).getInt("shift_target",0);
+        redline=a.getSharedPreferences("pit_vehicle_ui",0).getInt("redline",0);VehicleProfile.setRedline(redline);
+        try{regenEnd=a.getSharedPreferences("pit_vehicle_ui",0).getFloat("dpf_regen_end_odo",Float.NaN);DATA.dpfRegenEnd(regenEnd);}
+        catch(ClassCastException e){/* Incompatible saved value: count from the next regeneration. */}
         try{Theme.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("theme","n"));}
         catch(ClassCastException e){Theme.select("n");/* Incompatible saved value: open in N. */}
         try{CarPaint.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("car_paint","blue"));}
         catch(ClassCastException e){CarPaint.select("blue");}
+        try{Weather.selectSky(a.getSharedPreferences("pit_vehicle_ui",0).getString("sky_8bit","auto"));}
+        catch(ClassCastException e){Weather.selectSky("auto");}
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);modeColor=p.getBoolean("mode_color",false);modeScreen=p.getBoolean("mode_screen",false);
             for(int k=0;k<modeTargets.length;k++)modeTargets[k]=ClusterPicker.validTarget(p.getInt("mode_screen_"+ClusterPicker.MODE_NAMES[k].toLowerCase(java.util.Locale.US),ClusterPicker.MODE_DEFAULT[k]));}
         catch(ClassCastException e){/* Both options off for an incompatible saved value. */}
@@ -231,12 +237,16 @@ public final class VehicleDash extends View implements Runnable {
             else if(symmetric&&page>=PitRenderer.PAGE_RACE)delay=50;  // shift blink, upshift pop, live run timers
             else if(!(cluster&&media&&!gauges) && mediaState.snapshot(now).notice)delay=16;
             if(introStart>0&&now-introStart<1500)delay=Math.min(delay,33);   // smooth the welcome sweep
+            if(header.flinging())delay=16;   // a flicked tab strip coasts
+            float re=DATA.dpfRegenEnd();
+            if(Float.compare(re,regenEnd)!=0){regenEnd=re;activity.getSharedPreferences("pit_vehicle_ui",0).edit().putFloat("dpf_regen_end_odo",re).apply();}
             if(now-lastDiagnostic>=5000) { lastDiagnostic=now;android.util.Log.i("VehicleDash",DATA.diagnostics(now)+drawStats()); }
         }
         postDelayed(this,delay);
     }
     protected void onDraw(Canvas c) {
         long now=SystemClock.elapsedRealtime();
+        header.step(SystemClock.uptimeMillis());   // MotionEvent times are uptime
         MediaState.Snapshot track=mediaState.snapshot(now);artwork.request(track);
         renderer.setArtwork(artwork.bitmap());
         renderer.setGaugeLayout(gauges?gaugeLayout:null);
@@ -296,12 +306,12 @@ public final class VehicleDash extends View implements Runnable {
             if(Math.abs(y-downY)>=10)touching=false;   // a drag that scrolls is not a tap
             invalidate();return true;
         }
-        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y)){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);invalidate();return true;}
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y,event.getEventTime())){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);invalidate();return true;}
         if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);}return true;}
         if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);header.up();return true; }
         if(event.getAction()!=MotionEvent.ACTION_UP)return true;
         removeCallbacks(editHold);removeCallbacks(clusterHold);
-        if(header.up()){touching=false;return true;}   // a strip scroll is never a tap
+        if(header.up(event.getEventTime())){touching=false;return true;}   // a strip scroll is never a tap
         boolean tap=touching && Math.abs(x-downX)<16 && Math.abs(y-downY)<16;
         touching=false;
         if(tap&&!blocked&&HeaderTabs.gear(x,y)&&HeaderTabs.gear(downX,downY)){   // gear: edit the screen list, again to close it
@@ -333,7 +343,9 @@ public final class VehicleDash extends View implements Runnable {
             else switch(settingsCat){
                 case SettingsLayout.SCREENS:hidden=ClusterPicker.toggle(hidden,i);showCluster();break;
                 case SettingsLayout.THEME:Theme.select(Theme.IDS[i]);e.putString("theme",Theme.current().id);break;
-                case SettingsLayout.PAINT:CarPaint.select(i);e.putString("car_paint",CarPaint.id());break;
+                case SettingsLayout.PAINT:
+                    if(i==CarPaint.IDS.length){Weather.nextSky();e.putString("sky_8bit",Weather.skyId());break;}   // the sky tile cycles 자동 -> 맑음 -> 흐림
+                    CarPaint.select(i);e.putString("car_paint",CarPaint.id());break;
                 case SettingsLayout.MODE:
                     if(i==SettingsLayout.MODE_COLOR)modeColor=!modeColor;
                     else if(i==SettingsLayout.MODE_SCREEN){modeScreen=!modeScreen;modeBack=-1;}
@@ -342,6 +354,12 @@ public final class VehicleDash extends View implements Runnable {
                 case SettingsLayout.LANG:
                     if(LanguageSettings.save(activity,SettingsLayout.LANGS[i])&&entry!=null)entry.setText(UiText.t("N 계기판"));   // the OEM screen's entry button follows the language too
                     break;
+                case SettingsLayout.RPM:{   // − / + step 100 rpm; the rest of the row puts the default back
+                    int z=SettingsLayout.screenZone(x);if(z!=SettingsLayout.screenZone(downX))break;
+                    VehicleProfile prof=DATA.profile();int d=z==1?-100:z==2?100:0;
+                    if(i==SettingsLayout.RPM_SHIFT){shiftTarget=d==0?0:ShiftGuide.clamp(ShiftGuide.target(shiftTarget,prof)+d,prof.shiftMin,prof.shiftTop());e.putInt("shift_target",shiftTarget);}
+                    else{redline=d==0?0:ShiftGuide.clamp((int)prof.redline+d,prof.redlineMin,prof.redlineMax);VehicleProfile.setRedline(redline);e.putInt("redline",redline);}
+                    break;}
                 case SettingsLayout.DIAG:DtcDialog.show(activity);break;   // read-only trouble codes
             }
             e.apply();invalidate();return true;
@@ -391,7 +409,7 @@ public final class VehicleDash extends View implements Runnable {
             float minus=media?210:548,plus=media?440:740;
             if(x>=minus && x<=minus+42 && downX>=minus && downX<=minus+42)next-=100;
             if(x>=plus && x<=plus+42 && downX>=plus && downX<=plus+42)next+=100;
-            shiftTarget=ShiftGuide.clamp(next,prof.shiftMin,prof.shiftMax);
+            shiftTarget=ShiftGuide.clamp(next,prof.shiftMin,prof.shiftTop());
             activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("shift_target",shiftTarget).apply();
             invalidate();return true;
         }

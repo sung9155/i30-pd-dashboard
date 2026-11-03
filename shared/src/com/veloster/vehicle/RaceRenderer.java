@@ -58,13 +58,8 @@ public final class RaceRenderer {
         cell(c,"COOLANT",fmt("%.0f",v(2)),"°C",L,320,L+w,320+h,26,v(2)>=110?D():v(2)>=100?AMBER:WHITE);
         cell(c,"INTAKE",fmt("%.0f",v(Telemetry.INTAKE)),"°C",L+w+4,320,LC,320+h,26,v(Telemetry.INTAKE)>=80?D():v(Telemetry.INTAKE)>=60?AMBER:WHITE);
         cell(c,"THROTTLE",fmt("%.0f",v(Telemetry.THROTTLE_POS)),"%",L,324+h,L+w,BOT,26,WHITE);
-        // A diesel has no ignition timing: the slot shows the DPF from the standard OBD PIDs — the regeneration trigger
-        // (how close the next regeneration is), else the delta pressure; amber with REGEN while one runs. Unconfirmed
-        // on a PD diesel: a dash until the ECU answers.
-        if(prof.fuel==VehicleProfile.Fuel.DIESEL){
-            float tr=v(Telemetry.DPF_TRIGGER),dp=v(Telemetry.DPF_DP);boolean regen=v(Telemetry.DPF_REGEN)>0;
-            cell(c,regen?"DPF REGEN":"DPF",!Float.isNaN(tr)?fmt("%.0f",tr):fmt("%.1f",dp),!Float.isNaN(tr)?"%":Float.isNaN(dp)?"":"kPa",L+w+4,324+h,LC,BOT,26,regen?AMBER:WHITE);
-        }
+        // A diesel has no ignition timing: the slot shows the DPF from the standard OBD PIDs, all three at once.
+        if(prof.fuel==VehicleProfile.Fuel.DIESEL)dpf(c,L+w+4,324+h,LC,BOT);
         else cell(c,"SPARK",fmt("%.0f",v(Telemetry.SPARK)),"°",L+w+4,324+h,LC,BOT,26,WHITE);
         gear(c);gforce(c);
         // Shift point reached: the whole page edge blinks with the bar and the gear box.
@@ -125,6 +120,20 @@ public final class RaceRenderer {
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(T(LINE));c.drawRect(l+.5f,t+.5f,rr-.5f,b-.5f,p);p.setStyle(Paint.Style.FILL);
     }
     /** Caption top-left, value right-aligned at the bottom with a small unit. */
+    /** DPF cell: the regeneration trigger (how close the next regeneration is) big, delta pressure and temperature
+     *  small on the left; amber with DPF REGEN while one runs. Each reads "—" until the ECU answers (unconfirmed on a PD diesel). */
+    private void dpf(Canvas c,float l,float t,float rr,float b){
+        float tr=v(Telemetry.DPF_TRIGGER),dp=v(Telemetry.DPF_DP),tp=v(Telemetry.DPF_TEMP);boolean regen=v(Telemetry.DPF_REGEN)>0;int ink=regen?AMBER:WHITE;
+        cell(c,regen?"DPF REGEN":"DPF",fmt("%.0f",tr),"%",l,t,rr,b,24,ink);
+        text(c,"ΔP "+fmt("%.1f",dp),l+8,t+35,13,Float.isNaN(dp)?MUTED:ink,Paint.Align.LEFT);   // delta pressure, kPa
+        // Top right (not while regenerating): km since the last regeneration, else the ECU's average between them;
+        // with both, they take turns every 3 s.
+        float since=v(Telemetry.DPF_SINCE_KM),avg=v(Telemetry.DPF_AVG_KM);
+        boolean avgTurn=Float.isNaN(since)||(!Float.isNaN(avg)&&now/3000%2==1);
+        if(!regen&&!(Float.isNaN(since)&&Float.isNaN(avg)))
+            text(c,(avgTurn?"AVG ":"LAST ")+fmt("%.0f",avgTurn?avg:since)+"km",rr-8,t+16,11,MUTED,Paint.Align.RIGHT);
+        text(c,fmt("%.0f",tp)+" °C",l+8,t+52,13,Float.isNaN(tp)?MUTED:ink,Paint.Align.LEFT);
+    }
     private void cell(Canvas c,String caption,String value,String unit,float l,float t,float rr,float b,float size,int color){
         box(c,l,t,rr,b,PANEL);
         text(c,caption,l+8,t+16,12,MUTED,Paint.Align.LEFT);

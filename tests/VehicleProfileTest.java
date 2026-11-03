@@ -14,6 +14,15 @@ public final class VehicleProfileTest {
         check(VehicleProfile.PETROL_MT.topGear==6 && VehicleProfile.PETROL_MT.hasSpark,"petrol 6mt constants");
         check(VehicleProfile.DIESEL_MT.topGear==6 && !VehicleProfile.DIESEL_MT.hasSpark,"diesel 6mt constants");
         check(VehicleProfile.of(VehicleProfile.Fuel.DIESEL,VehicleProfile.Trans.DCT)==VehicleProfile.DIESEL_DCT,"of() returns the shared instance");
+        // the user's redline (설정 → RPM): clamped per profile, and the shift target never goes past it
+        VehicleProfile p=VehicleProfile.PETROL_MT;
+        check(p.shiftTop()==6500&&com.veloster.vehicle.ShiftGuide.target(6700,p)==6500,"default: shift target tops out at the 6500 redline");
+        VehicleProfile.setRedline(6000);
+        check(p.redline==6000&&VehicleProfile.PETROL_DCT.redline==6000&&VehicleProfile.DIESEL_MT.redline==5000,"a set redline applies to every profile, clamped (diesel max 5000)");
+        check(com.veloster.vehicle.ShiftGuide.target(0,p)==6000&&com.veloster.vehicle.ShiftGuide.target(6400,p)==6000,"the shift target follows a lower redline");
+        VehicleProfile.setRedline(9000);check(p.redline==7000,"petrol redline max 7000");
+        VehicleProfile.setRedline(1000);check(p.redline==5000&&VehicleProfile.DIESEL_DCT.redline==3500,"redline minimums");
+        VehicleProfile.setRedline(0);check(p.redline==6500&&VehicleProfile.DIESEL_DCT.redline==4600,"0 restores the defaults");
 
         Telemetry t=new Telemetry();
         check(t.profile()==VehicleProfile.PETROL_DCT,"defaults to the verified petrol 7DCT");

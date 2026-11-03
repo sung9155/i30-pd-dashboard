@@ -64,16 +64,16 @@ final class PixelCluster extends ClusterKit {
     /** Paints art once into a bitmap at 1 pixel per scene pixel. */
     private Bitmap bake(int w,int h,Art a){Bitmap b=bitmap(w,h);float s=pxScale,t=pxTop;pxScale=1;pxTop=0;a.paint(new Canvas(b));pxScale=s;pxTop=t;return b;}
     /** Stamps a baked bitmap at scene position x,y (4x, no smoothing). */
-    private void put(Canvas c,Bitmap b,float x,float y){blit(c,b,0,0,b.getWidth(),b.getHeight(),x*4,52+y*4,(x+b.getWidth())*4,52+(y+b.getHeight())*4);}
-    /** Draws the car yawed into a bend: horizontal bands shifted and narrowed toward the top, so a sliver of the far
+    private void put(Canvas c,Bitmap b,float x,float y){int xi=Math.round(x),yi=Math.round(y);blit(c,b,0,0,b.getWidth(),b.getHeight(),xi*4,52+yi*4,(xi+b.getWidth())*4,52+(yi+b.getHeight())*4);}
+    /** Draws the car yawed into a bend: horizontal bands shifted by whole pixels toward the top, so a sliver of the far
      * side shows as it turns. shear is in scene pixels across the car's height (+ = turning that way). */
     private void putYaw(Canvas c,Bitmap b,float x,float y,float shear){
         int w=b.getWidth(),h=b.getHeight(),bands=10;float bh=h/(float)bands;
         for(int i=0;i<bands;i++){
             int sy=Math.round(i*bh),eh=Math.round((i+1)*bh)-sy; if(eh<=0)continue;
             float f=(bands-1-i)/(float)(bands-1);                 // 1 at the top, 0 at the bottom
-            float dx=shear*f, nar=Math.abs(shear)*0.18f*f;         // shift, and a slight narrowing so the body turns away
-            blit(c,b,0,sy,w,eh,(x+dx+nar)*4,52+(y+sy)*4,(x+dx+w-nar)*4,52+(y+sy+eh)*4);
+            int dx=Math.round(shear*f);                            // whole-pixel shift only: a narrowed band would split the grid
+            blit(c,b,0,sy,w,eh,(Math.round(x)+dx)*4,52+Math.round(y+sy)*4,(Math.round(x)+dx+w)*4,52+Math.round(y+sy+eh)*4);
         }
     }
     /** Repeats a horizontal strip across the 200-pixel scene, scrolled by off. */
@@ -94,7 +94,16 @@ final class PixelCluster extends ClusterKit {
     /** Chase car's sideways offset in lo-res pixels (+ right), eased toward the steering. */
     private float sway;
 
-    private void px(Canvas c,float x,float y,float w,float h,int color){fill(c,x*pxScale,pxTop+y*pxScale,(x+w)*pxScale,pxTop+(y+h)*pxScale,color);}
+    /** A rectangle of scene pixels, snapped to the grid: edges round to whole pixels, and anything with size keeps at least one. */
+    private void px(Canvas c,float x,float y,float w,float h,int color){
+        int x0=Math.round(x),y0=Math.round(y),x1=Math.round(x+w),y1=Math.round(y+h);if(w>0&&x1==x0)x1++;if(h>0&&y1==y0)y1++;
+        fill(c,x0*pxScale,pxTop+y0*pxScale,x1*pxScale,pxTop+y1*pxScale,color);}
+    /** Half the scene pixels of a rectangle, in a checkerboard fixed to the grid: the 8-bit way to show light or haze. */
+    private void dither(Canvas c,float x,float y,float w,float h,int color){
+        int x0=Math.round(x),y0=Math.round(y),x1=Math.round(x+w),y1=Math.round(y+h);
+        for(int yy=y0;yy<y1;yy++)for(int xx=x0+((x0+yy)&1);xx<x1;xx+=2)px(c,xx,yy,1,1,color);}
+    /** 4 x 4 ordered-dither thresholds (0..15), for light that thins out with distance in baked art. */
+    private static final int[] BAYER={0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5};
     private void run(Canvas c,int color,float ox,float oy,int y,int x1,int x2){px(c,ox+x1,oy+y,x2-x1+1,1,color);}
 
     @Override protected void draw(Canvas c){
@@ -133,7 +142,7 @@ final class PixelCluster extends ClusterKit {
     // ---- side view ------------------------------------------------------------------------------------------
     private void sideScene(Canvas c,float v,boolean brake,boolean left,float boost,float rpm){
         int[] sky=SKY_SIDE[phase];
-        for(int i=0;i<sky.length;i++)px(c,0,i*9,200,9,sky[i]);
+        for(int i=0;i<sky.length;i++)px(c,0,i*9,200,i==sky.length-1?58-i*9:9,sky[i]);   // the last band reaches the verge: no gap between buildings
         if(phase==DayPhase.NIGHT)for(int i=0;i<24;i++){int x=200-(int)((i*37+scroll*0.02f)%200),y=(i*13)%28;if((i+now/500)%5!=0)px(c,x,y,1,1,W);}
         if(phase==DayPhase.NIGHT){px(c,120,8,8,8,0xffffe7a8);px(c,119,10,10,4,0xffffe7a8);px(c,123,9,4,4,sky[1]);}          // moon
         else if(phase==DayPhase.DAY){px(c,115,16,10,10,0xfffff2a8);px(c,113,18,14,6,0xfffff2a8);}                            // sun
@@ -146,24 +155,27 @@ final class PixelCluster extends ClusterKit {
         px(c,0,58,200,4,VERGE[phase]);px(c,0,62,200,45,0xff2b2b36);px(c,0,62,200,1,0xffc8c8d8);px(c,0,88,200,1,0xffc8c8d8);
         int off=(int)(scroll*0.9f)%24;for(int x=-off;x<200;x+=24)px(c,x,75,12,2,0xfff5f5ff);
         boolean sport=mode==SPORT;
-        if(v>(sport?30:60))for(int i=0;i<(sport?6:5);i++){float x=200-((scroll*2+i*53)%220);px(c,x,sport?63+i*4:64+i*5,(8+v/20)*(sport?1.25f:1),1,0x60ffffff);}
+        if(v>(sport?30:60))for(int i=0;i<(sport?6:5);i++){float x=200-((scroll*2+i*53)%220);px(c,x,sport?63+i*4:64+i*5,(8+v/20)*(sport?1.25f:1),1,0xff6a6a7a);}
         float cx=20,cy=56+(!Float.isNaN(rpm)&&rpm>prof.redline-1000?(int)Math.round(Math.sin(now/25.0)):0);
         // headlight beam ahead, tail glow behind
         if(lamps){if(beam==null)beam=bake(56,18,new Art(){public void paint(Canvas b){
-            for(int dx=0;dx<56;dx++){int a=(int)(0.22f*(1-dx/56f)*255),top=Math.round(7-dx*0.04f),bot=Math.round(8+dx*0.16f);px(b,dx,top,1,bot-top+1,(a<<24)|0xffecbe);}}});
+            for(int dx=0;dx<56;dx++){float d=0.5f*(1-dx/56f);int top=Math.round(7-dx*0.04f),bot=Math.round(8+dx*0.16f);   // dithered: denser near the lamp
+                for(int y=top;y<=bot;y++)if(BAYER[(y&3)*4+(dx&3)]<d*16)px(b,dx,y,1,1,0xff8a8670);}}});
             put(c,beam,cx+46,cy);
             if(high){if(highBeam==null)highBeam=bake(96,12,new Art(){public void paint(Canvas b){   // rows 0..11 below the car's top (the cone spans 1..11)
-                for(int dx=0;dx<96;dx++){int a=(int)(0.20f*(1-dx/96f)*255),tp=Math.round(6-dx*0.05f),bt=Math.round(8+dx*0.03f);px(b,dx,tp,1,bt-tp+1,(a<<24)|0xf4f6ff);}}});
+                for(int dx=0;dx<96;dx++){float d=0.4f*(1-dx/96f);int tp=Math.round(6-dx*0.05f),bt=Math.round(8+dx*0.03f);
+                    for(int y=tp;y<=bt;y++)if(BAYER[(y&3)*4+(dx&3)]<d*16)px(b,dx,y,1,1,0xff9a9ca8);}}});
                 put(c,highBeam,cx+46,cy);}}   // high beam: aimed level and far, a faint whiter cone over the low beam
-        if(tail||lamps||brake)for(int k=0;k<3;k++)px(c,cx-9+3*k,cy+3+k,9-3*k,6-2*k,((int)((brake?0.10f+0.06f*k:0.04f+0.03f*k)*255)<<24)|0xff281e);
-        if(left)for(int k=0;k<2;k++){int a=((int)((0.15f+0.15f*k)*255)<<24)|0xffaa1e;px(c,cx+43+k,cy+5+k,6-2*k,4-2*k,a);px(c,cx-3+k,cy+3+k,5-2*k,4-2*k,a);}
+        if(phase!=DayPhase.DAY){   // lamp glow only after dark, as a dither
+            if(tail||lamps||brake)dither(c,cx-7,cy+4,7,4,brake?0xffa02018:0xff5a1410);
+            if(left){dither(c,cx+43,cy+5,5,3,0xff8a5a10);dither(c,cx-3,cy+3,4,3,0xff8a5a10);}}
         double per=TAU/5;int spin=(int)(((scroll/5)%per+per)%per/per*6)%6;   // 5 spokes: 6 steps cover a turn
         int key=((brake?1:0)|(left?2:0)|(spin<<2))+(sport?24:0);
         if(sideCar[key]==null){final boolean b0=brake,l0=left;final double a0=spin*per/6;final int d0=sport?1:0;sideCar[key]=bake(47,19,new Art(){public void paint(Canvas b){sideCarArt(b,0,1,b0,l0,a0,d0);}});}
         put(c,sideCar[key],cx,cy-1);
         if(!Float.isNaN(boost)&&boost>0.3f)for(int i=0;i<4;i++){float age=((now/60+i*3)%12)/12f;px(c,cx+2-age*14,cy+12-age*3,2,2,boost>0.9f&&age<0.3f?0xffffcc33:age<0.6f?0xffbbbbbb:0xff666677);}
         float ped=v(9);   // exhaust smoke from the tailpipe under throttle (more gas, more smoke)
-        if(!Float.isNaN(ped)&&ped>20)for(int i=0;i<2+(int)(ped/40);i++){float ag=((now/70+i*5)%14)/14f;int a=(int)(0.26f*(1-ag)*255);px(c,cx-4-ag*18,cy+11-ag*2,2+ag*3,2+ag*2,(a<<24)|0xff9aa0a8);}
+        if(!Float.isNaN(ped)&&ped>20)for(int i=0;i<2+(int)(ped/40);i++){float ag=((now/70+i*5)%14)/14f;if(ag<0.66f)px(c,cx-4-ag*18,cy+11-ag*2,2+ag*3,2+ag*2,smoke(ag));}
         if(now-fireAt<450){boolean big=(now/60)%2==0;px(c,cx-(big?9:7),cy+(big?10:11),big?6:4,big?3:2,0xffff7a1a);px(c,cx-(big?6:5),cy+11,big?3:2,1,0xffffe14a);}   // backfire pop
         if(mode==ECO&&v>5)for(int i=0;i<3;i++){float ag=((now/90+i*8)%24)/24f;leaf(c,cx-2-ag*26,cy+8-ag*12+(float)Math.sin(ag*9+i)*2,i);}   // ECO: leaves blow off behind
     }
@@ -255,40 +267,48 @@ final class PixelCluster extends ClusterKit {
             int yi=Math.min(bottom,Math.round(y));int mi=(int)m;
             float side=mi%2!=0?1:-1,x=rowX[yi]+side*(rowW[yi]/2+rowW[yi]*0.16f),s=p;
             if(((mi%4)+4)%4<2){px(c,x-s,y-34*s,Math.max(1,2*s),34*s,0xff5a5f6a);px(c,x-side*7*s,y-34*s,8*s,Math.max(1,1.5f*s),0xff5a5f6a);
-                px(c,x-side*7*s-s,y-33*s,4*s,Math.max(1,2*s),phase!=DayPhase.DAY?0xffffe9a8:0xff9a9ea6);if(phase!=DayPhase.DAY)px(c,x-side*7*s-6*s,y-30*s,12*s,26*s,0x1fffe9a8);}
+                px(c,x-side*7*s-s,y-33*s,4*s,Math.max(1,2*s),phase!=DayPhase.DAY?0xffffe9a8:0xff9a9ea6);}
             else{px(c,x-s,y-6*s,Math.max(1,2*s),6*s,0xff3a2416);for(int k=0;k<3;k++)px(c,x-(7-k*2)*s,y-(10+k*6)*s,(14-k*4)*s,7*s,k%2!=0?0xff1f5a3a:0xff18492f);}
         }
         // headlight pool ahead of the car
         int yt=Math.round(hz+(bottom-hz)*0.18f);
-        if(lamps)for(int y=yt;y<=71;y+=2){float f=(y-yt)/(float)(72-yt);px(c,rowX[y]-rowW[y]*0.36f,y,rowW[y]*0.72f,2,((int)((0.03f+0.16f*f)*255)<<24)|0xffecbe);}
-        if(lamps&&high)for(int y=hz+2;y<yt;y+=2){float f=(y-hz)/(float)(yt-hz);px(c,rowX[y]-rowW[y]*0.45f,y,rowW[y]*0.9f,2,((int)((0.03f+0.12f*f)*255)<<24)|0xf4f6ff);}   // high beam reaches toward the horizon
+        // lit asphalt in two steps (brighter near the car), each in the row's band colour, centre line kept on top
+        if(lamps)for(int y=yt;y<=71;y++){boolean near=(y-yt)*2>=72-yt;litRow(c,rowX[y],rowW[y],0.72f,y,bands[y],near?0xff4a4a58:0xff42424f,near?0xff444452:0xff3d3d4a);}
+        if(lamps&&high)for(int y=hz+1;y<yt;y++)litRow(c,rowX[y],rowW[y],0.9f,y,bands[y],0xff40404e,0xff3a3a47);   // high beam reaches toward the horizon
         float vk=v(7);
         if(mode==SPORT&&vk>30)for(int i=0;i<4;i++){   // SPORT: speed lines stream out of the vanishing point toward the camera, speeding up
             float t=((now/40+i*11)%36)/36f,dx=i%2==0?-1:1,dy=0.18f+(i/2)*0.22f,n=(float)Math.hypot(dx,dy),r=16+t*t*140,len=2+t*12;
-            int a=((int)(0.30f*t*(1-t)*4*0.6f*255)<<24)|0xffffff;   // fades in and out, never above 0.18
-            line(c,(100+dx/n*r)*4,52+(hz+dy/n*r)*4,(100+dx/n*(r+len))*4,52+(hz+dy/n*(r+len))*4,4,a);}
+            int col=t<0.2f||t>0.8f?0xff5a5a6a:0xff9a9eaa;   // dim at both ends instead of a fade
+            for(int j=0;j<len;j++)px(c,100+dx/n*(r+j),hz+dy/n*(r+j),1,1,col);}
         rear(c,lat,bump,brake,left,right,boost,rpm);
     }
     /** i30 N from straight behind, 49 x 39 lo-res pixels traced from Hyundai's rear view (width : height 1.24). */
     private void rear(Canvas c,float lat,float bump,boolean brake,boolean left,boolean right,float boost,float rpm){
         float ox=76+Math.round(sway),oy=68+Math.round(bump)+(!Float.isNaN(rpm)&&rpm>prof.redline-1000?(int)Math.round(Math.sin(now/25.0)):0);
         int tilt=Math.abs(lat)>0.25f?(lat>0?-1:1):0;
-        px(c,ox-3,oy+37,55,3,0x80000000);
-        if(tail||lamps||brake)for(int k=0;k<3;k++){int red=((int)((brake?0.10f+0.05f*k:0.04f+0.02f*k)*255)<<24)|0xff281e;px(c,ox-6+2*k,oy+12+k,18-4*k,8-2*k,red);px(c,ox+37+2*k,oy+12+k,18-4*k,8-2*k,red);}
-        for(int k=0;k<3;k++){int amb=((int)((0.10f+0.07f*k)*255)<<24)|0xffaa1e;if(left)px(c,ox-8+2*k,oy+10+k,20-4*k,10-2*k,amb);if(right)px(c,ox+35+2*k,oy+10+k,20-4*k,10-2*k,amb);}
+        px(c,ox-3,oy+37,55,3,0xff1d1d24);   // shadow: one solid dark tone
+        if(phase!=DayPhase.DAY){   // lamp glow only after dark, as a dither beside each lamp
+            if(tail||lamps||brake){int red=brake?0xffa02018:0xff5a1410;dither(c,ox-5,oy+12,6,5,red);dither(c,ox+48,oy+12,6,5,red);}
+            if(left)dither(c,ox-7,oy+10,7,6,0xff8a5a10);if(right)dither(c,ox+49,oy+10,7,6,0xff8a5a10);}
         boolean sport=mode==SPORT;
         int key=((brake?1:0)|(left?2:0)|(right?4:0)|((tail||lamps)?8:0)|((tilt+1)<<4))+(sport?48:0);
         if(rearCar[key]==null){final boolean b0=brake,l0=left,r0=right,lp=tail||lamps;final int t0=tilt,d0=sport?1:0;rearCar[key]=bake(51,40,new Art(){public void paint(Canvas b){rearArt(b,1,0,t0,b0,l0,r0,lp,d0);}});}
         float yaw=lat*4.2f;                                   // lat here is the steering turn; the car yaws into the bend
         if(Math.abs(yaw)>0.6f)putYaw(c,rearCar[key],ox-1,oy,yaw);else put(c,rearCar[key],ox-1,oy);
         if(!Float.isNaN(boost)&&boost>0.9f&&blink(now,120)){for(int ex:new int[]{8,37}){run(c,0xffffcc33,ox,oy,34,ex,ex+3);run(c,0xffff7a1a,ox,oy,35,ex+1,ex+2);}}
-        else if(!Float.isNaN(boost)&&boost>0.3f){int k=(int)(now/125%3);for(int ex:new int[]{8,37})px(c,ox+ex+k,oy+34+k%2,3,1,0x99c8c8d2);}
+        else if(!Float.isNaN(boost)&&boost>0.3f){int k=(int)(now/125%3);for(int ex:new int[]{8,37})px(c,ox+ex+k,oy+34+k%2,3,1,0xffc8c8d2);}
         float ped=v(9);   // exhaust smoke from both tailpipes under throttle (more gas, more smoke)
-        if(!Float.isNaN(ped)&&ped>20){int puffs=1+(int)(ped/35);for(int ex:new int[]{8,37})for(int i=0;i<puffs;i++){float ag=((now/80+i*4)%12)/12f;int a=(int)(0.26f*(1-ag)*255);px(c,ox+ex-(int)(ag*5),oy+34+(int)(ag*10),2+(int)(ag*3),2+(int)(ag*2),(a<<24)|0xff9aa0a8);}}
+        if(!Float.isNaN(ped)&&ped>20){int puffs=1+(int)(ped/35);for(int ex:new int[]{8,37})for(int i=0;i<puffs;i++){float ag=((now/80+i*4)%12)/12f;if(ag<0.66f)px(c,ox+ex-(int)(ag*5),oy+34+(int)(ag*10),2+(int)(ag*3),2+(int)(ag*2),smoke(ag));}}
         if(now-fireAt<450){boolean big=(now/60)%2==0;for(int ex:new int[]{8,37}){px(c,ox+ex-(big?1:0),oy+34,big?6:4,big?4:3,0xffff7a1a);px(c,ox+ex+1,oy+34,2,big?2:1,0xffffe14a);}}   // backfire pop
         if(mode==ECO)for(int i=0;i<3;i++){float ag=((now/90+i*11)%32)/32f;int side=i%2==0?-1:1;   // ECO: leaves kicked off the rear wheels: a hop, then out and toward the camera (growing)
             leaf(c,ox+24+side*(20+ag*60),oy+34-(float)Math.sin(ag*Math.PI)*12+ag*6,i,ag<0.5f?1:2);}
     }
+    /** Exhaust smoke by age (0..1): pale, then darker; gone after two thirds instead of fading out. */
+    private static int smoke(float ag){return ag<0.33f?0xffb8bcc2:0xff8e939b;}
+    /** One row of lit road: the band's lit tone over the middle share of the lane, the centre line drawn again on top. */
+    private void litRow(Canvas c,float cx,float rw,float share,int y,boolean band,int litA,int litB){
+        px(c,cx-rw*share/2,y,rw*share,1,band?litA:litB);
+        if(band)px(c,cx-rw*0.012f,y,Math.max(1,rw*0.024f),1,0xffe8e8f0);}
     /** A 3 x 2 pixel leaf, its colour and tilt by i. */
     private void leaf(Canvas c,float x,float y,int i){leaf(c,x,y,i,1);}
     /** The leaf at k times its size (nearer the camera). */
@@ -358,7 +378,7 @@ final class PixelCluster extends ClusterKit {
         else{sh(c,sp,720,214,40,W,Paint.Align.RIGHT);sh(c,"KM/H",780,214,13,W,Paint.Align.RIGHT);}
         String msg=message(rpm,v);
         if(chase){
-            if(msg!=null){float w=fontWidth(msg,17)+28;fill(c,400-w/2,164,400+w/2,194,0xbf000000);outline(c,400-w/2+2,166,400+w/2-2,192,0,2,Y);
+            if(msg!=null){float w=fontWidth(msg,17)+28;fill(c,400-w/2,164,400+w/2,194,0xff000000);outline(c,400-w/2+2,166,400+w/2-2,192,0,2,Y);
                 sh(c,msg,400,186,17,blink(now,500)?Y:W,Paint.Align.CENTER);}
         }else{
             fill(c,20,410,780,468,0xff000000);outline(c,24,414,776,464,0,4,W);outline(c,31,421,769,457,0,2,W);
@@ -396,8 +416,9 @@ final class PixelCluster extends ClusterKit {
             textCache.put(key,b);}
         return b;
     }
-    /** Font pixel size for a text size: 13 -> 2 (14 px caps), 17 -> 2, 34 -> 4, 40 -> 5. */
-    private static int fontPx(float size){return Math.max(1,Math.round(size/8f));}
+    /** Font pixel size for a text size: 2 for HUD labels (14 px caps), 4 for the big numbers; never 1, 3 or 5, so every
+     * HUD pixel is half or all of a scene pixel. */
+    private static int fontPx(float size){return size>=26?4:2;}
     private static float fontWidth(String s,float size){int k=fontPx(size);return s.length()*6*k-k;}
     /** Glyph of a character: lower case shown as capitals except s, v (the ▼ prompt) and x; anything else as '-'. */
     private static int glyph(char ch){int g=FONT_CHARS.indexOf(ch);if(g<0)g=FONT_CHARS.indexOf(Character.toUpperCase(ch));return g<0?FONT_CHARS.indexOf('-'):g;}
@@ -413,6 +434,6 @@ final class PixelCluster extends ClusterKit {
         final int lv=Math.round(clamp(f,0,1)*8);
         if(heartBmp[lv]==null)heartBmp[lv]=bake(8,6,new Art(){public void paint(Canvas b){
             for(int r=0;r<HEART.length;r++)for(int k=0;k<8;k++)if(HEART[r].charAt(k)=='1')px(b,k,r,1,1,k<lv?0xffff3b5c:0xff3a2030);}});
-        blit(c,heartBmp[lv],0,0,8,6,x,y,x+20,y+15);
+        blit(c,heartBmp[lv],0,0,8,6,x,y,x+16,y+12);   // 2 px per heart pixel, like the HUD font
     }
 }

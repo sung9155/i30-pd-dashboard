@@ -8,8 +8,9 @@ import java.util.Calendar;
 import java.util.Locale;
 
 /**
- * 8-bit game in two views of a pixel i30 N (PD) in Performance Blue, traced from Hyundai's official side and rear
- * photos: the side view drives past a night city, the chase view follows from behind down a pseudo-3D road that
+ * 8-bit game in two views of a pixel i30 N (PD) in the chosen CarPaint: the side view (traced from Hyundai's official
+ * side photo) drives past a city, the Arcade view (the car from ArcadeCarFrames, turned into the bend) follows from
+ * behind down a pseudo-3D road that
  * bends with lateral G. LV = gear, EXP = rpm, hearts = range (100 km each), SCORE = odometer, a coin per second of
  * fuel cut, TURBO = boost. The sky follows the clock (DayPhase: day, twilight, night); the car's lamps follow its
  * own signals at any hour: headlamps and tail lamps the HeadLampLow bit, brake lights the brake, and the turn
@@ -56,8 +57,8 @@ final class PixelCluster extends ClusterKit {
         "..KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKrrrrr"};
     private final boolean chase;
     private static final double TAU=Math.PI*2;
-    // Caches: side car [brake|left<<1|spin<<2], rear car [brake|left|right|lamps|tilt], skyline/hills per sky, hearts, beam.
-    private final Bitmap[] sideCar=new Bitmap[48],rearCar=new Bitmap[96],cityStrip=new Bitmap[3],hillStrip=new Bitmap[3],heartBmp=new Bitmap[9];
+    // Caches: side car [brake|left<<1|spin<<2], skyline/hills per sky, hearts, beam; the Arcade car in arcadeCar.
+    private final Bitmap[] sideCar=new Bitmap[48],cityStrip=new Bitmap[3],hillStrip=new Bitmap[3],heartBmp=new Bitmap[9];
     private Bitmap beam,highBeam;
     private float pxScale=4,pxTop=52;
     private interface Art{void paint(Canvas c);}
@@ -150,17 +151,6 @@ final class PixelCluster extends ClusterKit {
         }
     }
     private void put(Canvas c,Bitmap b,float x,float y){int xi=Math.round(x),yi=Math.round(y);blit(c,b,0,0,b.getWidth(),b.getHeight(),xi*4,52+yi*4,(xi+b.getWidth())*4,52+(yi+b.getHeight())*4);}
-    /** Draws the car yawed into a bend: horizontal bands shifted by whole pixels toward the top, so a sliver of the far
-     * side shows as it turns. shear is in scene pixels across the car's height (+ = turning that way). */
-    private void putYaw(Canvas c,Bitmap b,float x,float y,float shear){
-        int w=b.getWidth(),h=b.getHeight(),bands=10;float bh=h/(float)bands;
-        for(int i=0;i<bands;i++){
-            int sy=Math.round(i*bh),eh=Math.round((i+1)*bh)-sy; if(eh<=0)continue;
-            float f=(bands-1-i)/(float)(bands-1);                 // 1 at the top, 0 at the bottom
-            int dx=Math.round(shear*f);                            // whole-pixel shift only: a narrowed band would split the grid
-            blit(c,b,0,sy,w,eh,(Math.round(x)+dx)*4,52+Math.round(y+sy)*4,(Math.round(x)+dx+w)*4,52+Math.round(y+sy+eh)*4);
-        }
-    }
     /** Repeats a horizontal strip across the 200-pixel scene, scrolled by off. */
     private void strip(Canvas c,Bitmap b,float off,float y){int w=b.getWidth();float o=((off%w)+w)%w;for(float x=-o;x<200;x+=w)put(c,b,x,y);}
     private int phase;
@@ -199,7 +189,7 @@ final class PixelCluster extends ClusterKit {
     private void run(Canvas c,int color,float ox,float oy,int y,int x1,int x2){px(c,ox+x1,oy+y,x2-x1+1,1,color);}
 
     @Override protected void draw(Canvas c){
-        if(paint!=CarPaint.index()){paint=CarPaint.index();int[] b=CarPaint.body();B=b[0];BH=b[1];BD=b[2];BS=b[3];Arrays.fill(sideCar,null);Arrays.fill(rearCar,null);}
+        if(paint!=CarPaint.index()){paint=CarPaint.index();int[] b=CarPaint.body();B=b[0];BH=b[1];BD=b[2];BS=b[3];Arrays.fill(sideCar,null);arcadeCar.clear();}
         float v=v(7),rpm=v(0),boost=v(Telemetry.BOOST),fuel=v(Telemetry.FUEL_RATE),lat=v(11),lon=v(12);
         float dt=last==0||now-last>2000?0:(now-last)/1000f;last=now;frameDt=dt;
         Calendar cal=Calendar.getInstance();
@@ -384,19 +374,21 @@ final class PixelCluster extends ClusterKit {
         rear(c,lat,bump,brake,left,right,boost,rpm);
         precip(c,frameDt,hz);
     }
-    /** i30 N from straight behind, 49 x 39 lo-res pixels traced from Hyundai's rear view (width : height 1.24). */
+    /** The Arcade car from behind, turned into the bend: one of ArcadeCarFrames' 13 yaws, painted for its lamps and
+     * the CarPaint, kept in a small cache (frame x lamp state; about 13 KB each). */
+    private final java.util.LinkedHashMap<Integer,Bitmap> arcadeCar=new java.util.LinkedHashMap<Integer,Bitmap>(32,0.75f,true){
+        @Override protected boolean removeEldestEntry(java.util.Map.Entry<Integer,Bitmap> e){return size()>24;}};   // ponytail: 24 ~ 320 KB, a turn's worth of frames in two lamp states
     private void rear(Canvas c,float lat,float bump,boolean brake,boolean left,boolean right,float boost,float rpm){
         float ox=76+Math.round(sway),oy=68+Math.round(bump)+(!Float.isNaN(rpm)&&rpm>prof.redline-1000?(int)Math.round(Math.sin(now/25.0)):0);
-        int tilt=Math.abs(lat)>0.25f?(lat>0?-1:1):0;
         px(c,ox-3,oy+37,55,3,0xff1d1d24);   // shadow: one solid dark tone
         if(phase!=DayPhase.DAY){   // lamp glow only after dark, as a dither beside each lamp
             if(tail||lamps||brake){int red=brake?0xffa02018:0xff5a1410;dither(c,ox-5,oy+12,6,5,red);dither(c,ox+48,oy+12,6,5,red);}
             if(left)dither(c,ox-7,oy+10,7,6,0xff8a5a10);if(right)dither(c,ox+49,oy+10,7,6,0xff8a5a10);}
-        boolean sport=mode==SPORT;
-        int key=((brake?1:0)|(left?2:0)|(right?4:0)|((tail||lamps)?8:0)|((tilt+1)<<4))+(sport?48:0);
-        if(rearCar[key]==null){final boolean b0=brake,l0=left,r0=right,lp=tail||lamps;final int t0=tilt,d0=sport?1:0;rearCar[key]=bake(51,40,new Art(){public void paint(Canvas b){rearArt(b,1,0,t0,b0,l0,r0,lp,d0);}});}
-        float yaw=lat*4.2f;                                   // lat here is the steering turn; the car yaws into the bend
-        if(Math.abs(yaw)>0.6f)putYaw(c,rearCar[key],ox-1,oy,yaw);else put(c,rearCar[key],ox-1,oy);
+        // lat here is the road's bend from the wheel; the car yaws 20 times that (30 deg wheel -> 4 deg, 90 -> 16, max 24)
+        final int fi=ArcadeCarFrames.frameFor(lat*20);final boolean b0=brake,l0=left,r0=right,lp=tail||lamps;
+        int key=fi|(brake?32:0)|(left?64:0)|(right?128:0)|(lp?256:0);Bitmap car=arcadeCar.get(key);
+        if(car==null){car=bake(ArcadeCarFrames.W,ArcadeCarFrames.H,new Art(){public void paint(Canvas b){arcadeArt(b,fi,b0,l0,r0,lp);}});arcadeCar.put(key,car);}
+        put(c,car,ox+ArcadeCarFrames.DX,oy+ArcadeCarFrames.DY);
         if(!Float.isNaN(boost)&&boost>0.9f&&blink(now,120)){for(int ex:new int[]{8,37}){run(c,0xffffcc33,ox,oy,34,ex,ex+3);run(c,0xffff7a1a,ox,oy,35,ex+1,ex+2);}}
         else if(!Float.isNaN(boost)&&boost>0.3f){int k=(int)(now/125%3);for(int ex:new int[]{8,37})px(c,ox+ex+k,oy+34+k%2,3,1,0xffc8c8d2);}
         float ped=v(9);   // exhaust smoke from both tailpipes under throttle (more gas, more smoke)
@@ -419,41 +411,27 @@ final class PixelCluster extends ClusterKit {
         int col=i%3==0?0xff4fbf3a:i%3==1?0xff8fd84a:0xffc8e05a;
         if(i%2==0){px(c,x,y,2*k,k,col);px(c,x+k,y+k,2*k,k,col);}else{px(c,x+k,y,2*k,k,col);px(c,x,y+k,2*k,k,col);}
     }
-    /** The rear view's body and lamps, origin ox,oy; the cabin shifts tilt pixels into a bend. */
-    private void rearArt(Canvas c,float ox,float oy,int tilt,boolean brake,boolean left,boolean right,boolean lamps,int drop){
-        for(int tx:new int[]{0,41}){px(c,ox+tx,oy+29,8,10,K);for(int y=31;y<38;y+=2)px(c,ox+tx+1,oy+y,6,1,0xff2a2c30);}
-        oy+=drop;   // SPORT: everything above the tyres one pixel lower
-        int stop=brake?0xffff4a3a:0xffa01818;
-        top(c,K,ox,oy,tilt,0,7,41);top(c,K,ox,oy,tilt,1,6,42);top(c,K,ox,oy,tilt,2,8,40);top(c,K2,ox,oy,tilt,0,9,39);   // wing over the glass
-        for(int y=3;y<=11;y++){int l=6-Math.round((y-3)*0.25f),r=48-l;top(c,B,ox,oy,tilt,y,l,r);top(c,0xff1c2532,ox,oy,tilt,y,l+2,r-2);}
-        top(c,stop,ox,oy,tilt,2,22,26);top(c,stop,ox,oy,tilt,3,23,25);top(c,stop,ox,oy,tilt,4,24,24);
-        for(int r=0;r<4;r++)top(c,0xff46566c,ox,oy,tilt,4+r,31+r*2,32+r*2);
-        top(c,K,ox,oy,tilt,10,24,35);top(c,K,ox,oy,tilt,11,23,24);
-        for(int[] m:new int[][]{{9,0,3},{10,0,4},{11,1,3}}){top(c,K,ox,oy,tilt,m[0],m[1],m[2]);top(c,K,ox,oy,tilt,m[0],48-m[2],48-m[1]);}
-        if(left)top(c,AMBER,ox,oy,tilt,10,0,2);if(right)top(c,AMBER,ox,oy,tilt,10,46,48);
-        run(c,B,ox,oy,12,2,46);for(int y=13;y<=20;y++)run(c,B,ox,oy,y,1,47);run(c,BH,ox,oy,12,4,44);
-        int tl=brake?0xffff3a2a:0xff5a0c14,led=brake?0xffffd0c4:(tail||lamps)?0xffe0323c:0xff7a1a22;
-        mir(c,tl,ox,oy,12,3,14);mir(c,tl,ox,oy,13,2,14);mir(c,tl,ox,oy,14,2,12);mir(c,tl,ox,oy,15,2,8);
-        mir(c,led,ox,oy,13,4,14);mir(c,0xff5a0c14,ox,oy,14,9,12);mir(c,led,ox,oy,15,3,6);
-        if(left){run(c,AMBER,ox,oy,13,2,6);run(c,AMBER,ox,oy,14,2,5);}if(right){run(c,AMBER,ox,oy,13,42,46);run(c,AMBER,ox,oy,14,43,46);}
-        run(c,SV,ox,oy,13,22,26);run(c,SV,ox,oy,14,21,27);run(c,BD,ox,oy,14,23,25);run(c,SV,ox,oy,15,22,26);
-        run(c,SV,ox,oy,18,9,13);run(c,SV,ox,oy,18,34,39);run(c,N_RED,ox,oy,18,36,36);run(c,BS,ox,oy,19,18,30);
-        // bumper down to the diffuser (photo: blue wraps the corners), plate in the middle, reflectors under the lamps
-        for(int y=21;y<=29;y++)run(c,B,ox,oy,y,0,48);run(c,BS,ox,oy,21,4,44);run(c,BH,ox,oy,22,1,47);
-        int refl=brake?0xffff3030:0xffa01818;mir(c,refl,ox,oy,19,4,10);mir(c,refl,ox,oy,20,3,10);
-        for(int y=23;y<=26;y++)run(c,0xfff2f2f2,ox,oy,y,17,31);run(c,0xff5a5a66,ox,oy,24,19,29);run(c,0xff5a5a66,ox,oy,25,19,29);
-        for(int y=26;y<=29;y++){mir(c,K,ox,oy,y,y==26?3:2,11);for(int x=3;x<=10;x++)if(((x+y)&1)!=0)mir(c,K2,ox,oy,y,x,x);}   // honeycomb corner vents
-        run(c,BD,ox,oy,29,12,36);
-        // diffuser between the wheels: straight red strip between the round tips, fins under it; the road shows below
-        run(c,K,ox,oy,30,5,43);run(c,K,ox,oy,31,5,43);run(c,K,ox,oy,32,6,42);run(c,K,ox,oy,33,7,41);
-        run(c,N_RED,ox,oy,30,12,12);run(c,N_RED,ox,oy,30,36,36);run(c,N_RED,ox,oy,31,13,35);
-        for(int x=17;x<=31;x+=3)for(int y=32;y<=33;y++)run(c,K2,ox,oy,y,x,x);
-        run(c,K2,ox,oy,34,8,40);run(c,K2,ox,oy,35,9,39);
-        for(int ex:new int[]{8,37}){run(c,SV,ox,oy,30,ex+1,ex+2);run(c,SV,ox,oy,31,ex,ex+3);run(c,SV,ox,oy,32,ex,ex+3);run(c,SV,ox,oy,33,ex+1,ex+2);
-            run(c,0xff0b0b0d,ox,oy,31,ex+1,ex+2);run(c,0xff0b0b0d,ox,oy,32,ex+1,ex+2);}
+    /** One Arcade frame, row runs of one colour each. */
+    private void arcadeArt(Canvas c,int fi,boolean brake,boolean left,boolean right,boolean lp){
+        for(int y=0;y<ArcadeCarFrames.H;y++){int run=0,col=0;
+            for(int x=0;x<=ArcadeCarFrames.W;x++){int k=x<ArcadeCarFrames.W?ArcadeCarFrames.code(fi,x,y):0,cc=k==0?0:arcadeColour(k,brake,left,right,lp);
+                if(cc!=col||k==0){if(col!=0)px(c,x-run,y,run,1,col);col=k==0?0:cc;run=0;}
+                if(k!=0)run++;}}
     }
-    private void top(Canvas c,int color,float ox,float oy,int tilt,int y,int x1,int x2){run(c,color,ox+tilt,oy,y,x1,x2);}
-    private void mir(Canvas c,int color,float ox,float oy,int y,int x1,int x2){run(c,color,ox,oy,y,x1,x2);run(c,color,ox,oy,y,48-x2,48-x1);}
+    /** A frame code's colour: paint shades from the CarPaint, lamps as the hand-drawn rear lit them, amber for a turn signal. */
+    private int arcadeColour(int code,boolean brake,boolean left,boolean right,boolean lp){
+        int[] e=ArcadeCarFrames.CODES[code-1];
+        if(e[0]==4){if(e[1]<0?left:right)return AMBER;e=ArcadeCarFrames.CODES[e[2]-1];}
+        if(e[0]==1)return e[1]==0?B:e[1]==1?BH:e[1]==2?BD:BS;
+        if(e[0]==2)return e[1];
+        switch(e[1]){   // tail, LED line, high stop lamp, reflector, clear lens
+            case 0:return brake?0xffff3a2a:0xff5a0c14;
+            case 1:return brake?0xffffd0c4:lp?0xffe0323c:0xff7a1a22;
+            case 2:return brake?0xffff4a3a:0xffa01818;
+            case 3:return brake?0xffff3030:0xffa01818;
+            default:return 0xff9a9496;
+        }
+    }
 
     // ---- HUD (both views) -----------------------------------------------------------------------------------
     private void hud(Canvas c,String g,float rpm,float boost,float v){

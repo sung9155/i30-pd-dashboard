@@ -21,8 +21,9 @@ public final class PixelGridCheck {
     static Telemetry.Sample on(float v){return new Telemetry.Sample(v,true,false,true,false,0);}
     public static void main(String[] a) throws Exception {
         Set<Integer> palette=new HashSet<>();
-        Matcher m=Pattern.compile("0xff([0-9a-fA-F]{6})").matcher(new String(Files.readAllBytes(Paths.get(a[0])),StandardCharsets.UTF_8));
-        while(m.find())palette.add(Integer.parseInt(m.group(1),16));
+        for(java.nio.file.Path src:new java.nio.file.Path[]{Paths.get(a[0]),Paths.get(a[0]).resolveSibling("ArcadeCarFrames.java")}){   // the renderer and its car frames
+            Matcher m=Pattern.compile("0xff([0-9a-fA-F]{6})").matcher(new String(Files.readAllBytes(src),StandardCharsets.UTF_8));
+            while(m.find())palette.add(Integer.parseInt(m.group(1),16));}
         Theme.select("n");CarPaint.select("blue");for(int b:CarPaint.body())palette.add(b&0xffffff);
         int bad=0,frames=0,run=0;java.util.Map<String,int[]> where=new java.util.TreeMap<>();
         for(int hour:new int[]{13,23})for(int layout:new int[]{6,7})for(int state=0;state<9;state++){

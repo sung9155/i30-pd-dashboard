@@ -29,9 +29,9 @@ public final class DriveStatsTest {
         for(;v>55;v-=1){t+=80;step(r,t,v,2000,0,-0.2f);}
         check(Float.isNaN(r.last[1])&&!r.running[1],"aborted 60-100 leaves no time");
         check(Math.abs(r.maxDecel-0.2f)<0.01f,"peak decel");
-        // Cool-down: hard use (boost 0.6) then a stop counts 45 s down; no hard use -> not needed.
+        // Cool-down: 40 s of hard use (boost 0.8) then a stop counts 45 s down; no hard use -> not needed.
         DriveStats s=new DriveStats();t=0;
-        for(int k=0;k<10;k++){t+=80;step(s,t,80,5200,0.6f,0.3f);}
+        for(int k=0;k<500;k++){t+=80;step(s,t,80,5200,0.8f,0.3f);}
         check(s.coolDownLeft()==-1,"moving: no cool-down");
         for(v=80;v>0;v-=4){t+=80;step(s,t,Math.max(0,v-4),900,0,-0.3f);}
         long stop=t;for(int k=0;k<10;k++){t+=80;step(s,t,0,800,0,0);}
@@ -42,6 +42,22 @@ public final class DriveStatsTest {
         for(int k=0;k<20;k++){t+=80;step(calm,t,30,1500,0,0);}
         for(int k=0;k<10;k++){t+=80;step(calm,t,0,800,0,0);}
         check(calm.coolDownLeft()==-1,"gentle drive needs no cool-down");
+        // City bursts: four 2 s pulls at 0.9 bar in five minutes (8 s, under the 30 s needed), then a stop: not needed.
+        DriveStats city=new DriveStats();t=0;
+        for(int p=0;p<4;p++){for(int k=0;k<25;k++){t+=80;step(city,t,50,3000,0.9f,0.2f);}for(int k=0;k<800;k++){t+=80;step(city,t,40,1800,0,0);}}
+        for(int k=0;k<10;k++){t+=80;step(city,t,0,800,0,0);}
+        check(city.coolDownLeft()==-1,"short city boost bursts need no cool-down");
+        // 0.6 bar is ordinary driving now, however long: not needed.
+        DriveStats mild=new DriveStats();t=0;
+        for(int k=0;k<1000;k++){t+=80;step(mild,t,90,3000,0.6f,0);}
+        for(int k=0;k<10;k++){t+=80;step(mild,t,0,800,0,0);}
+        check(mild.coolDownLeft()==-1,"0.6 bar cruising needs no cool-down");
+        // Hard use older than five minutes before the stop does not count.
+        DriveStats old=new DriveStats();t=0;
+        for(int k=0;k<500;k++){t+=80;step(old,t,100,5000,1f,0);}
+        for(int k=0;k<4000;k++){t+=80;step(old,t,60,2000,0,0);}
+        for(int k=0;k<10;k++){t+=80;step(old,t,0,800,0,0);}
+        check(old.coolDownLeft()==-1,"hard use 5+ minutes before the stop is forgotten");
         // Warm-up below 70 C coolant; G trail keeps the last 24 points, newest last.
         DriveStats w=new DriveStats();w.update(0,0,0,800,0,0.1f,0.2f,0,55f);
         check(w.warmUp,"55 C is warm-up");

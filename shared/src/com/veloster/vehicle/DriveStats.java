@@ -7,8 +7,11 @@ public final class DriveStats {
     /** Acceleration runs in km/h: 0-100 from standstill, then two rolling in-gear runs. */
     public static final float[][] RUNS={{0,100},{60,100},{80,120}};
     public static final int TRAIL=24;
-    static final float STOP_KMH=0.5f,WARM_C=70,HARD_BOOST=0.5f,HARD_RPM=4500;
-    static final long RUN_LIMIT_MS=30000,COOLDOWN_MS=45000,HARD_WINDOW_MS=120000;
+    static final float STOP_KMH=0.5f,WARM_C=70,HARD_BOOST=0.7f,HARD_RPM=4500;
+    /** Turbo cool-down only after sustained hard use: HARD_SUM_MS of boost >= HARD_BOOST or rpm >= HARD_RPM within the
+     *  HARD_WINDOW_MS before stopping. A city drive's short boost bursts (10/29 log: 7 s over 0.5 bar in 10 min, which
+     *  showed COOL-DOWN at one of two stops) no longer count. */
+    static final long RUN_LIMIT_MS=30000,COOLDOWN_MS=45000,HARD_WINDOW_MS=300000,HARD_SUM_MS=30000;
 
     // Runs: armed below the start speed, running after the upward crossing, finished at the end speed.
     public final float[] last=nan(3),best=nan(3);
@@ -18,7 +21,10 @@ public final class DriveStats {
     // Peaks.
     public float maxG=Float.NaN,maxLat=Float.NaN,maxDecel=Float.NaN,maxBoost=Float.NaN,maxRpm=Float.NaN,maxSpeed=Float.NaN;
     // Warm-up / cool-down.
-    public boolean warmUp;private long lastHardAt=Long.MIN_VALUE/2,stoppedAt=-1;
+    public boolean warmUp;private long lastHardAt=Long.MIN_VALUE/2,stoppedAt=-1,hardFrameAt=Long.MIN_VALUE;
+    /** Hard-use time per frame (start ms, length ms), oldest first, kept for HARD_WINDOW_MS; and whether the current stop
+     *  followed enough of it. */
+    private final java.util.ArrayDeque<long[]> hard=new java.util.ArrayDeque<long[]>();private boolean coolNeeded;
     // G trail, oldest first when read through trailX/trailY(i).
     private final float[] tx=new float[TRAIL],ty=new float[TRAIL];private int tHead,tCount;
     private float prevSpeed=Float.NaN;private long prevSpeedAt=Long.MIN_VALUE,prevGAt=Long.MIN_VALUE;
@@ -54,11 +60,15 @@ public final class DriveStats {
         if(!Float.isNaN(lat))maxLat=max(maxLat,Math.abs(lat));
         if(!Float.isNaN(lon)&&lon<0)maxDecel=max(maxDecel,-lon);
         warmUp=!Float.isNaN(coolant)&&coolant<WARM_C;
-        if((!Float.isNaN(boost)&&boost>=HARD_BOOST)||(!Float.isNaN(rpm)&&rpm>=HARD_RPM))lastHardAt=now;
+        long frame=hardFrameAt==Long.MIN_VALUE?0:Math.max(0,Math.min(GAP_MS,now-hardFrameAt));hardFrameAt=now;   // a hole counts nothing
+        if((!Float.isNaN(boost)&&boost>=HARD_BOOST)||(!Float.isNaN(rpm)&&rpm>=HARD_RPM)){lastHardAt=now;if(frame>0)hard.addLast(new long[]{now,frame});}
+        while(!hard.isEmpty()&&now-hard.peekFirst()[0]>HARD_WINDOW_MS)hard.removeFirst();
         for(int i=0;i<3;i++)if(running[i]&&now-prevSpeedAt>GAP_MS)running[i]=false;   // speed stopped arriving
         if(!Float.isNaN(speed)&&speedAt!=prevSpeedAt){
             if(!Float.isNaN(prevSpeed)&&speedAt-prevSpeedAt>GAP_MS){for(int i=0;i<3;i++)running[i]=false;prevSpeed=Float.NaN;}   // no crossing inside a hole
-            runs(speed,speedAt);stoppedAt=speed<STOP_KMH?(stoppedAt<0?speedAt:stoppedAt):-1;
+            runs(speed,speedAt);
+            if(speed<STOP_KMH&&stoppedAt<0){stoppedAt=speedAt;long sum=0;for(long[] h:hard)sum+=h[1];coolNeeded=sum>=HARD_SUM_MS;}   // decided once, at the stop
+            else if(speed>=STOP_KMH)stoppedAt=-1;
             prevSpeed=speed;prevSpeedAt=speedAt;}
         if(!Float.isNaN(lat)&&!Float.isNaN(lon)&&gAt!=prevGAt){
             maxG=max(maxG,(float)Math.sqrt(lat*lat+lon*lon));
@@ -114,9 +124,10 @@ public final class DriveStats {
         if(Float.isNaN(v0)||v1==v0)return t1;
         return t0+Math.round((t1-t0)*(double)Math.max(0,Math.min(1,(v-v0)/(v1-v0))));
     }
-    /** Remaining turbo cool-down (ms) while parked after hard use in the last 2 minutes; 0 = done, -1 = not needed. */
+    /** Remaining turbo cool-down (ms) while parked after sustained hard use (HARD_SUM_MS in the HARD_WINDOW_MS before
+     *  the stop); 0 = done, -1 = not needed. */
     public long coolDownLeft(){
-        if(stoppedAt<0||stoppedAt-lastHardAt>HARD_WINDOW_MS)return -1;
+        if(stoppedAt<0||!coolNeeded)return -1;
         return Math.max(0,COOLDOWN_MS-(now-Math.max(stoppedAt,lastHardAt)));
     }
     public int trailCount(){return tCount;}

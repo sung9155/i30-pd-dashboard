@@ -8,7 +8,7 @@ import java.util.Arrays;
  * remap table. Semantic green / amber (ok / caution) are never remapped. No Android imports: host-tested.
  */
 public final class Theme {
-    public static final String[] IDS={"n","lambo","bmw","ice","mono","amber","teal","night","rose","copper"};
+    public static final String[] IDS={"n","lambo","bmw","ice","mono","amber","teal","night","rose","copper","red","green"};
     public static final int SHAPE_CUT=0,SHAPE_HEX=1,SHAPE_ROUND=2;
 
     // N palette literals grouped by role (RGB only; alpha is kept from the caller).
@@ -59,6 +59,10 @@ public final class Theme {
         // Rose: round cells like M, without its stripe. Copper: hex cells like LB, normal digit weight.
         new Theme("rose","RS",SHAPE_ROUND,0,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x080506,0x110b0d,0x3a2830,0x24181d,0xfff2f6,0xa8909a,0xff8fb1,0x3a1624,0xff4f7b}),
         new Theme("copper","CU",SHAPE_HEX,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x070504,0x0e0a08,0x3a2c22,0x241b15,0xf8ece2,0xa69282,0xe08a52,0x33200f,0xc0502a}),
+        // Red: the accent is red, so warnings turn yellow and keep amber's ring. Green: a lime accent, clear of the
+        // shared ok-green and the ECO accent.
+        new Theme("red","RD",SHAPE_CUT,2,false,true,0xffffd21f,0xffffffff,new int[]{0x000000,0x080303,0x110707,0x3e1a1a,0x261111,0xfff1ee,0xaa8b86,0xff3b30,0x3d0d0a,0xff8a1f}),
+        new Theme("green","GR",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x040703,0x0a1007,0x27391a,0x172412,0xf1fbe8,0x8fa384,0xa6e22e,0x22320b,0xd9e84a}),
     };
     private static volatile Theme current=ALL[0];
     /** Drive-mode accent (option): ECO green, SPORT red-orange over any theme's accent; 0 = the theme's own. */

@@ -545,5 +545,7 @@
   "DPF 재생 트리거": "DPF regeneration trigger",
   "DPF 재생 중": "DPF regenerating",
   "DPF 재생 후 거리": "DPF km since regeneration",
-  "DPF 평균 재생 간격": "DPF average km between regenerations"
+  "DPF 평균 재생 간격": "DPF average km between regenerations",
+  "레드": "Red",
+  "그린": "Green"
 }

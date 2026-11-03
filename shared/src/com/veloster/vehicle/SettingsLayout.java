@@ -15,7 +15,7 @@ public final class SettingsLayout {
     public static final float TITLE_H=30;
     public static final String[] CATS={"화면","테마","차량 색","주행 모드","RPM","언어","진단","완료"};
     /** Display names for Theme.IDS, in that order. */
-    public static final String[] THEME_NAMES={"N","람보","BMW","아이스","모노","앰버","틸","나이트","로즈","코퍼"};
+    public static final String[] THEME_NAMES={"N","람보","BMW","아이스","모노","앰버","틸","나이트","로즈","코퍼","레드","그린"};
     /** Language choices (LanguageSettings ids) and their names. */
     public static final String[] LANGS={"auto","ko","en"},LANG_NAMES={"시스템","한국어","English"};
     public static final float TOP=60,BOTTOM=472,CAT_L=12,CAT_W=152,CAT_H=46,GAP=6,PANE_L=178,PANE_R=788,MAX_ITEM_H=72;

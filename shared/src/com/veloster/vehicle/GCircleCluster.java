@@ -49,7 +49,7 @@ final class GCircleCluster extends ClusterKit {
         bold(c,m?gr.substring(1):gr,700,122,44,ACC,Paint.Align.RIGHT);if(m)bold(c,"M",700,82,16,ACC,Paint.Align.RIGHT);
         bar(c,182,t("가속 페달"),Float.isNaN(pedal)?Float.NaN:pedal/100,fmt("%.0f",pedal)+" %",0xff3ddc84,false);
         bar(c,220,t("브레이크 압력"),Float.isNaN(brake)?Float.NaN:brake/60,fmt("%.0f",brake)+" bar",danger(),false);
-        bar(c,258,t("조향각"),Float.isNaN(steer)?Float.NaN:steer/360,Float.isNaN(steer)?"—":(steer>0?t("왼쪽 "):steer<0?t("오른쪽 "):"")+Math.abs(Math.round(steer))+"°",ACC,true);
+        bar(c,258,t("조향각"),Float.isNaN(steer)?Float.NaN:steer/360,Float.isNaN(steer)?"—":(steer>0?t("오른쪽 "):steer<0?t("왼쪽 "):"")+Math.abs(Math.round(steer))+"°",ACC,true);
         bar(c,296,t("요레이트"),Float.isNaN(yaw)?Float.NaN:yaw/40,fmt("%.1f",Float.isNaN(yaw)?Float.NaN:Math.abs(yaw))+" °/s",PEAK,true);
         bold(c,t("세션 최대"),x0,342,13,MU,Paint.Align.LEFT);
         String[] l={t("가속"),t("제동"),t("왼쪽"),t("오른쪽")};float[] pv={pkAcc,Math.abs(pkBrk),pkL,Math.abs(pkR)};

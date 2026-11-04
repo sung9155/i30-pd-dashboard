@@ -52,8 +52,8 @@ public final class VehicleDash extends View implements Runnable {
     private final int[] modeTargets=ClusterPicker.MODE_DEFAULT.clone();
     private int pickSlot=-1;
     private final HeaderTabs header=renderer.header();
-    private boolean lapRunning;
-    private long lapStart, lapMs;
+    private final LapTimer lap=new LapTimer();
+    private boolean lapHeld;   // the hold already acted; the finger's release is not a tap
     private long introStart;
     private float downX,downY;
     private long lastDiagnostic;
@@ -78,6 +78,11 @@ public final class VehicleDash extends View implements Runnable {
             int slot=graphs?graphLayout.hit(downX,downY):gaugeEditor.hit(downX,downY);
             if(slot>=0){touching=false;if(graphs)graphEditor.edit(slot);else gaugeEditor.edit(slot);}
         }
+    }};
+    /** Lap card on the performance page (PerformanceRenderer.LAP_*). */
+    private boolean onLap(float x,float y){return symmetric&&page==PitRenderer.PAGE_PERFORMANCE&&x>=PerformanceRenderer.LAP_L&&x<=PerformanceRenderer.LAP_R&&y>=PerformanceRenderer.LAP_T&&y<=PerformanceRenderer.LAP_B;}
+    private final Runnable lapHold=new Runnable(){public void run(){
+        if(touching&&!blocked&&getVisibility()==VISIBLE&&onLap(downX,downY)&&lap.hold(SystemClock.elapsedRealtime())){lapHeld=true;invalidate();}
     }};
     private final Runnable clusterHold=new Runnable(){public void run(){
         if(touching&&!blocked&&getVisibility()==VISIBLE&&header.onStrip(downX,downY)){
@@ -224,7 +229,7 @@ public final class VehicleDash extends View implements Runnable {
     public static void hscanPd(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanPd(cid,funcLow,data,receivedAt);}
     public static void obd(int pid,byte[] d){DATA.obd(pid,d,SystemClock.elapsedRealtime());}
     protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity); post(this); }
-    protected void onDetachedFromWindow() { removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(clusterHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();mediaReceiver.stop();artwork.close();super.onDetachedFromWindow(); }
+    protected void onDetachedFromWindow() { removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();mediaReceiver.stop();artwork.close();super.onDetachedFromWindow(); }
     public void run() {
         long delay=100;
         long tick=SystemClock.elapsedRealtime();
@@ -233,7 +238,7 @@ public final class VehicleDash extends View implements Runnable {
         if(getVisibility()==VISIBLE) {
             invalidate();long now=SystemClock.elapsedRealtime();
             if(graphs)delay=250;
-            else if(symmetric&&page==PitRenderer.PAGE_PERFORMANCE&&lapRunning)delay=33;
+            else if(symmetric&&page==PitRenderer.PAGE_PERFORMANCE&&lap.state()==LapTimer.RUNNING)delay=33;
             else if(symmetric&&page>=PitRenderer.PAGE_RACE)delay=50;  // shift blink, upshift pop, live run timers
             else if(!(cluster&&media&&!gauges) && mediaState.snapshot(now).notice)delay=16;
             if(introStart>0&&now-introStart<1500)delay=Math.min(delay,33);   // smooth the welcome sweep
@@ -262,7 +267,7 @@ public final class VehicleDash extends View implements Runnable {
         renderer.setPicker(picker,editing,hidden);renderer.setOrder(order,settingsScroll);
         renderer.setModeOptions(modeColor,modeScreen);
         if(picker&&editing)renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);
-        renderer.setLap(lapRunning?now-lapStart:lapMs,lapRunning);
+        renderer.setLap(lap);
         renderer.setOverviewLayout(overviewLayout);
         long drawStart=System.nanoTime();
         renderer.draw(c,getWidth(),getHeight(),cluster,DATA,now,shiftTarget,media,track);
@@ -295,8 +300,9 @@ public final class VehicleDash extends View implements Runnable {
     public boolean onTouchEvent(MotionEvent event) {
         float x=event.getX()*800/getWidth(), y=event.getY()*480/getHeight();
         if(event.getAction()==MotionEvent.ACTION_DOWN) {
-            removeCallbacks(editHold);removeCallbacks(clusterHold);touching=true;downX=x;downY=y;lastMoveY=y;header.down(x,y);
+            removeCallbacks(editHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);touching=true;downX=x;downY=y;lastMoveY=y;header.down(x,y);
             if(!blocked&&!picker&&header.onStrip(x,y))postDelayed(clusterHold,600);
+            removeCallbacks(lapHold);lapHeld=false;if(!blocked&&!picker&&onLap(x,y))postDelayed(lapHold,700);
             overviewDown=!cluster&&!gauges&&!graphs&&!symmetric&&!blocked&&!overviewCovered(y)?overviewLayout.hit(x,y):-1;
             if(!blocked&&!picker&&((gauges&&gaugeEditor.hit(x,y)>=0)||(graphs&&graphLayout.hit(x,y)>=0)))postDelayed(editHold,600);   // not under the screen list
             return true;
@@ -306,11 +312,11 @@ public final class VehicleDash extends View implements Runnable {
             if(Math.abs(y-downY)>=10)touching=false;   // a drag that scrolls is not a tap
             invalidate();return true;
         }
-        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y,event.getEventTime())){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);invalidate();return true;}
-        if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);}return true;}
-        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);header.up();return true; }
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y,event.getEventTime())){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);invalidate();return true;}
+        if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);}return true;}
+        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);header.up();return true; }
         if(event.getAction()!=MotionEvent.ACTION_UP)return true;
-        removeCallbacks(editHold);removeCallbacks(clusterHold);
+        removeCallbacks(editHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);
         if(header.up(event.getEventTime())){touching=false;return true;}   // a strip scroll is never a tap
         boolean tap=touching && Math.abs(x-downX)<16 && Math.abs(y-downY)<16;
         touching=false;
@@ -382,9 +388,8 @@ public final class VehicleDash extends View implements Runnable {
             activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("overview_style_"+overviewDown,overviewLayout.style(overviewDown)).apply();
             invalidate();return true;
         }
-        if(tap&&!blocked&&symmetric&&page==PitRenderer.PAGE_PERFORMANCE&&x>=600&&x<=788&&downX>=600&&downX<=788&&y>=339&&y<=468&&downY>=339&&downY<=468){
-            long now=SystemClock.elapsedRealtime();
-            if(lapRunning){lapMs=now-lapStart;lapRunning=false;}else if(lapMs>0)lapMs=0;else{lapStart=now;lapRunning=true;}
+        if(tap&&!blocked&&onLap(x,y)&&onLap(downX,downY)){   // tap: start / next lap / resume; a hold (lapHold) stops, then clears
+            if(!lapHeld)lap.tap(SystemClock.elapsedRealtime());
             invalidate();return true;
         }
         if(tap&&!blocked&&symmetric&&PitRenderer.isCluster(page)&&y>52&&downY>52&&renderer.clusterTap(x,y)){invalidate();return true;}

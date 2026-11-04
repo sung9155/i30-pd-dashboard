@@ -263,8 +263,6 @@
   "G-포스": "G-force",
   "랩 타이머": "Lap timer",
   "탭: 시작": "Tap: start",
-  "탭: 정지": "Tap: stop",
-  "탭: 초기화": "Tap: reset",
   "연료 L/h": "Fuel L/h",
   "레이스": "Race",
   "운전석": "Driver",
@@ -554,5 +552,10 @@
   "시간 초과 · 취소됨": "Timed out · disarmed",
   "측정 준비를 누르세요": "Tap Arm to start",
   "측정 준비": "Arm",
-  "측정 중 · 버튼": "Timing"
+  "측정 중 · 버튼": "Timing",
+  "지난 랩": "Last",
+  "최고 랩": "Best",
+  "최고 대비": "vs best",
+  "탭: 다음 랩 · 길게: 정지": "Tap: next lap · Hold: stop",
+  "탭: 계속 · 길게: 초기화": "Tap: resume · Hold: clear"
 }

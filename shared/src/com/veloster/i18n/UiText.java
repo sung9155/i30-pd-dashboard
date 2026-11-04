@@ -462,6 +462,7 @@ public final class UiText {
         EN.put("지금","Now");
         EN.put("지금 연비 ","Now ");
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
+        EN.put("지난 랩","Last");
         EN.put("진단","DTC");
         EN.put("진단 서비스에 연결하지 못했습니다.","Could not connect to the diagnostic service.");
         EN.put("차량 계산값","From the car");
@@ -476,6 +477,8 @@ public final class UiText {
         EN.put("최고 0→100 km/h 초","Best 0→100 km/h s");
         EN.put("최고 RPM","Peak rpm");
         EN.put("최고 감속G","Peak decel G");
+        EN.put("최고 대비","vs best");
+        EN.put("최고 랩","Best");
         EN.put("최고 부스트","Peak boost");
         EN.put("최고 부스트 순간","At peak boost");
         EN.put("최고 속도","Top speed");
@@ -508,9 +511,9 @@ public final class UiText {
         EN.put("타이어 공기압 낮음","Low tire pressure");
         EN.put("택시","Taxi");
         EN.put("택시 미터기","Taxi meter");
+        EN.put("탭: 계속 · 길게: 초기화","Tap: resume · Hold: clear");
+        EN.put("탭: 다음 랩 · 길게: 정지","Tap: next lap · Hold: stop");
         EN.put("탭: 시작","Tap: start");
-        EN.put("탭: 정지","Tap: stop");
-        EN.put("탭: 초기화","Tap: reset");
         EN.put("테마","Theme");
         EN.put("토크 (계산)","Torque (calc.)");
         EN.put("통과 속도","Trap speed");

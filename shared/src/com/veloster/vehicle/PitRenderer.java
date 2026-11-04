@@ -68,9 +68,9 @@ public final class PitRenderer {
     private final DriveStats stats=new DriveStats();
     /** Session records, fed every frame whatever tab is shown. */
     public DriveStats stats(){return stats;}
-    private boolean symmetric,lapRunning;
+    private boolean symmetric;
     private int page;
-    private long lapMs;
+    private LapTimer lap=new LapTimer();
     private GraphLayout graphLayout;
     private GaugeLayout gaugeLayout;
     private OverviewLayout overviewLayout=new OverviewLayout();
@@ -88,7 +88,7 @@ public final class PitRenderer {
     public void setSymmetric(boolean value){symmetric=value;}
     /** Performance and race are variants of the symmetric page (symmetric must also be set), so every other tab check stays as is. */
     public void setPage(int value){page=value;}
-    public void setLap(long ms,boolean running){lapMs=ms;lapRunning=running;}
+    public void setLap(LapTimer timer){lap=timer;}
     public void setOverviewLayout(OverviewLayout value){if(value!=null)overviewLayout=value;}
     private static final String[] PREFIX={"엔진 RPM","오일 온도","냉각수 온도","앞 왼쪽 휠","앞 오른쪽 휠","뒤 왼쪽 휠","뒤 오른쪽 휠","속도 km/h","현재 기어","스로틀 %","브레이크 압력 bar","횡가속","종가속","조향각","외기 온도","출력 (계산)","토크 (계산)","부스트 (계산)","앞 왼쪽 공기압","앞 오른쪽 공기압","뒤 왼쪽 공기압","뒤 오른쪽 공기압","TCS","ESC","ABS","배터리 SOC","배터리 전압","조향 속도","e-LSD 수치","흡기 온도"};
     private int index(String prefix){for(int i=0;i<PREFIX.length;i++)if(PREFIX[i].equals(prefix))return i;return -1;}
@@ -126,7 +126,7 @@ public final class PitRenderer {
         chrome(c,width,height,cluster);
         if(graphLayout!=null)graphRenderer.draw(c,model,now,graphLayout);
         else if(gaugeLayout!=null)gaugeRenderer.draw(c,model,now,gaugeLayout);
-        else if(symmetric&&page==PAGE_PERFORMANCE)performanceRenderer.draw(c,samples,lapMs,lapRunning,profile);
+        else if(symmetric&&page==PAGE_PERFORMANCE)performanceRenderer.draw(c,samples,lap,now,profile);
         else if(symmetric&&page==PAGE_SHOW)showRenderer.draw(c,samples,frameTime,profile);
         else if(symmetric&&page==PAGE_RACE)raceRenderer.draw(c,samples,cue,frameTime,stats,profile,media,music,artwork);
         else if(symmetric&&page==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
@@ -337,7 +337,7 @@ public final class PitRenderer {
         else if(s==ClusterPicker.F1)drawCluster(c);
         else if(s==ClusterPicker.OVERVIEW)drawDashboard(c);
         else{int pg=s-ClusterPicker.F1;
-            if(pg==PAGE_PERFORMANCE)performanceRenderer.draw(c,samples,0,false,profile);
+            if(pg==PAGE_PERFORMANCE)performanceRenderer.draw(c,samples,null,frameTime,profile);
             else if(pg==PAGE_SHOW)showRenderer.draw(c,samples,frameTime,profile);
             else if(pg==PAGE_RACE)raceRenderer.draw(c,samples,cue,frameTime,stats,profile,false,null,null);
             else if(pg==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);

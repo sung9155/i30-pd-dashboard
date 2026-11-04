@@ -199,6 +199,7 @@ public final class HscanPdTelemetryTest {
         t.hscanPd(0xc7,0x09,b(0xe3,0xff,0x80,0x8c,0x11,0x24,0xff,0x10),1002);check(!t.sample(2,1002).valid&&!t.sample(9,1002).valid&&!t.sample(1,1002).valid,"coolant/pedal sentinels withheld");
         // EMS19 slot 0x0e boost: withheld until EMS14 baro (0x0a byte0 0xd8 -> 748.7 mmHg) arrives, then gauge bar.
         Telemetry u=new Telemetry();
+        u.hscanPd(0xc7,0x0c,b(0,0,0,0,0,0,0x5e,0),999);   // petrol ignition timing seen: the petrol boost layout
         u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x39,0x2e,0,0,0x80,0),1000);check(!u.sample(Telemetry.BOOST,1000).valid,"boost needs baro first");
         u.hscanPd(0xc7,0x0a,b(0xd8,0x80,0,0x8e,0,0,0,0),1001);
         float baro=(27*10.731613f+458.98f)*1.33322f;
@@ -208,6 +209,22 @@ public final class HscanPdTelemetryTest {
         u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x50,0x59,0,0,0x80,0),1004);check(u.sample(Telemetry.BOOST,1004).value>0.8f,"1885 hPa drive peak is about +0.89 bar once two samples agree");
         u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x50,0xda,0,0,0x80,0),1005);u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x50,0xda,0,0,0x80,0),1006);
         check(Math.abs(u.sample(Telemetry.BOOST,1006).value-0.89f)<0.01f,"3.62 bar (in-car lift-off MAX) is never shown, even twice");
+        // Diesel (drive 2026-11-05): the timing slot stays 0 with the engine running; boost comes from 0x0e byte1 x 20 hPa.
+        // The bytes are the log's: idle 00 34 33 db 14 00 0c 79 (petrol layout would read about +3.6 bar), flat out byte1 129.
+        Telemetry dzb=new Telemetry();
+        dzb.hscanPd(0xc7,0x0a,b(0xd8,0x80,0,0x8e,0,0,0,0),900);
+        dzb.hscanPd(0xc7,0x0e,b(0,0x34,0x33,0xdb,0x14,0,0x0c,0x79),901);check(!dzb.sample(Telemetry.BOOST,901).valid,"no boost before the engine type is known");
+        for(int k=0;k<5;k++){dzb.hscanPd(0xc7,0x08,b(0,0,0x60,0x0d,0,0,0,0),902+k);dzb.hscanPd(0xc7,0x0c,b(0x1b,0x20,0,0x30,0,0x61,0,0x35),902+k);}
+        check(dzb.profile().fuel==com.veloster.vehicle.VehicleProfile.Fuel.DIESEL,"a zeroed timing slot with the engine running is a diesel at once, before 2000 rpm");
+        dzb.hscanPd(0xc7,0x0e,b(0,0x34,0x33,0xdb,0x14,0,0x0c,0x79),910);
+        check(Math.abs(dzb.sample(Telemetry.BOOST,910).value-(52*20f-baro)/1000f)<0.001f&&Math.abs(dzb.sample(Telemetry.BOOST,910).value)<0.1f,"diesel idle: byte1 52 is about baro, near 0 bar: "+dzb.sample(Telemetry.BOOST,910).value);
+        dzb.hscanPd(0xc7,0x0e,b(0,0x81,0x3a,0xb5,0x14,0,0x13,0x77),911);dzb.hscanPd(0xc7,0x0e,b(0,0x81,0x3a,0xb5,0x14,0,0x13,0x77),912);
+        check(Math.abs(dzb.sample(Telemetry.BOOST,912).value-(129*20f-baro)/1000f)<0.001f,"diesel flat out: byte1 129 is about +1.6 bar");
+        Telemetry ptb=new Telemetry();   // a petrol never takes the diesel path, even with a few zero timing frames first
+        ptb.hscanPd(0xc7,0x0a,b(0xd8,0x80,0,0x8e,0,0,0,0),900);
+        for(int k=0;k<3;k++){ptb.hscanPd(0xc7,0x08,b(0,0,0x60,0x0d,0,0,0,0),901+k);ptb.hscanPd(0xc7,0x0c,b(0,0,0,0,0,0,0,0),901+k);}
+        ptb.hscanPd(0xc7,0x0c,b(0,0,0,0,0,0,0x5e,0),905);ptb.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x39,0x2e,0,0,0x80,0),906);
+        check(Math.abs(ptb.sample(Telemetry.BOOST,906).value+0.02f)<0.01f,"petrol keeps the verified layout");
         u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0xc0,0x8d,0,0,0x80,0),1007);check(u.sample(Telemetry.BOOST,1007).value<1f,"lone rise to +2.0 bar dropped");
         u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0xd0,0x7a,0,0,0x80,0),1008);check(u.sample(Telemetry.BOOST,1008).value>1.5f,"+0.7 bar rise to +1.6 (hard spool) shown");
         u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x39,0x2e,0,0,0x80,0),1009);check(u.sample(Telemetry.BOOST,1009).value<0,"lift-off fall from +1.6 to idle shown at once");

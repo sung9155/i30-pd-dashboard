@@ -21,25 +21,7 @@
    - **기본 시작 화면 = 레이스(screen index 5)**: `VehicleDash` 로드부 `p.getInt("cluster_screen",ClusterPicker.OVERVIEW)` 의 기본값을 레이스로. 깔끔하게 `ClusterPicker`에 `RACE=F1+2`(=5) 상수 추가해 쓰면 좋다. (SPORT 모드 기본도 이미 `F1+2`=레이스.)
    - 주의: 저장된 `cluster_order`/`cluster_screen` 가 있으면 사용자 설정 우선(기존 동작 유지). 기본값만 바꾸는 것.
 
-5. ~~**RED 테마 경고 램프 테두리 흰색 → 테마색**~~ — 2026-11-03 끝냄(아래 수정 그대로 적용, `ThemeShapes.ring`). — RED 테마 클래식에서 PARK(상단 띠)·PARK BRAKE(하단 경고줄)에 켜질 때 **흰색 테두리**가 생겨 빨간 팔레트와 안 어울림.
-   - 현상: 켜진 경고 램프 = danger색(RED 테마는 노랑 `0xffffd21f`) 채움 + 흰색 2px 링. 흰 링이 빨강 테마에서 튄다.
-   - 원인: `ThemeShapes.ring()`(shared/.../vehicle/ThemeShapes.java:31)이 링 색을 `0xffffffff`로 하드코딩. 링은 `Theme.dangerRing`인 테마에서만 그림 = amber·red 둘뿐(Theme.java:56,64). amber는 흰 링이 맞지만(앰버 UI에서 danger와 accent가 가까워 흰색으로 구분), red는 danger가 노랑이라 흰 링이 불필요하게 튄다. 주석(Theme.java:62)이 "red는 amber의 링을 유지"라 **삭제 말고 색만 교체**가 의도에 맞음.
-   - 적용할 수정(ThemeShapes.java, 검증 완료 — 로컬에선 되돌려 둠, 다른 PC에서 적용):
-     ```java
-     /**
-      * 2px ring that marks a warning when the danger colour is close to the accent. Amber frames it in white;
-      * red's danger lamp is yellow on a red field, where a white ring clashes, so red frames it in the accent red.
-      */
-     static void ring(Canvas c,Paint p,float l,float t,float rr,float b){
-         Theme th=Theme.current();
-         if(!th.dangerRing)return;
-         int col="red".equals(th.id)?th.accent:0xffffffff;
-         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(col);c.drawRect(l+2,t+2,rr-2,b-2,p);p.setStyle(Paint.Style.FILL);
-     }
-     ```
-     RED accent = `0xffff3b30`(Theme.java:64). 같은 `ring()`을 PARK(상단)·PARK BRAKE(하단)·기타 danger 램프가 공유하므로 한 곳 고치면 전부 적용.
-   - 검증: 프리뷰로 RED+클래식+PARK_BRAKE 강제 점등 렌더 → 노랑 램프에 **빨간 링**(흰색 아님) 확인. 테스트 영향 없음(ThemeShapes 단독, 상수/카운트 안 건드림). 적용 후 `preview.sh`로 재확인 + 실차 1회 확인 권장.
-   - 미결: amber 테마는 그대로 흰 링 유지. 다른 danger색 테마(없음)는 해당 없음.
+5. ~~**RED 테마 경고 램프 테두리 흰색 → 테마색**~~ — 2026-11-04 beta 적용 완료(`ThemeShapes.ring`: `int col="red".equals(th.id)?th.accent:0xffffffff;`). RED 클래식 PARK/PARK BRAKE 노랑 램프에 빨간 링. amber는 흰 링 유지.
 
 6. **지도 반 + 계기판 반 (순정 분할 칸)** — 실차 확인 필요. 순정 "내비 반 + 음악 반" 화면이 framework의 분할 창(창 종류 2040, 오른쪽 480 px)을 쓰는지 노트북에서 확인한다: `bash i30pd_port/split_capture.sh on` → `off` → (필요하면) `pull <패키지명>`. 배경·읽는 법·구현 계획은 [`SPLIT_SCREEN.md`](SPLIT_SCREEN.md). 결과는 그 문서 맨 아래 "실차 결과"에 적는다.
 
@@ -59,6 +41,18 @@
 - `c5bcaa9` 레이아웃 선택 설정 = 리스트 + ▲▼ 순서변경 + 라이브 미니 썸네일
 - `dda16b9` 에코 화면 삭제 (오실로·노킹도 앞서 삭제)
 - `24fcfdd` 추격 도로 방향 수정, `9d3b677` 플로팅 버튼 투명도 0.2
+- 2026-11-04 beta 반영분(다른 PC):
+  - `a1de4ee` main v1.8.0 병합 — 사운드(엔진사운드·시프트비프·8비트 플레임) stable 편입(`cd9bf58`), 폰 설치기 주행 녹화(`6e29916`)
+  - `ceafc85` 퍼포먼스 실 랩타이머(랩·last·best·delta, 1:23.45 표기)
+  - `16b8d0f`/`4a7e355` 시프트 비프(옵션, 기본 OFF): 시프트 큐 점등 시 더블 차임, 알림음 5종(설정→RPM→알림음 종류)
+  - `af78d7d`/`35d7a39` 드래그: 측정 준비 키로만 트리 작동(1회/암, 10 s 그린 타임아웃), 암 키 트리 아래 268×96로 이동
+  - `a292de3`/`4d1cac9` 택시: 상태 라벨 단일 버튼(운행 시작/종료/정차 후 다음), 상태 램프 달린 미터 키
+  - `8bc4b62`/`d38f403` 아케이드: 도로가 차를 중심으로 회전, 차도 도로 따라 회전
+  - `750b354` 택시 미터: 말 더 빨리 질주 + LED 테마 추종
+  - `ebc5e50` 페이지 chrome 캐시 비트맵(main 쪽)
+  - `1887801` 렉 수정: PD에 없는 BCM 서비스 조회 중단, DTC unregister 실패가 OBD 폴러 정지 안 시키게
+  - `20fb748`/`a9b634c` OBD 프로브(읽기전용): 현대 mode 22 식별자 원시 응답 로깅, 라운드 반복(최대 2시간)
+  - `e1abfa4` My Apps 플로팅 버튼 = 소형 속도계 face
 
 ## 참고
 - 차: `pd_kr`. 재부팅마다 USB 디버깅 꺼짐 → 엔지니어모드→Factory Test `0A 01`→`65 01`→`0A 02` 재진입.

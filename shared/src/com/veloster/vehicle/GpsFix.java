@@ -7,7 +7,9 @@ public final class GpsFix {
     public static volatile float accuracy=Float.NaN;
     /** System.nanoTime of the last fix in ms, 0 before the first. */
     public static volatile long at;
-    public static void set(double latitude,double longitude,float acc){lat=latitude;lon=longitude;accuracy=acc;at=Math.max(1,System.nanoTime()/1000000);}
+    /** Counts fixes, so a reader can take each one once (CircuitCluster). */
+    public static volatile int seq;
+    public static void set(double latitude,double longitude,float acc){lat=latitude;lon=longitude;accuracy=acc;at=Math.max(1,System.nanoTime()/1000000);seq++;}
     public static boolean any(){return at>0;}
     /** Fresh enough to place the car (the receiver sends about one a second). */
     public static boolean fresh(){long t=at;return t>0&&System.nanoTime()/1000000-t<5000;}

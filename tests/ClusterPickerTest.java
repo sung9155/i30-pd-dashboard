@@ -5,10 +5,12 @@ public final class ClusterPickerTest {
     private static int checks;
     private static void check(boolean b,String s){checks++;if(!b)throw new AssertionError(s);}
     public static void main(String[] args){
-        check(ClusterPicker.COUNT==22&&ClusterPicker.NAMES.length==22&&ClusterPicker.DESC.length==22,"22 screens, one name and line each");
+        check(ClusterPicker.COUNT==23&&ClusterPicker.NAMES.length==23&&ClusterPicker.DESC.length==23,"23 screens, one name and line each");
+        {int[] old=new int[22];for(int i=0;i<22;i++)old[i]=21-i;int[] o=ClusterPicker.validOrder(old);
+         check(o.length==23&&o[0]==21&&o[21]==0&&o[22]==22,"an order saved with 22 screens keeps its arrangement, the new screen last");}
         check(ClusterPicker.NAMES[ClusterPicker.OVERVIEW].equals("전체 조망")&&ClusterPicker.NAMES[ClusterPicker.GAUGES].equals("게이지")&&ClusterPicker.NAMES[ClusterPicker.GRAPHS].equals("그래프"),"overview, gauges, graphs first");
         check(ClusterPicker.NAMES[ClusterPicker.F1].equals("F1")&&ClusterPicker.NAMES[ClusterPicker.CLASSIC].equals("클래식"),"then F1, the symmetric pages, the drawn layouts");
-        check(ClusterPicker.page(ClusterPicker.F1+1)==1&&ClusterPicker.page(ClusterPicker.CLASSIC)==5&&ClusterPicker.page(ClusterPicker.COUNT-1)==18,"screen after F1 maps to its PitRenderer page");
+        check(ClusterPicker.page(ClusterPicker.F1+1)==1&&ClusterPicker.page(ClusterPicker.CLASSIC)==5&&ClusterPicker.page(ClusterPicker.COUNT-1)==19,"screen after F1 maps to its PitRenderer page");
         for(int i=0;i<ClusterPicker.SLOTS;i++){
             float x=ClusterPicker.left(i)+10,y=ClusterPicker.top(i)+10;
             check(ClusterPicker.hit(x,y)==i,"tile "+i+" hits itself");

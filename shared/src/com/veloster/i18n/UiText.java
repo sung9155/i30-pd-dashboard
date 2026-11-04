@@ -25,6 +25,7 @@ public final class UiText {
         EN.put(" 전환 요청 완료. 실제 PC 연결은 별도로 확인하세요."," change requested. Verify the actual PC connection separately.");
         EN.put(" 화면이 없거나 현재 앱에서 실행할 수 없습니다."," is unavailable or cannot be opened by this app.");
         EN.put("%,d원","%,d won");
+        EN.put("%d랩 완료","%d laps done");
         EN.put("%s · 서울 요금","%s · Seoul fare");
         EN.put("%s 요금","%s fare");
         EN.put(". 백업이 남아 있으면 원상복구하세요.",". Restore the original settings if a backup remains.");
@@ -40,7 +41,9 @@ public final class UiText {
         EN.put("8비트 게임","8-bit game");
         EN.put("8비트 추격 시점","8-bit chase view");
         EN.put("8비트 하늘","8-bit sky");
+        EN.put("AMG 스피드웨이","AMG Speedway");
         EN.put("AP 상태 13 확인. IP 주소와 iPhone의 SSID 검색을 다음으로 확인하세요.","AP state 13 confirmed. Next check the IP address and whether the iPhone sees the SSID.");
+        EN.put("BMW 드라이빙 센터","BMW Driving Center");
         EN.put("CH1 횡G 0.2 g/div","CH1 lat G 0.2 g/div");
         EN.put("CH2 종G 0.2 g/div","CH2 long G 0.2 g/div");
         EN.put("DCT 짝수단 클러치 온도","DCT even-gear clutch temperature");
@@ -63,8 +66,13 @@ public final class UiText {
         EN.put("G 원","G circle");
         EN.put("G-볼 1.2g","G-ball 1.2g");
         EN.put("G-포스","G-force");
+        EN.put("GPS 끊김","GPS lost");
+        EN.put("GPS 랩 타이머","GPS lap timer");
+        EN.put("GPS 신호를 기다리는 중","Waiting for GPS");
         EN.put("GPS 없음","no GPS");
+        EN.put("GPS 자동 랩","GPS auto laps");
         EN.put("GPS·오디오 등 실제 연결은 해당 앱에서 진행합니다. 기기를 선택해 확인할 때만 페어링을 요청합니다.","Use the relevant app for GPS or audio connections. Pairing is requested only after you select and confirm a device.");
+        EN.put("KIC 상설 서킷","KIC Permanent Circuit");
         EN.put("L · 가속 페달","L · accelerator");
         EN.put("N 계기판","N Dashboard");
         EN.put("R · 부스트","R · boost");
@@ -204,6 +212,7 @@ public final class UiText {
         EN.put("뒤로","Back");
         EN.put("드래그","Drag");
         EN.put("드래그 출발 트리","Drag start tree");
+        EN.put("등록된 서킷 밖 · 가장 가까운 %s %.0f km","No known circuit here · nearest: %s, %.0f km");
         EN.put("디젤 DPF","Diesel DPF");
         EN.put("라바 오렌지","Lava Orange");
         EN.put("람보","Lambo");
@@ -301,6 +310,7 @@ public final class UiText {
         EN.put("상향등","High beam");
         EN.put("새 기기","New device");
         EN.put("서울","Seoul");
+        EN.put("서킷","Circuit");
         EN.put("설명 / Help","Help");
         EN.put("설정 복원 확인. 백업 표시 삭제 실패로 다음 실행 때 재확인 필요.","Settings restoration verified, but the backup marker could not be cleared. Check again next time.");
         EN.put("설정 상태 확인 불가","Setting unavailable");
@@ -440,6 +450,7 @@ public final class UiText {
         EN.put("이전","Previous");
         EN.put("이전 시험 백업이 남아 있습니다. 먼저 원상복구하세요.","A previous test backup remains. Restore the original settings first.");
         EN.put("이제 ☆ 버튼을 짧게 누르면 계기판이 열립니다.","A short press of ☆ now opens the dashboard.");
+        EN.put("인제 스피디움","Inje Speedium");
         EN.put("인천","Incheon");
         EN.put("인텐스 블루","Intense Blue");
         EN.put("인텐스 카퍼","Intense Copper");
@@ -537,6 +548,7 @@ public final class UiText {
         EN.put("처리 실패: ","Operation failed: ");
         EN.put("처리 중입니다. 완료될 때까지 기다려 주세요.","Working. Please wait until this finishes.");
         EN.put("처음 설치했다면 실행 바로가기를 설정하세요. 순정 홈에는 앱이 자동으로 추가되지 않습니다.","After first installation, set up Quick entry. The factory home screen does not add this app automatically.");
+        EN.put("초기화","Reset");
         EN.put("촉매 온도","Catalyst temp");
         EN.put("최고","Best");
         EN.put("최고 0→100 km/h 초","Best 0→100 km/h s");
@@ -553,6 +565,10 @@ public final class UiText {
         EN.put("최대 횡G","Max lat G");
         EN.put("출력 (계산)","Power (calc.)");
         EN.put("출력 경로","Output route");
+        EN.put("출발선 위치는 추정","Start / finish line estimated");
+        EN.put("출발선 지정","Set line");
+        EN.put("출발선을 지나면 1랩이 시작됩니다","Lap 1 starts at the start / finish line");
+        EN.put("출발하면 1랩이 시작됩니다","Lap 1 starts as you move off");
         EN.put("출발하세요 · %d초","Go · %ds");
         EN.put("충남","Chungnam");
         EN.put("충북","Chungbuk");
@@ -570,6 +586,7 @@ public final class UiText {
         EN.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","When enabled, reboot restores only the shortcut, not the full app screen. Drag the edge button to move it.\n\nIf overlays are denied, the notification remains. If the factory UI also hides notifications, use another entry point. Force-stop may prevent restoration until My Apps is opened again.");
         EN.put("켜짐 (짧게 누르면 계기판)","On (short press opens the dashboard)");
         EN.put("켬","On");
+        EN.put("코리아 인터내셔널 서킷","Korea International Circuit");
         EN.put("코치","Coach");
         EN.put("코퍼","Copper");
         EN.put("클래식","Classic");
@@ -582,6 +599,7 @@ public final class UiText {
         EN.put("타이어 공기압","Tire pressure");
         EN.put("타이어 공기압 (4바퀴 묶음)","Tyre pressures (all four)");
         EN.put("타이어 공기압 낮음","Low tire pressure");
+        EN.put("태백 스피드웨이","Taebaek Speedway");
         EN.put("택시","Taxi");
         EN.put("택시 미터기","Taxi meter");
         EN.put("탭: 계속 · 길게: 초기화","Tap: resume · Hold: clear");
@@ -614,6 +632,7 @@ public final class UiText {
         EN.put("페어링됨","Paired");
         EN.put("페어링을 요청했습니다. PIN 확인 창이 나타나면 차량 화면에서 확인하세요.","Pairing requested. Confirm the PIN on the head-unit screen if prompted.");
         EN.put("평균 연비","Avg economy");
+        EN.put("포천 레이스웨이","Pocheon Raceway");
         EN.put("폴라 화이트","Polar White");
         EN.put("표시 항목","Signal");
         EN.put("표시할 설치 앱이 없습니다. 앱 설치 뒤 다시 열거나 목록 편집에서 선택하세요.","No installed apps to show. Reopen after installing an app or select one in Edit app list.");

@@ -64,7 +64,7 @@ public final class TabsPreview {
         rec.setPage(PitRenderer.PAGE_RECORDS);save(out,"4d_records",rec,model,now,false,false);
         model.obd(0x46,new byte[]{(byte)58},now);model.obd(0x2f,new byte[]{(byte)158},now);   // ambient 18 C, fuel 62 % (the replayed log has neither; the classic tiles show them)
         String[] layouts={"9a_cluster_classic","9b_cluster_retro","9c_cluster_rally","9d_cluster_taxi","9e_cluster_80s","9f_cluster_hud","9g_cluster_8bit","9g_cluster_8bit_chase",
-            "9i_cluster_gcircle","9j_cluster_night","9k_cluster_drag","9l_cluster_engine","9m_cluster_cassette","9n_cluster_warp"};
+            "9i_cluster_gcircle","9j_cluster_night","9k_cluster_drag","9l_cluster_engine","9m_cluster_cassette","9n_cluster_warp","9o_cluster_circuit"};
         for(int i=0;i<layouts.length;i++){rec.setPage(PitRenderer.PAGE_CLASSIC+i);save(out,layouts[i],rec,model,now,false,false);}
         rec.setPicker(true,false,0);save(out,"9_cluster_list",rec,model,now,false,false);rec.setPicker(false,false,0);
         Telemetry.Sample sel=model.sample(Telemetry.GEAR_SELECTOR,now);   // G circle in the DCT manual gate (S -> "M" + gear), then the lever back
@@ -94,6 +94,7 @@ public final class TabsPreview {
         taxi(out,"9d_cluster_taxi_music",model,now,ms.snapshot(now),false);
         taxi(out,"9d_cluster_taxi_receipt",model,now,ms.snapshot(now),true);
         taxiArea(out,"9d_cluster_taxi_busan_out",model,now,ms.snapshot(now));
+        for(int ci=0;ci<Circuits.count();ci++)circuit(out,"9o_circuit_"+Circuits.id(ci),ci,model,now);
         // Theme switch on a live renderer: draw once in the selected theme, then switch to lambo and draw again.
         String was=Theme.current().id;PitRenderer sw=new PitRenderer();sw.setSymmetric(true);sw.setPage(PitRenderer.PAGE_RACE);
         save(out,"x_theme_before",sw,model,now,false,false);Theme.select("lambo");save(out,"x_theme_switch",sw,model,now,false,false);Theme.select(was);
@@ -176,6 +177,26 @@ public final class TabsPreview {
         r.draw(c,3,m.snapshot(now),now,new DriveStats(),VehicleProfile.PETROL_DCT,m,track);
         GpsFix.set(35.3350,129.0373,8);   // Yangsan City Hall
         for(int i=1;i<=4;i++)r.draw(c,3,m.snapshot(now),now+i*1001,new DriveStats(),VehicleProfile.PETROL_DCT,m,track);
+        GpsFix.at=0;
+        ImageIO.write(img,"png",new File(dir,name+".png"));
+    }
+    /** Circuit ci driven along its own track at about 120 km/h (one fix a second): a lap and a half, the second lap
+     *  2 s quicker, drawn mid-lap. */
+    private static void circuit(File dir,String name,int ci,Telemetry m,long now) throws Exception {
+        BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
+        android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+        CircuitCluster k=new CircuitCluster();
+        int n=Circuits.points(ci);double t=0,want=33.3,s=0,next=0;double[] at=Circuits.point(ci,n-3);
+        k.feed(at[0],at[1],0);   // just before the line
+        for(int lap=0;lap<3;lap++)for(int i=0;i<n;i++){
+            if(lap==2&&i>n*0.45)break;
+            double[] a=Circuits.point(ci,i),b=Circuits.point(ci,(i+1)%n);
+            double kx=111320*Math.cos(Math.toRadians(a[0])),len=Math.hypot((b[1]-a[1])*kx,(b[0]-a[0])*110540),v=lap==1?want*1.03:want;
+            for(double d=next;d<len;d+=v){double f=d/len;t+=1000;k.feed(a[0]+f*(b[0]-a[0]),a[1]+f*(b[1]-a[1]),(long)t);next=d+v-len;}
+            if(next<0)next=0;
+        }
+        GpsFix.lat=at[0];GpsFix.lon=at[1];GpsFix.accuracy=4;GpsFix.at=System.nanoTime()/1000000;   // fresh, without a new fix (seq) for the cluster to take
+        k.frame(c,m.snapshot(now),m,new DriveStats(),VehicleProfile.PETROL_DCT,now,null);
         GpsFix.at=0;
         ImageIO.write(img,"png",new File(dir,name+".png"));
     }

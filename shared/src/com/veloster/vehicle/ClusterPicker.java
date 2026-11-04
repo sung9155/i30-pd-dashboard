@@ -10,11 +10,11 @@ package com.veloster.vehicle;
 public final class ClusterPicker {
     /** Header tab label per screen (short: the tab is 160 px wide). */
     public static final String[] NAMES={"전체 조망","게이지","그래프","F1","퍼포먼스","레이스","기록","쇼",
-        "클래식","레트로","랠리","택시","80년대","HUD","8비트","아케이드","G 원","야간","드래그","엔진","카세트","워프"};
+        "클래식","레트로","랠리","택시","80년대","HUD","8비트","아케이드","G 원","야간","드래그","엔진","카세트","워프","서킷"};
     /** Second line on each tile. */
     public static final String[] DESC={"모든 값 한눈에","고른 값 게이지","시간 그래프","F1 스타일 계기판","랩 타이머","변속 표시·음악","주행 기록","쇼 화면",
         "계단 회전 곡선","주황 LCD","흰 네모 숫자","택시 미터기","80년대 디지털","전투기 HUD","8비트 게임","8비트 추격 시점","마찰원","야간 미니멀","드래그 출발 트리",
-        "비행기 엔진 계기판","카세트 데크","우주선 워프"};
+        "비행기 엔진 계기판","카세트 데크","우주선 워프","GPS 랩 타이머"};
     public static final int OVERVIEW=0,GAUGES=1,GRAPHS=2,F1=3,CLASSIC=8,COUNT=NAMES.length,COLS=6,SLOTS=30;
     public static final float LEFT=17,TOP=60,TILE_W=121,TILE_H=76,GAP=8;
     private ClusterPicker(){}
@@ -32,8 +32,10 @@ public final class ClusterPicker {
     public static int valid(int hidden){return (hidden&~ALL)!=0||hidden==ALL?0:hidden;}
     /** Natural display order 0..COUNT-1. */
     public static int[] naturalOrder(){int[] o=new int[COUNT];for(int i=0;i<COUNT;i++)o[i]=i;return o;}
-    /** A saved order repaired to a permutation of 0..COUNT-1 (natural when it is missing or malformed). */
+    /** A saved order repaired to a permutation of 0..COUNT-1 (natural when it is missing or malformed). An order saved
+     *  before screens were added keeps its arrangement, with the new screens after it. */
     public static int[] validOrder(int[] o){
+        if(o!=null&&o.length<COUNT){int[] w=new int[COUNT];System.arraycopy(o,0,w,0,o.length);for(int i=o.length;i<COUNT;i++)w[i]=i;o=w;}
         if(o==null||o.length!=COUNT)return naturalOrder();
         boolean[] seen=new boolean[COUNT];
         for(int s:o){if(s<0||s>=COUNT||seen[s])return naturalOrder();seen[s]=true;}

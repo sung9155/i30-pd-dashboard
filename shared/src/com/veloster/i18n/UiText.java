@@ -103,7 +103,6 @@ public final class UiText {
         EN.put("게이지를 길게 눌러 항목 · 모양 · 위치 편집","Hold a gauge to edit its signal, style or position");
         EN.put("경과 초","seconds");
         EN.put("계기판","Dashboard");
-        EN.put("계기판 · 가장자리 버튼","Dash");
         EN.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","Open dashboard; long-press for My Apps; drag to move");
         EN.put("계단 회전 곡선","Stepped rev curve");
         EN.put("고른 값 게이지","Your chosen gauges");
@@ -561,7 +560,6 @@ public final class UiText {
         EN.put("흡기온","Intake");
         EN.put("흰 네모 숫자","White boxed numbers");
         KO.put("가장자리 버튼 + 알림 / Floating + notification","가장자리 버튼 + 알림");
-        KO.put("계기판 · 가장자리 버튼","계기판");
         KO.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경");
         KO.put("내 앱 / My Apps","내 앱");
         KO.put("내 앱 열기 · 길게 끌어서 위치 변경 / My Apps","내 앱 열기 · 끌어서 위치 변경");

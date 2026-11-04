@@ -45,6 +45,9 @@ final class EngineCluster extends ClusterKit {
         for(int i=Telemetry.TPMS_FL;i<=Telemetry.TPMS_RR;i++){float t=v(i);if(!Float.isNaN(t)&&t<30){n=msg(c,n,"TIRE PRESS",AM);break;}}
         if(!Float.isNaN(boost)&&boost>0.4f)n=msg(c,n,"TURBO BOOST",CY);
         if(!Float.isNaN(fuel)&&fuel==0&&!Float.isNaN(spd)&&spd>0)n=msg(c,n,"FUEL CUT",CY);
+        float co=v(Telemetry.CLUTCH_ODD),ce=v(Telemetry.CLUTCH_EVEN);   // 7DCT clutch odd / even, once the TCU answers
+        if(!(Float.isNaN(co)&&Float.isNaN(ce))){int lv=Math.max(Telemetry.clutchLevel(co),Telemetry.clutchLevel(ce));
+            n=msg(c,n,(lv==2?"CLUTCH HOT ":"CLUTCH ")+fmt("%.0f",co)+"/"+fmt("%.0f",ce)+"C",lv==2?RD:lv==1?AM:WH);}
         float mode=v(Telemetry.DRIVE_MODE);
         n=msg(c,n,"DRIVE MODE "+(Float.isNaN(mode)?"—":Telemetry.driveModeLabel((int)mode)),WH);
         msg(c,n,"ODO "+fmt("%.0f",v(Telemetry.ODOMETER)),WH);

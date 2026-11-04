@@ -70,7 +70,10 @@ final class DragCluster extends ClusterKit {
         bold(c,big,x0,160,84,TX,Paint.Align.LEFT);
         bold(c,launchAt>=0?t("경과 초"):t("최고 0→100 km/h 초"),x0+4,182,13,MU,Paint.Align.LEFT);
         bold(c,fmt("%.0f",v)+" km/h · "+gear(),790,160,30,ACC,Paint.Align.RIGHT);
-        bold(c,launchAt>=0?String.format(Locale.US,"%.0f m",dist):"",790,182,15,MU,Paint.Align.RIGHT);
+        float co=v(Telemetry.CLUTCH_ODD),ce=v(Telemetry.CLUTCH_EVEN);   // 7DCT: clutch heat between runs (the run itself shows its distance here)
+        if(launchAt>=0)bold(c,String.format(Locale.US,"%.0f m",dist),790,182,15,MU,Paint.Align.RIGHT);
+        else if(!(Float.isNaN(co)&&Float.isNaN(ce))){int lv=Math.max(Telemetry.clutchLevel(co),Telemetry.clutchLevel(ce));
+            bold(c,String.format(Locale.US,t("클러치 홀 %s° · 짝 %s°"),fmt("%.0f",co),fmt("%.0f",ce)),790,182,15,lv==2?RD:lv==1?AM:MU,Paint.Align.RIGHT);}
         round(c,x0,200,790,380,8,0xff111214);outline(c,x0,200,790,380,8,1,0xff25272b);
         bold(c,t("이번"),650,224,13,MU,Paint.Align.RIGHT);bold(c,t("최고"),770,224,13,AM,Paint.Align.RIGHT);
         String[] l={t("반응 시간"),"0→60 km/h","0→100 km/h",t("201 m (1/8마일)"),t("통과 속도")};

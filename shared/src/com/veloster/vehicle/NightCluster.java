@@ -37,6 +37,9 @@ final class NightCluster extends ClusterKit {
         if(v(Telemetry.HOOD)>0)return t("후드 열림");
         for(int i=Telemetry.TPMS_FL;i<=Telemetry.TPMS_RR;i++){float t=v(i);if(!Float.isNaN(t)&&t<30)return t("타이어 공기압 낮음");}
         if(!Float.isNaN(cool)&&cool>=110)return t("냉각수 과열");
+        float co=v(Telemetry.CLUTCH_ODD),ce=v(Telemetry.CLUTCH_EVEN);boolean even=Float.isNaN(co)||!Float.isNaN(ce)&&ce>co;
+        float hot=even?ce:co;int lv=Telemetry.clutchLevel(hot);   // 7DCT: the hotter clutch, only once it runs warm
+        if(lv>0)return t(lv==2?"클러치 과열":"클러치 온도 높음")+" · "+t(even?"짝수단":"홀수단")+" "+fmt("%.0f",hot)+"°C";
         if(v(Telemetry.PARK_BRAKE)>0&&v(7)>3)return t("주차 브레이크");
         if(v(Telemetry.DPF_REGEN)>0)return t("DPF 재생 중");
         return null;

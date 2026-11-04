@@ -25,7 +25,7 @@ public final class PitRenderer {
         return background;
     }
     private final android.graphics.RectF cellRect=new android.graphics.RectF();
-    private static final int BG=0xff040506,PANEL=0xff101315,LINE=0xff303638,BLUE=0xffa4d9ef,WHITE=0xffe1edf2,MUTED=0xff91a5ae,RED=0xffff4059;
+    private static final int BG=0xff040506,PANEL=0xff101315,LINE=0xff303638,BLUE=0xffa4d9ef,WHITE=0xffe1edf2,MUTED=0xff91a5ae,RED=0xffff4059,AMBER=0xffffb84d;
     private Telemetry.Sample[] samples;
     private int shiftTarget;
     private long frameTime;
@@ -557,6 +557,26 @@ public final class PitRenderer {
         float fraction=Math.max(0,Math.min(1,numericAt(9)/100));
         for(int i=0;i<20;i++)box(c,x+148+i*10.6f,403,x+155+i*10.6f,421,fraction>i/20f?BLUE:LINE);
     }
+    /** 7DCT clutch temperatures (odd / even gears), Telemetry.clutchLevel colours; the card fills at red. */
+    private void clutchCard(Canvas c,float x,float y,float w,float h){
+        float[] t={clutchT(Telemetry.CLUTCH_ODD),clutchT(Telemetry.CLUTCH_EVEN)};
+        boolean hot=Telemetry.clutchLevel(t[0])==2||Telemetry.clutchLevel(t[1])==2;
+        panel(c,x,y,w,h,hot?D():PANEL,hot?D():LINE);box(c,x+10,y,x+53,y+2,hot?BG:BLUE);
+        fitted(c,UiText.t("DCT 클러치"),x+10,y+20,13,w-20,hot?BG:MUTED);
+        String[] n={UiText.t("홀수단"),UiText.t("짝수단")};
+        for(int k=0;k<2;k++){float ty=y+50+k*30;int lv=Telemetry.clutchLevel(t[k]);
+            text(c,n[k],x+10,ty,12,hot?BG:MUTED,false);
+            text(c,Float.isNaN(t[k])?"—":Telemetry.format("%.0f",t[k]),x+70,ty,22,hot?BG:lv==1?AMBER:BLUE,true);}
+        text(c,"°C",x+w-28,y+88,11,hot?BG:MUTED,false);
+    }
+    private float clutchT(int i){Telemetry.Sample k=samples[i];return k.valid?k.value:Float.NaN;}
+    /** F1 brake card: the clutch temperatures where a 6MT shows its clutch switch; filled at red, nothing before the TCU answers. */
+    private void clutchTempChip(Canvas c,float x,float y){
+        float o=clutchT(Telemetry.CLUTCH_ODD),e=clutchT(Telemetry.CLUTCH_EVEN);if(Float.isNaN(o)&&Float.isNaN(e))return;
+        int lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));
+        panel(c,x,y,132,18,lv==2?D():0xff111516,lv==2?D():lv==1?AMBER:LINE);
+        centered(c,"ODD "+(Float.isNaN(o)?"—":Telemetry.format("%.0f",o)+"°")+"  EVEN "+(Float.isNaN(e)?"—":Telemetry.format("%.0f",e)+"°"),x+66,y+13,10,lv==2?BG:lv==1?AMBER:MUTED,true);
+    }
     /** 6MT clutch switch as a chip: filled with the accent and IN while pressed, OUT outlined, a dash with no signal. */
     private void clutchChip(Canvas c,float x,float y){
         Telemetry.Sample k=samples[Telemetry.CLUTCH];boolean seen=k.valid,in=seen&&k.value>0;
@@ -609,6 +629,7 @@ public final class PitRenderer {
         accelPedal(c,18);
         pedal(c,"BRAKE PRESSURE", "브레이크 압력 bar", "bar",406,RED,100);
         if(profile.trans==VehicleProfile.Trans.MT)clutchChip(c,406+230,382);   // 6MT: the clutch beside the brake (EMS12 CLU_ACK)
+        else clutchTempChip(c,406+230,382);   // 7DCT: the clutch temperatures in the same place
         button(c,"−",548,452,42,27,false,BLUE);
         text(c,UiText.t("목표 ")+shiftTarget+" rpm",604,471,12,BLUE,true);
         button(c,"+",740,452,42,27,false,BLUE);
@@ -617,11 +638,13 @@ public final class PitRenderer {
         String[] names={"SPEED / km/h","ENGINE / rpm","EMS GEAR","ACCEL / %","BRAKE / bar"};
         for(int slot=0;slot<overviewLayout.count();slot++){
             int i=overviewLayout.signalAt(slot);boolean head=overviewLayout.headline(i);
+            if(i==Telemetry.CLUTCH_ODD&&profile.trans==VehicleProfile.Trans.MT)continue;   // a 6MT has no clutch temperatures: the slot stays empty
             if(overviewLayout.grouped(i))groupCard(c,i);else overviewCard(c,i,head?names[slot]:UiText.t(Telemetry.LABELS[i]));
         }
     }
     private void groupCard(Canvas c,int i){
         float x=overviewLayout.left(i),y=overviewLayout.top(i),w=overviewLayout.width(i);
+        if(i==Telemetry.CLUTCH_ODD){clutchCard(c,x,y,w,overviewLayout.height(i));return;}
         panel(c,x,y,w,overviewLayout.height(i),PANEL,LINE);box(c,x+10,y,x+53,y+2,BLUE);
         if(i==Telemetry.TPMS_FL){
             fitted(c,UiText.t("타이어 공기압"),x+10,y+20,13,w-20,MUTED);

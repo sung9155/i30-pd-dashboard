@@ -41,6 +41,11 @@ public final class PerformanceRenderer {
         value(c,UiText.t("브레이크 압력"),fmt("%.1f",v(10)),"bar",CL,T2,BR,B2);
         if(prof.trans==VehicleProfile.Trans.MT){float k=v(Telemetry.CLUTCH);   // 6MT: the clutch switch under the brake caption
             text(c,"CLUTCH "+(Float.isNaN(k)?"—":k>0?"IN":"OUT"),CL+14,T2+46,12,k>0?BLUE:MUTED,Paint.Align.LEFT);}
+        else{float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);   // 7DCT: the clutch temperatures in the same place
+            if(!(Float.isNaN(o)&&Float.isNaN(e))){int lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));
+                String t="ODD "+fmt("%.0f",o)+"°  EVEN "+fmt("%.0f",e)+"°";
+                if(lv==2){p.setStyle(Paint.Style.FILL);p.setTypeface(Typeface.DEFAULT);p.setTextSize(12);p.setColor(T(D()));c.drawRect(CL+8,T2+33,CL+20+p.measureText(t),T2+51,p);}   // red: a filled strip
+                text(c,t,CL+14,T2+46,12,lv==2?0xff040506:lv==1?0xffffb84d:MUTED,Paint.Align.LEFT);}}
         gforce(c);
         lapCard(c,lap==null?new LapTimer():lap,now);
     }

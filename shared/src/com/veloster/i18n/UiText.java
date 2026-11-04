@@ -42,6 +42,7 @@ public final class UiText {
         EN.put("CH1 횡G 0.2 g/div","CH1 lat G 0.2 g/div");
         EN.put("CH2 종G 0.2 g/div","CH2 long G 0.2 g/div");
         EN.put("DCT 짝수단 클러치 온도","DCT even-gear clutch temperature");
+        EN.put("DCT 클러치","DCT clutch");
         EN.put("DCT 홀수단 클러치 온도","DCT odd-gear clutch temperature");
         EN.put("DPF 온도","DPF temperature");
         EN.put("DPF 재생","DPF regeneration");
@@ -495,6 +496,7 @@ public final class UiText {
         EN.put("직렬 6기통 터보","Inline-6 turbo");
         EN.put("진단","DTC");
         EN.put("진단 서비스에 연결하지 못했습니다.","Could not connect to the diagnostic service.");
+        EN.put("짝수단","Even");
         EN.put("차량 계산값","From the car");
         EN.put("차량 색","Car colour");
         EN.put("차량 속도","Vehicle speed");
@@ -538,6 +540,9 @@ public final class UiText {
         EN.put("클래식","Classic");
         EN.put("클러스터","Cluster");
         EN.put("클러치 (수동)","Clutch (manual)");
+        EN.put("클러치 과열","Clutch overheating");
+        EN.put("클러치 온도 높음","Clutch hot");
+        EN.put("클러치 홀 %s° · 짝 %s°","Clutch odd %s° · even %s°");
         EN.put("타이어 공기압","Tire pressure");
         EN.put("타이어 공기압 낮음","Low tire pressure");
         EN.put("택시","Taxi");
@@ -591,6 +596,7 @@ public final class UiText {
         EN.put("현재 차량 표시 제한으로 N 계기판을 열 수 없습니다.","N Dashboard is unavailable under the current vehicle display restriction.");
         EN.put("현재: ","Now: ");
         EN.put("호출","Call");
+        EN.put("홀수단","Odd");
         EN.put("화면","Screens");
         EN.put("화면 잠금 상태를 추적할 수 없어 알림만 표시합니다.","Screen lock state cannot be tracked. Only the notification is shown.");
         EN.put("확인","OK");

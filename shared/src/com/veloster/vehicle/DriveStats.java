@@ -20,6 +20,8 @@ public final class DriveStats {
     private final boolean[] armed=new boolean[3];
     // Peaks.
     public float maxG=Float.NaN,maxLat=Float.NaN,maxDecel=Float.NaN,maxBoost=Float.NaN,maxRpm=Float.NaN,maxSpeed=Float.NaN;
+    /** 7DCT clutch temperatures, hottest this session (the TCU is asked every 2 s, so a sample up to 5 s old counts). */
+    public float maxClutchOdd=Float.NaN,maxClutchEven=Float.NaN;
     // Warm-up / cool-down.
     public boolean warmUp;private long lastHardAt=Long.MIN_VALUE/2,stoppedAt=-1,hardFrameAt=Long.MIN_VALUE;
     /** Hard-use time per frame (start ms, length ms), oldest first, kept for HARD_WINDOW_MS; and whether the current stop
@@ -44,6 +46,8 @@ public final class DriveStats {
 
     public void update(Telemetry.Sample[] s,long now){
         update(now,f(s,7),at(s,7,now),f(s,0),f(s,Telemetry.BOOST),f(s,11),f(s,12),at(s,12,now),f(s,2),f(s,9));
+        for(int k=0;k<2;k++){Telemetry.Sample x=s[Telemetry.CLUTCH_ODD+k];if(!x.valid||x.ageMs>5000)continue;
+            if(k==0)maxClutchOdd=max(maxClutchOdd,x.value);else maxClutchEven=max(maxClutchEven,x.value);}
     }
     private static float f(Telemetry.Sample[] s,int i){return s[i].valid&&s[i].ageMs<=1000?s[i].value:Float.NaN;}
     private static long at(Telemetry.Sample[] s,int i,long now){return now-s[i].ageMs;}

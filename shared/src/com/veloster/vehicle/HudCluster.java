@@ -53,6 +53,9 @@ final class HudCluster extends ClusterKit {
         float gsum=Float.isNaN(lat)||Float.isNaN(lon)?Float.NaN:(float)Math.hypot(lat,lon);
         String[][] tr={{"G",fmt("%.2f",gsum)},{"BRK",fmt("%.0f",brake)+" bar"},{"STR",Float.isNaN(steer)?"—":(steer>0?"R":"L")+Math.abs(Math.round(steer))},{"TMP",fmt("%.0f",cool)+"C"}};
         for(int i=0;i<4;i++){mono(c,tr[i][0],576,126+i*22,14,GD,Paint.Align.RIGHT);mono(c,tr[i][1],636,126+i*22,16,G,Paint.Align.RIGHT);}
+        float co=v(Telemetry.CLUTCH_ODD),ce=v(Telemetry.CLUTCH_EVEN);   // 7DCT clutch odd / even, once the TCU answers; blinks from amber up
+        if(!(Float.isNaN(co)&&Float.isNaN(ce))&&(Math.max(Telemetry.clutchLevel(co),Telemetry.clutchLevel(ce))==0||blink(now,400))){
+            mono(c,"CLU",576,214,14,GD,Paint.Align.RIGHT);mono(c,fmt("%.0f",co)+"/"+fmt("%.0f",ce)+"C",636,214,16,G,Paint.Align.RIGHT);}
         Calendar k=Calendar.getInstance();
         mono(c,String.format(Locale.US,"%02d:%02d:%02d",k.get(Calendar.HOUR_OF_DAY),k.get(Calendar.MINUTE),k.get(Calendar.SECOND)),740,470,15,GD,Paint.Align.RIGHT);
         mono(c,"ODO "+fmt("%.0f",v(Telemetry.ODOMETER)),60,470,15,GD,Paint.Align.LEFT);

@@ -268,16 +268,15 @@ public final class RaceRenderer {
         text(c,Float.isNaN(v)?"—":in?"IN":"OUT",L+36,222,15,in?BG:MUTED,Paint.Align.CENTER);
     }
     /** 7DCT clutch temperatures, odd-gear clutch over even-gear clutch, left of the brake bar like the 6MT clutch pedal.
-     *  ponytail: amber from 150 °C, red from 180 °C is a guess (our car read 68 °C after 11 min in town); move the
-     *  two numbers once a hard drive or a drag run shows where the TCU starts protecting the clutch. */
-    static final float CLUTCH_WARM=150,CLUTCH_HOT=180;
+     *  Levels: Telemetry.clutchLevel; at red the whole cell fills, like the 6MT clutch cell does when pressed. */
     private void clutchTemps(Canvas c,float odd,float even){
-        box(c,L,188,L+72,228,PANEL);
-        clutchRow(c,"ODD",odd,205);clutchRow(c,"EVEN",even,223);
+        boolean hot=Telemetry.clutchLevel(odd)==2||Telemetry.clutchLevel(even)==2;
+        box(c,L,188,L+72,228,hot?D():PANEL);
+        clutchRow(c,"ODD",odd,205,hot);clutchRow(c,"EVEN",even,223,hot);
     }
-    private void clutchRow(Canvas c,String name,float t,float y){
-        int ink=Float.isNaN(t)?MUTED:t>=CLUTCH_HOT?D():t>=CLUTCH_WARM?AMBER:WHITE;
-        text(c,name,L+5,y,10,t>=CLUTCH_WARM?ink:MUTED,Paint.Align.LEFT);
+    private void clutchRow(Canvas c,String name,float t,float y,boolean filled){
+        int lv=Telemetry.clutchLevel(t),ink=filled?BG:Float.isNaN(t)?MUTED:lv==1?AMBER:WHITE;
+        text(c,name,L+5,y,10,filled||lv>0?ink:MUTED,Paint.Align.LEFT);
         text(c,fmt("%.0f",t)+"°",L+68,y,15,ink,Paint.Align.RIGHT);
     }
     /** Steering cell (320..448, as tall as the 2x2 grid on the left): a simple wheel icon turned by the displayed angle
@@ -367,9 +366,22 @@ public final class RaceRenderer {
         String[] name={"MAX LAT G","MAX DECEL","MAX BOOST","MAX RPM","MAX SPEED"};
         String[] val={fmt("%.2f",st.maxLat),fmt("%.2f",st.maxDecel),fmt("%+.2f",st.maxBoost),fmt("%.0f",st.maxRpm),fmt("%.0f",st.maxSpeed)};
         String[] unit={"g","g","bar","rpm","km/h"};
-        float w5=(R-L-32)/5;
-        for(int i=0;i<5;i++)cell(c,name[i],val[i],unit[i],L+i*(w5+8),258,L+i*(w5+8)+w5,468,44,WHITE);
+        // 7DCT: a sixth cell with the session's hottest odd / even clutch, once the TCU has answered (5 cells otherwise)
+        boolean ct=!Float.isNaN(st.maxClutchOdd)||!Float.isNaN(st.maxClutchEven);int n=ct?6:5;
+        float w5=(R-L-8*(n-1))/n;
+        for(int i=0;i<5;i++)cell(c,name[i],val[i],unit[i],L+i*(w5+8),258,L+i*(w5+8)+w5,468,n==6?38:44,WHITE);
+        if(ct){float l=L+5*(w5+8),rr=l+w5;
+            boolean hot=Telemetry.clutchLevel(st.maxClutchOdd)==2||Telemetry.clutchLevel(st.maxClutchEven)==2;
+            box(c,l,258,rr,468,hot?D():PANEL);
+            text(c,"MAX CLUTCH",l+12,282,13,hot?BG:MUTED,Paint.Align.LEFT);
+            maxClutch(c,"ODD",st.maxClutchOdd,l,rr,390,hot);maxClutch(c,"EVEN",st.maxClutchEven,l,rr,446,hot);}
         text(c,"Records reset when the app closes",R,478,10,MUTED,Paint.Align.RIGHT);
+    }
+    private void maxClutch(Canvas c,String name,float t,float l,float rr,float y,boolean filled){
+        int lv=Telemetry.clutchLevel(t),ink=filled?BG:Float.isNaN(t)?MUTED:lv==1?AMBER:WHITE;
+        text(c,name,l+12,y-38,12,filled||lv>0?ink:MUTED,Paint.Align.LEFT);
+        text(c,"°C",rr-10,y,13,filled?BG:MUTED,Paint.Align.RIGHT);
+        text(c,fmt("%.0f",t),rr-32,y,36,ink,Paint.Align.RIGHT);
     }
     private void text(Canvas c,String t,float x,float y,float size,int color,Paint.Align align){
         p.setStyle(Paint.Style.FILL);p.setColor(T(color));p.setTypeface(Typeface.DEFAULT);p.setTextSize(size);

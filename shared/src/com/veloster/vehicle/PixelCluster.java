@@ -489,6 +489,9 @@ final class PixelCluster extends ClusterKit {
         float brake=v(10),lat=v(11),lon=v(12),fuel=v(Telemetry.FUEL_RATE),pedal=v(9);
         if(!Float.isNaN(rpm)&&rpm>prof.redline-300)return "REV LIMIT! SHIFT!";
         if(now-modeAt<1500)return mode==SPORT?"SPORT MODE - BATTLE START!":mode==ECO?"ECO MODE - SAVE FUEL!":"NORMAL MODE";
+        float co=v(Telemetry.CLUTCH_ODD),ce=v(Telemetry.CLUTCH_EVEN);boolean ev=Float.isNaN(co)||!Float.isNaN(ce)&&ce>co;   // 7DCT: the hotter clutch, once warm
+        int lv=Telemetry.clutchLevel(ev?ce:co);
+        if(lv>0)return String.format(Locale.US,lv==2?"CLUTCH HOT! %s %.0fC - COOL DOWN":"CLUTCH WARM... %s %.0fC",ev?"EVEN":"ODD",ev?ce:co);
         if(now-fireAt<450)return "BACKFIRE! POP POP!";
         if(now-shiftAt<800)return "SHIFT! LV "+lastGear+" REACHED";
         if(!Float.isNaN(brake)&&brake>35)return String.format(Locale.US,"BRAKE!! %.2fG",Float.isNaN(lon)?0:lon);

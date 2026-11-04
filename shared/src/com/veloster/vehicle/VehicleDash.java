@@ -270,8 +270,8 @@ public final class VehicleDash extends View implements Runnable {
     public static void hscanJsn(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanJsn(cid,funcLow,data,receivedAt);}
     public static void hscanPd(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanPd(cid,funcLow,data,receivedAt);}
     public static void obd(int pid,byte[] d){DATA.obd(pid,d,SystemClock.elapsedRealtime());}
-    protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity); post(this); }
-    protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();mediaReceiver.stop();artwork.close();super.onDetachedFromWindow(); }
+    protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity);Gps.start(activity); post(this); }
+    protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();mediaReceiver.stop();artwork.close();Gps.stop();super.onDetachedFromWindow(); }
     public void run() {
         long delay=100;
         long tick=SystemClock.elapsedRealtime();

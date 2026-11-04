@@ -9,7 +9,9 @@ import java.util.Locale;
 
 /**
  * Taxi meter: seven-segment fare in the theme's accent, lamps, the classic running horse in an LED window, and a receipt. The fare is
- * TaxiFare (Seoul medium taxi, distance and time combined). The trip starts when the car moves or with the 운행 시작
+ * TaxiFare on the table of the area where the trip started (TaxiZones from the GPS, TaxiTariff), with that area's
+ * out-of-area surcharge once the car is in another 시·군 (a metropolitan city, 세종 and 제주 are one area each). Without a
+ * GPS fix it keeps the last area's table (Seoul before any). The trip starts when the car moves or with the 운행 시작
  * button, and ends with the 운행 종료 button (the same button, labelled by state); it keeps counting while another
  * page is up (tick runs every frame). The right panel is
  * the car radio (now playing) until a trip ends; then it is that trip's receipt until tapped or the next trip starts.
@@ -67,18 +69,52 @@ final class TaxiCluster extends ClusterKit {
     /** The same frames as small bitmaps, painted on first use (one stamp per frame instead of ~250 squares). */
     private final Bitmap[] horseBmp=new Bitmap[HORSE.length];
 
-    /** +20 % 22-23 and 02-04 h, +40 % 23-02 h. */
-    private float sur(){return hour<0?0:hour>=23||hour<2?0.4f:hour>=22||hour<4?0.2f:0;}   // -1: not read yet
+    /** The table in use: the trip's, or while vacant the one where the car is. */
+    private TaxiTariff tariff=TaxiTariff.of("서울");
+    /** Area (TaxiZones) the car was last placed in, and the one the trip started in (-1: none yet). */
+    private int zone=-1,startZone=-1;
+    /** In another area than the trip's start, after FLIP agreeing seconds (the borders are simplified to 200 m). */
+    private boolean outside;
+    private int flip;
+    private static final int FLIP=3;
+    private float sur(){return tariff.surcharge(hour,outside);}   // hour -1: not read yet, no night surcharge
+    /** Once a second: where the car is, and whether that is out of the trip's area. */
+    private void place(){
+        if(!GpsFix.fresh())return;
+        int z=TaxiZones.at(GpsFix.lat,GpsFix.lon);
+        if(z<0)return;   // at sea or abroad: keep what was known
+        zone=z;
+        if(!hired){
+            TaxiTariff t=TaxiTariff.of(TaxiZones.tariff(z));
+            if(t!=tariff&&!ended){tariff=t;fare.start(t,sur());}   // the idle meter shows this area's base fare
+            return;
+        }
+        if(startZone<0)startZone=z;   // started before the first fix: this is the trip's area
+        boolean o=z!=startZone;
+        if(o==outside)flip=0;else if(++flip>=FLIP){outside=o;flip=0;}
+    }
     @Override protected void tick(){
         float v=v(7);
         long dt=last==0?0:now-last;last=now;
-        if(hour<0||now-hourAt>=1000){hour=Calendar.getInstance().get(Calendar.HOUR_OF_DAY);hourAt=now;}
+        if(hour<0||now-hourAt>=1000){hour=Calendar.getInstance().get(Calendar.HOUR_OF_DAY);hourAt=now;place();}
         float sur=sur();
         if(waitStop&&!Float.isNaN(v)&&v<=3)waitStop=false;
         if(!hired&&!waitStop&&!Float.isNaN(v)&&v>3)startTrip(sur);
         if(dt>0&&dt<2000&&hired&&!Float.isNaN(v)){km+=v*dt/3600000f;tripSec+=dt/1000f;if(v<=15)slowSec+=dt/1000f;fare.add(v,dt/1000f,sur);}
     }
-    private void startTrip(float sur){hired=true;ended=false;km=0;slowSec=0;tripSec=0;fare.start(sur);}
+    private void startTrip(float sur){
+        if(zone>=0)tariff=TaxiTariff.of(TaxiZones.tariff(zone));
+        startZone=GpsFix.fresh()?zone:-1;outside=false;flip=0;
+        hired=true;ended=false;km=0;slowSec=0;tripSec=0;fare.start(tariff,sur());
+    }
+    /** The table's name, borrowed (세종), out of area, or no GPS yet, for the meter's top line. */
+    private String areaLabel(){
+        String r=t(tariff.region);
+        if(tariff.borrowed)r=String.format(t("%s · 서울 요금"),r);else r=String.format(t("%s 요금"),r);
+        if(hired&&outside)r+=" · "+t("시계외");
+        if(!GpsFix.any())r+=" · "+t("GPS 없음");
+        return r;
+    }
     @Override protected void draw(Canvas c){
         leds();float v=v(7),sur=sur();
         // Gallop phase by elapsed time, so frames step at the right rate between 50 ms redraws: 95 ms a frame (0.95 s a
@@ -90,6 +126,7 @@ final class TaxiCluster extends ClusterKit {
         fill(c,0,52,800,480,0xff14110e);
         round(c,14,60,522,470,14,0xff1d1d20);round(c,22,68,514,462,10,0xff0c0c0d);
         text(c,"KOREA DIGITAL TAXIMETER",34,88,12,0xff5d5d63,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
+        bold(c,areaLabel(),502,88,12,hired&&outside?0xffffb020:0xff8a8a90,Paint.Align.RIGHT);
         // lamps
         String[] ln={t("빈차"),t("주행"),t("할증"),t("예약"),t("호출")};boolean[] on={!hired,hired,sur>0,false,false};int[] lc={0xffff3b2f,0xff2fe06a,0xffffb020,0xff3fa2ff,0xffff3b2f};
         for(int i=0;i<5;i++){float x=34+i*94;round(c,x,98,x+84,128,5,on[i]?lc[i]:0xff1a1a1c);bold(c,ln[i],x+42,119,16,on[i]?0xff111111:0xff4a4a50,Paint.Align.CENTER);}
@@ -106,7 +143,7 @@ final class TaxiCluster extends ClusterKit {
         seg7(c,shown,452,160,90,RED,RED_OFF,false);
         bold(c,t("원"),494,252,22,WON,Paint.Align.RIGHT);
         boolean slowNow=!Float.isNaN(v)&&v<=15;
-        text(c,waitStop?t("멈추면 다음 운행 준비"):!hired?t("움직이면 자동 시작 · 버튼으로 바로 시작"):slowNow?t("시간 요금 · 30초당 100원"):String.format(Locale.US,t("다음 100원까지 %.0f m"),Math.ceil(fare.toNext())),46,280,12,HINT,Paint.Align.LEFT,Typeface.DEFAULT);
+        text(c,waitStop?t("멈추면 다음 운행 준비"):!hired?t("움직이면 자동 시작 · 버튼으로 바로 시작"):slowNow?String.format(Locale.US,t("시간 요금 · %d초당 100원"),tariff.stepS):String.format(Locale.US,t("다음 100원까지 %.0f m"),Math.ceil(fare.toNext())),46,280,12,HINT,Paint.Align.LEFT,Typeface.DEFAULT);
         fill(c,290,272,490,280,RED_OFF);fill(c,290,272,290+200*fare.progress(),280,RED);
         // distance / time / slow time
         String[] lab={t("주행 거리 km"),t("주행 시간"),t("저속 시간")};
@@ -116,8 +153,8 @@ final class TaxiCluster extends ClusterKit {
         // one button, labelled by state: start (vacant), end (hired), or a note while an ended trip still rolls
         // A raised meter key: dark recess, shadow lip, face, a highlight along the top edge, and a lamp in the state's colour.
         key(c,34,386,268,452,hired?t("운행 종료 · 버튼"):waitStop?t("정차 후 다음 운행"):t("운행 시작"),26,hired?KEY_RED:waitStop?KEY_GREY:KEY_GREEN,0);
-        text(c,t("기본 4,800원 (1.6 km)"),282,414,13,0xff8a8a90,Paint.Align.LEFT,Typeface.DEFAULT);
-        text(c,t("할증 22~04시 · 23~02시 40%"),282,438,13,0xff8a8a90,Paint.Align.LEFT,Typeface.DEFAULT);
+        text(c,String.format(Locale.US,t("기본 %,d원 (%.1f km)"),tariff.base,tariff.baseM/1000f),282,414,13,0xff8a8a90,Paint.Align.LEFT,Typeface.DEFAULT);
+        text(c,String.format(Locale.US,t("심야 %s시 최대 %d%%"),tariff.nightHours(),tariff.nightMax())+" · "+(tariff.out>0?String.format(Locale.US,t("시계외 %d%%"),tariff.out):t("시계외 없음")),282,438,13,0xff8a8a90,Paint.Align.LEFT,Typeface.DEFAULT);
         if(ended)receipt(c,total,v);else radio(c);
     }
     /** Taxi dash radio: source, play state, title over two lines, artist, progress, in the meter's amber. */
@@ -172,8 +209,10 @@ final class TaxiCluster extends ClusterKit {
         mono(c,t("거리  ")+String.format(Locale.US,"%.2f km",km),l+16,t+68,13,ink,Paint.Align.LEFT);
         mono(c,t("시간  ")+mmss(tripSec),l+16,t+88,13,ink,Paint.Align.LEFT);
         for(float x=l+16;x<rr-16;x+=6)fill(c,x,t+102,x+3,t+103,0xffbdb7aa);
-        String[] a={t("기본요금 1.6 km"),t("거리 131 m × ")+fare.distUnits,t("시간 30초 × ")+fare.timeUnits,t("심야 할증")};
-        int[] w={4800,fare.distUnits*100,fare.timeUnits*100,fare.surcharge()};
+        TaxiTariff tf=fare.tariff();
+        String[] a={String.format(Locale.US,t("기본요금 %.1f km"),tf.baseM/1000f),String.format(Locale.US,t("거리 %d m × "),tf.stepM)+fare.distUnits,
+            String.format(Locale.US,t("시간 %d초 × "),tf.stepS)+fare.timeUnits,t("할증 (심야·시계외)")};
+        int[] w={tf.base,fare.distWon,fare.timeWon,fare.surcharge()};
         for(int i=0;i<4;i++){text(c,a[i],l+16,t+126+i*24,13,ink,Paint.Align.LEFT,Typeface.DEFAULT);mono(c,String.format(Locale.US,"%,d",w[i]),rr-16,t+126+i*24,14,ink,Paint.Align.RIGHT);}
         fill(c,l+16,t+212,rr-16,t+214,ink);
         bold(c,t("합계"),l+16,t+242,16,0xff1d1b18,Paint.Align.LEFT);bold(c,String.format(Locale.US,t("%,d원"),total),rr-16,t+242,20,0xffb3261e,Paint.Align.RIGHT);

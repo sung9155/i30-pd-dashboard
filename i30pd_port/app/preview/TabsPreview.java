@@ -93,6 +93,7 @@ public final class TabsPreview {
         ms.update(1,true,"한강 따라 달리는 밤의 드라이브 (Night Drive Remix)",true,"City Lights Band",true,83000,true,214000,false,now);ms.playback(1,1);
         taxi(out,"9d_cluster_taxi_music",model,now,ms.snapshot(now),false);
         taxi(out,"9d_cluster_taxi_receipt",model,now,ms.snapshot(now),true);
+        taxiArea(out,"9d_cluster_taxi_busan_out",model,now,ms.snapshot(now));
         // Theme switch on a live renderer: draw once in the selected theme, then switch to lambo and draw again.
         String was=Theme.current().id;PitRenderer sw=new PitRenderer();sw.setSymmetric(true);sw.setPage(PitRenderer.PAGE_RACE);
         save(out,"x_theme_before",sw,model,now,false,false);Theme.select("lambo");save(out,"x_theme_switch",sw,model,now,false,false);Theme.select(was);
@@ -165,6 +166,17 @@ public final class TabsPreview {
         r.draw(c,3,m.snapshot(now),now,new DriveStats(),VehicleProfile.PETROL_DCT,m,track);   // the car moves: trip starts
         if(endTrip)r.tap(3,150,420);
         r.draw(c,3,m.snapshot(now),now+50,new DriveStats(),VehicleProfile.PETROL_DCT,m,track);
+        ImageIO.write(img,"png",new File(dir,name+".png"));
+    }
+    /** A trip started in Busan (GpsFix), then four seconds in Yangsan: Busan's table with its 30 % out-of-area surcharge. */
+    private static void taxiArea(File dir,String name,Telemetry m,long now,MediaState.Snapshot track) throws Exception {
+        BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);ClusterRenderer r=new ClusterRenderer();
+        android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+        GpsFix.set(35.1798,129.0750,8);   // Busan City Hall
+        r.draw(c,3,m.snapshot(now),now,new DriveStats(),VehicleProfile.PETROL_DCT,m,track);
+        GpsFix.set(35.3350,129.0373,8);   // Yangsan City Hall
+        for(int i=1;i<=4;i++)r.draw(c,3,m.snapshot(now),now+i*1001,new DriveStats(),VehicleProfile.PETROL_DCT,m,track);
+        GpsFix.at=0;
         ImageIO.write(img,"png",new File(dir,name+".png"));
     }
     private static void save(File dir,String name,PitRenderer r,Telemetry model,long now,boolean cluster,boolean media) throws Exception {

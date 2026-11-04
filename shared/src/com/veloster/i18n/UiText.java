@@ -25,6 +25,8 @@ public final class UiText {
         EN.put(" 전환 요청 완료. 실제 PC 연결은 별도로 확인하세요."," change requested. Verify the actual PC connection separately.");
         EN.put(" 화면이 없거나 현재 앱에서 실행할 수 없습니다."," is unavailable or cannot be opened by this app.");
         EN.put("%,d원","%,d won");
+        EN.put("%s · 서울 요금","%s · Seoul fare");
+        EN.put("%s 요금","%s fare");
         EN.put(". 백업이 남아 있으면 원상복구하세요.",". Restore the original settings if a backup remains.");
         EN.put("1.6 터보 4기통","1.6 turbo I4");
         EN.put("1분","1 min");
@@ -61,6 +63,7 @@ public final class UiText {
         EN.put("G 원","G circle");
         EN.put("G-볼 1.2g","G-ball 1.2g");
         EN.put("G-포스","G-force");
+        EN.put("GPS 없음","no GPS");
         EN.put("GPS·오디오 등 실제 연결은 해당 앱에서 진행합니다. 기기를 선택해 확인할 때만 페어링을 요청합니다.","Use the relevant app for GPS or audio connections. Pairing is requested only after you select and confirm a device.");
         EN.put("L · 가속 페달","L · accelerator");
         EN.put("N 계기판","N Dashboard");
@@ -98,10 +101,11 @@ public final class UiText {
         EN.put("가장자리 버튼 + 알림","Floating + notification");
         EN.put("가장자리 버튼 + 알림 / Floating + notification","Floating + notification");
         EN.put("가장자리 버튼을 표시할 수 없어 알림 바로가기를 유지합니다. 시스템의 다른 앱 위 표시 권한을 확인하세요.","The floating button could not be shown. The notification remains. Check permission to display over other apps.");
+        EN.put("강원","Gangwon");
         EN.put("강제 재시작","Restart head unit");
         EN.put("개발자 설정","Developer options");
         EN.put("거리  ","Dist  ");
-        EN.put("거리 131 m × ","Distance 131 m × ");
+        EN.put("거리 %d m × ","Distance %d m × ");
         EN.put("검색 요청 실패: ","Discovery request failed: ");
         EN.put("검색 종료","Stop discovery");
         EN.put("검색 종료 상태를 확인하지 못했습니다.","Could not confirm that discovery stopped.");
@@ -112,6 +116,9 @@ public final class UiText {
         EN.put("게이지 모양","Gauge style");
         EN.put("게이지를 길게 눌러 항목 · 모양 · 위치 편집","Hold a gauge to edit its signal, style or position");
         EN.put("경과 초","seconds");
+        EN.put("경기","Gyeonggi");
+        EN.put("경남","Gyeongnam");
+        EN.put("경북","Gyeongbuk");
         EN.put("계기판","Dashboard");
         EN.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","Open dashboard; long-press for My Apps; drag to move");
         EN.put("계단 회전 곡선","Stepped rev curve");
@@ -125,6 +132,7 @@ public final class UiText {
         EN.put("공회전","Idle");
         EN.put("공회전 중","Idling");
         EN.put("관성","Inertia");
+        EN.put("광주","Gwangju");
         EN.put("구간 아래에서 가속하면 측정","starts when you accelerate through the range");
         EN.put("그대로 표시","shown as usual");
         EN.put("그래프","Graphs");
@@ -139,10 +147,10 @@ public final class UiText {
         EN.put("기기 페어링 상태를 확인할 수 없습니다.","The pairing state could not be verified.");
         EN.put("기록","Records");
         EN.put("기록은 앱을 닫으면 초기화","Records reset when the app closes");
-        EN.put("기본 4,800원 (1.6 km)","Base 4,800 won (1.6 km)");
+        EN.put("기본 %,d원 (%.1f km)","Base %,d won (%.1f km)");
         EN.put("기본 배치로 복원","Reset layout");
         EN.put("기본값으로 되돌리기","Back to the default");
-        EN.put("기본요금 1.6 km","Base fare 1.6 km");
+        EN.put("기본요금 %.1f km","Base %.1f km");
         EN.put("기존 AP 설정 복원 요청 실패. 백업 보존.","Could not request restoration of the original AP settings. Backup retained.");
         EN.put("기존 AP 설정 읽기 검증 실패. 백업 보존.","Could not verify the restored AP settings. Backup retained.");
         EN.put("기존 AP 설정과 Wi-Fi 꺼짐 상태는 복구했습니다. AP 드라이버 실패 상태14가 남아 백업을 유지합니다. 다음 정상 시작 후 복구를 다시 확인하세요.","Original AP settings and Wi-Fi off state restored. AP driver failure state 14 remains, so the backup is retained. Check restoration after the next normal startup.");
@@ -184,6 +192,8 @@ public final class UiText {
         EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
         EN.put("단 = 워프 단계","gear = warp stage");
         EN.put("닫기","Close");
+        EN.put("대구","Daegu");
+        EN.put("대전","Daejeon");
         EN.put("대칭","Sym");
         EN.put("데미타스 브라운","Demitasse Brown");
         EN.put("돌아가기","Back");
@@ -254,6 +264,7 @@ public final class UiText {
         EN.put("복구할 시험 백업이 없습니다. 변경하지 않았습니다.","No test backup to restore. No changes were made.");
         EN.put("복원","Reset");
         EN.put("부드러움 ","Smoothness ");
+        EN.put("부산","Busan");
         EN.put("부스트","Boost");
         EN.put("부스트 (계산)","Boost (calc.)");
         EN.put("부스트 bar","Boost bar");
@@ -289,6 +300,7 @@ public final class UiText {
         EN.put("상태 확인 실패: ","Status check failed: ");
         EN.put("상향등","High beam");
         EN.put("새 기기","New device");
+        EN.put("서울","Seoul");
         EN.put("설명 / Help","Help");
         EN.put("설정 복원 확인. 백업 표시 삭제 실패로 다음 실행 때 재확인 필요.","Settings restoration verified, but the backup marker could not be cleared. Check again next time.");
         EN.put("설정 상태 확인 불가","Setting unavailable");
@@ -298,6 +310,7 @@ public final class UiText {
         EN.put("설정으로 / Back","Back");
         EN.put("설치된 기본 앱 중 외부 실행이 허용된 앱만 표시합니다.","Only installed system apps that allow external launch are shown.");
         EN.put("세션 최대","Session peaks");
+        EN.put("세종","Sejong");
         EN.put("속도 km/h","Speed km/h");
         EN.put("쇼","Show");
         EN.put("쇼 화면","Show screen");
@@ -311,10 +324,13 @@ public final class UiText {
         EN.put("스타게이징 블루","Stargazing Blue");
         EN.put("스포츠 머플러","Sport muffler");
         EN.put("시간  ","Time  ");
-        EN.put("시간 30초 × ","Time 30 s × ");
+        EN.put("시간 %d초 × ","Time %d s × ");
         EN.put("시간 그래프","Values over time");
-        EN.put("시간 요금 · 30초당 100원","Time fare · 100 won per 30 s");
+        EN.put("시간 요금 · %d초당 100원","Time fare · 100 won per %d s");
         EN.put("시간 초과 · 취소됨","Timed out · disarmed");
+        EN.put("시계외","out of area");
+        EN.put("시계외 %d%%","out of area %d%%");
+        EN.put("시계외 없음","no out-of-area rate");
         EN.put("시동 안내 화면 건너뛰기","Skip the start-up notice");
         EN.put("시동 안내 화면: ","Start-up notice: ");
         EN.put("시스템","System");
@@ -324,7 +340,7 @@ public final class UiText {
         EN.put("실행 가능한 액티비티가 없습니다: ","No launchable activity: ");
         EN.put("실행 바로가기 / Quick entry","Quick entry");
         EN.put("실행 실패: ","Launch failed: ");
-        EN.put("심야 할증","Night surcharge");
+        EN.put("심야 %s시 최대 %d%%","Night %s h up to %d%%");
         EN.put("심야 할증 ","Night surcharge ");
         EN.put("아이스","Ice");
         EN.put("아이언 그레이","Iron Grey");
@@ -396,6 +412,7 @@ public final class UiText {
         EN.put("운행 종료 · 버튼","End trip");
         EN.put("운행 중","On a trip");
         EN.put("운행을 마치면 영수증이 나옵니다","The receipt appears when the trip ends");
+        EN.put("울산","Ulsan");
         EN.put("움직이면 자동 시작 · 버튼으로 바로 시작","Starts when you move · or tap Start");
         EN.put("워프","Warp");
         EN.put("원","won");
@@ -423,6 +440,7 @@ public final class UiText {
         EN.put("이전","Previous");
         EN.put("이전 시험 백업이 남아 있습니다. 먼저 원상복구하세요.","A previous test backup remains. Restore the original settings first.");
         EN.put("이제 ☆ 버튼을 짧게 누르면 계기판이 열립니다.","A short press of ☆ now opens the dashboard.");
+        EN.put("인천","Incheon");
         EN.put("인텐스 블루","Intense Blue");
         EN.put("인텐스 카퍼","Intense Copper");
         EN.put("일반 블루투스(Classic)를 사용합니다. BLE 검색과 GPS 데이터 수신 기능은 포함하지 않습니다.","Uses Classic Bluetooth. BLE discovery and GPS data reception are not included.");
@@ -447,6 +465,8 @@ public final class UiText {
         EN.put("저장공간","Storage");
         EN.put("저장된 고장코드가 없습니다.","No stored trouble codes.");
         EN.put("전기·차체","Electrics · body");
+        EN.put("전남","Jeonnam");
+        EN.put("전북","Jeonbuk");
         EN.put("전조등","Headlamps");
         EN.put("전체 기본 배치로 복원","Reset all gauges");
         EN.put("전체 조망","Overview");
@@ -467,6 +487,7 @@ public final class UiText {
         EN.put("정차하면 트리가 켜집니다","Stop to light the tree");
         EN.put("제동","Braking");
         EN.put("제동 (ABS/ESC)","Brakes (ABS/ESC)");
+        EN.put("제주","Jeju");
         EN.put("조수석","Passenger");
         EN.put("조수석 문","Passenger door");
         EN.put("조향","Steering");
@@ -533,6 +554,8 @@ public final class UiText {
         EN.put("출력 (계산)","Power (calc.)");
         EN.put("출력 경로","Output route");
         EN.put("출발하세요 · %d초","Go · %ds");
+        EN.put("충남","Chungnam");
+        EN.put("충북","Chungbuk");
         EN.put("취소","Cancel");
         EN.put("취소 / Cancel","Cancel");
         EN.put("측정 완료","Run complete");
@@ -600,7 +623,7 @@ public final class UiText {
         EN.put("플래티넘 실버","Platinum Silver");
         EN.put("한국어","Korean");
         EN.put("할증","Night");
-        EN.put("할증 22~04시 · 23~02시 40%","Night 22-04 h · 23-02 h 40%");
+        EN.put("할증 (심야·시계외)","Surcharge (night, area)");
         EN.put("합계","Total");
         EN.put("합성 G","Combined G");
         EN.put("핫스팟 끄기 확인 실패. 백업을 보존했습니다. 다시 복구하세요.","Could not confirm hotspot shutdown. Backup retained; retry restoration.");

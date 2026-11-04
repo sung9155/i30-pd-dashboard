@@ -114,8 +114,14 @@ final class TaxiCluster extends ClusterKit {
         for(int i=0;i<3;i++){float x=34+i*158;round(c,x,302,x+148,374,6,CELL_BG);text(c,lab[i],x+10,320,12,ALBL,Paint.Align.LEFT,Typeface.DEFAULT);
             seg7(c,val[i],x+138,330,34,AMB,AMB_OFF,false);}
         // one button, labelled by state: start (vacant), end (hired), or a note while an ended trip still rolls
-        round(c,34,388,268,450,8,0xff232326);round(c,38,392,264,446,6,hired?0xff3a1d1b:waitStop?0xff1d1d20:0xff1b3322);
-        bold(c,hired?t("운행 종료 · 버튼"):waitStop?t("정차 후 다음 운행"):t("운행 시작"),151,425,17,waitStop?0xff5a5a60:0xffd8d8dc,Paint.Align.CENTER);
+        // A raised meter key: dark recess, shadow lip, face, a highlight along the top edge, and a lamp in the state's colour.
+        int face=hired?0xff5a2420:waitStop?0xff26262a:0xff1f4a2c,hi=hired?0xff8a3a32:waitStop?0xff3a3a40:0xff3a7a4c,
+            lo=hired?0xff2a100e:waitStop?0xff121214:0xff0f2416,lamp=hired?0xffff3b2f:waitStop?0xff3a3a40:0xff2fe06a;
+        round(c,34,386,268,452,9,0xff0a0a0b);round(c,38,393,264,448,7,lo);round(c,38,389,264,443,7,face);fill(c,46,391,256,393,hi);
+        ring(c,64,416,9,2,0xff0a0a0b);dot(c,64,416,7,lamp);
+        String key=hired?t("운행 종료 · 버튼"):waitStop?t("정차 후 다음 운행"):t("운행 시작");
+        float ks=26;while(ks>14&&width(key,ks,Typeface.DEFAULT_BOLD)>176)ks--;   // English labels are longer
+        bold(c,key,168,416+ks*0.36f,ks,waitStop?0xff6a6a70:0xfff2f2f4,Paint.Align.CENTER);
         text(c,t("기본 4,800원 (1.6 km)"),282,414,13,0xff8a8a90,Paint.Align.LEFT,Typeface.DEFAULT);
         text(c,t("할증 22~04시 · 23~02시 40%"),282,438,13,0xff8a8a90,Paint.Align.LEFT,Typeface.DEFAULT);
         if(ended)receipt(c,total,v);else radio(c);

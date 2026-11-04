@@ -83,6 +83,18 @@ abstract class ClusterKit {
     protected void bold(Canvas c,String str,float x,float y,float size,int color,Paint.Align align){text(c,str,x,y,size,color,align,Typeface.DEFAULT_BOLD);}
     protected void mono(Canvas c,String str,float x,float y,float size,int color,Paint.Align align){text(c,str,x,y,size,color,align,Typeface.MONOSPACE);}
     protected float width(String str,float size,Typeface face){p.setTypeface(face);p.setTextSize(size);return p.measureText(str);}
+    /** Key colours: face, top highlight, shadow lip, lamp, label. */
+    static final int[] KEY_GREEN={0xff1f4a2c,0xff3a7a4c,0xff0f2416,0xff2fe06a,0xfff2f2f4},KEY_RED={0xff5a2420,0xff8a3a32,0xff2a100e,0xffff3b2f,0xfff2f2f4},
+        KEY_AMBER={0xff4a3a12,0xff7a6224,0xff241c08,0xffffb000,0xfff2f2f4},KEY_GREY={0xff26262a,0xff3a3a40,0xff121214,0xff3a3a40,0xff6a6a70},
+        KEY_SLATE={0xff2c2e33,0xff484b52,0xff141518,0xff3a3a40,0xfff2f2f4};   // GREY: a dead key; SLATE: a live neutral one
+    /** A raised meter key in (l,t)-(r,b): dark recess, shadow lip, face, a highlight along the top, a lamp on the left and
+     *  the label at up to size px (shrunk to fit). k: KEY_*; lamp overrides k's lamp colour (0: k's). */
+    protected void key(Canvas c,float l,float t,float r,float b,String label,float size,int[] k,int lamp){
+        round(c,l,t,r,b,9,0xff0a0a0b);round(c,l+4,t+7,r-4,b-4,7,k[2]);round(c,l+4,t+3,r-4,b-9,7,k[0]);fill(c,l+12,t+5,r-12,t+7,k[1]);
+        float cy=(t+3+b-9)/2;ring(c,l+30,cy,9,2,0xff0a0a0b);dot(c,l+30,cy,7,lamp!=0?lamp:k[3]);
+        float s=size;while(s>12&&width(label,s,Typeface.DEFAULT_BOLD)>r-l-58)s--;
+        bold(c,label,(l+39+r-4)/2,cy+s*0.36f,s,k[4],Paint.Align.CENTER);
+    }
     /** Pointer from (cx,cy) at deg clockwise from 12 o'clock. */
     protected static float px(float cx,float r,float deg){return cx+(float)Math.sin(Math.toRadians(deg))*r;}
     protected static float py(float cy,float r,float deg){return cy-(float)Math.cos(Math.toRadians(deg))*r;}

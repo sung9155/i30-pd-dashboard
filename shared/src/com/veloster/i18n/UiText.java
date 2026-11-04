@@ -285,6 +285,7 @@ public final class UiText {
         EN.put("시간 30초 × ","Time 30 s × ");
         EN.put("시간 그래프","Values over time");
         EN.put("시간 요금 · 30초당 100원","Time fare · 100 won per 30 s");
+        EN.put("시간 초과 · 취소됨","Timed out · disarmed");
         EN.put("시동 안내 화면 건너뛰기","Skip the start-up notice");
         EN.put("시동 안내 화면: ","Start-up notice: ");
         EN.put("시스템","System");
@@ -421,6 +422,7 @@ public final class UiText {
         EN.put("점화·노킹 모니터","Spark & knock monitor");
         EN.put("점화시기","Timing");
         EN.put("정속 주행","Steady cruise");
+        EN.put("정지 유지 · 곧 트리 시작","Hold still · tree starting");
         EN.put("정차 · 공회전 ","Stopped · idle ");
         EN.put("정차 상태에서 확인하세요. 이 화면을 여는 것만으로 무선 설정은 바뀌지 않습니다.","Check while parked. Opening this screen alone does not change wireless settings.");
         EN.put("정차 후 다음 운행","Stop for next trip");
@@ -455,7 +457,6 @@ public final class UiText {
         EN.put("주행가능거리","Range");
         EN.put("주행거리","Odometer");
         EN.put("주황 LCD","Orange LCD");
-        EN.put("준비 · 정지 상태","Staging · stopped");
         EN.put("지각 (추정)","Retard (est.)");
         EN.put("지각 추정","Est. retard");
         EN.put("지금","Now");
@@ -483,10 +484,14 @@ public final class UiText {
         EN.put("최근 60초","Last 60 s");
         EN.put("최대 횡G","Max lat G");
         EN.put("출력 (계산)","Power (calc.)");
-        EN.put("출발하세요","Go");
+        EN.put("출발하세요 · %d초","Go · %ds");
         EN.put("취소","Cancel");
         EN.put("취소 / Cancel","Cancel");
+        EN.put("측정 완료","Run complete");
+        EN.put("측정 준비","Arm");
+        EN.put("측정 준비를 누르세요","Tap Arm to start");
         EN.put("측정 중","timing");
+        EN.put("측정 중 · 버튼","Timing");
         EN.put("카세트","Cassette");
         EN.put("카세트 데크","Cassette deck");
         EN.put("카키","Khaki");
@@ -574,6 +579,7 @@ public final class UiText {
         KO.put("운행 종료 · 버튼","운행 종료");
         KO.put("저장 / Save","저장");
         KO.put("취소 / Cancel","취소");
+        KO.put("측정 중 · 버튼","측정 중");
         KO.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.");
     }
     private UiText() {}

@@ -33,7 +33,7 @@ public final class GaugeRenderer {
         if(i==Telemetry.BAT_VOLTAGE)return 18;if(i==Telemetry.STEERING_SPEED)return 1020;
         if("psi".equals(u))return 60;
         if("rpm".equals(u))return 8000;if("km/h".equals(u))return 300;if("%".equals(u))return 100;
-        if("°C".equals(u))return 160;if("G".equals(u))return 2;if("PS".equals(u)||"hp".equals(u))return 350;
+        if(i==Telemetry.CLUTCH_TEMP1||i==Telemetry.CLUTCH_TEMP2)return 250;if("°C".equals(u))return 160;if("G".equals(u))return 2;if("PS".equals(u)||"hp".equals(u))return 350;
         if(i!=Telemetry.STEER_TORQUE&&("Nm".equals(u)||"N·m".equals(u)))return 500;if("kPa".equals(u))return 250;
         if("bar".equals(u))return i==10?100:2.5f;if(i==Telemetry.STEERING)return 540;
         if(i==Telemetry.RANGE)return 800;if(i==Telemetry.SPARK)return 50;if(i==Telemetry.STEER_TORQUE)return 5;if(i==Telemetry.BRAKE_SWITCH||i>=Telemetry.DOOR_DRIVER)return i==Telemetry.WIPER?2:1;if("L/h".equals(u))return 40;if("km/L".equals(u))return 30;

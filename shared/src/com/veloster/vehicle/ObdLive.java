@@ -41,6 +41,9 @@ public final class ObdLive {
     private final int[] misses=new int[PIDS.length];
     private final long[] logged=new long[PIDS.length];
     private static final long REPLY_MS=300;
+    /** 7DCT clutch temperatures (TCU 22 01A4, decoded in Telemetry) every 2 s; three misses in a row (a 6MT has no
+     *  TCU) stop asking for the session. */
+    private static final long CLUTCH_EVERY=2000;private int clutchMisses;private long clutchAt;
 
     private final Object lock=new Object();
     private final List<byte[]> replies=new ArrayList<byte[]>();
@@ -70,6 +73,7 @@ public final class ObdLive {
                 long now=System.currentTimeMillis();
                 if(nextProbe<0)nextProbe=now+PROBE_FIRST;
                 else if(now>=nextProbe&&rounds<PROBE_ROUNDS){probe(svc,++rounds);nextProbe=now+PROBE_EVERY;}
+                if(clutchMisses<3&&now-clutchAt>=CLUTCH_EVERY){clutchAt=now;clutch(sink,svc);}
                 for(int k=0;k<PIDS.length;k++){
                     if(!running)return;
                     if(diagBusy)break;
@@ -94,6 +98,11 @@ public final class ObdLive {
         logged[k]=now;StringBuilder b=new StringBuilder();
         if(r!=null)for(byte x:r)b.append(String.format("%02X ",x&255));
         android.util.Log.i("VehicleDash","OBD "+String.format("%02X",pid)+(r==null?": no reply "+DPF_MISSES+"x, dropped":": "+b.toString().trim()));
+    }
+    private void clutch(Sink sink,IBinder svc){
+        byte[] r=askRaw(svc,TCU,new byte[]{0x22,0x01,(byte)0xA4},600);
+        if(r==null||r.length<4||(r[0]&255)!=0x62||(r[1]&255)!=0x01||(r[2]&255)!=0xA4){clutchMisses++;return;}
+        clutchMisses=0;byte[] d=new byte[r.length-3];System.arraycopy(r,3,d,0,d.length);sink.value(Telemetry.DID_CLUTCH,d);
     }
     /** One round of the mode 22 probe into the log: the whole reply in hex, a negative response code, or no reply. */
     private void probe(IBinder svc,int round){

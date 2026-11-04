@@ -51,8 +51,10 @@ public final class RaceRenderer {
         cell(c,"RPM",fmt("%.0f",rpm),"rpm",L,TOP,LC,184,48,!Float.isNaN(rpm)&&rpm>=prof.redline?RED:WHITE);
         // 6MT: the clutch sits left of the brake, in pedal order (clutch | brake | gear | accel).
         boolean mt=prof.trans==VehicleProfile.Trans.MT;
-        if(mt)clutch(c);
-        bar(c,"BRAKE",fmt("%.1f",brake)+" bar",mt?L+76:L,LC,brake/100,RED,true);
+        // 7DCT: the hotter clutch's temperature in the same place, once the TCU answers (nothing moves before that).
+        float ct=Math.max(v(Telemetry.CLUTCH_TEMP1),v(Telemetry.CLUTCH_TEMP2));boolean dct=!mt&&!Float.isNaN(ct);
+        if(mt)clutch(c);else if(dct)clutchTemp(c,ct);
+        bar(c,"BRAKE",fmt("%.1f",brake)+" bar",mt||dct?L+76:L,LC,brake/100,RED,true);
         boost(c,boost);
         float w=(LC-L-4)/2,h=(BOT-320-4)/2;
         cell(c,"COOLANT",fmt("%.0f",v(2)),"°C",L,320,L+w,320+h,26,v(2)>=110?D():v(2)>=100?AMBER:WHITE);
@@ -264,6 +266,16 @@ public final class RaceRenderer {
         box(c,L,188,L+72,228,in?BLUE:PANEL);
         text(c,"CLUTCH",L+36,204,11,in?BG:MUTED,Paint.Align.CENTER);
         text(c,Float.isNaN(v)?"—":in?"IN":"OUT",L+36,222,15,in?BG:MUTED,Paint.Align.CENTER);
+    }
+    /** 7DCT clutch temperature (the hotter of the two), left of the brake bar like the 6MT clutch pedal.
+     *  ponytail: amber from 150 °C, red from 180 °C is a guess (our car read 68 °C after 11 min in town); move the
+     *  two numbers once a hard drive or a drag run shows where the TCU starts protecting the clutch. */
+    static final float CLUTCH_WARM=150,CLUTCH_HOT=180;
+    private void clutchTemp(Canvas c,float t){
+        int ink=t>=CLUTCH_HOT?D():t>=CLUTCH_WARM?AMBER:WHITE;
+        box(c,L,188,L+72,228,PANEL);
+        text(c,"CLUTCH",L+36,204,11,t>=CLUTCH_WARM?ink:MUTED,Paint.Align.CENTER);
+        text(c,fmt("%.0f",t)+"°C",L+36,222,15,ink,Paint.Align.CENTER);
     }
     /** Steering cell (320..448, as tall as the 2x2 grid on the left): a simple wheel icon turned by the displayed angle
      * (right = clockwise, as Telemetry.displayValue shows it), a centre-zero bar, the angle, and the SAS steering speed

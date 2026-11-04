@@ -539,6 +539,8 @@
   "DPF 재생 중": "DPF regenerating",
   "DPF 재생 후 거리": "DPF km since regeneration",
   "DPF 평균 재생 간격": "DPF average km between regenerations",
+  "DCT 클러치 1 온도": "DCT clutch 1 temperature",
+  "DCT 클러치 2 온도": "DCT clutch 2 temperature",
   "레드": "Red",
   "그린": "Green",
   "사운드": "Sound",

@@ -41,6 +41,8 @@ public final class UiText {
         EN.put("AP 상태 13 확인. IP 주소와 iPhone의 SSID 검색을 다음으로 확인하세요.","AP state 13 confirmed. Next check the IP address and whether the iPhone sees the SSID.");
         EN.put("CH1 횡G 0.2 g/div","CH1 lat G 0.2 g/div");
         EN.put("CH2 종G 0.2 g/div","CH2 long G 0.2 g/div");
+        EN.put("DCT 클러치 1 온도","DCT clutch 1 temperature");
+        EN.put("DCT 클러치 2 온도","DCT clutch 2 temperature");
         EN.put("DPF 온도","DPF temperature");
         EN.put("DPF 재생","DPF regeneration");
         EN.put("DPF 재생 중","DPF regenerating");

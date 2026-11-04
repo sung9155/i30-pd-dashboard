@@ -557,6 +557,20 @@ public final class PitRenderer {
         float fraction=Math.max(0,Math.min(1,numericAt(9)/100));
         for(int i=0;i<20;i++)box(c,x+148+i*10.6f,403,x+155+i*10.6f,421,fraction>i/20f?BLUE:LINE);
     }
+    /** One of F1's two lines under speed and rpm: caption, value, unit; several-value entries in a smaller line. */
+    private void f1Tile(Canvas c,int i,float capX,float valX,float unitX){
+        int sig=Tiles.signal(Tiles.F1,i,profile);String txt;int lv=0;float size=22;
+        if(sig==Tiles.TIRES){StringBuilder b=new StringBuilder();for(int k=0;k<4;k++){float x=clutchT(Telemetry.TPMS_FL+k);lv=Math.max(lv,Tiles.level(Telemetry.TPMS_FL+k,x));b.append(k>0?" ":"").append(Tiles.text(Telemetry.TPMS_FL+k,x));}txt=b.toString();size=16;}
+        else if(sig==Tiles.CLUTCH){float o=clutchT(Telemetry.CLUTCH_ODD),e=clutchT(Telemetry.CLUTCH_EVEN);lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));txt=Tiles.text(Telemetry.CLUTCH_ODD,o)+" / "+Tiles.text(Telemetry.CLUTCH_EVEN,e);size=18;}
+        else if(sig==Tiles.DPF){float tr=clutchT(Telemetry.DPF_TRIGGER),dp=clutchT(Telemetry.DPF_DP);boolean useDp=Float.isNaN(tr)&&!Float.isNaN(dp);
+            txt=useDp?Tiles.text(Telemetry.DPF_DP,dp):Tiles.text(Telemetry.DPF_TRIGGER,tr);lv=clutchT(Telemetry.DPF_REGEN)>0?1:0;
+            text(c,useDp?"kPa":"%",unitX,310,11,MUTED,false);}
+        else{float v=Tiles.value(sig,samples,stats);lv=Tiles.level(sig,v);txt=Tiles.text(sig,v);}
+        text(c,Tiles.caption(sig),capX,307,11,MUTED,true);
+        boolean several=sig==Tiles.TIRES||sig==Tiles.CLUTCH;   // a longer line starts right after the caption, clear of the unit
+        text(c,txt,several?capX+85:valX,310,txt.length()>6&&size==22?18:size,lv==2?D():lv==1?AMBER:WHITE,true);
+        if(sig!=Tiles.DPF)text(c,Tiles.unit(sig),unitX,310,11,MUTED,false);
+    }
     /** 7DCT clutch temperatures (odd / even gears), Telemetry.clutchLevel colours; the card fills at red. */
     private void clutchCard(Canvas c,float x,float y,float w,float h){
         float[] t={clutchT(Telemetry.CLUTCH_ODD),clutchT(Telemetry.CLUTCH_EVEN)};
@@ -615,17 +629,12 @@ public final class PitRenderer {
         text(c,"km/h",229,148,12,MUTED,false);
         centered(c,value("속도 km/h"),150,253,88,WHITE,true);
         box(c,18,276,276,278,LINE);
-        // No oil sensor on this engine and the oil slot only repeated coolant: intake air (EMS15) instead.
-        text(c,"INTAKE TEMP",22,307,11,MUTED,true);
-        text(c,value("흡기 온도"),175,310,22,WHITE,true);
-        text(c,"°C",250,310,11,MUTED,false);
+        f1Tile(c,0,22,175,250);   // hold to pick (Tiles): intake air by default, coolant on the right
         text(c,"ENGINE",526,148,14,MUTED,true);
         text(c,"rpm",749,148,12,MUTED,false);
         centered(c,value("엔진 RPM"),653,247,69,WHITE,true);
         box(c,524,276,782,278,LINE);
-        text(c,"COOLANT",528,307,11,MUTED,true);
-        text(c,value("냉각수 온도"),685,310,22,WHITE,true);
-        text(c,"°C",760,310,11,MUTED,false);
+        f1Tile(c,1,528,685,760);
         accelPedal(c,18);
         pedal(c,"BRAKE PRESSURE", "브레이크 압력 bar", "bar",406,RED,100);
         if(profile.trans==VehicleProfile.Trans.MT)clutchChip(c,406+230,382);   // 6MT: the clutch beside the brake (EMS12 CLU_ACK)

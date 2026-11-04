@@ -65,18 +65,9 @@ public final class ClusterRenderer {
         lamps(c,sig,name,56,72,true);
         revCurve(c,12,78,788,128);
         int hero=hero();
-        // Left: engine 2x2, mirrored on the right by the four tyres (same cell, same bar).
-        float cool=v(2),in=v(Telemetry.INTAKE),boost=v(Telemetry.BOOST),acc=v(9);
-        meter(c,12,138,133,258,"COOLANT","°C",fmt("%.0f",cool),temp(cool,100,110),(cool-40)/80,hero,false);
-        meter(c,141,138,262,258,"INTAKE","°C",fmt("%.0f",in),temp(in,60,80),in/80,hero,false);
-        meter(c,12,266,133,386,"BOOST","bar",fmt("%+.2f",boost),WHITE,boost/(st==null?DriveStats.boostTop(Float.NaN):st.boostTop()),hero,false);
-        meter(c,141,266,262,386,"ACCEL","%",fmt("%.0f",acc),WHITE,acc/100,hero,false);
-        int[] ts={Telemetry.TPMS_FL,Telemetry.TPMS_FR,Telemetry.TPMS_RL,Telemetry.TPMS_RR};String[] tn={"FL","FR","RL","RR"};
-        for(int i=0;i<4;i++){
-            float val=v(ts[i]),l=i%2==0?538:667,t=i<2?138:266;boolean crit=!Float.isNaN(val)&&val<TIRE_CRIT;
-            int state=Float.isNaN(val)?TRACK:crit?D():val<TIRE_LOW?AMBER:GREEN;
-            meter(c,l,t,l+121,t+120,tn[i],"psi",fmt("%.0f",val),crit?D():WHITE,val/45,state,crit);
-        }
+        // Four tiles each side, hold one to pick what it shows (Tiles): by default coolant / intake / boost / accel on the
+        // left, the four tyres in one tile, ambient, fuel and the DCT clutches (a 6MT: engine load) on the right.
+        for(int i=0;i<Tiles.RECTS[Tiles.CLASSIC].length;i++)classicTile(c,Tiles.RECTS[Tiles.CLASSIC][i],Tiles.signal(Tiles.CLASSIC,i,prof),hero);
         // Centre: speed | rpm, gear, drive mode (and the 6MT shift hint).
         bigItalic(c,fmt("%.0f",v(7)),335,170,34,hero,Paint.Align.CENTER);text(c,"km/h",335,188,11,MUTED,Paint.Align.CENTER,Typeface.DEFAULT_BOLD,1,0);
         bigItalic(c,fmt("%.0f",v(0)),465,170,34,WHITE,Paint.Align.CENTER);text(c,"rpm",465,188,11,MUTED,Paint.Align.CENTER,Typeface.DEFAULT_BOLD,1,0);
@@ -107,6 +98,49 @@ public final class ClusterRenderer {
         fill(c,l+10,b-16,rr-10,b-11,TRACK);
         if(!Float.isNaN(frac))fill(c,l+10,b-16,l+10+(rr-l-20)*Math.max(0,Math.min(1,frac)),b-11,barCol);
         if(ring)ThemeShapes.ring(c,p,l,t,rr,b);
+    }
+    private void classicTile(Canvas c,float[] r,int sig,int hero){
+        float l=r[0],t=r[1],rr=r[2],b=r[3];
+        if(sig==Tiles.TIRES){   // the four tyres in one tile: FL FR over RL RR, each coloured by its own pressure
+            meter(c,l,t,rr,b,"TPMS","psi","",WHITE,Float.NaN,hero,false);boolean crit=false;
+            for(int k=0;k<4;k++){float val=v(Telemetry.TPMS_FL+k);int lv=Tiles.level(Telemetry.TPMS_FL+k,val);crit|=lv==2;
+                bigItalic(c,fmt("%.0f",val),k%2==0?l+(rr-l)*0.40f:rr-10,t+(k<2?62:104),28,lv==2?D():lv==1?AMBER:WHITE,Paint.Align.RIGHT);}
+            if(crit)ThemeShapes.ring(c,p,l,t,rr,b);
+            return;
+        }
+        if(sig==Tiles.CLUTCH){   // both DCT clutches; at red the tile fills
+            float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);boolean hot=Telemetry.clutchLevel(o)==2||Telemetry.clutchLevel(e)==2;
+            meter(c,l,t,rr,b,"CLUTCH","°C","",WHITE,Float.NaN,hero,false);if(hot)fill(c,l+1,t+1,rr-1,b-1,D());
+            String[] n={"ODD","EVEN"};float[] x={o,e};
+            for(int k=0;k<2;k++){int lv=Telemetry.clutchLevel(x[k]);
+                text(c,n[k],l+10,t+(k==0?60:102),11,hot?0xff000000:MUTED,Paint.Align.LEFT,Typeface.DEFAULT_BOLD,1,0);
+                bigItalic(c,fmt("%.0f",x[k]),rr-10,t+(k==0?64:106),30,hot?0xff000000:lv==1?AMBER:WHITE,Paint.Align.RIGHT);}
+            if(hot)text(c,"CLUTCH",l+10,t+20,12,0xff000000,Paint.Align.LEFT,Typeface.DEFAULT_BOLD,1,0);
+            return;
+        }
+        if(sig==Tiles.DPF){   // the regeneration trigger, or the delta pressure when the ECU gives only that
+            float tr=v(Telemetry.DPF_TRIGGER),dp=v(Telemetry.DPF_DP);boolean regen=v(Telemetry.DPF_REGEN)>0,useDp=Float.isNaN(tr)&&!Float.isNaN(dp);
+            meter(c,l,t,rr,b,regen?"DPF REGEN":"DPF",useDp?"kPa":"%",fmt(useDp?"%.1f":"%.0f",useDp?dp:tr),regen?AMBER:WHITE,useDp?dp/50:tr/100,regen?AMBER:hero,false);
+            return;
+        }
+        float val=Tiles.value(sig,s,st);int lv=Tiles.level(sig,val);
+        float frac=sig==Telemetry.BOOST?val/(st==null?DriveStats.boostTop(Float.NaN):st.boostTop()):Tiles.fraction(sig,val);
+        boolean tyre=sig>=Telemetry.TPMS_FL&&sig<=Telemetry.TPMS_RR;
+        int bar=lv==2?D():lv==1?AMBER:tyre?(Float.isNaN(val)?TRACK:GREEN):hero;
+        meter(c,l,t,rr,b,Tiles.caption(sig),Tiles.unit(sig),Tiles.text(sig,val),lv==2?D():lv==1&&!tyre?AMBER:WHITE,frac,bar,lv==2);
+    }
+    /** Retro's bottom row: one value in a lit LCD box, red at the critical level. */
+    private void retroTile(Canvas c,float[] r,int sig){
+        float x=r[0];lcdBox(c,x,r[1],r[2],r[3]);lcdLabel(c,Tiles.caption(sig),x+10,r[1]+18);
+        String txt;int col=R_AMBER;
+        if(sig==Tiles.TIRES){StringBuilder b=new StringBuilder();int lv=0;
+            for(int k=0;k<4;k++){float val=v(Telemetry.TPMS_FL+k);lv=Math.max(lv,Tiles.level(Telemetry.TPMS_FL+k,val));b.append(k>0?" ":"").append(fmt("%.0f",val));}
+            mono(c,b.toString(),x+10,r[3]-18,24,lv==2?LCD_RED:lv==1?R_YELLOW:R_AMBER,Paint.Align.LEFT);return;}
+        if(sig==Tiles.CLUTCH){float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);int lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));
+            txt=fmt("%.0f",o)+"/"+fmt("%.0f",e);col=lv==2?LCD_RED:lv==1?R_YELLOW:R_AMBER;}
+        else if(sig==Tiles.DPF){float tr=v(Telemetry.DPF_TRIGGER),dp=v(Telemetry.DPF_DP);txt=Float.isNaN(tr)&&!Float.isNaN(dp)?fmt("%.1f",dp):fmt("%.0f",tr);if(v(Telemetry.DPF_REGEN)>0)col=R_YELLOW;}
+        else{float val=Tiles.value(sig,s,st);int lv=Tiles.level(sig,val);txt=Tiles.text(sig,val);col=lv==2?LCD_RED:lv==1?R_YELLOW:R_AMBER;}
+        mono(c,txt,x+10,r[3]-16,txt.length()>7?26:36,col,Paint.Align.LEFT);
     }
     /** Stepped rev curve: columns rise like a torque curve; lit up to the current rpm, red past the redline. */
     private void revCurve(Canvas c,float l,float t,float rr,float b){
@@ -158,12 +192,8 @@ public final class ClusterRenderer {
             if(crit)ThemeShapes.ring(c,p,x-3,y-3,x+19,y+43);
             mono(c,fmt("%.0f",val),right?780:548,y+28,22,R_AMBER,right?Paint.Align.RIGHT:Paint.Align.LEFT);
         }
-        // Bottom: last corner, live lateral G, battery.
-        String[] bl={"BTM SPEED","PREV LAT G","LAT G","BATT"};
-        float lat=v(11);
-        String[] bv={fmt("%.0f",st==null?Float.NaN:st.cornerMinSpeed),fmt("%.2f",st==null?Float.NaN:st.cornerMaxLat),
-            fmt("%.2f",Float.isNaN(lat)?Float.NaN:Math.abs(lat)),fmt("%.1f",v(Telemetry.BAT_VOLTAGE))};
-        for(int i=0;i<4;i++){float x=12+i*196.5f;lcdBox(c,x,382,x+192,472);lcdLabel(c,bl[i],x+10,400);mono(c,bv[i],x+10,456,36,R_AMBER,Paint.Align.LEFT);}
+        // Bottom: four tiles, hold one to pick what it shows (default: last corner's lowest speed and peak G, live G, battery).
+        for(int i=0;i<Tiles.RECTS[Tiles.RETRO].length;i++)retroTile(c,Tiles.RECTS[Tiles.RETRO][i],Tiles.signal(Tiles.RETRO,i,prof));
     }
     private void lcdBox(Canvas c,float l,float t,float rr,float b){
         fill(c,l,t,rr,b,CELL);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(col(FRAME));c.drawRect(l+.5f,t+.5f,rr-.5f,b-.5f,p);p.setStyle(Paint.Style.FILL);

@@ -13,7 +13,8 @@ public final class GaugeEditor {
     private final Runnable invalidate;
     private final SharedPreferences prefs;
     private AlertDialog dialog;
-    public void dismiss(){AlertDialog previous=dialog;dialog=null;if(previous!=null)previous.dismiss();}
+    private TilePicker list;private VehicleProfile profile=VehicleProfile.PETROL_DCT;
+    public void dismiss(){AlertDialog previous=dialog;dialog=null;if(previous!=null)previous.dismiss();if(list!=null)list.dismiss();}
     private void show(AlertDialog.Builder builder){
         dismiss();
         if(activity.isFinishing())return;
@@ -22,7 +23,7 @@ public final class GaugeEditor {
         next.show();
     }
     public GaugeEditor(Activity a,GaugeLayout l,Runnable changed){
-        activity=a;layout=l;invalidate=changed;prefs=a.getSharedPreferences("nmode_vehicle_gauges",0);
+        activity=a;layout=l;invalidate=changed;prefs=a.getSharedPreferences("nmode_vehicle_gauges",0);list=new TilePicker(a);
         try{layout.dense(prefs.getInt("dense",0)==1);}catch(ClassCastException e){/* Keep default grid. */}
         for(int i=0;i<GaugeLayout.SLOTS;i++){
             try{layout.set(i,prefs.getInt("signal_"+i,l.signal(i)),prefs.getInt("style_"+i,l.style(i)));}
@@ -33,15 +34,16 @@ public final class GaugeEditor {
     public int hit(float x,float y){return layout.hit(x,y);}
     public void toggleGrid(){dismiss();layout.dense(!layout.dense());save();}
     private void save(){SharedPreferences.Editor e=prefs.edit();e.putInt("dense",layout.dense()?1:0);for(int i=0;i<GaugeLayout.SLOTS;i++){e.putInt("signal_"+i,layout.signal(i));e.putInt("style_"+i,layout.style(i));}e.apply();invalidate.run();}
-    public void edit(final int slot){
+    public void edit(final int slot,VehicleProfile p){
         if(slot<0||slot>=layout.count()||activity.isFinishing())return;
+        if(p!=null)profile=p;
         show(new AlertDialog.Builder(activity).setTitle(UiText.t("게이지 ")+(slot+1)+" · "+UiText.t(Telemetry.LABELS[layout.signal(slot)]))
             .setItems(new String[]{UiText.t("표시 항목"), UiText.t("게이지 모양"), UiText.t("다른 칸과 위치 바꾸기"), UiText.t("전체 기본 배치로 복원")},new DialogInterface.OnClickListener(){public void onClick(DialogInterface d,int which){
                 if(which==0)source(slot);else if(which==1)style(slot);else if(which==2)swap(slot);else reset();
             }}).setNegativeButton(UiText.t("닫기"),null));
     }
-    private void source(final int slot){
-        show(new AlertDialog.Builder(activity).setTitle(UiText.t("표시 항목")).setSingleChoiceItems(UiText.list(Telemetry.LABELS),layout.signal(slot),new DialogInterface.OnClickListener(){public void onClick(DialogInterface d,int n){layout.set(slot,n,layout.style(slot));save();d.dismiss();}}).setNegativeButton(UiText.t("취소"),null));
+    private void source(final int slot){   // the grouped list (TilePicker), single signals only
+        dismiss();list.open(UiText.t("표시 항목"),profile,false,false,layout.signal(slot),new TilePicker.Pick(){public void pick(int s){layout.set(slot,s,layout.style(slot));save();}});
     }
     private void style(final int slot){
         show(new AlertDialog.Builder(activity).setTitle(UiText.t("게이지 모양")).setSingleChoiceItems(new String[]{UiText.t("원형"), UiText.t("막대"), UiText.t("숫자")},layout.style(slot),new DialogInterface.OnClickListener(){public void onClick(DialogInterface d,int n){layout.set(slot,layout.signal(slot),n);save();d.dismiss();}}).setNegativeButton(UiText.t("취소"),null));

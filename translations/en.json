@@ -598,5 +598,20 @@
   "알림 채널 · 앞 스피커": "Alert channel · front speakers",
   "내비 효과음 · 차에서 무음": "Navi effects · silent in car",
   "미디어 소스 · 차에서 무음": "Media source · silent in car",
-  "안드로이드 기본 · 차에서 무음": "Android default · silent in car"
+  "안드로이드 기본 · 차에서 무음": "Android default · silent in car",
+  "온도": "Temperatures",
+  "터보·연료": "Turbo · fuel",
+  "변속·구동": "Transmission",
+  "주행·자세": "Motion",
+  "브레이크·안전": "Brakes · safety",
+  "타이어": "Tyres",
+  "전기·차체": "Electrics · body",
+  "디젤 DPF": "Diesel DPF",
+  "타이어 공기압 (4바퀴 묶음)": "Tyre pressures (all four)",
+  "DCT 클러치 온도 (홀·짝 묶음)": "DCT clutch temperatures (odd · even)",
+  "DPF (차압·온도·재생 묶음)": "DPF (pressure · temperature · regeneration)",
+  "직전 코너 최저 속도": "Last corner's lowest speed",
+  "직전 코너 최대 횡가속": "Last corner's peak lateral G",
+  "기본값으로 되돌리기": "Back to the default",
+  "뒤로": "Back"
 }

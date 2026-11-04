@@ -43,7 +43,9 @@ public final class UiText {
         EN.put("CH2 종G 0.2 g/div","CH2 long G 0.2 g/div");
         EN.put("DCT 짝수단 클러치 온도","DCT even-gear clutch temperature");
         EN.put("DCT 클러치","DCT clutch");
+        EN.put("DCT 클러치 온도 (홀·짝 묶음)","DCT clutch temperatures (odd · even)");
         EN.put("DCT 홀수단 클러치 온도","DCT odd-gear clutch temperature");
+        EN.put("DPF (차압·온도·재생 묶음)","DPF (pressure · temperature · regeneration)");
         EN.put("DPF 온도","DPF temperature");
         EN.put("DPF 재생","DPF regeneration");
         EN.put("DPF 재생 중","DPF regenerating");
@@ -139,6 +141,7 @@ public final class UiText {
         EN.put("기록은 앱을 닫으면 초기화","Records reset when the app closes");
         EN.put("기본 4,800원 (1.6 km)","Base 4,800 won (1.6 km)");
         EN.put("기본 배치로 복원","Reset layout");
+        EN.put("기본값으로 되돌리기","Back to the default");
         EN.put("기본요금 1.6 km","Base fare 1.6 km");
         EN.put("기존 AP 설정 복원 요청 실패. 백업 보존.","Could not request restoration of the original AP settings. Backup retained.");
         EN.put("기존 AP 설정 읽기 검증 실패. 백업 보존.","Could not verify the restored AP settings. Backup retained.");
@@ -188,8 +191,10 @@ public final class UiText {
         EN.put("뒤 오른쪽 휠","Rear-right wheel");
         EN.put("뒤 왼쪽 공기압","Rear-left pressure");
         EN.put("뒤 왼쪽 휠","Rear-left wheel");
+        EN.put("뒤로","Back");
         EN.put("드래그","Drag");
         EN.put("드래그 출발 트리","Drag start tree");
+        EN.put("디젤 DPF","Diesel DPF");
         EN.put("라바 오렌지","Lava Orange");
         EN.put("람보","Lambo");
         EN.put("랠리","Rally");
@@ -241,6 +246,7 @@ public final class UiText {
         EN.put("변속 목표에서 깜빡일 때 울림 · 앞 스피커","Sounds with the shift flash · front speakers");
         EN.put("변속 알림음","Shift beep");
         EN.put("변속 표시·음악","Shift lights, music");
+        EN.put("변속·구동","Transmission");
         EN.put("변속기 (TCU)","Transmission (TCU)");
         EN.put("보정 토크","Corrected torque");
         EN.put("복구","Restore");
@@ -260,6 +266,7 @@ public final class UiText {
         EN.put("브레이크 스위치","Brake switch");
         EN.put("브레이크 압력","Brake pressure");
         EN.put("브레이크 압력 bar","Brake pressure bar");
+        EN.put("브레이크·안전","Brakes · safety");
         EN.put("블로오프","Blow-off");
         EN.put("블루투스 기기 검색·페어링","Bluetooth discovery and pairing");
         EN.put("블루투스 꺼짐 · 차량 설정에서 먼저 켜주세요.","Bluetooth is off. Turn it on in the vehicle settings first.");
@@ -371,6 +378,7 @@ public final class UiText {
         EN.put("오실로","Scope");
         EN.put("오실로스코프","Oscilloscope");
         EN.put("오일 온도","Oil temperature");
+        EN.put("온도","Temperatures");
         EN.put("와이퍼","Wiper");
         EN.put("완료","Done");
         EN.put("외기 온도","Ambient temperature");
@@ -438,6 +446,7 @@ public final class UiText {
         EN.put("저장 / Save","Save");
         EN.put("저장공간","Storage");
         EN.put("저장된 고장코드가 없습니다.","No stored trouble codes.");
+        EN.put("전기·차체","Electrics · body");
         EN.put("전조등","Headlamps");
         EN.put("전체 기본 배치로 복원","Reset all gauges");
         EN.put("전체 조망","Overview");
@@ -481,6 +490,7 @@ public final class UiText {
         EN.put("주행 기록","Drive records");
         EN.put("주행 모드","Drive mode");
         EN.put("주행 시간","Trip time");
+        EN.put("주행·자세","Motion");
         EN.put("주행가능 ","Range ");
         EN.put("주행가능거리","Range");
         EN.put("주행거리","Odometer");
@@ -494,6 +504,8 @@ public final class UiText {
         EN.put("지난 랩","Last");
         EN.put("지연 보정","Latency compensation");
         EN.put("직렬 6기통 터보","Inline-6 turbo");
+        EN.put("직전 코너 최대 횡가속","Last corner's peak lateral G");
+        EN.put("직전 코너 최저 속도","Last corner's lowest speed");
         EN.put("진단","DTC");
         EN.put("진단 서비스에 연결하지 못했습니다.","Could not connect to the diagnostic service.");
         EN.put("짝수단","Even");
@@ -543,7 +555,9 @@ public final class UiText {
         EN.put("클러치 과열","Clutch overheating");
         EN.put("클러치 온도 높음","Clutch hot");
         EN.put("클러치 홀 %s° · 짝 %s°","Clutch odd %s° · even %s°");
+        EN.put("타이어","Tyres");
         EN.put("타이어 공기압","Tire pressure");
+        EN.put("타이어 공기압 (4바퀴 묶음)","Tyre pressures (all four)");
         EN.put("타이어 공기압 낮음","Low tire pressure");
         EN.put("택시","Taxi");
         EN.put("택시 미터기","Taxi meter");
@@ -551,6 +565,7 @@ public final class UiText {
         EN.put("탭: 다음 랩 · 길게: 정지","Tap: next lap · Hold: stop");
         EN.put("탭: 시작","Tap: start");
         EN.put("터보 휘슬","Turbo whistle");
+        EN.put("터보·연료","Turbo · fuel");
         EN.put("테마","Theme");
         EN.put("토크 (계산)","Torque (calc.)");
         EN.put("통과 속도","Trap speed");

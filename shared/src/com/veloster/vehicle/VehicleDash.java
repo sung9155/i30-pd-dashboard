@@ -84,8 +84,23 @@ public final class VehicleDash extends View implements Runnable {
     private final Runnable editHold=new Runnable(){public void run(){
         if((gauges||graphs)&&touching&&!blocked&&!picker&&getVisibility()==VISIBLE){
             int slot=graphs?graphLayout.hit(downX,downY):gaugeEditor.hit(downX,downY);
-            if(slot>=0){touching=false;if(graphs)graphEditor.edit(slot);else gaugeEditor.edit(slot);}
+            if(slot>=0){touching=false;if(graphs)graphEditor.edit(slot,DATA.profile());else gaugeEditor.edit(slot,DATA.profile());}
         }
+    }};
+    /** Which hold-to-edit tile set (Tiles) the current screen has, or -1. */
+    private int tileLayout(){
+        if(cluster)return Tiles.F1;
+        if(!symmetric)return -1;
+        return page==PitRenderer.PAGE_RACE?Tiles.RACE:page==PitRenderer.PAGE_CLASSIC?Tiles.CLASSIC:page==PitRenderer.PAGE_RETRO?Tiles.RETRO:-1;
+    }
+    private TilePicker tilePicker;
+    /** Hold a tile: pick what it shows from the grouped list, or put its default back; kept per layout and tile. */
+    private final Runnable tileHold=new Runnable(){public void run(){
+        final int l=tileLayout(),i=l<0?-1:Tiles.hit(l,downX,downY);
+        if(i<0||!touching||blocked||picker||getVisibility()!=VISIBLE)return;
+        touching=false;int cur=Tiles.signal(l,i,DATA.profile());
+        tilePicker.open(UiText.t("표시 항목")+" · "+UiText.t(Tiles.label(cur)),DATA.profile(),true,true,cur,new TilePicker.Pick(){public void pick(int sig){
+            Tiles.picked[l][i]=sig;activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt(Tiles.key(l,i),sig).apply();invalidate();}});
     }};
     /** Lap card on the performance page (PerformanceRenderer.LAP_*). */
     private boolean onLap(float x,float y){return symmetric&&page==PitRenderer.PAGE_PERFORMANCE&&x>=PerformanceRenderer.LAP_L&&x<=PerformanceRenderer.LAP_R&&y>=PerformanceRenderer.LAP_T&&y<=PerformanceRenderer.LAP_B;}
@@ -109,6 +124,10 @@ public final class VehicleDash extends View implements Runnable {
     }
     private VehicleDash(Activity a) { super(a); activity=a; artwork=new ArtworkLoader(a,this);
         gaugeEditor=new GaugeEditor(a,gaugeLayout,new Runnable(){public void run(){invalidate();}});
+        tilePicker=new TilePicker(a);
+        {SharedPreferences tp=a.getSharedPreferences("pit_vehicle_ui",0);   // the tiles' picks (Tiles), -1 = default
+         for(int l=0;l<Tiles.KEYS.length;l++)for(int i=0;i<Tiles.picked[l].length;i++)
+             try{Tiles.picked[l][i]=tp.getInt(Tiles.key(l,i),-1);}catch(ClassCastException e){Tiles.picked[l][i]=-1;}}
         graphEditor=new GraphEditor(a,graphLayout,new Runnable(){public void run(){invalidate();}});
         for(int i=0;i<Telemetry.LABELS.length;i++)try{
             overviewLayout.style(i,a.getSharedPreferences("pit_vehicle_ui",0).getInt("overview_style_"+i,2));
@@ -184,12 +203,12 @@ public final class VehicleDash extends View implements Runnable {
     public static void pauseStandalone(Activity a){
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
         d.resumed=false;d.touching=false;d.removeCallbacks(d.editHold);
-        d.gaugeEditor.dismiss();d.graphEditor.dismiss();d.dismissList();d.mediaReceiver.stop();d.artwork.close();
+        d.gaugeEditor.dismiss();d.graphEditor.dismiss();if(d.tilePicker!=null)d.tilePicker.dismiss();d.dismissList();d.mediaReceiver.stop();d.artwork.close();
     }
     /** Close the screen list and anything it opened (language chooser). */
     private void dismissList(){picker=false;editing=false;}
     private void showDashboard(){setVisibility(VISIBLE);if(entry!=null)entry.setVisibility(GONE);bringToFront();}
-    private void close() { entryRequestUntil=0;removeCallbacks(editHold);touching=false;gaugeEditor.dismiss();graphEditor.dismiss();dismissList();setVisibility(GONE); if(entry!=null) entry.setVisibility(blocked?GONE:VISIBLE); }
+    private void close() { entryRequestUntil=0;removeCallbacks(editHold);removeCallbacks(tileHold);touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();dismissList();setVisibility(GONE); if(entry!=null) entry.setVisibility(blocked?GONE:VISIBLE); }
     public static void consumeEntryIntent(Activity a){entryIntent(a,a.getIntent());}
     /** Explicit opt-in only; consume once and require a live unrestricted OEM response. */
     public static void entryIntent(Activity a,android.content.Intent intent){
@@ -252,7 +271,7 @@ public final class VehicleDash extends View implements Runnable {
     public static void hscanPd(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanPd(cid,funcLow,data,receivedAt);}
     public static void obd(int pid,byte[] d){DATA.obd(pid,d,SystemClock.elapsedRealtime());}
     protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity); post(this); }
-    protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();mediaReceiver.stop();artwork.close();super.onDetachedFromWindow(); }
+    protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();mediaReceiver.stop();artwork.close();super.onDetachedFromWindow(); }
     public void run() {
         long delay=100;
         long tick=SystemClock.elapsedRealtime();
@@ -326,11 +345,12 @@ public final class VehicleDash extends View implements Runnable {
     public boolean onTouchEvent(MotionEvent event) {
         float x=event.getX()*800/getWidth(), y=event.getY()*480/getHeight();
         if(event.getAction()==MotionEvent.ACTION_DOWN) {
-            removeCallbacks(editHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);touching=true;downX=x;downY=y;lastMoveY=y;header.down(x,y);
+            removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);touching=true;downX=x;downY=y;lastMoveY=y;header.down(x,y);
             if(!blocked&&!picker&&header.onStrip(x,y))postDelayed(clusterHold,600);
             removeCallbacks(lapHold);lapHeld=false;if(!blocked&&!picker&&onLap(x,y))postDelayed(lapHold,700);
             overviewDown=!cluster&&!gauges&&!graphs&&!symmetric&&!blocked&&!overviewCovered(y)?overviewLayout.hit(x,y):-1;
             if(!blocked&&!picker&&((gauges&&gaugeEditor.hit(x,y)>=0)||(graphs&&graphLayout.hit(x,y)>=0)))postDelayed(editHold,600);   // not under the screen list
+            if(!blocked&&!picker&&tileLayout()>=0&&Tiles.hit(tileLayout(),x,y)>=0)postDelayed(tileHold,600);
             return true;
         }
         if(event.getAction()==MotionEvent.ACTION_MOVE&&picker&&editing&&settingsCat==SettingsLayout.SCREENS&&pickSlot<0&&downX>=SettingsLayout.PANE_L-6&&downY>=SettingsLayout.TOP&&downY<=SettingsLayout.BOTTOM){
@@ -338,11 +358,11 @@ public final class VehicleDash extends View implements Runnable {
             if(Math.abs(y-downY)>=10)touching=false;   // a drag that scrolls is not a tap
             invalidate();return true;
         }
-        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y,event.getEventTime())){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);invalidate();return true;}
-        if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);}return true;}
-        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);header.up();return true; }
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y,event.getEventTime())){touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);invalidate();return true;}
+        if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);}return true;}
+        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);header.up();return true; }
         if(event.getAction()!=MotionEvent.ACTION_UP)return true;
-        removeCallbacks(editHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);
+        removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);
         if(header.up(event.getEventTime())){touching=false;return true;}   // a strip scroll is never a tap
         boolean tap=touching && Math.abs(x-downX)<16 && Math.abs(y-downY)<16;
         touching=false;

@@ -56,13 +56,8 @@ public final class RaceRenderer {
         if(mt)clutch(c);else if(dct)clutchTemps(c,odd,even);
         bar(c,"BRAKE",fmt("%.1f",brake)+" bar",mt||dct?L+76:L,LC,brake/100,RED,true);
         boost(c,boost);
-        float w=(LC-L-4)/2,h=(BOT-320-4)/2;
-        cell(c,"COOLANT",fmt("%.0f",v(2)),"°C",L,320,L+w,320+h,26,v(2)>=110?D():v(2)>=100?AMBER:WHITE);
-        cell(c,"INTAKE",fmt("%.0f",v(Telemetry.INTAKE)),"°C",L+w+4,320,LC,320+h,26,v(Telemetry.INTAKE)>=80?D():v(Telemetry.INTAKE)>=60?AMBER:WHITE);
-        cell(c,"THROTTLE",fmt("%.0f",v(Telemetry.THROTTLE_POS)),"%",L,324+h,L+w,BOT,26,WHITE);
-        // A diesel has no ignition timing: the slot shows the DPF from the standard OBD PIDs, all three at once.
-        if(prof.fuel==VehicleProfile.Fuel.DIESEL)dpf(c,L+w+4,324+h,LC,BOT);
-        else cell(c,"SPARK",fmt("%.0f",v(Telemetry.SPARK)),"°",L+w+4,324+h,LC,BOT,26,WHITE);
+        // Four tiles, hold one to pick what it shows (Tiles): coolant, intake, throttle and spark by default (a diesel: the DPF).
+        for(int i=0;i<Tiles.RECTS[Tiles.RACE].length;i++)raceTile(c,Tiles.RECTS[Tiles.RACE][i],Tiles.signal(Tiles.RACE,i,prof));
         gear(c);gforce(c);
         // Shift point reached: the whole page edge blinks with the bar and the gear box.
         if(cue.shift&&blink()){p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(4);p.setColor(T(RED));c.drawRect(3,55,797,478,p);p.setStyle(Paint.Style.FILL);}
@@ -261,6 +256,24 @@ public final class RaceRenderer {
             if(!Float.isNaN(val)&&val<TIRE_CRIT)ThemeShapes.ring(c,p,tx-3,ty-3,tx+tw+3,ty+th+3);
             text(c,fmt("%.0f",val),right?R-12:RC+12,ty+th-1,24,WHITE,right?Paint.Align.RIGHT:Paint.Align.LEFT);
         }
+    }
+    private void raceTile(Canvas c,float[] r,int sig){
+        float l=r[0],t=r[1],rr=r[2],b=r[3];
+        if(sig==Tiles.DPF){dpf(c,l,t,rr,b);return;}
+        if(sig==Tiles.TIRES||sig==Tiles.CLUTCH){   // several values: two lines under the caption
+            boolean tyres=sig==Tiles.TIRES;float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);
+            boolean hot=!tyres&&(Telemetry.clutchLevel(o)==2||Telemetry.clutchLevel(e)==2);
+            box(c,l,t,rr,b,hot?D():PANEL);text(c,tyres?"TPMS psi":"CLUTCH °C",l+8,t+16,12,hot?BG:MUTED,Paint.Align.LEFT);
+            for(int k=0;k<(tyres?4:2);k++){
+                int sigk=tyres?Telemetry.TPMS_FL+k:k==0?Telemetry.CLUTCH_ODD:Telemetry.CLUTCH_EVEN;float val=v(sigk);int lv=Tiles.level(sigk,val);
+                float x=tyres?(k%2==0?l+(rr-l)*0.45f:rr-10):rr-10,y=t+(tyres?(k<2?36:56):(k==0?36:56));
+                if(!tyres)text(c,k==0?"ODD":"EVEN",l+8,y,11,hot?BG:MUTED,Paint.Align.LEFT);
+                text(c,fmt("%.0f",val),x,y,17,hot?BG:lv==2?D():lv==1?AMBER:WHITE,Paint.Align.RIGHT);
+            }
+            return;
+        }
+        float val=Tiles.value(sig,s,st);int lv=Tiles.level(sig,val);
+        cell(c,Tiles.caption(sig),Tiles.text(sig,val),Tiles.unit(sig),l,t,rr,b,26,lv==2?D():lv==1?AMBER:WHITE);
     }
     /** 6MT clutch pedal (EMS12 CLU_ACK as received), left of the brake bar: pressed fills the cell in the accent. */
     private void clutch(Canvas c){

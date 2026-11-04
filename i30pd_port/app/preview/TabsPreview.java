@@ -62,6 +62,7 @@ public final class TabsPreview {
         model.obd(0x8b,new byte[]{0x51,0x00,(byte)0x61,0,0,0x01,(byte)0xe0},now);model.obd(0x7a,new byte[]{0x01,0x02,(byte)0x8a,0,0,0,0},now);model.obd(0x7c,new byte[]{0x01,0x0d,(byte)0xac,0,0,0,0,0,0},now);
         race(out,"4c_race_diesel_dpf",rec,model,now/6000*6000,VehicleProfile.DIESEL_DCT,-1);race(out,"4c_race_diesel_dpf_avg",rec,model,now/6000*6000+3000,VehicleProfile.DIESEL_DCT,-1);
         rec.setPage(PitRenderer.PAGE_RECORDS);save(out,"4d_records",rec,model,now,false,false);
+        model.obd(0x46,new byte[]{(byte)58},now);model.obd(0x2f,new byte[]{(byte)158},now);   // ambient 18 C, fuel 62 % (the replayed log has neither; the classic tiles show them)
         String[] layouts={"9a_cluster_classic","9b_cluster_retro","9c_cluster_rally","9d_cluster_taxi","9e_cluster_80s","9f_cluster_hud","9g_cluster_8bit","9g_cluster_8bit_chase",
             "9i_cluster_gcircle","9j_cluster_night","9k_cluster_drag","9l_cluster_engine","9m_cluster_cassette","9n_cluster_warp"};
         for(int i=0;i<layouts.length;i++){rec.setPage(PitRenderer.PAGE_CLASSIC+i);save(out,layouts[i],rec,model,now,false,false);}
@@ -118,6 +119,17 @@ public final class TabsPreview {
         model.obd(0x8b,new byte[]{0x11,0x01,(byte)0x9e,0,0,0,0},now);   // regenerating, trigger 62 %
         int[] dl={11,9,0,2};String[] dn={"engine","night","classic","rally"};   // classic and rally carry the warning-lamp row
         for(int k=0;k<dl.length;k++)cluster(out,"x_"+dn[k]+"_diesel_regen",dl[k],model,now,rec.stats(),VehicleProfile.DIESEL_DCT);
+        // hold-to-edit tiles (Tiles): a few picks on each layout, then back to the defaults
+        Tiles.picked[Tiles.CLASSIC]=new int[]{1,Telemetry.CAT_TEMP,Telemetry.BOOST,Telemetry.THROTTLE_POS,Tiles.TIRES,Telemetry.CLUTCH_ODD,Telemetry.BAT_VOLTAGE,Tiles.CORNER_MAX_LAT};
+        Tiles.picked[Tiles.RACE]=new int[]{Tiles.TIRES,Tiles.CLUTCH,Telemetry.CAT_TEMP,Telemetry.BAT_VOLTAGE};
+        Tiles.picked[Tiles.F1]=new int[]{Tiles.TIRES,Tiles.CLUTCH};
+        Tiles.picked[Tiles.RETRO]=new int[]{Tiles.TIRES,Tiles.CLUTCH,Telemetry.AMBIENT,Telemetry.FUEL_LEVEL};
+        rec.setPage(PitRenderer.PAGE_CLASSIC);save(out,"x_tiles_classic",rec,model,now,false,false);
+        race(out,"x_tiles_race",rec,model,now,VehicleProfile.PETROL_DCT,-1);
+        save(out,"x_tiles_f1",new PitRenderer(),model,now,true,false);
+        rec.setPage(PitRenderer.PAGE_RETRO);save(out,"x_tiles_retro",rec,model,now,false,false);
+        for(int[] t:Tiles.picked)java.util.Arrays.fill(t,-1);
+        cluster(out,"x_tiles_classic_mt",0,model,now,rec.stats(),VehicleProfile.PETROL_MT);   // a 6MT: engine load instead of the DCT clutches
     }
     private static void feed(Telemetry model,String hex,long now){
         byte[] b=new byte[hex.length()/2];

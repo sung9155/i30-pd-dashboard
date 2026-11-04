@@ -39,6 +39,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/ArcadeCarFrames.java",
                ROOT / "shared/src/com/veloster/vehicle/EngineSynth.java",
                ROOT / "shared/src/com/veloster/vehicle/ObdSchedule.java",
+               ROOT / "shared/src/com/veloster/vehicle/Tiles.java",
                ROOT / "shared/src/com/veloster/i18n/UiText.java",
                ROOT / "apps/dashboard/src/com/veloster/dashboard/HscanFrameDecoder.java"]
     sources += [hub / (name + ".java") for name in ("RadioTrial", "BluetoothSession", "RebootRequest", "QuickEntryPolicy")]

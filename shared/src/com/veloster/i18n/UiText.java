@@ -234,6 +234,8 @@ public final class UiText {
         EN.put("변속 권장","Shift hint");
         EN.put("변속 레버","Shift lever");
         EN.put("변속 목표","Shift target");
+        EN.put("변속 목표에서 깜빡일 때 삐빅 · 앞 스피커","Beeps with the shift flash · front speakers");
+        EN.put("변속 알림음","Shift beep");
         EN.put("변속 표시·음악","Shift lights, music");
         EN.put("변속기 (TCU)","Transmission (TCU)");
         EN.put("보정 토크","Corrected torque");

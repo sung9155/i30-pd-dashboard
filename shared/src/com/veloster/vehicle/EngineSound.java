@@ -55,7 +55,7 @@ final class EngineSound implements Runnable {
             track=new AudioTrack(ROUTE_STREAM[r],EngineSynth.RATE,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT,
                 bytes,AudioTrack.MODE_STREAM);
             if(track.getState()!=AudioTrack.STATE_INITIALIZED){android.util.Log.w("VehicleDash","Engine sound: AudioTrack not initialised, stream "+ROUTE_STREAM[r]);return;}
-            if(micom>=0)router=startMicom(micom);
+            if(micom>=0)router=startMicom(context,micom);
             track.play();
             android.util.Log.i("VehicleDash","Engine sound on: route "+r+" stream "+ROUTE_STREAM[r]+" micom 0x"+Integer.toHexString(micom)+" min buffer "+min);
             EngineSynth.Voice playing=voice;EngineSynth synth=new EngineSynth(EngineSynth.RATE,playing);float[] f=new float[BLOCK];short[] pcm=new short[BLOCK];int flames=0;
@@ -84,7 +84,7 @@ final class EngineSound implements Runnable {
     }
 
     /** MicomAudioManager lives in the head unit's automotive library; anywhere else this logs and plays unrouted. */
-    private Object startMicom(int type){
+    static Object startMicom(Context context,int type){
         try{
             com.hkmc.media.MicomAudioManager m=new com.hkmc.media.MicomAudioManager(context);
             boolean ok=m.startAudio(type);
@@ -92,7 +92,7 @@ final class EngineSound implements Runnable {
             return m;
         }catch(LinkageError|RuntimeException e){android.util.Log.w("VehicleDash","Engine sound: no micom audio router",e);return null;}
     }
-    private static void endMicom(Object router,int type){
+    static void endMicom(Object router,int type){
         try{boolean ok=((com.hkmc.media.MicomAudioManager)router).endAudio(type);android.util.Log.i("VehicleDash","Engine sound: micom endAudio(0x"+Integer.toHexString(type)+") = "+ok);}
         catch(LinkageError|RuntimeException e){android.util.Log.w("VehicleDash","Engine sound: endAudio failed",e);}
     }

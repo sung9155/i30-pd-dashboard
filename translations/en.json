@@ -579,5 +579,7 @@
   "최고 랩": "Best",
   "최고 대비": "vs best",
   "탭: 다음 랩 · 길게: 정지": "Tap: next lap · Hold: stop",
-  "탭: 계속 · 길게: 초기화": "Tap: resume · Hold: clear"
+  "탭: 계속 · 길게: 초기화": "Tap: resume · Hold: clear",
+  "변속 알림음": "Shift beep",
+  "변속 목표에서 깜빡일 때 삐빅 · 앞 스피커": "Beeps with the shift flash · front speakers"
 }

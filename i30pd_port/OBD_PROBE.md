@@ -248,3 +248,22 @@ start. Best guess: engine oil (or coolant) temperature, scale ≈ ÷100 °C. Sti
 OBDb E001 field map or the dash's own gauge before it is shown; the other E001 movers ([14..20] etc.)
 track rpm/airflow at the sample instant, not temperature. Boost (E003) and knock (E00A) still need a
 wide-open pull on a round tick.
+
+### Correction — the [11..12] "oil temperature" is wrong (rounds 5–7, ~30 min)
+
+The sweep ran on to round 7 (18:50). The [11..12] candidate above does **not** hold: after `1B5F` at
+round 4 it reads `1857 → 175F → 093F` (62.3 → 59.8 → 23.7 °C) — it falls, so it is load/rpm noise at the
+sample instant, not a temperature. **Retracted: E001 has no pinned temperature byte yet.** The clean way
+to read E001 is the OBDb E001 field map, or the sports burst below that logs the whole block densely
+while driving. Clutch temperature (01A4, ×2 − 40) stays the only confirmed temperature.
+
+**E003 — intake manifold pressure candidate.** Whole-reply byte **[17]** (just after `… 00 05 00 00 00 00`)
+tracks instantaneous load: rounds 1–7 = `1D 23 6E 36 11 15 1B` = 29 35 110 54 17 21 27. Idle/overrun sits
+~17–35 (vacuum) and round 3 caught `0x6E` = 110, just into boost — so **[17] ≈ intake manifold absolute
+pressure in kPa**. No round's 5-minute tick caught a hard wide-open pull, so the full-scale / boost
+reading is still open; the sports burst (0.5 s while the pedal is down, build `dbe4234`, not on the car
+for this drive) is what pins it.
+
+**Clutch temperatures under sport driving (01A4, ×2 − 40 °C), rounds 5–7:** #1 odd `0x39/0x47/0x47` =
+74 / 102 / 102 °C, #2 even `0x45/0x46/0x49` = 98 / 100 / 106 °C. So a hard drive puts the DCT clutches
+around 100–106 °C — the top of the live range for the warning colours.

@@ -95,6 +95,14 @@ public final class TabsPreview {
         taxi(out,"9d_cluster_taxi_receipt",model,now,ms.snapshot(now),true);
         taxiArea(out,"9d_cluster_taxi_busan_out",model,now,ms.snapshot(now));
         for(int ci=0;ci<Circuits.count();ci++)circuit(out,"9o_circuit_"+Circuits.id(ci),ci,model,now);
+        {   // in Seoul: 자동 shows the nearest circuit and how far; then the list, nearest first
+            BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+            CircuitCluster k=new CircuitCluster();k.feed(37.5663,126.9779,0);
+            GpsFix.lat=37.5663;GpsFix.lon=126.9779;GpsFix.accuracy=6;GpsFix.at=System.nanoTime()/1000000;
+            k.frame(c,model.snapshot(now),model,new DriveStats(),VehicleProfile.PETROL_DCT,now,null);ImageIO.write(img,"png",new File(out,"9o_circuit_seoul.png"));
+            k.tap(100,80);k.frame(c,model.snapshot(now),model,new DriveStats(),VehicleProfile.PETROL_DCT,now,null);ImageIO.write(img,"png",new File(out,"9o_circuit_list.png"));
+            GpsFix.at=0;
+        }
         // Theme switch on a live renderer: draw once in the selected theme, then switch to lambo and draw again.
         String was=Theme.current().id;PitRenderer sw=new PitRenderer();sw.setSymmetric(true);sw.setPage(PitRenderer.PAGE_RACE);
         save(out,"x_theme_before",sw,model,now,false,false);Theme.select("lambo");save(out,"x_theme_switch",sw,model,now,false,false);Theme.select(was);

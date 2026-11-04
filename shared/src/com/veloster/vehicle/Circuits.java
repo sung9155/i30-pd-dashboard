@@ -18,6 +18,8 @@ public final class Circuits {
     public static int lengthM(int i){return Integer.parseInt(CircuitData.TRACKS[i][3]);}
     /** The start / finish line is an estimate (no official map or OSM finish node behind it). */
     public static boolean lineEstimated(int i){return CircuitData.TRACKS[i][5].equals("est");}
+    /** The track's points run in the driving direction (otherwise the first crossing decides). */
+    public static boolean directionKnown(int i){return CircuitData.TRACKS[i][6].equals("1");}
     private static synchronized void load(){
         if(pts!=null)return;
         int n=count();int[][] p=new int[n][],b=new int[n][];
@@ -61,12 +63,5 @@ public final class Circuits {
         if(best<0||best==cur)return best;
         if(cur>=0&&near(cur,lat,lon)&&!(distance(cur,lat,lon)>OFF_M&&bd<ON_M))return cur;
         return best;
-    }
-    /** The nearest circuit's index (by its start line) and the distance in km, for the off-circuit note. */
-    public static double[] nearest(double lat,double lon){
-        load();int best=0;double bd=Double.MAX_VALUE;
-        for(int i=0;i<count();i++){double[] s=start(i);double kx=111320*Math.cos(Math.toRadians(lat));
-            double d=Math.hypot((s[1]-lon)*kx,(s[0]-lat)*110540);if(d<bd){bd=d;best=i;}}
-        return new double[]{best,bd/1000};
     }
 }

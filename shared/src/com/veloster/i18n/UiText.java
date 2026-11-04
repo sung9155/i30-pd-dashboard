@@ -25,7 +25,6 @@ public final class UiText {
         EN.put(" 전환 요청 완료. 실제 PC 연결은 별도로 확인하세요."," change requested. Verify the actual PC connection separately.");
         EN.put(" 화면이 없거나 현재 앱에서 실행할 수 없습니다."," is unavailable or cannot be opened by this app.");
         EN.put("%,d원","%,d won");
-        EN.put("%d랩 완료","%d laps done");
         EN.put("%s · 서울 요금","%s · Seoul fare");
         EN.put("%s 요금","%s fare");
         EN.put(". 백업이 남아 있으면 원상복구하세요.",". Restore the original settings if a backup remains.");
@@ -69,7 +68,6 @@ public final class UiText {
         EN.put("GPS 랩 타이머","GPS lap timer");
         EN.put("GPS 신호를 기다리는 중","Waiting for GPS");
         EN.put("GPS 없음","no GPS");
-        EN.put("GPS 자동 랩","GPS auto laps");
         EN.put("GPS·오디오 등 실제 연결은 해당 앱에서 진행합니다. 기기를 선택해 확인할 때만 페어링을 요청합니다.","Use the relevant app for GPS or audio connections. Pairing is requested only after you select and confirm a device.");
         EN.put("KIC 상설 서킷","KIC Permanent Circuit");
         EN.put("L · 가속 페달","L · accelerator");
@@ -211,7 +209,6 @@ public final class UiText {
         EN.put("뒤로","Back");
         EN.put("드래그","Drag");
         EN.put("드래그 출발 트리","Drag start tree");
-        EN.put("등록된 서킷 밖 · 가장 가까운 %s %.0f km","No known circuit here · nearest: %s, %.0f km");
         EN.put("디젤 DPF","Diesel DPF");
         EN.put("라바 오렌지","Lava Orange");
         EN.put("람보","Lambo");
@@ -310,6 +307,8 @@ public final class UiText {
         EN.put("새 기기","New device");
         EN.put("서울","Seoul");
         EN.put("서킷","Circuit");
+        EN.put("서킷 선택","Choose circuit");
+        EN.put("서킷까지 %s","%s to the circuit");
         EN.put("설명 / Help","Help");
         EN.put("설정 복원 확인. 백업 표시 삭제 실패로 다음 실행 때 재확인 필요.","Settings restoration verified, but the backup marker could not be cleared. Check again next time.");
         EN.put("설정 상태 확인 불가","Setting unavailable");
@@ -397,6 +396,7 @@ public final class UiText {
         EN.put("연료 차단 · ","Fuel cut · ");
         EN.put("연료 차단 중","Fuel cut");
         EN.put("영 수 증","RECEIPT");
+        EN.put("예상","PREDICTED");
         EN.put("예약","Booked");
         EN.put("오른쪽","Right");
         EN.put("오른쪽 ","Right ");
@@ -446,6 +446,7 @@ public final class UiText {
         EN.put("이미 페어링된 기기입니다. 실제 연결은 해당 앱에서 진행하세요.","Already paired. Use the relevant app to connect.");
         EN.put("이미 페어링된 기기입니다. 프로필 연결은 해당 앱에서 진행하세요.","Already paired. Connect the required profile from the relevant app.");
         EN.put("이번","This run");
+        EN.put("이번 랩 / 지난 랩","this lap / last lap");
         EN.put("이전","Previous");
         EN.put("이전 시험 백업이 남아 있습니다. 먼저 원상복구하세요.","A previous test backup remains. Restore the original settings first.");
         EN.put("이제 ☆ 버튼을 짧게 누르면 계기판이 열립니다.","A short press of ☆ now opens the dashboard.");
@@ -460,6 +461,7 @@ public final class UiText {
         EN.put("읽기만 합니다. 고장코드 삭제는 정비소 진단기로 하세요.","Read only. Clear codes with a workshop scan tool.");
         EN.put("잎 1개 = 20점","1 leaf = 20 points");
         EN.put("자동","Auto");
+        EN.put("자동 · 가장 가까운 서킷","Auto · nearest circuit");
         EN.put("자동 확인","confirmed automatically");
         EN.put("자동: 와이퍼·외기온·낮 전조등","Auto: wipers, outside temp, daytime lamps");
         EN.put("작동","Active");
@@ -537,6 +539,7 @@ public final class UiText {
         EN.put("직렬 6기통 터보","Inline-6 turbo");
         EN.put("직전 코너 최대 횡가속","Last corner's peak lateral G");
         EN.put("직전 코너 최저 속도","Last corner's lowest speed");
+        EN.put("직접 선택","Chosen by you");
         EN.put("진단","DTC");
         EN.put("진단 서비스에 연결하지 못했습니다.","Could not connect to the diagnostic service.");
         EN.put("짝수단","Even");
@@ -555,6 +558,7 @@ public final class UiText {
         EN.put("최고 감속G","Peak decel G");
         EN.put("최고 대비","vs best");
         EN.put("최고 랩","Best");
+        EN.put("최고 랩 대비","vs best lap");
         EN.put("최고 부스트","Peak boost");
         EN.put("최고 부스트 순간","At peak boost");
         EN.put("최고 속도","Top speed");
@@ -565,9 +569,7 @@ public final class UiText {
         EN.put("출력 (계산)","Power (calc.)");
         EN.put("출력 경로","Output route");
         EN.put("출발선 위치는 추정","Start / finish line estimated");
-        EN.put("출발선 지정","Set line");
         EN.put("출발선을 지나면 1랩이 시작됩니다","Lap 1 starts at the start / finish line");
-        EN.put("출발하면 1랩이 시작됩니다","Lap 1 starts as you move off");
         EN.put("출발하세요 · %d초","Go · %ds");
         EN.put("충남","Chungnam");
         EN.put("충북","Chungbuk");
@@ -590,6 +592,7 @@ public final class UiText {
         EN.put("코퍼","Copper");
         EN.put("클래식","Classic");
         EN.put("클러스터","Cluster");
+        EN.put("클러치","Clutch");
         EN.put("클러치 (수동)","Clutch (manual)");
         EN.put("클러치 과열","Clutch overheating");
         EN.put("클러치 온도 높음","Clutch hot");
@@ -639,6 +642,7 @@ public final class UiText {
         EN.put("풀부하 기준","Full-load line");
         EN.put("풀부하에서 점화가 기준선보다","Spark later than the full-load line");
         EN.put("플래티넘 실버","Platinum Silver");
+        EN.put("한 번 더 누르면 초기화","Tap again to reset");
         EN.put("한국어","Korean");
         EN.put("할증","Night");
         EN.put("할증 (심야·시계외)","Surcharge (night, area)");

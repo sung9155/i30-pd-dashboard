@@ -38,6 +38,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/LapTimer.java",
                ROOT / "shared/src/com/veloster/vehicle/CircuitLap.java",
                ROOT / "shared/src/com/veloster/vehicle/Circuits.java",
+               ROOT / "shared/src/com/veloster/vehicle/TrackPath.java",
                ROOT / "shared/src/com/veloster/vehicle/CircuitData.java",
                ROOT / "shared/src/com/veloster/vehicle/CarPaint.java",
                ROOT / "shared/src/com/veloster/vehicle/RoadJolt.java",

@@ -150,6 +150,9 @@ public final class Telemetry {
     // is inferred only once there is evidence, defaulting to the verified PETROL 7DCT otherwise. Display-only; the
     // decode is identical for every variant.
     private boolean sparkSeen, selectorSeen, leverAlive, emsGearSeen; private float rpmMax;
+    /** EMS16 frames with the timing byte at 0 while the engine has run: a diesel's empty slot (a petrol always has timing). */
+    private int zeroSpark;
+    private boolean diesel(){return !sparkSeen&&zeroSpark>=5;}
     private int leverCheck=-1, leverFrozen;
     // 6MT gear from rpm / speed. Ratios: Hyundai AU i30 PD spec sheet, 1.6 T-GDi 6MT (final drive 4.467, single);
     // Korean sources (catalog, Danawa) publish none. K = rpm per (km/h x overall ratio), measured on our 7DCT logs
@@ -192,7 +195,7 @@ public final class Telemetry {
     }
     public VehicleProfile profile() {
         VehicleProfile.Fuel fuel = sparkSeen ? VehicleProfile.Fuel.PETROL
-            : (rpmMax>2000 && rpmMax<5200 ? VehicleProfile.Fuel.DIESEL : VehicleProfile.Fuel.PETROL);
+            : (diesel() || (rpmMax>2000 && rpmMax<5200) ? VehicleProfile.Fuel.DIESEL : VehicleProfile.Fuel.PETROL);
         // ponytail: 30 frozen lever frames is ~5 s at the 10/29 slot rate; never seen from a 6MT yet
         VehicleProfile.Trans trans = leverAlive || selectorSeen ? VehicleProfile.Trans.DCT
             : (emsGearSeen || leverFrozen>=30 || rpmMax>2000 ? VehicleProfile.Trans.MT : VehicleProfile.Trans.DCT);
@@ -203,7 +206,7 @@ public final class Telemetry {
         epoch++;ptValid=false;gfValid=false;stdSeen=false;lastComputedPt=-1;lastComputedGf=-1;
         calculation.remove();
         observedPreviousRpm=-1;observedTorqueValid=false;
-        sparkSeen=false;selectorSeen=false;leverAlive=false;emsGearSeen=false;rpmMax=0;
+        sparkSeen=false;selectorSeen=false;leverAlive=false;emsGearSeen=false;rpmMax=0;zeroSpark=0;
         leverCheck=-1;leverFrozen=0;mtCand=0;mtShown=0;mtCandAt=0;mtRatioMin=mtRatioMax=0;mtReverse=false;idleTarget=Float.NaN;idleKmh=0;clutchLast=-1;clutchToggled=false;
         for(int i=0;i<LABELS.length;i++) { counts[i]=0; valid[i]=false; changed[i]=false; seen[i]=false; history[i]=null; }
     }
@@ -479,9 +482,16 @@ public final class Telemetry {
         }else if(funcLow==0x0e&&b.length==8){
             // EMS19 CR_Ems_BstPre @20|12 *1.322 hPa absolute; shown as gauge bar against EMS14 baro.
             // In-car: idle -0.02 bar, peak +0.89 bar at 70 % load (r=0.72 with TQI).
-            int raw=((b[2]&255)>>4)|((b[3]&255)<<4);
-            boolean ok=raw!=0xfff&&!Float.isNaN(baroHpa);
-            boost(ok?(raw*1.322f-baroHpa)/1000f:0,ok,now);
+            // A diesel lays this slot out differently: 20|12 runs backwards (highest at idle, r=-0.85 with rpm, read as
+            // a pegged 2.4 bar) and byte1 (the DBC's DecelReq) follows load (r=0.89). Diesel drive 2026-11-05: byte1 52 at
+            // idle = baro at 20 hPa a count, 129-132 flat out = +1.6 bar, the usual range of a 1.6 diesel VGT.
+            // ponytail: 20 hPa a count is fitted on idle and the typical peak, not on an OBD MAP reading; check it
+            // against 01 0B from a diesel's diagnostic log. On a petrol byte1 is no pressure (it rises on overrun).
+            // Until the engine type is known (petrol timing seen, or a diesel's zeroed timing slot) nothing is shown.
+            boolean ok;float v;
+            if(diesel()){int r=b[1]&255;ok=r>0&&r<255&&!Float.isNaN(baroHpa);v=(r*20f-baroHpa)/1000f;}
+            else{int raw=((b[2]&255)>>4)|((b[3]&255)<<4);ok=sparkSeen&&raw!=0xfff&&!Float.isNaN(baroHpa);v=(raw*1.322f-baroHpa)/1000f;}
+            boost(ok?v:0,ok,now);
         }else if(funcLow==0x04&&b.length==8){
             // CLU13 CF_Clu_DrivingModeSwi @16|2: 0 normal, 1 sport, 3 eco (10/30 tagged captures; 2 never seen).
             int mode=b[2]&3;
@@ -525,6 +535,7 @@ public final class Telemetry {
             int spark=b[6]&255;
             // raw 0 (-35.6 deg) never occurs on a running petrol engine; it is what a diesel's empty, zero-frozen slot sends.
             put(SPARK,spark*0.375f-35.625f,spark>0&&spark<255,now);
+            if(spark==0&&rpmMax>400&&zeroSpark<1000)zeroSpark++;
         }else if(funcLow==0x1b&&b.length==8){
             // TCS13 DriverBraking @55|1 (AliveCounterTCS/CheckSum cycling): agrees with ESP12 pressure >3 bar 98 %.
             put(BRAKE_SWITCH,(b[6]>>7)&1,true,now);

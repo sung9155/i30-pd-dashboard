@@ -14,6 +14,11 @@ import java.util.List;
  * a trouble-code read runs (the channel is shared). The engine ECU answered these in the 2026-11-02 probe.
  * It also asks the diesel DPF PIDs 0x7A/0x7C/0x8B; a PID that gets no positive reply three times in a row (a petrol
  * engine) is dropped for the session, and their raw replies are logged at most every 10 s for a diesel owner's record.
+ * Probe (2026-11-04, read only): 20 s after the gate opens and then every 5 minutes, six rounds in all, it asks a few
+ * Hyundai data identifiers (mode 22) once each and logs the raw reply: engine oil temperature, boost / wastegate and
+ * per-cylinder knock retard from the engine, DCT clutch temperatures from the transmission. Which identifiers to try
+ * came from the OBDb Hyundai-i30 signal set (CC BY-SA 4.0); nothing is decoded or shown until our own car's replies
+ * confirm the layout.
  */
 public final class ObdLive {
     public interface Sink { void value(int pid,byte[] data); }   // data: the reply bytes after the PID
@@ -24,7 +29,11 @@ public final class ObdLive {
     private static final String SERVICE="com.hkmc.micom.hscanmicomservice";
     private static final String SIFACE="com.hkmc.hscan.IHscanMicomService";
     private static final String LIFACE="com.hkmc.hscan.IHscanMicomListener";
-    private static final int EMS=0x27;
+    private static final int EMS=0x27,TCU=0x26;
+    /** ECU, then the request: 22 + data identifier. */
+    private static final int[][] PROBE={{EMS,0x22,0xE0,0x01},{EMS,0x22,0xED,0x02},{EMS,0x22,0xE0,0x11},{EMS,0x22,0xE0,0x21},
+        {EMS,0x22,0xE0,0x0A},{EMS,0x22,0xE0,0x03},{TCU,0x22,0x01,0xA4},{TCU,0x22,0x01,0xA5}};
+    private static final long PROBE_FIRST=20000,PROBE_EVERY=300000;private static final int PROBE_ROUNDS=6;
     private static final int[] PIDS={0x46,0x2f,0x3c,0x43,0x7a,0x7c,0x8b};
     private static final int FIRST_DPF=4,DPF_MISSES=3;
     private final int[] misses=new int[PIDS.length];
@@ -52,9 +61,13 @@ public final class ObdLive {
         if(svc==null)return;
         Binder listener=new Listener(),token=new Binder();
         try{call(svc,1,listener,token);}catch(Throwable e){return;}
+        long nextProbe=-1;int rounds=0;
         try{
             while(running){
                 if(diagBusy||gate==null||!gate.open()){nap(500);continue;}
+                long now=System.currentTimeMillis();
+                if(nextProbe<0)nextProbe=now+PROBE_FIRST;
+                else if(now>=nextProbe&&rounds<PROBE_ROUNDS){probe(svc,++rounds);nextProbe=now+PROBE_EVERY;}
                 for(int k=0;k<PIDS.length;k++){
                     if(!running)return;
                     if(diagBusy)break;
@@ -80,10 +93,28 @@ public final class ObdLive {
         if(r!=null)for(byte x:r)b.append(String.format("%02X ",x&255));
         android.util.Log.i("VehicleDash","OBD "+String.format("%02X",pid)+(r==null?": no reply "+DPF_MISSES+"x, dropped":": "+b.toString().trim()));
     }
+    /** One round of the mode 22 probe into the log: the whole reply in hex, a negative response code, or no reply. */
+    private void probe(IBinder svc,int round){
+        for(int[] p:PROBE){
+            if(!running||diagBusy)return;
+            byte[] req=new byte[p.length-1];for(int i=1;i<p.length;i++)req[i-1]=(byte)p[i];
+            byte[] r=askRaw(svc,p[0],req,1200);
+            StringBuilder b=new StringBuilder();
+            if(r!=null)for(byte x:r)b.append(String.format("%02X ",x&255));
+            android.util.Log.i("VehicleDash",String.format("OBD probe %d/%d ecu %02X %02X %02X%02X: ",round,PROBE_ROUNDS,p[0],p[1],p[2],p[3])
+                +(r==null?"no reply":b.toString().trim()+" ("+r.length+" B)"));
+            nap(250);
+        }
+    }
     private void nap(long ms){try{Thread.sleep(ms);}catch(InterruptedException e){}}
 
     /** One request; the positive reply (41 PID ...) or null on a negative reply or timeout. */
     private byte[] ask(IBinder svc,int ecu,byte[] req){
+        byte[] r=askRaw(svc,ecu,req,REPLY_MS);
+        return r!=null&&(r[0]&255)==(req[0]&255)+0x40?r:null;
+    }
+    /** One request; the positive reply, the negative one (7F sid code), or null on a timeout. */
+    private byte[] askRaw(IBinder svc,int ecu,byte[] req,long waitMs){
         int sid=req[0]&255;
         synchronized(lock){replies.clear();expectEcu=ecu;}
         Parcel in=Parcel.obtain(),out=Parcel.obtain();
@@ -95,14 +126,14 @@ public final class ObdLive {
             svc.transact(3,in,out,0);out.readException();
         }catch(Throwable e){return null;}
         finally{in.recycle();out.recycle();}
-        long end=System.currentTimeMillis()+REPLY_MS;
+        long end=System.currentTimeMillis()+waitMs;
         synchronized(lock){
             try{
                 while(true){
                     while(!replies.isEmpty()){
                         byte[] a=replies.remove(0);
                         if(a.length>=1&&(a[0]&255)==sid+0x40)return a;
-                        if(a.length>=3&&(a[0]&255)==0x7f&&(a[1]&255)==sid)return null;
+                        if(a.length>=3&&(a[0]&255)==0x7f&&(a[1]&255)==sid){if((a[2]&255)==0x78)continue;return a;}   // 78: still working, keep waiting
                     }
                     long left=end-System.currentTimeMillis();
                     if(left<=0)return null;

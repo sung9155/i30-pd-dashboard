@@ -36,7 +36,9 @@ public final class ObdLive {
         {EMS,0x22,0xE0,0x0A},{EMS,0x22,0xE0,0x03},{TCU,0x22,0x01,0xA4},{TCU,0x22,0x01,0xA5},
         // tyre temperatures: Kia Ceed CD (the PD's sibling) and other Hyundai / Kia answer 22 C00B on 7A0, older ones 21 06
         // on 7D6 (OBDb); which TP_DEVICE the micom maps to 7A0 is unknown, so ask the TPMS and the BCM
-        {TPMS,0x22,0xC0,0x0B},{BCM,0x22,0xC0,0x0B},{TPMS,0x21,0x06}};
+        {TPMS,0x22,0xC0,0x0B},{BCM,0x22,0xC0,0x0B},{TPMS,0x21,0x06},
+        // diesel (OBDb Hyundai-i30): differential pressure E0F1, successful regenerations E0F2, KWP 21 06 regeneration state, 21 03 block
+        {EMS,0x22,0xE0,0xF1},{EMS,0x22,0xE0,0xF2},{EMS,0x21,0x06},{EMS,0x21,0x03}};
     private static final long PROBE_FIRST=20000,PROBE_EVERY=300000;private static final int PROBE_ROUNDS=24;
     private final List<String> coldProbe=new ArrayList<String>();
     private static final long REPLY_MS=300,SLOW_REPLY_MS=600;   // the engine answers fast; the TCU's multi-frame reply takes longer
@@ -88,7 +90,7 @@ public final class ObdLive {
         if(r==null&&p.misses()!=p.dropAfter()-1)return;   // log only the miss that drops it
         dpfLogged[k]=now;StringBuilder b=new StringBuilder();
         if(r!=null)for(byte x:r)b.append(String.format("%02X ",x&255));
-        android.util.Log.i("VehicleDash","OBD "+String.format("%02X",k)+(r==null?": no reply "+p.dropAfter()+"x, dropped":": "+b.toString().trim()));
+        android.util.Log.i("VehicleDash","OBD "+String.format("%02X",p.key)+(r==null?": no reply "+p.dropAfter()+"x, dropped":": "+b.toString().trim()));
     }
     /** A positive reply to req: its service + 0x40, then the same PID / data identifier. */
     static boolean positive(byte[] r,byte[] req){

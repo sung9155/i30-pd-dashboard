@@ -34,6 +34,7 @@ public final class ObdSchedule {
             new Poll(TCU,new byte[]{0x22,0x01,(byte)0xA4},Telemetry.DID_CLUTCH,1000,3),    // 7DCT clutch temperatures (a launch heats them in seconds); a 6MT has no TCU
             pid(0x3c,5000,0),                                                              // catalyst temperature
             pid(0x7a,2000,3),pid(0x7c,2000,3),pid(0x8b,2000,3),                            // diesel DPF (pressure moves during a regeneration); a petrol engine drops them
+            new Poll(EMS,new byte[]{0x22,(byte)0xED,0x03},Telemetry.DID_DPF,2000,3),       // Hyundai diesel DPF block (the PD diesel ignores the standard PIDs); a petrol EMS says 7F 31
             pid(0x46,30000,0),pid(0x2f,30000,0));                                          // ambient, fuel level
     }
     private static Poll pid(int pid,long every,int dropAfter){return new Poll(EMS,new byte[]{0x01,(byte)pid},pid,every,dropAfter);}

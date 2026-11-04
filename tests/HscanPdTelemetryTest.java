@@ -297,6 +297,12 @@ public final class HscanPdTelemetryTest {
         k.obd(Telemetry.DID_CLUTCH,java.util.Arrays.copyOfRange(r,3,r.length),3430);
         check(k.sample(Telemetry.CLUTCH_ODD,3430).value==58&&k.sample(Telemetry.CLUTCH_EVEN,3430).value==96,"DCT clutch temperatures odd 58 / even 96 C");
         k.obd(Telemetry.DID_CLUTCH,new byte[10],3431);check(k.sample(Telemetry.CLUTCH_ODD,3431).value==58,"a short reply leaves them alone");}
+        // Hyundai diesel DPF block 22 ED03 (OBDb layout): 35 -> 15.1 kPa, 58 -> 372 C upstream, 123 400 m since the regeneration
+        {Telemetry k=new Telemetry();byte[] e=new byte[56];e[36]=35;e[38]=58;e[45]=0;e[46]=1;e[47]=(byte)0xE2;e[48]=0x08;
+        k.obd(Telemetry.DID_DPF,e,3440);
+        check(Math.abs(k.sample(Telemetry.DPF_DP,3440).value-15.1f)<0.05f&&Math.abs(k.sample(Telemetry.DPF_TEMP,3440).value-372.2f)<0.1f
+            &&Math.abs(k.sample(Telemetry.DPF_SINCE_KM,3440).value-123.4f)<0.01f,"ED03 delta pressure, temperature, distance since regeneration");
+        k.obd(Telemetry.DID_DPF,new byte[40],3441);check(k.sample(Telemetry.DPF_DP,3441).value>15,"a short ED03 reply leaves them alone");}
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
     private static byte[] hex(String h){String[] p=h.trim().split(" ");byte[] b=new byte[p.length];for(int i=0;i<p.length;i++)b[i]=(byte)Integer.parseInt(p[i],16);return b;}

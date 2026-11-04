@@ -192,3 +192,18 @@ temperatures every 1 s and the DPF PIDs every 2 s; load 1 s, catalyst 5 s, ambie
 ~2.2 requests a second on a petrol (~3.7 on a diesel), about 10 CAN frames a second. The tighter limit is the
 head unit's MICOM channel (shared with the OEM telematics and the trouble-code reader), and the OBD poller is
 still a suspect for the old in-car lag — if lag comes back, lower `BUDGET` / lengthen periods first.
+
+## Diesel DPF — Hyundai ED03 block (2026-11-04)
+
+A PD diesel owner reports the DPF cells still read "—": the engine does not answer the standard
+J1979 DPF PIDs 01 7A / 7C / 8B. OBDb Hyundai-i30 defines a Hyundai diesel block `7E0 22 ED03`
+(data bytes after `62 ED 03`): [36] DPF differential pressure ×4.31373 (unit not given; read as hPa,
+so ×0.431373 kPa), [38] exhaust temperature upstream of the DPF ×4.7098 + 99 °C, [40] regeneration
+demand counter by soot load, [41..44] odometer at the last regeneration (m), [45..48] distance since
+the last regeneration (m), [53] successful regeneration state, [54] fuel since the regeneration
+×1.2549 L, [55] regeneration count. `ObdSchedule` now asks ED03 every 2 s (dropped after 3 misses on
+a petrol, which answers 7F 31) and `Telemetry` publishes the pressure, the temperature and the
+distance; its raw reply is logged every 10 s as `OBD ED03: …` for checking. The probe also asks
+22 E0F1, 22 E0F2, 21 06 (regeneration state) and 21 03. Not yet seen from a real PD diesel — the
+owner's diagnostics record decides; there is no live "regenerating" flag in ED03, so the amber
+REGEN state still needs 21 06.

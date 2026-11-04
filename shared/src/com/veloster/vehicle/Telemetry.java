@@ -18,6 +18,8 @@ public final class Telemetry {
     public static int clutchLevel(float t){return Float.isNaN(t)?0:t>=CLUTCH_HOT?2:t>=CLUTCH_WARM?1:0;}
     /** Sink key for the TCU's mode 22 DID 01A4 reply (above every mode 01 PID). */
     public static final int DID_CLUTCH=0x1A4;
+    /** Sink key for the diesel engine's mode 22 DID ED03 reply (Hyundai DPF block; the standard DPF PIDs get no answer on a PD diesel). */
+    public static final int DID_DPF=0xED03;
     public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격", "DCT 홀수단 클러치 온도", "DCT 짝수단 클러치 온도"};
     public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%", "km", "km", "°C", "°C"};
     public static final long STALE_MS = 60000; // UI freshness threshold, not an OEM timeout.
@@ -262,6 +264,11 @@ public final class Telemetry {
             // Our car: 28/30 cold, 32/34 at 5 min, 58/96 at 11 min. #2 ran hot while the same reply's gear byte read R,
             // and R rides on the even clutch, so #1 = odd gears, #2 = even gears (i30pd_port/OBD_PROBE.md).
             case DID_CLUTCH: if(n>=33){put(CLUTCH_ODD,u16(d,29)*2-40,true,now);put(CLUTCH_EVEN,u16(d,31)*2-40,true,now);} break;
+            // Hyundai diesel DPF block 62 ED 03 (OBDb Hyundai-i30, CC BY-SA 4.0, not yet seen on our side): data byte 36
+            // differential pressure x4.31373 (hPa, so x0.431373 kPa), 38 exhaust temperature upstream of the DPF x4.7098 + 99 °C,
+            // 45..48 distance since the last regeneration in metres. The ECU keeps that distance, so it beats our odometer count.
+            case DID_DPF: if(n>=56){put(DPF_DP,(d[36]&255)*0.431373f,true,now);put(DPF_TEMP,(d[38]&255)*4.7098f+99,true,now);
+                put(DPF_SINCE_KM,(((long)u16(d,45)<<16)|u16(d,47))/1000f,true,now);} break;
             default: obd(pid,n>0?d[0]&255:0,n>1?d[1]&255:0,now);
         }
     }

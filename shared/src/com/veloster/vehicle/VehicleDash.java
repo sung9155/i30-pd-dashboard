@@ -270,6 +270,8 @@ public final class VehicleDash extends View implements Runnable {
     public static void hscanJsn(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanJsn(cid,funcLow,data,receivedAt);}
     public static void hscanPd(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanPd(cid,funcLow,data,receivedAt);}
     public static void obd(int pid,byte[] d){DATA.obd(pid,d,SystemClock.elapsedRealtime());}
+    /** The latest valid value of a signal, NaN when there is none (the OBD poller's sports-drive burst reads rpm and pedal). */
+    public static float now(int i){Telemetry.Sample x=DATA.sample(i,SystemClock.elapsedRealtime());return x.valid?x.value:Float.NaN;}
     protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity);Gps.start(activity); post(this); }
     protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();mediaReceiver.stop();artwork.close();Gps.stop();super.onDetachedFromWindow(); }
     public void run() {

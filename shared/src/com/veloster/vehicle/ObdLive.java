@@ -45,6 +45,13 @@ public final class ObdLive {
     private final List<String> coldProbe=new ArrayList<String>();
     private static final long REPLY_MS=300,SLOW_REPLY_MS=1200;   // a mode 01 PID is one frame; a mode 22 block (ED03 ~59 B, 01A4) is multi-frame and slower
     private final long[] dpfLogged=new long[256];
+    /** Burst (sports drive): while the pedal is past half or the engine is past 4000 rpm, and 3 s after, ask the
+     *  boost (E003) and knock (E00A) blocks every 0.5 s and the oil block (E001) every 5 s, each logged with rpm,
+     *  pedal and computed boost so a pull lines up with the hscan record. Capped so the record's log tail keeps it. */
+    private static final float BURST_PEDAL=50,BURST_RPM=4000;private static final long BURST_HOLD=3000,BURST_EVERY=500;
+    private static final int BURST_MAX=2400;
+    private static final byte[][] BURST={{0x22,(byte)0xE0,0x03},{0x22,(byte)0xE0,0x0A},{0x22,(byte)0xE0,0x01}};
+    private long burstUntil,nextBurst;private int burstLines,burstStep;
 
     private final Object lock=new Object();
     private final List<byte[]> replies=new ArrayList<byte[]>();
@@ -74,6 +81,9 @@ public final class ObdLive {
                 long now=System.currentTimeMillis();
                 if(nextProbe<0)nextProbe=now+PROBE_FIRST;
                 else if(now>=nextProbe&&rounds<PROBE_ROUNDS){probe(svc,++rounds);nextProbe=now+PROBE_EVERY;continue;}
+                float rpm=VehicleDash.now(0),ped=VehicleDash.now(9);
+                if(ped>=BURST_PEDAL||rpm>=BURST_RPM)burstUntil=now+BURST_HOLD;
+                if(now<burstUntil&&now>=nextBurst&&burstLines<BURST_MAX){burst(svc);nextBurst=now+BURST_EVERY;continue;}
                 ObdSchedule.Poll p=sched.next(now);
                 if(p==null){long w=sched.untilNext(now);nap(w<0?1000:Math.min(w,500));continue;}
                 byte[] r=askRaw(svc,p.ecu,p.req,p.req[0]==0x01?REPLY_MS:SLOW_REPLY_MS);
@@ -115,6 +125,17 @@ public final class ObdLive {
             nap(ObdSchedule.gapAfter(r==null?0:r.length));   // the probe keeps to the same budget (its replies run to 104 B)
         }
         if(round>1)for(String s:coldProbe)android.util.Log.i("VehicleDash","OBD probe round 1 again "+s);
+    }
+    private void burst(IBinder svc){
+        int n=burstStep++%10==0?3:2;
+        for(int i=0;i<n&&running&&!diagBusy;i++){
+            byte[] r=askRaw(svc,EMS,BURST[i],SLOW_REPLY_MS);
+            StringBuilder b=new StringBuilder();if(r!=null)for(byte x:r)b.append(String.format("%02X ",x&255));
+            android.util.Log.i("VehicleDash",String.format("OBD burst rpm %.0f ped %.0f boost %.2f 22 %02X%02X: ",
+                VehicleDash.now(0),VehicleDash.now(9),VehicleDash.now(Telemetry.BOOST),BURST[i][1]&255,BURST[i][2])+(r==null?"no reply":b.toString().trim()));
+            burstLines++;
+            nap(ObdSchedule.gapAfter(r==null?0:r.length));
+        }
     }
     private void nap(long ms){try{Thread.sleep(ms);}catch(InterruptedException e){}}
 

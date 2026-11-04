@@ -19,6 +19,7 @@ final class DragCluster extends ClusterKit {
     /** Why the last arm ended, shown until the next one: 0 none, 1 run complete, 2 green timed out. */
     private int outcome;
     private static final long GREEN_WAIT=10000;
+    private static final int KL=16,KT=376,KR=284,KB=472;   // the key, under the tree
     private float dist;
     private final float[] cur=new float[5],best={Float.NaN,Float.NaN,Float.NaN,Float.NaN,Float.NaN};   // reaction, 0-60, 0-100, 201 m, trap
     private final float[] curveT=new float[200],curveV=new float[200];
@@ -47,23 +48,24 @@ final class DragCluster extends ClusterKit {
         }
         fill(c,0,52,800,480,0xff0a0a0b);
         // tree
-        fill(c,136,60,164,476,0xff1b1d20);round(c,70,66,230,468,12,0xff121315);outline(c,70,66,230,468,12,2,0xff2a2c30);
+        // tree, shortened so the key fits below it, away from the header tabs and big enough to hit while stopped
+        fill(c,136,58,164,372,0xff1b1d20);round(c,70,62,230,364,12,0xff121315);outline(c,70,62,230,364,12,2,0xff2a2c30);
         boolean staged=treeAt>=0&&launchAt<0;
         float since=treeAt<0?-1:(now-treeAt)/1000f;
         for(int x:new int[]{110,190}){
-            lamp(c,x,94,9,0xfffff7c2,armed&&stopped||staged);lamp(c,x,126,9,0xfffff7c2,staged);
-            for(int k=0;k<3;k++)lamp(c,x,180+k*60,22,AM,staged&&since>=0.5f+k*0.5f&&since<0.5f+k*0.5f+0.4f);
-            lamp(c,x,362,22,GR,(staged&&since>=2)||(launchAt>=0&&!foul&&now-launchAt<1200));
-            lamp(c,x,420,18,RD,launchAt>=0&&foul);
+            lamp(c,x,84,8,0xfffff7c2,armed&&stopped||staged);lamp(c,x,108,8,0xfffff7c2,staged);
+            for(int k=0;k<3;k++)lamp(c,x,150+k*46,18,AM,staged&&since>=0.5f+k*0.5f&&since<0.5f+k*0.5f+0.4f);
+            lamp(c,x,292,19,GR,(staged&&since>=2)||(launchAt>=0&&!foul&&now-launchAt<1200));
+            lamp(c,x,340,14,RD,launchAt>=0&&foul);
         }
-        text(c,"PRE",150,98,11,0xff55575c,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);text(c,"STAGE",150,130,11,0xff55575c,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
+        text(c,"PRE",150,88,11,0xff55575c,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);text(c,"STAGE",150,112,11,0xff55575c,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
+        // one key under the tree: arm, cancel (armed, not launched), or a dead key while a run is timed
+        key(c,KL,KT,KR,KB,launchAt>=0?t("측정 중 · 버튼"):armed?t("취소"):t("측정 준비"),30,launchAt>=0?KEY_GREY:armed?KEY_SLATE:KEY_AMBER,launchAt>=0?GR:armed?AM:0);
         // right side
         float x0=300;
         String state=launchAt>=0?(foul?t("부정 출발"):"GO"):staged?(since<2?t("곧 출발"):String.format(Locale.US,t("출발하세요 · %d초"),(int)Math.ceil((green+GREEN_WAIT-now)/1000f))):armed?(stopped?t("정지 유지 · 곧 트리 시작"):t("정차하면 트리가 켜집니다"))
             :outcome==1?t("측정 완료"):outcome==2?t("시간 초과 · 취소됨"):t("측정 준비를 누르세요");
         bold(c,state,x0,86,18,launchAt>=0?(foul?RD:GR):staged?AM:armed?TX:MU,Paint.Align.LEFT);
-        // one key: arm, cancel (armed, not launched), or a dead key while a run is timed
-        key(c,596,60,790,114,launchAt>=0?t("측정 중 · 버튼"):armed?t("취소"):t("측정 준비"),22,launchAt>=0?KEY_GREY:armed?KEY_SLATE:KEY_AMBER,launchAt>=0?GR:armed?AM:0);
         String big=launchAt>=0?String.format(Locale.US,"%.3f",e):!Float.isNaN(best[2])?String.format(Locale.US,"%.3f",best[2]):"—";
         bold(c,big,x0,160,84,TX,Paint.Align.LEFT);
         bold(c,launchAt>=0?t("경과 초"):t("최고 0→100 km/h 초"),x0+4,182,13,MU,Paint.Align.LEFT);
@@ -88,7 +90,7 @@ final class DragCluster extends ClusterKit {
         launchAt=-1;treeAt=-1;armed=false;outcome=1;
     }
     @Override boolean tap(float x,float y){
-        if(x<596||x>790||y<60||y>114||launchAt>=0)return false;   // no key while a run is timed
+        if(x<KL||x>KR||y<KT||y>KB||launchAt>=0)return false;   // no key while a run is timed
         if(armed){armed=false;treeAt=-1;outcome=0;}else{armed=true;outcome=0;}
         return true;
     }

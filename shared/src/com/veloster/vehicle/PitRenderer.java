@@ -42,7 +42,9 @@ public final class PitRenderer {
     private final ClusterRenderer clusterRenderer=new ClusterRenderer();
     public static final int PAGE_PERFORMANCE=1,PAGE_RACE=2,PAGE_RECORDS=3,PAGE_SHOW=4,PAGE_CLASSIC=5,PAGE_RETRO=6,PAGE_RALLY=7;
     /** Pages ClusterRenderer draws: PAGE_CLASSIC and up (layout = page - PAGE_CLASSIC, screen = ClusterPicker.CLASSIC + layout). */
-    public static boolean isCluster(int page){return page>=PAGE_CLASSIC&&page<ClusterPicker.page(ClusterPicker.COUNT);}
+    /** The 수동 screen: drawn by the race renderer (its sweep variant), not a cluster layout. */
+    public static final int PAGE_MANUAL=ClusterPicker.MANUAL-ClusterPicker.F1;
+    public static boolean isCluster(int page){return page>=PAGE_CLASSIC&&page<PAGE_MANUAL;}
     private boolean picker,editing;
     private int hidden;
     /** Screen list over the body while open, its edit mode and the hidden screens (VehicleDash owns the gesture). */
@@ -143,6 +145,7 @@ public final class PitRenderer {
         else if(symmetric&&page==PAGE_SHOW)showRenderer.draw(c,samples,frameTime,profile);
         else if(symmetric&&page==PAGE_RACE)raceRenderer.draw(c,samples,cue,frameTime,stats,profile,media,music,artwork);
         else if(symmetric&&page==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
+        else if(symmetric&&page==PAGE_MANUAL)raceRenderer.drawManual(c,samples,cue,frameTime,stats,profile);
         else if(symmetric&&isCluster(page))clusterRenderer.draw(c,page-PAGE_CLASSIC,samples,frameTime,stats,profile,model,music);
         else if(mediaPage)drawCombined(c);else if(cluster)drawCluster(c);else drawDashboard(c);
         // Pages without their own shift light (performance, show, every cluster layout) get the race tab's cue from the same
@@ -368,6 +371,7 @@ public final class PitRenderer {
             else if(pg==PAGE_SHOW)showRenderer.draw(c,samples,frameTime,profile);
             else if(pg==PAGE_RACE)raceRenderer.draw(c,samples,cue,frameTime,stats,profile,false,null,null);
             else if(pg==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
+            else if(pg==PAGE_MANUAL)raceRenderer.drawManual(c,samples,cue,frameTime,stats,profile);
             else if(isCluster(pg))clusterRenderer.draw(c,pg-PAGE_CLASSIC,samples,frameTime,stats,profile,thModel,null);
         }
     }
@@ -633,7 +637,7 @@ public final class PitRenderer {
         f1Tile(c,0,22,175,250);   // hold to pick (Tiles): intake air by default, coolant on the right
         text(c,"ENGINE",526,148,14,MUTED,true);
         text(c,"rpm",749,148,12,MUTED,false);
-        centered(c,value("엔진 RPM"),653,247,69,WHITE,true);
+        centered(c,value("엔진 RPM"),653,247,69,RevMatch.matched(samples,profile)>0?0xff3ddc84:WHITE,true);   // green: a 6MT blip on a lower gear's rpm
         box(c,524,276,782,278,LINE);
         f1Tile(c,1,528,685,760);
         accelPedal(c,18);

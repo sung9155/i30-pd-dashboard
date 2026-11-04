@@ -91,7 +91,7 @@ public final class VehicleDash extends View implements Runnable {
     private int tileLayout(){
         if(cluster)return Tiles.F1;
         if(!symmetric)return -1;
-        return page==PitRenderer.PAGE_RACE?Tiles.RACE:page==PitRenderer.PAGE_CLASSIC?Tiles.CLASSIC:page==PitRenderer.PAGE_RETRO?Tiles.RETRO:-1;
+        return page==PitRenderer.PAGE_RACE||page==PitRenderer.PAGE_MANUAL?Tiles.RACE:page==PitRenderer.PAGE_CLASSIC?Tiles.CLASSIC:page==PitRenderer.PAGE_RETRO?Tiles.RETRO:-1;
     }
     private TilePicker tilePicker;
     /** Hold a tile: pick what it shows from the grouped list, or put its default back; kept per layout and tile. */

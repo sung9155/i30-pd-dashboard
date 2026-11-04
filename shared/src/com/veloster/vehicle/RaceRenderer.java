@@ -51,9 +51,9 @@ public final class RaceRenderer {
         cell(c,"RPM",fmt("%.0f",rpm),"rpm",L,TOP,LC,184,48,!Float.isNaN(rpm)&&rpm>=prof.redline?RED:WHITE);
         // 6MT: the clutch sits left of the brake, in pedal order (clutch | brake | gear | accel).
         boolean mt=prof.trans==VehicleProfile.Trans.MT;
-        // 7DCT: the hotter clutch's temperature in the same place, once the TCU answers (nothing moves before that).
-        float ct=Math.max(v(Telemetry.CLUTCH_TEMP1),v(Telemetry.CLUTCH_TEMP2));boolean dct=!mt&&!Float.isNaN(ct);
-        if(mt)clutch(c);else if(dct)clutchTemp(c,ct);
+        // 7DCT: both clutch temperatures (odd / even gears) in the same place, once the TCU answers (nothing moves before that).
+        float odd=v(Telemetry.CLUTCH_ODD),even=v(Telemetry.CLUTCH_EVEN);boolean dct=!mt&&!(Float.isNaN(odd)&&Float.isNaN(even));
+        if(mt)clutch(c);else if(dct)clutchTemps(c,odd,even);
         bar(c,"BRAKE",fmt("%.1f",brake)+" bar",mt||dct?L+76:L,LC,brake/100,RED,true);
         boost(c,boost);
         float w=(LC-L-4)/2,h=(BOT-320-4)/2;
@@ -267,15 +267,18 @@ public final class RaceRenderer {
         text(c,"CLUTCH",L+36,204,11,in?BG:MUTED,Paint.Align.CENTER);
         text(c,Float.isNaN(v)?"—":in?"IN":"OUT",L+36,222,15,in?BG:MUTED,Paint.Align.CENTER);
     }
-    /** 7DCT clutch temperature (the hotter of the two), left of the brake bar like the 6MT clutch pedal.
+    /** 7DCT clutch temperatures, odd-gear clutch over even-gear clutch, left of the brake bar like the 6MT clutch pedal.
      *  ponytail: amber from 150 °C, red from 180 °C is a guess (our car read 68 °C after 11 min in town); move the
      *  two numbers once a hard drive or a drag run shows where the TCU starts protecting the clutch. */
     static final float CLUTCH_WARM=150,CLUTCH_HOT=180;
-    private void clutchTemp(Canvas c,float t){
-        int ink=t>=CLUTCH_HOT?D():t>=CLUTCH_WARM?AMBER:WHITE;
+    private void clutchTemps(Canvas c,float odd,float even){
         box(c,L,188,L+72,228,PANEL);
-        text(c,"CLUTCH",L+36,204,11,t>=CLUTCH_WARM?ink:MUTED,Paint.Align.CENTER);
-        text(c,fmt("%.0f",t)+"°C",L+36,222,15,ink,Paint.Align.CENTER);
+        clutchRow(c,"ODD",odd,205);clutchRow(c,"EVEN",even,223);
+    }
+    private void clutchRow(Canvas c,String name,float t,float y){
+        int ink=Float.isNaN(t)?MUTED:t>=CLUTCH_HOT?D():t>=CLUTCH_WARM?AMBER:WHITE;
+        text(c,name,L+5,y,10,t>=CLUTCH_WARM?ink:MUTED,Paint.Align.LEFT);
+        text(c,fmt("%.0f",t)+"°",L+68,y,15,ink,Paint.Align.RIGHT);
     }
     /** Steering cell (320..448, as tall as the 2x2 grid on the left): a simple wheel icon turned by the displayed angle
      * (right = clockwise, as Telemetry.displayValue shows it), a centre-zero bar, the angle, and the SAS steering speed

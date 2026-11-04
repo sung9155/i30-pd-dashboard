@@ -10,10 +10,10 @@ public final class Telemetry {
     public static final int SPARK=42,BRAKE_SWITCH=43,STEER_TORQUE=44,DOOR_DRIVER=45,WIPER=46,DOOR_PASSENGER=47,TRUNK=48,HOOD=49,TURN_LEFT=50,TURN_RIGHT=51,SHIFT_HINT=52,HEAD_LAMP=53,TAIL_LAMP=54,HIGH_BEAM=55,CLUTCH=56,FUEL_LEVEL=57,CAT_TEMP=58,ABS_LOAD=59;
     public static final int DPF_DP=60,DPF_TEMP=61,DPF_REGEN=62,DPF_TRIGGER=63;   // diesel, standard OBD PIDs 0x7A/0x7C/0x8B
     public static final int DPF_SINCE_KM=64,DPF_AVG_KM=65;   // km since the last regeneration the app saw end; ECU average between regenerations
-    public static final int CLUTCH_TEMP1=66,CLUTCH_TEMP2=67;   // 7DCT clutch #1 / #2 temperature, TCU mode 22 DID 01A4 (ObdLive)
+    public static final int CLUTCH_ODD=66,CLUTCH_EVEN=67;   // 7DCT clutch temperatures: #1 odd gears (1 3 5 7), #2 even gears (2 4 6 R); TCU 22 01A4
     /** Sink key for the TCU's mode 22 DID 01A4 reply (above every mode 01 PID). */
     public static final int DID_CLUTCH=0x1A4;
-    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격", "DCT 클러치 1 온도", "DCT 클러치 2 온도"};
+    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격", "DCT 홀수단 클러치 온도", "DCT 짝수단 클러치 온도"};
     public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%", "km", "km", "°C", "°C"};
     public static final long STALE_MS = 60000; // UI freshness threshold, not an OEM timeout.
     public static final long HISTORY_MS=300000,HISTORY_STEP_MS=250;
@@ -253,9 +253,10 @@ public final class Telemetry {
                 if(n>=7&&(d[0]&0x40)!=0)put(DPF_AVG_KM,u16(d,5),true,now);   // average distance between regenerations, km
                 if(odo.valid&&!Float.isNaN(regenEndOdo)&&odo.value>=regenEndOdo)put(DPF_SINCE_KM,odo.value-regenEndOdo,true,now);
                 break;}
-            // 7DCT clutch temperatures: whole-reply bytes [33] and [35] of 62 01 A4 (d = after the DID), raw °C. Pinned
-            // from our car's cold / 5 min / 11 min replies (34/35 -> 36/37 -> 49/68 °C, i30pd_port/OBD_PROBE.md).
-            case DID_CLUTCH: if(n>=33){put(CLUTCH_TEMP1,d[30]&255,true,now);put(CLUTCH_TEMP2,d[32]&255,true,now);} break;
+            // 7DCT clutch temperatures (OBDb Hyundai-i30, CC BY-SA 4.0): u16 at data bytes 29 and 31 after 62 01 A4, x2 - 40 °C.
+            // Our car: 28/30 cold, 32/34 at 5 min, 58/96 at 11 min. #2 ran hot while the same reply's gear byte read R,
+            // and R rides on the even clutch, so #1 = odd gears, #2 = even gears (i30pd_port/OBD_PROBE.md).
+            case DID_CLUTCH: if(n>=33){put(CLUTCH_ODD,u16(d,29)*2-40,true,now);put(CLUTCH_EVEN,u16(d,31)*2-40,true,now);} break;
             default: obd(pid,n>0?d[0]&255:0,n>1?d[1]&255:0,now);
         }
     }

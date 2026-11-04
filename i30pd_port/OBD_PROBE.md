@@ -134,3 +134,21 @@ One more drive would pin them: get the engine fully hot, read the dash's own oil
 a moment, and do a wide-open pull — the probe logs a round every 5 minutes on its own, so keep the
 cable connected and note the dash reading near a round. The gauge value anchors the oil-temp byte and
 scale; the pull moves the boost and knock bytes.
+
+## Correction — clutch temperature scale and odd / even (2026-11-04)
+
+OBDb's `22 01A4` definition (`I30_CLUTCH_1_T` / `I30_CLUTCH_2_T`, bix 232 / 248, 16 bits, `×2 − 40` °C)
+puts the two temperatures at whole-reply bytes **[32..33]** and **[34..35]** — the bytes [33] / [35]
+above are their low bytes, so the position holds, but the scale is not plain °C:
+
+| round | elapsed | #1 u16 → °C | #2 u16 → °C | gear byte [26] / next [27] |
+|-------|---------|:-----------:|:-----------:|:--------------------------:|
+| 1 | 20 s, cold | 0x22 → 28 | 0x23 → 30 | 0 / 0 (P) |
+| 2 | ~5 min | 0x24 → 32 | 0x25 → 34 | 1 / 2 |
+| 3 | ~11 min | 0x31 → 58 | 0x44 → 96 | 14 / 14 (R) |
+
+The same bix convention (data bytes counted after `62 01 A4`) puts OBDb's current / next gear at
+[26] / [27], and those read P, 1→2 and R in the three rounds, which confirms the offsets. Round 3 was
+taken while reversing and #2 was the hot one; R rides on the even-gear clutch, so **#1 = odd gears
+(1 3 5 7), #2 = even gears (2 4 6 R)**. The dashboard shows them as `ODD` / `EVEN` (Telemetry
+`CLUTCH_ODD` / `CLUTCH_EVEN`). Still to see: values from a hard drive, to set the warning colours.

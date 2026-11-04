@@ -272,7 +272,7 @@ public final class HscanPdTelemetryTest {
         t.obd(0x2f,0x7f,0,3401);check(Math.abs(t.sample(Telemetry.FUEL_LEVEL,3401).value-49.8f)<0.5f,"fuel level ~50%");
         t.obd(0x3c,0x0b,0x54,3402);check(Math.abs(t.sample(Telemetry.CAT_TEMP,3402).value-250f)<1f,"catalyst temp ~250 C");
         t.obd(0x43,0x00,0x31,3403);check(Math.abs(t.sample(Telemetry.ABS_LOAD,3403).value-19.2f)<0.5f,"absolute load ~19%");
-        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.CLUTCH_TEMP2+1,"label/unit tables cover the added signals");
+        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.CLUTCH_EVEN+1,"label/unit tables cover the added signals");
         // diesel DPF PIDs (J1979-DA): a support byte first, only marked fields published; other PIDs fall through
         t.obd(0x7a,new byte[]{0x07,0x05,(byte)0xdc,0,0,0,0},3410);check(Math.abs(t.sample(Telemetry.DPF_DP,3410).value-15f)<0.01f,"DPF delta pressure 1500 x 0.01 = 15 kPa");
         t.obd(0x7a,new byte[]{0x07,(byte)0xff,(byte)0x9c,0,0,0,0},3411);check(Math.abs(t.sample(Telemetry.DPF_DP,3411).value+1f)<0.01f,"delta pressure is signed (-1 kPa)");
@@ -292,11 +292,11 @@ public final class HscanPdTelemetryTest {
         {Telemetry dpf0=new Telemetry();dpf0.obd(0x8b,new byte[]{0x00,0x01,(byte)0x80,0,0,0,0},3415);
         check(!dpf0.sample(Telemetry.DPF_REGEN,3415).valid&&!dpf0.sample(Telemetry.DPF_TRIGGER,3415).valid,"unsupported fields stay unpublished");
         dpf0.obd(0x2f,new byte[]{0x7f},3416);check(Math.abs(dpf0.sample(Telemetry.FUEL_LEVEL,3416).value-49.8f)<0.5f,"single-byte PIDs still decode through the byte[] path");}
-        // 7DCT clutch temperatures from TCU 22 01A4 (our car, 11 min): whole-reply [33]=0x31, [35]=0x44 -> 49 / 68 C
+        // 7DCT clutch temperatures from TCU 22 01A4 (our car, 11 min, reversing): u16 0x0031 / 0x0044, x2-40 -> odd 58 / even 96 C
         {Telemetry k=new Telemetry();byte[] r=hex("62 01 A4 FF FF E0 00 14 02 00 26 00 FE 94 1B 9E BD C3 14 94 08 F6 C4 10 02 03 0E 0E F0 FC C0 FF 00 31 00 44 00");
         k.obd(Telemetry.DID_CLUTCH,java.util.Arrays.copyOfRange(r,3,r.length),3430);
-        check(k.sample(Telemetry.CLUTCH_TEMP1,3430).value==49&&k.sample(Telemetry.CLUTCH_TEMP2,3430).value==68,"DCT clutch temperatures 49 / 68 C");
-        k.obd(Telemetry.DID_CLUTCH,new byte[10],3431);check(k.sample(Telemetry.CLUTCH_TEMP1,3431).value==49,"a short reply leaves them alone");}
+        check(k.sample(Telemetry.CLUTCH_ODD,3430).value==58&&k.sample(Telemetry.CLUTCH_EVEN,3430).value==96,"DCT clutch temperatures odd 58 / even 96 C");
+        k.obd(Telemetry.DID_CLUTCH,new byte[10],3431);check(k.sample(Telemetry.CLUTCH_ODD,3431).value==58,"a short reply leaves them alone");}
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
     private static byte[] hex(String h){String[] p=h.trim().split(" ");byte[] b=new byte[p.length];for(int i=0;i<p.length;i++)b[i]=(byte)Integer.parseInt(p[i],16);return b;}

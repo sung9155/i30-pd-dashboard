@@ -51,8 +51,8 @@ public final class TabsPreview {
         race(out,"4c_race_mt_out",rec,model,now,VehicleProfile.PETROL_MT,0);   // and released
         race(out,"4c_race_mt_hint",rec,model,now,VehicleProfile.PETROL_MT,0,4); // the ECU's shift hint (▲4) on its red band
         race(out,"4c_race_diesel",rec,model,now,VehicleProfile.DIESEL_DCT,-1); // DPF slot instead of SPARK
-        {byte[] ct=new byte[34];ct[30]=(byte)112;ct[32]=(byte)156;model.obd(Telemetry.DID_CLUTCH,ct,now);}   // 7DCT clutch temperatures 112 / 156 C (TCU 22 01A4)
-        race(out,"4c_race_dct_clutch",rec,model,now,VehicleProfile.PETROL_DCT,-1); // hotter clutch left of the brake, amber from 150 C
+        {byte[] ct=new byte[33];ct[30]=(byte)76;ct[32]=(byte)98;model.obd(Telemetry.DID_CLUTCH,ct,now);}   // 7DCT clutch temperatures odd 112 / even 156 C (TCU 22 01A4, x2-40)
+        race(out,"4c_race_dct_clutch",rec,model,now,VehicleProfile.PETROL_DCT,-1); // odd / even clutch left of the brake, amber from 150 C
         model.obd(0x8b,new byte[]{0x11,0x01,(byte)0x9e,0,0,0,0},now);model.obd(0x7a,new byte[]{0x01,0x05,(byte)0xdc,0,0,0,0},now);model.obd(0x7c,new byte[]{0x01,0x19,0x64,0,0,0,0,0,0},now);   // standard DPF PIDs: regenerating, trigger 62 %, 15 kPa, 610 °C
         race(out,"4c_race_diesel_regen",rec,model,now,VehicleProfile.DIESEL_DCT,-1);
         // after it: trigger 38 %, 6.5 kPa, 310 °C, 123 km since the regeneration ended (ECU average 480 km, shown in turn)

@@ -39,8 +39,10 @@ public final class TabsPreview {
         ImageIO.write(intro,"png",new File(out,"0_intro.png"));
         save(out,"2_f1",p,model,now,true,false);
         save(out,"3_f1_media",p,model,now,true,true);
-        PitRenderer perf=new PitRenderer();perf.setSymmetric(true);perf.setPage(PitRenderer.PAGE_PERFORMANCE);perf.setLap(83456,false);
+        PitRenderer perf=new PitRenderer();perf.setSymmetric(true);perf.setPage(PitRenderer.PAGE_PERFORMANCE);LapTimer lap=new LapTimer();lap.tap(now-310000);lap.tap(now-222000);lap.tap(now-137500);lap.tap(now-51800);perf.setLap(lap);   // lap 4 running; lap 2 is the best, lap 3 is 1.2 s off it
         save(out,"4b_performance",perf,model,now,false,false);
+        lap.hold(now-20000);save(out,"4b_performance_lap_stopped",perf,model,now,false,false);   // stopped 20 s ago: frozen, hold clears
+        perf.setLap(new LapTimer());save(out,"4b_performance_lap_idle",perf,model,now,false,false);
         PitRenderer show=new PitRenderer();show.setSymmetric(true);show.setPage(PitRenderer.PAGE_SHOW);
         save(out,"4e_show",show,model,now,false,false);
         rec.setPage(PitRenderer.PAGE_RACE);save(out,"4c_race",rec,model,now,false,false);
@@ -80,7 +82,7 @@ public final class TabsPreview {
         Telemetry none=new Telemetry();
         for(int i=0;i<layouts.length;i++)cluster(out,"x_"+layouts[i].substring(3)+"_empty",i,none,now,new DriveStats(),VehicleProfile.PETROL_DCT);
         cluster(out,"x_cluster_mt",0,model,now,rec.stats(),VehicleProfile.PETROL_MT);
-        // Taxi right panel: the radio during a trip (sample track), the receipt after 빈차 · 운행 종료.
+        // Taxi right panel: the radio during a trip (sample track), the receipt after 운행 종료 (x_cluster_taxi_empty: 운행 시작).
         MediaState ms=new MediaState();ms.mode(0x36);
         ms.update(1,true,"한강 따라 달리는 밤의 드라이브 (Night Drive Remix)",true,"City Lights Band",true,83000,true,214000,false,now);ms.playback(1,1);
         taxi(out,"9d_cluster_taxi_music",model,now,ms.snapshot(now),false);
@@ -107,7 +109,7 @@ public final class TabsPreview {
         Telemetry.Sample[] ps=model.snapshot(now);ps[Telemetry.CLUTCH]=new Telemetry.Sample(1,true,false,true,false,0);
         {BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas pc=new android.graphics.Canvas(img.createGraphics());
          perf.draw(pc,800,480,false,model,now,0,false,null);android.graphics.Paint bg=new android.graphics.Paint(1);bg.setColor(Theme.current().map(0xff040506));pc.drawRect(0,53,800,480,bg);
-         new PerformanceRenderer().draw(pc,ps,83456,false,VehicleProfile.PETROL_MT);ImageIO.write(img,"png",new File(out,"x_perf_mt_clutch.png"));}
+         new PerformanceRenderer().draw(pc,ps,null,now,VehicleProfile.PETROL_MT);ImageIO.write(img,"png",new File(out,"x_perf_mt_clutch.png"));}
         model.obd(0x8b,new byte[]{0x11,0x01,(byte)0x9e,0,0,0,0},now);   // regenerating, trigger 62 %
         int[] dl={11,9,0,2};String[] dn={"engine","night","classic","rally"};   // classic and rally carry the warning-lamp row
         for(int k=0;k<dl.length;k++)cluster(out,"x_"+dn[k]+"_diesel_regen",dl[k],model,now,rec.stats(),VehicleProfile.DIESEL_DCT);

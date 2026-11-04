@@ -32,6 +32,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/SparkRetard.java",
                ROOT / "shared/src/com/veloster/vehicle/DayPhase.java",
                ROOT / "shared/src/com/veloster/vehicle/TaxiFare.java",
+               ROOT / "shared/src/com/veloster/vehicle/LapTimer.java",
                ROOT / "shared/src/com/veloster/vehicle/CarPaint.java",
                ROOT / "shared/src/com/veloster/vehicle/RoadJolt.java",
                ROOT / "shared/src/com/veloster/vehicle/Weather.java",

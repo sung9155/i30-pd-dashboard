@@ -107,7 +107,6 @@ public final class UiText {
         EN.put("게이지를 길게 눌러 항목 · 모양 · 위치 편집","Hold a gauge to edit its signal, style or position");
         EN.put("경과 초","seconds");
         EN.put("계기판","Dashboard");
-        EN.put("계기판 · 가장자리 버튼","Dash");
         EN.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","Open dashboard; long-press for My Apps; drag to move");
         EN.put("계단 회전 곡선","Stepped rev curve");
         EN.put("고른 값 게이지","Your chosen gauges");
@@ -201,6 +200,7 @@ public final class UiText {
         EN.put("마찰원","Friction circle");
         EN.put("막대","Bar");
         EN.put("맑음","Clear");
+        EN.put("멈추면 다음 운행 준비","Stop to ready the next trip");
         EN.put("모노","Mono");
         EN.put("모드 색","Mode colour");
         EN.put("모드 화면","Mode screen");
@@ -264,7 +264,6 @@ public final class UiText {
         EN.put("비작동","Inactive");
         EN.put("비행기 엔진 계기판","Airliner engine display");
         EN.put("빈차","Vacant");
-        EN.put("빈차 · 운행 종료","Vacant · end trip");
         EN.put("사용","On");
         EN.put("사용 안 함","Off");
         EN.put("사용 안 함 / Off","Off");
@@ -299,6 +298,7 @@ public final class UiText {
         EN.put("시간 30초 × ","Time 30 s × ");
         EN.put("시간 그래프","Values over time");
         EN.put("시간 요금 · 30초당 100원","Time fare · 100 won per 30 s");
+        EN.put("시간 초과 · 취소됨","Timed out · disarmed");
         EN.put("시동 안내 화면 건너뛰기","Skip the start-up notice");
         EN.put("시동 안내 화면: ","Start-up notice: ");
         EN.put("시스템","System");
@@ -370,9 +370,12 @@ public final class UiText {
         EN.put("우주선 워프","Starship warp");
         EN.put("운전석","Driver");
         EN.put("운전석 문","Driver door");
+        EN.put("운행 시작","Start trip");
         EN.put("운행 종료","Trip ended");
+        EN.put("운행 종료 · 버튼","End trip");
         EN.put("운행 중","On a trip");
         EN.put("운행을 마치면 영수증이 나옵니다","The receipt appears when the trip ends");
+        EN.put("움직이면 자동 시작 · 버튼으로 바로 시작","Starts when you move · or tap Start");
         EN.put("워프","Warp");
         EN.put("원","won");
         EN.put("원래 화면","Previous screen");
@@ -434,8 +437,10 @@ public final class UiText {
         EN.put("점화·노킹 모니터","Spark & knock monitor");
         EN.put("점화시기","Timing");
         EN.put("정속 주행","Steady cruise");
+        EN.put("정지 유지 · 곧 트리 시작","Hold still · tree starting");
         EN.put("정차 · 공회전 ","Stopped · idle ");
         EN.put("정차 상태에서 확인하세요. 이 화면을 여는 것만으로 무선 설정은 바뀌지 않습니다.","Check while parked. Opening this screen alone does not change wireless settings.");
+        EN.put("정차 후 다음 운행","Stop for next trip");
         EN.put("정차 후 출발하면 측정","starts when you pull away from a stop");
         EN.put("정차하면 트리가 켜집니다","Stop to light the tree");
         EN.put("제동","Braking");
@@ -467,13 +472,13 @@ public final class UiText {
         EN.put("주행가능거리","Range");
         EN.put("주행거리","Odometer");
         EN.put("주황 LCD","Orange LCD");
-        EN.put("준비 · 정지 상태","Staging · stopped");
         EN.put("중통 제거","Resonator delete");
         EN.put("지각 (추정)","Retard (est.)");
         EN.put("지각 추정","Est. retard");
         EN.put("지금","Now");
         EN.put("지금 연비 ","Now ");
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
+        EN.put("지난 랩","Last");
         EN.put("지연 보정","Latency compensation");
         EN.put("직렬 6기통 터보","Inline-6 turbo");
         EN.put("진단","DTC");
@@ -490,6 +495,8 @@ public final class UiText {
         EN.put("최고 0→100 km/h 초","Best 0→100 km/h s");
         EN.put("최고 RPM","Peak rpm");
         EN.put("최고 감속G","Peak decel G");
+        EN.put("최고 대비","vs best");
+        EN.put("최고 랩","Best");
         EN.put("최고 부스트","Peak boost");
         EN.put("최고 부스트 순간","At peak boost");
         EN.put("최고 속도","Top speed");
@@ -499,11 +506,14 @@ public final class UiText {
         EN.put("최대 횡G","Max lat G");
         EN.put("출력 (계산)","Power (calc.)");
         EN.put("출력 경로","Output route");
-        EN.put("출발하면 미터가 켜집니다","The meter starts when you drive off");
-        EN.put("출발하세요","Go");
+        EN.put("출발하세요 · %d초","Go · %ds");
         EN.put("취소","Cancel");
         EN.put("취소 / Cancel","Cancel");
+        EN.put("측정 완료","Run complete");
+        EN.put("측정 준비","Arm");
+        EN.put("측정 준비를 누르세요","Tap Arm to start");
         EN.put("측정 중","timing");
+        EN.put("측정 중 · 버튼","Timing");
         EN.put("카세트","Cassette");
         EN.put("카세트 데크","Cassette deck");
         EN.put("카키","Khaki");
@@ -520,9 +530,9 @@ public final class UiText {
         EN.put("타이어 공기압 낮음","Low tire pressure");
         EN.put("택시","Taxi");
         EN.put("택시 미터기","Taxi meter");
+        EN.put("탭: 계속 · 길게: 초기화","Tap: resume · Hold: clear");
+        EN.put("탭: 다음 랩 · 길게: 정지","Tap: next lap · Hold: stop");
         EN.put("탭: 시작","Tap: start");
-        EN.put("탭: 정지","Tap: stop");
-        EN.put("탭: 초기화","Tap: reset");
         EN.put("터보 휘슬","Turbo whistle");
         EN.put("테마","Theme");
         EN.put("토크 (계산)","Torque (calc.)");
@@ -583,7 +593,6 @@ public final class UiText {
         EN.put("흡기온","Intake");
         EN.put("흰 네모 숫자","White boxed numbers");
         KO.put("가장자리 버튼 + 알림 / Floating + notification","가장자리 버튼 + 알림");
-        KO.put("계기판 · 가장자리 버튼","계기판");
         KO.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경");
         KO.put("내 앱 / My Apps","내 앱");
         KO.put("내 앱 열기 · 길게 끌어서 위치 변경 / My Apps","내 앱 열기 · 끌어서 위치 변경");
@@ -592,8 +601,10 @@ public final class UiText {
         KO.put("설정으로 / Back","설정으로");
         KO.put("실행 바로가기 / Quick entry","실행 바로가기");
         KO.put("알림만 / Notification only","알림만");
+        KO.put("운행 종료 · 버튼","운행 종료");
         KO.put("저장 / Save","저장");
         KO.put("취소 / Cancel","취소");
+        KO.put("측정 중 · 버튼","측정 중");
         KO.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.");
     }
     private UiText() {}

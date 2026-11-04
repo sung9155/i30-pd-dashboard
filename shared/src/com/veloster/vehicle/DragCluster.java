@@ -6,14 +6,20 @@ import android.graphics.Typeface;
 import java.util.Locale;
 
 /**
- * Drag start tree for track use: stopped for 1.5 s stages the tree, three ambers count down, green waits for the
- * launch. Times run from the launch (speed > 0.5 km/h): reaction from green (a launch before green lights red),
- * 0-60, 0-100 km/h, 201 m (1/8 mile, integrated speed) and the speed there. Best of the session alongside.
+ * Drag start tree for track use. Nothing runs until the 측정 준비 key arms it (so ordinary stops never light the
+ * tree); armed and stopped for 1.5 s stages the tree, three ambers count down, green waits up to 10 s for the launch.
+ * Times run from the launch (speed > 0.5 km/h): reaction from green (a launch before green lights red), 0-60,
+ * 0-100 km/h, 201 m (1/8 mile, integrated speed) and the speed there. Best of the session alongside. One run per arm:
+ * the run's end, the green timeout, the 취소 key or leaving the tab disarms.
  */
 final class DragCluster extends ClusterKit {
     private static final int TX=0xffeef0f2,MU=0xff8a8f96,AM=0xffffb000,GR=0xff39ff5a,RD=0xffff2a2a,ACC=0xffa4d9ef;
     private long stoppedAt=-1,treeAt=-1,launchAt=-1,lastAt;
-    private boolean foul;
+    private boolean foul,armed;
+    /** Why the last arm ended, shown until the next one: 0 none, 1 run complete, 2 green timed out. */
+    private int outcome;
+    private static final long GREEN_WAIT=10000;
+    private static final int KL=16,KT=376,KR=284,KB=472;   // the key, under the tree
     private float dist;
     private final float[] cur=new float[5],best={Float.NaN,Float.NaN,Float.NaN,Float.NaN,Float.NaN};   // reaction, 0-60, 0-100, 201 m, trap
     private final float[] curveT=new float[200],curveV=new float[200];
@@ -22,11 +28,12 @@ final class DragCluster extends ClusterKit {
 
     @Override protected void draw(Canvas c){
         float v=v(7);long gap=lastAt==0?0:now-lastAt;lastAt=now;
-        if(gap>2000){launchAt=-1;treeAt=-1;stoppedAt=-1;}   // a hidden tab is no run
+        if(gap>2000){launchAt=-1;treeAt=-1;stoppedAt=-1;armed=false;}   // a hidden tab is no run
         boolean stopped=!Float.isNaN(v)&&v<0.5f;
-        if(stopped){if(stoppedAt<0)stoppedAt=now;if(launchAt>=0)finish();if(treeAt<0&&now-stoppedAt>1500){treeAt=now;foul=false;}}
+        if(stopped){if(stoppedAt<0)stoppedAt=now;if(launchAt>=0)finish();if(armed&&treeAt<0&&now-stoppedAt>1500){treeAt=now;foul=false;}}
         else stoppedAt=-1;
         long green=treeAt<0?-1:treeAt+2000;
+        if(launchAt<0&&green>=0&&now-green>GREEN_WAIT){treeAt=-1;armed=false;outcome=2;}
         if(!stopped&&!Float.isNaN(v)&&treeAt>=0&&launchAt<0){
             launchAt=now;foul=now<green;dist=0;curveN=0;java.util.Arrays.fill(cur,Float.NaN);cur[0]=(now-green)/1000f;
         }
@@ -41,20 +48,24 @@ final class DragCluster extends ClusterKit {
         }
         fill(c,0,52,800,480,0xff0a0a0b);
         // tree
-        fill(c,136,60,164,476,0xff1b1d20);round(c,70,66,230,468,12,0xff121315);outline(c,70,66,230,468,12,2,0xff2a2c30);
+        // tree, shortened so the key fits below it, away from the header tabs and big enough to hit while stopped
+        fill(c,136,58,164,372,0xff1b1d20);round(c,70,62,230,364,12,0xff121315);outline(c,70,62,230,364,12,2,0xff2a2c30);
         boolean staged=treeAt>=0&&launchAt<0;
         float since=treeAt<0?-1:(now-treeAt)/1000f;
         for(int x:new int[]{110,190}){
-            lamp(c,x,94,9,0xfffff7c2,stopped||staged);lamp(c,x,126,9,0xfffff7c2,staged);
-            for(int k=0;k<3;k++)lamp(c,x,180+k*60,22,AM,staged&&since>=0.5f+k*0.5f&&since<0.5f+k*0.5f+0.4f);
-            lamp(c,x,362,22,GR,(staged&&since>=2)||(launchAt>=0&&!foul&&now-launchAt<1200));
-            lamp(c,x,420,18,RD,launchAt>=0&&foul);
+            lamp(c,x,84,8,0xfffff7c2,armed&&stopped||staged);lamp(c,x,108,8,0xfffff7c2,staged);
+            for(int k=0;k<3;k++)lamp(c,x,150+k*46,18,AM,staged&&since>=0.5f+k*0.5f&&since<0.5f+k*0.5f+0.4f);
+            lamp(c,x,292,19,GR,(staged&&since>=2)||(launchAt>=0&&!foul&&now-launchAt<1200));
+            lamp(c,x,340,14,RD,launchAt>=0&&foul);
         }
-        text(c,"PRE",150,98,11,0xff55575c,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);text(c,"STAGE",150,130,11,0xff55575c,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
+        text(c,"PRE",150,88,11,0xff55575c,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);text(c,"STAGE",150,112,11,0xff55575c,Paint.Align.CENTER,Typeface.DEFAULT_BOLD);
+        // one key under the tree: arm, cancel (armed, not launched), or a dead key while a run is timed
+        key(c,KL,KT,KR,KB,launchAt>=0?t("측정 중 · 버튼"):armed?t("취소"):t("측정 준비"),30,launchAt>=0?KEY_GREY:armed?KEY_SLATE:KEY_AMBER,launchAt>=0?GR:armed?AM:0);
         // right side
         float x0=300;
-        String state=launchAt>=0?(foul?t("부정 출발"):"GO"):staged?(since<2?t("곧 출발"):t("출발하세요")):stopped?t("준비 · 정지 상태"):t("정차하면 트리가 켜집니다");
-        bold(c,state,x0,86,18,launchAt>=0?(foul?RD:GR):staged?AM:MU,Paint.Align.LEFT);
+        String state=launchAt>=0?(foul?t("부정 출발"):"GO"):staged?(since<2?t("곧 출발"):String.format(Locale.US,t("출발하세요 · %d초"),(int)Math.ceil((green+GREEN_WAIT-now)/1000f))):armed?(stopped?t("정지 유지 · 곧 트리 시작"):t("정차하면 트리가 켜집니다"))
+            :outcome==1?t("측정 완료"):outcome==2?t("시간 초과 · 취소됨"):t("측정 준비를 누르세요");
+        bold(c,state,x0,86,18,launchAt>=0?(foul?RD:GR):staged?AM:armed?TX:MU,Paint.Align.LEFT);
         String big=launchAt>=0?String.format(Locale.US,"%.3f",e):!Float.isNaN(best[2])?String.format(Locale.US,"%.3f",best[2]):"—";
         bold(c,big,x0,160,84,TX,Paint.Align.LEFT);
         bold(c,launchAt>=0?t("경과 초"):t("최고 0→100 km/h 초"),x0+4,182,13,MU,Paint.Align.LEFT);
@@ -76,7 +87,12 @@ final class DragCluster extends ClusterKit {
         if(!foul&&!Float.isNaN(cur[0])&&(Float.isNaN(best[0])||cur[0]<best[0]))best[0]=cur[0];
         for(int i=1;i<4;i++)if(!Float.isNaN(cur[i])&&(Float.isNaN(best[i])||cur[i]<best[i]))best[i]=cur[i];
         if(!Float.isNaN(cur[4])&&(Float.isNaN(best[4])||cur[4]>best[4]))best[4]=cur[4];
-        launchAt=-1;treeAt=-1;
+        launchAt=-1;treeAt=-1;armed=false;outcome=1;
+    }
+    @Override boolean tap(float x,float y){
+        if(x<KL||x>KR||y<KT||y>KB||launchAt>=0)return false;   // no key while a run is timed
+        if(armed){armed=false;treeAt=-1;outcome=0;}else{armed=true;outcome=0;}
+        return true;
     }
     private static String val(float x,int i){return Float.isNaN(x)?"—":i==4?String.format(Locale.US,"%.0f km/h",x):String.format(Locale.US,i==0?"%.3f s":"%.2f s",x);}
     private void lamp(Canvas c,float x,float y,float r,int color,boolean on){

@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.Canvas;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
@@ -24,18 +25,17 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.WindowManager;
-import android.widget.Button;
 import java.lang.ref.WeakReference;
 
 /** Opt-in standard Android shortcut. No OEM APIs, HOME replacement or full-screen boot launch. */
 public final class QuickEntryService extends Service {
     private static final String PREFS="quick_entry",CHANNEL="vn_quick_entry",STOP="com.veloster.carplayhub.QUICK_ENTRY_OFF";
     private static final int NOTICE=9117;
-    private static final float IDLE_ALPHA=0.2f;   // very faint at rest so the floating button barely distracts; opaque while touched
+    private static final float IDLE_ALPHA=0.35f;   // faint at rest (dark disc + thin gauge, so 0.35 reads like the old grey button at 0.2); opaque while touched
     private static WeakReference<Runnable> statusObserver=new WeakReference<Runnable>(null);
     private SharedPreferences prefs;
     private WindowManager windows;
-    private Button button;
+    private View button;
     private WindowManager.LayoutParams layout;
     private int width,height,size;
     private boolean registered,overlayFailed;
@@ -148,7 +148,9 @@ public final class QuickEntryService extends Service {
             layout=new WindowManager.LayoutParams(size,size,Build.VERSION.SDK_INT>=26?2038:WindowManager.LayoutParams.TYPE_PHONE,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,PixelFormat.TRANSLUCENT);
             layout.gravity=Gravity.TOP|Gravity.LEFT;layout.x=QuickEntryPolicy.edge(storedRight(),width,size);layout.y=QuickEntryPolicy.y(storedY(),height,size);
-            final Button created=new Button(this);created.setText(UiText.t("계기판 · 가장자리 버튼"));created.setTextSize(14);created.setPadding(0,0,0,0);created.setMinWidth(0);created.setMinimumWidth(0);created.setMinHeight(0);created.setMinimumHeight(0);
+            final View created=new View(this){   // a small speedometer face (DashBadge), not a text button
+                protected void onDraw(Canvas canvas){DashBadge.draw(canvas,Math.min(getWidth(),getHeight()),isPressed());}
+            };
             created.setAlpha(IDLE_ALPHA);   // faint at rest so it doesn't distract; opaque while touched (below)
             created.setContentDescription(UiText.t("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard"));
             created.setOnClickListener(new View.OnClickListener(){public void onClick(View view){
@@ -172,7 +174,7 @@ public final class QuickEntryService extends Service {
                     int action=event.getActionMasked();
                     if(action==MotionEvent.ACTION_DOWN){
                         downX=event.getRawX();downY=event.getRawY();initialX=layout.x;initialY=layout.y;dragged=false;longPressed=false;
-                        created.setAlpha(1f);created.postDelayed(openHub,500);return true;
+                        created.setAlpha(1f);created.setPressed(true);created.invalidate();created.postDelayed(openHub,500);return true;
                     }
                     if(action==MotionEvent.ACTION_MOVE){
                         float dx=event.getRawX()-downX,dy=event.getRawY()-downY;
@@ -181,7 +183,7 @@ public final class QuickEntryService extends Service {
                         return true;
                     }
                     if(action==MotionEvent.ACTION_UP||action==MotionEvent.ACTION_CANCEL){
-                        created.removeCallbacks(openHub);created.setAlpha(IDLE_ALPHA);
+                        created.removeCallbacks(openHub);created.setAlpha(IDLE_ALPHA);created.setPressed(false);created.invalidate();
                         if(dragged){
                             boolean right=QuickEntryPolicy.right(layout.x,width,size);
                             layout.x=QuickEntryPolicy.edge(right,width,size);
@@ -203,7 +205,7 @@ public final class QuickEntryService extends Service {
         catch(RuntimeException e){removeOverlay();overlayFailed=true;error(this,"버튼 위치를 갱신하지 못해 알림만 유지합니다.");}
     }
     private void removeOverlay(){
-        Button old=button;button=null;
+        View old=button;button=null;
         if(old!=null&&windows!=null)try{windows.removeView(old);}catch(RuntimeException ignored){}
     }
     public void onConfigurationChanged(Configuration configuration){super.onConfigurationChanged(configuration);removeOverlay();onStartCommand(null,0,0);}

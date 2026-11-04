@@ -11,7 +11,7 @@ import java.util.Locale;
 
 /** N Mode "performance" page of the N cars' head unit, laid out for the i30 PD below the shared navigation:
  * throttle / intake air / coolant on the left (no oil sensor on this engine), RPM strip + 7-speed gear dots + speed + selector and brake pressure in the
- * middle, G-force and a tap-driven lap timer on the right. The N page's circuit map needs GPS track data, so the
+ * middle, G-force on the right, and a lap timer (LapTimer) across the bottom right with the brake pressure beside it. The N page's circuit map needs GPS track data, so the
  * same blue-outline / red-dot card shows the G-ball instead. Only received samples are drawn; missing ones show a dash. */
 public final class PerformanceRenderer {
     /** Every colour goes through the selected theme (identity for N). */
@@ -22,26 +22,42 @@ public final class PerformanceRenderer {
     private static final int TEXT=0xfff2f6f8,MUTED=0xff8fa0a8,EDGE=0xff3a4a54,TRACK=0xff2a343b,BLUE=0xff8fd0f0,RED=0xffff4059;
     private VehicleProfile prof=VehicleProfile.PETROL_DCT;
     // 3 rows x 3 columns, pad 12, gap 8; the middle and right top cards span two rows.
-    private static final float T0=64,T1=201,T2=339,B0=193,B1=331,B2=468,LL=12,LR=200,CL=208,CR=592,RL=600,RR=788;
+    private static final float T0=64,T1=201,T2=339,B0=193,B1=331,B2=468,LL=12,LR=200,CL=208,CR=592,RL=600,RR=788,BR=372;
+    /** The lap card (VehicleDash hit-tests it): bottom row from after the brake card to the right edge. */
+    public static final float LAP_L=380,LAP_R=RR,LAP_T=T2,LAP_B=B2;
+    private static final int GREEN=0xff4cd964;
     private Telemetry.Sample[] s;
 
     private float v(int i){return i>=0&&i<s.length&&s[i].valid&&!Float.isNaN(s[i].value)&&!Float.isInfinite(s[i].value)?Telemetry.displayValue(i,s[i].value):Float.NaN;}
     private static String fmt(String f,float x){return Float.isNaN(x)?"—":Telemetry.format(f,x);}
 
-    public void draw(Canvas c,Telemetry.Sample[] samples,long lapMs,boolean lapRunning,VehicleProfile profile){
+    /** lap null: an idle timer (thumbnails). */
+    public void draw(Canvas c,Telemetry.Sample[] samples,LapTimer lap,long now,VehicleProfile profile){
         s=samples;prof=profile;
         value(c,UiText.t("스로틀"),fmt("%.0f",v(Telemetry.THROTTLE_POS)),"%",LL,T0,LR,B0);
         value(c,UiText.t("흡기 온도"),fmt("%.0f",v(Telemetry.INTAKE)),"°C",LL,T1,LR,B1);
         value(c,UiText.t("냉각수 온도"),fmt("%.0f",v(2)),"°C",LL,T2,LR,B2);
         rpmCard(c);
-        value(c,UiText.t("브레이크 압력"),fmt("%.1f",v(10)),"bar",CL,T2,CR,B2);
+        value(c,UiText.t("브레이크 압력"),fmt("%.1f",v(10)),"bar",CL,T2,BR,B2);
         if(prof.trans==VehicleProfile.Trans.MT){float k=v(Telemetry.CLUTCH);   // 6MT: the clutch switch under the brake caption
             text(c,"CLUTCH "+(Float.isNaN(k)?"—":k>0?"IN":"OUT"),CL+14,T2+46,12,k>0?BLUE:MUTED,Paint.Align.LEFT);}
         gforce(c);
-        long cs=lapMs/10;
-        String lap=String.format(Locale.US,"%02d:%02d:%02d",cs/6000%100,cs/100%60,cs%100);
-        value(c,UiText.t("랩 타이머"),lap,"s",RL,T2,RR,B2);
-        text(c,UiText.t(lapRunning?"탭: 정지":lapMs>0?"탭: 초기화":"탭: 시작"),RL+14,T2+46,12,lapRunning?RED:MUTED,Paint.Align.LEFT);
+        lapCard(c,lap==null?new LapTimer():lap,now);
+    }
+    /** Current lap large on the left with the lap number and what a tap / hold does; last, best and the delta on the right. */
+    private void lapCard(Canvas c,LapTimer lap,long now){
+        float l=LAP_L,t=LAP_T,rr=LAP_R,b=LAP_B,mid=l+232;int st=lap.state();
+        card(c,UiText.t("랩 타이머"),l,t,rr,b);
+        if(st!=LapTimer.IDLE)text(c,"LAP "+(lap.laps+1),mid-14,t+26,15,BLUE,Paint.Align.RIGHT);
+        text(c,UiText.t(st==LapTimer.RUNNING?"탭: 다음 랩 · 길게: 정지":st==LapTimer.STOPPED?"탭: 계속 · 길게: 초기화":"탭: 시작"),l+14,t+48,13,
+            st==LapTimer.RUNNING?BLUE:st==LapTimer.STOPPED?RED:MUTED,Paint.Align.LEFT);
+        text(c,LapTimer.format(lap.current(now)),l+14,b-18,46,st==LapTimer.STOPPED?MUTED:TEXT,Paint.Align.LEFT);
+        p.setColor(T(EDGE));c.drawRect(mid,t+14,mid+1,b-14,p);
+        String[] lab={UiText.t("지난 랩"),UiText.t("최고 랩"),UiText.t("최고 대비")};
+        long d=lap.delta();
+        String[] val={LapTimer.format(lap.last),LapTimer.format(lap.best),d==Long.MIN_VALUE?"—":LapTimer.formatDelta(d)};
+        int[] col={TEXT,BLUE,d==Long.MIN_VALUE?TEXT:d<0?GREEN:RED};
+        for(int i=0;i<3;i++){float y=t+38+i*34;text(c,lab[i],mid+14,y,14,MUTED,Paint.Align.LEFT);text(c,val[i],rr-14,y,22,col[i],Paint.Align.RIGHT);}
     }
     /** Glass card: top-lit vertical gradient, 1 px edge, caption top-left. */
     private void card(Canvas c,String caption,float l,float t,float rr,float b){

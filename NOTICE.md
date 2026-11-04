@@ -18,7 +18,7 @@ CAN 메시지·신호의 배치와 배율은 [commaai/opendbc](https://github.co
 
 ## 서킷 지도
 
-서킷 화면의 국내 서킷 7곳(인제 스피디움, 코리아 인터내셔널 서킷 풀코스·상설, 태백 스피드웨이, AMG 스피드웨이, 포천 레이스웨이, BMW 드라이빙 센터) 트랙 선은 © [OpenStreetMap](https://www.openstreetmap.org/copyright) 기여자 자료이며 ODbL 1.0을 따릅니다. 이 자료로 만든 `shared/src/com/veloster/vehicle/CircuitData.java`(`scripts/circuits.py`로 생성)는 이 레포의 다른 파일과 달리 ODbL로 배포합니다. 인제의 출발선은 2025 슈퍼레이스 6라운드 공식 서킷맵에 표시된 컨트롤라인 위치를 OSM 트랙 위에 옮긴 것이고, 태백은 사용자가 보내 준 서킷맵(10번 코너와 1번 코너 사이 직선 가운데)의 출발선을, KIC 풀코스는 OSM의 결승선 표시, 나머지는 피트 옆 직선 가운데로 추정한 위치입니다.
+서킷 화면의 국내 서킷 7곳(인제 스피디움, 코리아 인터내셔널 서킷 풀코스·상설, 태백 스피드웨이, AMG 스피드웨이, 포천 레이스웨이, BMW 드라이빙 센터) 트랙 선은 © [OpenStreetMap](https://www.openstreetmap.org/copyright) 기여자 자료이며 ODbL 1.0을 따릅니다. 이 자료로 만든 `shared/src/com/veloster/vehicle/CircuitData.java`(`scripts/circuits.py`로 생성)는 이 레포의 다른 파일과 달리 ODbL로 배포합니다. 인제의 출발선은 2025 슈퍼레이스 6라운드 공식 서킷맵에 표시된 컨트롤라인 위치를 OSM 트랙 위에 옮긴 것이고, 태백·AMG 스피드웨이는 사용자가 보내 준 서킷맵(태백 10번과 1번 사이 직선 가운데, AMG 17번과 1번 사이 직선)의 출발선을, KIC 풀코스는 OSM의 결승선 표시, 나머지는 피트 옆 직선 가운데로 추정한 위치입니다.
 
 ## 아케이드 화면의 차 그림
 

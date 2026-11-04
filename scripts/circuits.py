@@ -10,7 +10,7 @@ Fetch the ways below with an Overpass query and pass the JSON:
 
 The start / finish line is, in this order: a point read off the circuit's official map, snapped onto the track (Inje:
 the 2025 SuperRace round 6 circuit map, control line just after T19; Taebaek: a circuit map with the line about mid
-straight between T10 and T1); OSM's "Finish Line" node (KIC); or an estimate,
+straight between T10 and T1; AMG: a circuit map, the line 185 m into the T17-T1 straight); OSM's "Finish Line" node (KIC); or an estimate,
 halfway (by distance) along the longest straight within 40 m of the pit lane, the main straight beside the pits, or
 the middle of the longest straight where no pit lane is mapped. Lap times do not depend on where the line sits.
 """
@@ -28,7 +28,7 @@ CIRCUITS = [
     ("kic", "코리아 인터내셔널 서킷", "Korea International Circuit", [708763326], [234767156, 1291666918], 2429025515),
     ("kic_permanent", "KIC 상설 서킷", "KIC Permanent Circuit", [234764328], [234768719], None),
     ("taebaek", "태백 스피드웨이", "Taebaek Speedway", [240211101], [826496123], (37.082725, 129.017869)),   # circuit map: 348 m into the 651 m straight from T10
-    ("amg", "AMG 스피드웨이", "AMG Speedway", [240199084, 671420801, 671420803, 671420804], [450059011], None),
+    ("amg", "AMG 스피드웨이", "AMG Speedway", [240199084, 671420801, 671420803, 671420804], [450059011], (37.296167, 127.206624)),   # circuit map: 185 m into the 446 m T17-T1 straight
     ("pocheon", "포천 레이스웨이", "Pocheon Raceway", [1559045138], [], None),   # OSM has no pit lane here
     ("bmw", "BMW 드라이빙 센터", "BMW Driving Center", [530969647], [], None),
 ]
@@ -74,6 +74,10 @@ def main():
             nodes += n[1:] if nodes else n
         if nodes[0] == nodes[-1]:
             pts, nodes = pts[:-1], nodes[:-1]   # closed: drop the repeated point
+        else:   # open (KIC): drop an end that runs on past the start
+            m0 = metres(*pts[0])
+            while math.hypot(*m0(*pts[-1])) < 10:
+                pts, nodes = pts[:-1], nodes[:-1]
         m = metres(*pts[0])
         xy = [m(*p) for p in pts]
         if isinstance(finish, tuple):

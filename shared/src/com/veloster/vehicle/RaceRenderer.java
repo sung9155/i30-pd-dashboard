@@ -138,7 +138,8 @@ public final class RaceRenderer {
         text(c,caption,l+8,t+16,12,MUTED,Paint.Align.LEFT);
         text(c,unit,rr-8,b-10,12,MUTED,Paint.Align.RIGHT);
         p.setTextSize(12);float uw=p.measureText(unit);
-        rnumber(c,value,rr-14-uw,b-10,size,color);
+        float room=rr-14-uw-(l+8),w=rwidth(value,size);   // six record cells are ~123 px: 6242 or +1.52 at 38 px ran into the next cell
+        rnumber(c,value,rr-14-uw,b-10,w>room?size*room/w:size,color);
         if(color==D())ThemeShapes.ring(c,p,l,t,rr,b);
     }
     /** Bar cell (188..228) under RPM/speed: caption left, reading right, a 30-block bar (F1 pedal style).
@@ -403,10 +404,17 @@ public final class RaceRenderer {
         p.setTextAlign(align);c.drawText(t,x,y,p);p.setTextAlign(Paint.Align.LEFT);
     }
     /** Right-aligned numeric readout with a fixed digit cell, so a narrow 1 does not make the reading jitter as it updates. */
-    private void rnumber(Canvas c,String s,float rightX,float y,float size,int color){
-        p.setStyle(Paint.Style.FILL);p.setColor(T(color));p.setTypeface(Theme.current().digitWeight==2?Typeface.DEFAULT_BOLD:Typeface.DEFAULT);p.setTextSize(size);p.setTextAlign(Paint.Align.LEFT);
+    /** Width rnumber draws s at: every digit as wide as the widest one. */
+    private float rwidth(String s,float size){
+        p.setTypeface(Theme.current().digitWeight==2?Typeface.DEFAULT_BOLD:Typeface.DEFAULT);p.setTextSize(size);
         float dw=0;for(char d='0';d<='9';d++)dw=Math.max(dw,p.measureText(String.valueOf(d)));
         float total=0;for(int k=0;k<s.length();k++){char ch=s.charAt(k);total+=ch>='0'&&ch<='9'?dw:p.measureText(String.valueOf(ch));}
+        return total;
+    }
+    private void rnumber(Canvas c,String s,float rightX,float y,float size,int color){
+        float total=rwidth(s,size);
+        p.setStyle(Paint.Style.FILL);p.setColor(T(color));p.setTextAlign(Paint.Align.LEFT);
+        float dw=0;for(char d='0';d<='9';d++)dw=Math.max(dw,p.measureText(String.valueOf(d)));
         float x=rightX-total;
         for(int k=0;k<s.length();k++){char ch=s.charAt(k);String g=String.valueOf(ch);float gw=p.measureText(g);
             if(ch>='0'&&ch<='9'){c.drawText(g,x+(dw-gw)/2,y,p);x+=dw;}else{c.drawText(g,x,y,p);x+=gw;}}

@@ -36,7 +36,8 @@ public final class ObdSchedule {
             pid(0x7a,2000,3),pid(0x7c,2000,3),pid(0x8b,2000,3),                            // diesel DPF (pressure moves during a regeneration); a petrol engine drops them
             new Poll(EMS,new byte[]{0x22,(byte)0xED,0x03},Telemetry.DID_DPF,2000,3),
             new Poll(EMS,new byte[]{0x22,(byte)0xED,0x1D},Telemetry.DID_SOOT,2000,3),         // soot load g (Kia Ceed 2018 in OBDb); a petrol drops it       // Hyundai diesel DPF block (the PD diesel ignores the standard PIDs); a petrol EMS says 7F 31
-            pid(0x46,30000,0),pid(0x2f,30000,0));                                          // ambient, fuel level
+            pid(0x46,30000,0),pid(0x2f,30000,0),                                           // ambient, fuel level
+            pid(0x0b,2000,3));                                                             // intake manifold pressure: checks the diesel boost scale (VehicleDash logs it beside the hscan byte)
     }
     private static Poll pid(int pid,long every,int dropAfter){return new Poll(EMS,new byte[]{0x01,(byte)pid},pid,every,dropAfter);}
     private final Poll[] polls;

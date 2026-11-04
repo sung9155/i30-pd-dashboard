@@ -98,6 +98,8 @@ public final class Telemetry {
     private boolean hscanSpeed;
     /** Latest EMS14 barometric pressure (hPa) from slot 0x0a; NaN until received. Boost is relative to it. */
     private float baroHpa=Float.NaN;
+    /** For the diesel boost-scale check: the last EMS19 byte1 (-1 before one) and OBD MAP (01 0B, kPa, -1 before one). */
+    private int boostByte=-1,mapKpa=-1;
     private final long[] counts=new long[LABELS.length];
     private final float[] values = new float[LABELS.length];
     private final long[] times = new long[LABELS.length];
@@ -250,6 +252,7 @@ public final class Telemetry {
             case 0x2f: put(FUEL_LEVEL,a*100f/255,true,now); break;        // fuel tank level, A*100/255 %
             case 0x3c: put(CAT_TEMP,((a<<8|b)/10f)-40,true,now); break;   // catalyst temperature, (256A+B)/10-40 °C
             case 0x43: put(ABS_LOAD,(a<<8|b)*100f/255,true,now); break;   // absolute load, (256A+B)*100/255 %
+            case 0x0b: mapKpa=a; break;                                     // intake manifold absolute pressure, A kPa (logged, not shown)
         }
     }
     /**
@@ -293,6 +296,12 @@ public final class Telemetry {
         }
     }
     private static int u16(byte[] d,int i){return (d[i]&255)<<8|(d[i+1]&255);}
+    /** One line for the diagnostic record: OBD MAP beside the hscan boost byte, baro and the boost shown (diesel scale check). */
+    public synchronized String boostCheck(long now){
+        Sample s=sample(BOOST,now),r=sample(0,now),p=sample(9,now);
+        return String.format(java.util.Locale.US,"MAP %d kPa | baro %.0f hPa, 0x0e b1 %d, shown %s bar, rpm %.0f, pedal %.0f %%, %s",
+            mapKpa,baroHpa,boostByte,s.valid?String.format(java.util.Locale.US,"%+.2f",s.value):"-",r.valid?r.value:-1f,p.valid?displayValue(9,p.value):-1f,diesel()?"diesel":sparkSeen?"petrol":"unknown");
+    }
     private int lastRegen=-1;
     private float regenEndOdo=Float.NaN;
     /** Odometer (km) where the last regeneration the app saw ended, NaN before the first; VehicleDash keeps it in prefs. */
@@ -489,6 +498,7 @@ public final class Telemetry {
             // against 01 0B from a diesel's diagnostic log. On a petrol byte1 is no pressure (it rises on overrun).
             // Until the engine type is known (petrol timing seen, or a diesel's zeroed timing slot) nothing is shown.
             boolean ok;float v;
+            boostByte=b[1]&255;
             if(diesel()){int r=b[1]&255;ok=r>0&&r<255&&!Float.isNaN(baroHpa);v=(r*20f-baroHpa)/1000f;}
             else{int raw=((b[2]&255)>>4)|((b[3]&255)<<4);ok=sparkSeen&&raw!=0xfff&&!Float.isNaN(baroHpa);v=(raw*1.322f-baroHpa)/1000f;}
             boost(ok?v:0,ok,now);

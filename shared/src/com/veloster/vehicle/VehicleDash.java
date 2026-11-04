@@ -269,7 +269,12 @@ public final class VehicleDash extends View implements Runnable {
     public static void hscanJsn(int cid,int funcLow,byte[] data){DATA.hscanJsn(cid,funcLow,data,SystemClock.elapsedRealtime());}
     public static void hscanJsn(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanJsn(cid,funcLow,data,receivedAt);}
     public static void hscanPd(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanPd(cid,funcLow,data,receivedAt);}
-    public static void obd(int pid,byte[] d){DATA.obd(pid,d,SystemClock.elapsedRealtime());}
+    public static void obd(int pid,byte[] d){
+        long now=SystemClock.elapsedRealtime();DATA.obd(pid,d,now);
+        // Diesel boost scale check (EMS19 byte1 x 20 hPa is fitted, not measured): MAP beside it every 4 s on a diesel.
+        if(pid==0x0b&&now-mapLogAt>=4000&&DATA.profile().fuel==VehicleProfile.Fuel.DIESEL){mapLogAt=now;android.util.Log.i("VehicleDash","OBD "+DATA.boostCheck(now));}
+    }
+    private static long mapLogAt;
     /** The latest valid value of a signal, NaN when there is none (the OBD poller's sports-drive burst reads rpm and pedal). */
     public static float now(int i){Telemetry.Sample x=DATA.sample(i,SystemClock.elapsedRealtime());return x.valid?x.value:Float.NaN;}
     protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity);Gps.start(activity); post(this); }

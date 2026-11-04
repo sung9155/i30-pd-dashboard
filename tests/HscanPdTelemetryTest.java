@@ -289,6 +289,7 @@ public final class HscanPdTelemetryTest {
         t.obd(0x2f,0x7f,0,3401);check(Math.abs(t.sample(Telemetry.FUEL_LEVEL,3401).value-49.8f)<0.5f,"fuel level ~50%");
         t.obd(0x3c,0x0b,0x54,3402);check(Math.abs(t.sample(Telemetry.CAT_TEMP,3402).value-250f)<1f,"catalyst temp ~250 C");
         t.obd(0x43,0x00,0x31,3403);check(Math.abs(t.sample(Telemetry.ABS_LOAD,3403).value-19.2f)<0.5f,"absolute load ~19%");
+        t.obd(0x0b,new byte[]{0x67},3404);check(t.boostCheck(3404).startsWith("MAP 103 kPa"),"MAP 01 0B kept for the boost-scale line: "+t.boostCheck(3404));
         check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.DPF_SOOT+1,"label/unit tables cover the added signals");
         // diesel DPF PIDs (J1979-DA): a support byte first, only marked fields published; other PIDs fall through
         t.obd(0x7a,new byte[]{0x07,0x05,(byte)0xdc,0,0,0,0},3410);check(Math.abs(t.sample(Telemetry.DPF_DP,3410).value-15f)<0.01f,"DPF delta pressure 1500 x 0.01 = 15 kPa");

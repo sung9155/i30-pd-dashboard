@@ -581,5 +581,12 @@
   "탭: 다음 랩 · 길게: 정지": "Tap: next lap · Hold: stop",
   "탭: 계속 · 길게: 초기화": "Tap: resume · Hold: clear",
   "변속 알림음": "Shift beep",
-  "변속 목표에서 깜빡일 때 삐빅 · 앞 스피커": "Beeps with the shift flash · front speakers"
+  "변속 목표에서 깜빡일 때 울림 · 앞 스피커": "Sounds with the shift flash · front speakers",
+  "알림음 종류": "Beep sound",
+  "누를 때마다 바뀌고 한 번 들려줌": "Tap to change · plays it once",
+  "삐빅": "Double beep",
+  "삑": "Beep",
+  "상승 3음": "Rising tones",
+  "레이스 버저": "Race buzzer",
+  "틱틱": "Double tick"
 }

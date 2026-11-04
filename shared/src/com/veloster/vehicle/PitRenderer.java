@@ -61,8 +61,8 @@ public final class PitRenderer {
     public void setSettings(int cat,String language,int pick,int[] targets){settingsCat=cat;langSel=language;pickSlot=pick;modeTargets=targets;}
     /** Virtual engine sound settings: switch, route (SettingsLayout.SOUND_ROUTES), engine and exhaust, and the − / + values. */
     private boolean soundOn;private int soundRoute,soundEngine,soundExhaust;private int[] soundVals=SettingsLayout.SOUND_DEFAULT;
-    private boolean beepOn;
-    public void setBeep(boolean on){beepOn=on;}
+    private boolean beepOn;private int beepSound;
+    public void setBeep(boolean on,int sound){beepOn=on;beepSound=sound;}
     /** The shift cue of the last frame (rpm at the target, moving, not top gear): the optional beep follows it. */
     public boolean shiftCue(){return cue!=null&&cue.shift;}
     public void setSound(boolean on,int route,int engine,int exhaust,int[] vals){soundOn=on;soundRoute=route;soundEngine=engine;soundExhaust=exhaust;soundVals=vals;}
@@ -263,7 +263,8 @@ public final class PitRenderer {
                 case SettingsLayout.PICK:{int s=i<ClusterPicker.COUNT?i:-1;sel=modeTargets[pickSlot]==s;name=screenName(s);
                     if(s>=0&&(hidden&(1<<s))!=0){dim=true;sub="미사용";}break;}
                 case SettingsLayout.RPM:
-                    if(i==SettingsLayout.RPM_BEEP){sel=beepOn;name="변속 알림음";sub="변속 목표에서 깜빡일 때 삐빅 · 앞 스피커";value=beepOn?"켬":"끔";break;}
+                    if(i==SettingsLayout.RPM_BEEP){sel=beepOn;name="변속 알림음";sub="변속 목표에서 깜빡일 때 울림 · 앞 스피커";value=beepOn?"켬":"끔";break;}
+                    if(i==SettingsLayout.RPM_BEEP_SOUND){name="알림음 종류";dim=!beepOn;sub="누를 때마다 바뀌고 한 번 들려줌";value=SettingsLayout.BEEP_SOUNDS[beepSound];break;}
                     name=i==SettingsLayout.RPM_SHIFT?"변속 목표":"레드라인";
                     sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
                 case SettingsLayout.SOUND:
@@ -287,13 +288,13 @@ public final class PitRenderer {
             int ink=dim?MUTED:sel?BLUE:WHITE;
             if(sub==null)text(c,UiText.t(name),tx,t+h/2+7,18,ink,true);
             else{text(c,UiText.t(name),tx,t+h/2-3,18,ink,true);text(c,UiText.t(sub),tx,t+h/2+17,12,cat==SettingsLayout.SCREENS&&!dim?BLUE:MUTED,cat==SettingsLayout.SCREENS);}
-            if(cat==SettingsLayout.RPM&&i!=SettingsLayout.RPM_BEEP||cat==SettingsLayout.SOUND&&i>=SettingsLayout.SOUND_VOLUME){   // value, then − and +
+            if(cat==SettingsLayout.RPM&&i<SettingsLayout.RPM_BEEP||cat==SettingsLayout.SOUND&&i>=SettingsLayout.SOUND_VOLUME){   // value, then − and +
                 float by=t+(h-SettingsLayout.SBTN_W)/2;String v=cat==SettingsLayout.SOUND?soundValue(i):(i==SettingsLayout.RPM_SHIFT?shiftTarget:(int)profile.redline)+" rpm";
                 paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);text(c,v,SettingsLayout.upBtnL()-14-paint.measureText(v),t+h/2+7,18,dim?MUTED:BLUE,true);   // a dimmed row (sound off, no turbo) greys its value and buttons too
                 button(c,"−",SettingsLayout.upBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);
                 button(c,"+",SettingsLayout.downBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);
             }
-            if(value!=null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);String v=UiText.t(value);text(c,v,l+w-20-paint.measureText(v),t+h/2+7,18,sel||(cat==SettingsLayout.MODE&&i>=SettingsLayout.MODE_FIRST||cat==SettingsLayout.SOUND)&&!dim?BLUE:MUTED,true);}
+            if(value!=null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);String v=UiText.t(value);text(c,v,l+w-20-paint.measureText(v),t+h/2+7,18,sel||(cat==SettingsLayout.MODE&&i>=SettingsLayout.MODE_FIRST||cat==SettingsLayout.SOUND||cat==SettingsLayout.RPM)&&!dim?BLUE:MUTED,true);}
         }
     }
     /** The 화면 category as a reorderable, scrollable list: a mini preview, the name, 사용/미사용, and ▲▼ to move it. */

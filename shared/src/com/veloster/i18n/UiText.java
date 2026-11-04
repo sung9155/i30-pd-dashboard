@@ -165,6 +165,7 @@ public final class UiText {
         EN.put("노킹","Knock");
         EN.put("노킹 센서 값은 버스에 없어","No knock-sensor value on the bus:");
         EN.put("누르면 음악으로","Tap for music");
+        EN.put("누를 때마다 바뀌고 한 번 들려줌","Tap to change · plays it once");
         EN.put("눌러서 N 계기판과 앱 목록 열기","Tap to open N Dashboard and your app list");
         EN.put("눌러서 사용·미사용","Tap to turn on/off");
         EN.put("눌러서 화면 고르기","Tap to choose a screen");
@@ -193,6 +194,7 @@ public final class UiText {
         EN.put("레드라인","Redline");
         EN.put("레이스","Race");
         EN.put("레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값","Race SHIFT ▲ · F1 LEDs · tap the name for the default");
+        EN.put("레이스 버저","Race buzzer");
         EN.put("레트로","Retro");
         EN.put("로즈","Rose");
         EN.put("마리나 블루","Marina Blue");
@@ -234,7 +236,7 @@ public final class UiText {
         EN.put("변속 권장","Shift hint");
         EN.put("변속 레버","Shift lever");
         EN.put("변속 목표","Shift target");
-        EN.put("변속 목표에서 깜빡일 때 삐빅 · 앞 스피커","Beeps with the shift flash · front speakers");
+        EN.put("변속 목표에서 깜빡일 때 울림 · 앞 스피커","Sounds with the shift flash · front speakers");
         EN.put("변속 알림음","Shift beep");
         EN.put("변속 표시·음악","Shift lights, music");
         EN.put("변속기 (TCU)","Transmission (TCU)");
@@ -266,11 +268,14 @@ public final class UiText {
         EN.put("비작동","Inactive");
         EN.put("비행기 엔진 계기판","Airliner engine display");
         EN.put("빈차","Vacant");
+        EN.put("삐빅","Double beep");
+        EN.put("삑","Beep");
         EN.put("사용","On");
         EN.put("사용 안 함","Off");
         EN.put("사용 안 함 / Off","Off");
         EN.put("사용 연료","Fuel used");
         EN.put("사운드","Sound");
+        EN.put("상승 3음","Rising tones");
         EN.put("상태 새로 확인","Refresh status");
         EN.put("상태 확인 실패: ","Status check failed: ");
         EN.put("상향등","High beam");
@@ -321,6 +326,7 @@ public final class UiText {
         EN.put("알림 바로가기를 만들지 못했습니다. 서비스가 중지되었습니다.","Could not create the shortcut notification. The service has stopped.");
         EN.put("알림만","Notification only");
         EN.put("알림만 / Notification only","Notification only");
+        EN.put("알림음 종류","Beep sound");
         EN.put("앞 오른쪽 공기압","Front-right pressure");
         EN.put("앞 오른쪽 휠","Front-right wheel");
         EN.put("앞 왼쪽 공기압","Front-left pressure");
@@ -544,6 +550,7 @@ public final class UiText {
         EN.put("트렁크 열림","Trunk open");
         EN.put("트립 평균","Trip average");
         EN.put("트립 평균 ","Trip average ");
+        EN.put("틱틱","Double tick");
         EN.put("틸","Teal");
         EN.put("파이어리 레드","Fiery Red");
         EN.put("팝 빈도","Pop rate");

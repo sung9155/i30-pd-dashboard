@@ -9,8 +9,10 @@ public final class SettingsLayout {
     /** Not a category: the screen chooser a mode row opens (every screen, then 원래 화면), under a title line. */
     public static final int PICK=9;
     /** RPM pane rows: the two values have − and + at the right (screenZone 1 and 2), the rest of the row resets it;
-     *  RPM_BEEP is an on/off switch (the optional shift beep, ShiftBeep). */
-    public static final int RPM_SHIFT=0,RPM_RED=1,RPM_BEEP=2;
+     *  RPM_BEEP is an on/off switch (the optional shift beep, ShiftBeep) and RPM_BEEP_SOUND cycles its sound. */
+    public static final int RPM_SHIFT=0,RPM_RED=1,RPM_BEEP=2,RPM_BEEP_SOUND=3;
+    /** Shift beep sounds, in ShiftBeep.SOUNDS order. */
+    public static final String[] BEEP_SOUNDS={"삐빅","삑","상승 3음","레이스 버저","틱틱"};
     /** Sound pane rows: the virtual engine sound switch, its output route (cycles), and its volume with − and +. */
     public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_POP=5,SOUND_TURBO=6,SOUND_BOV=7,SOUND_LEAD=8;
     /** Rows from SOUND_VOLUME on have − and + (screenZone 1 and 2); the rest of the row puts the default back. */
@@ -49,7 +51,7 @@ public final class SettingsLayout {
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
         switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
-            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_BEEP+1;case SOUND:return SOUND_LEAD+1;case LANG:return LANGS.length;case DIAG:return 1;
+            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_BEEP_SOUND+1;case SOUND:return SOUND_LEAD+1;case LANG:return LANGS.length;case DIAG:return 1;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
     public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME||cat==PAINT?2:1;}

@@ -8,9 +8,9 @@ import java.util.List;
 
 /**
  * Active OBD-II mode 01 poller over the head unit's MICOM diagnostic channel (the same channel {@link DtcReader}
- * uses). READ ONLY: it asks the engine ECU for a few standard PIDs the hscan broadcast does not carry — ambient
- * temperature (0x46), fuel level (0x2F), catalyst temperature (0x3C) and absolute load (0x43) — a couple of times a
- * second and feeds them to a sink. Only on pd_kr, only while the gate is open (ignition on), and it steps aside while
+ * uses). READ ONLY: it asks for values the hscan broadcast does not carry — ambient temperature (0x46), fuel level
+ * (0x2F), catalyst temperature (0x3C) and absolute load (0x43) from the engine, the 7DCT clutch temperatures from the
+ * transmission — each on its own period under one request budget (ObdSchedule), and feeds them to a sink. Only on pd_kr, only while the gate is open (ignition on), and it steps aside while
  * a trouble-code read runs (the channel is shared). The engine ECU answered these in the 2026-11-02 probe.
  * It also asks the diesel DPF PIDs 0x7A/0x7C/0x8B; a PID that gets no positive reply three times in a row (a petrol
  * engine) is dropped for the session, and their raw replies are logged at most every 10 s for a diesel owner's record.
@@ -39,14 +39,8 @@ public final class ObdLive {
         {TPMS,0x22,0xC0,0x0B},{BCM,0x22,0xC0,0x0B},{TPMS,0x21,0x06}};
     private static final long PROBE_FIRST=20000,PROBE_EVERY=300000;private static final int PROBE_ROUNDS=24;
     private final List<String> coldProbe=new ArrayList<String>();
-    private static final int[] PIDS={0x46,0x2f,0x3c,0x43,0x7a,0x7c,0x8b};
-    private static final int FIRST_DPF=4,DPF_MISSES=3;
-    private final int[] misses=new int[PIDS.length];
-    private final long[] logged=new long[PIDS.length];
-    private static final long REPLY_MS=300;
-    /** 7DCT clutch temperatures (TCU 22 01A4, decoded in Telemetry) every 2 s; three misses in a row (a 6MT has no
-     *  TCU) stop asking for the session. */
-    private static final long CLUTCH_EVERY=2000;private int clutchMisses;private long clutchAt;
+    private static final long REPLY_MS=300,SLOW_REPLY_MS=600;   // the engine answers fast; the TCU's multi-frame reply takes longer
+    private final long[] dpfLogged=new long[256];
 
     private final Object lock=new Object();
     private final List<byte[]> replies=new ArrayList<byte[]>();
@@ -69,43 +63,38 @@ public final class ObdLive {
         if(svc==null)return;
         Binder listener=new Listener(),token=new Binder();
         try{call(svc,1,listener,token);}catch(Throwable e){return;}
-        long nextProbe=-1;int rounds=0;
+        long nextProbe=-1;int rounds=0;ObdSchedule sched=ObdSchedule.standard();
         try{
             while(running){
                 if(diagBusy||gate==null||!gate.open()){nap(500);continue;}
                 long now=System.currentTimeMillis();
                 if(nextProbe<0)nextProbe=now+PROBE_FIRST;
-                else if(now>=nextProbe&&rounds<PROBE_ROUNDS){probe(svc,++rounds);nextProbe=now+PROBE_EVERY;}
-                if(clutchMisses<3&&now-clutchAt>=CLUTCH_EVERY){clutchAt=now;clutch(sink,svc);}
-                for(int k=0;k<PIDS.length;k++){
-                    if(!running)return;
-                    if(diagBusy)break;
-                    if(k>=FIRST_DPF&&misses[k]>=DPF_MISSES)continue;   // not a diesel (or not answering): stop asking
-                    int pid=PIDS[k];
-                    byte[] r=ask(svc,EMS,new byte[]{0x01,(byte)pid});
-                    boolean ok=r!=null&&r.length>=3&&(r[0]&255)==0x41&&(r[1]&255)==pid;
-                    if(k>=FIRST_DPF)dpfLog(k,pid,ok?r:null);
-                    if(ok){misses[k]=0;byte[] d=new byte[r.length-2];System.arraycopy(r,2,d,0,d.length);sink.value(pid,d);}
-                    else misses[k]++;
-                    nap(220);
-                }
-                nap(500);
+                else if(now>=nextProbe&&rounds<PROBE_ROUNDS){probe(svc,++rounds);nextProbe=now+PROBE_EVERY;continue;}
+                ObdSchedule.Poll p=sched.next(now);
+                if(p==null){long w=sched.untilNext(now);nap(w<0?1000:Math.min(w,500));continue;}
+                byte[] r=askRaw(svc,p.ecu,p.req,p.ecu==EMS?REPLY_MS:SLOW_REPLY_MS);
+                boolean ok=positive(r,p.req);
+                if(p.dropAfter()>0&&p.ecu==EMS)dpfLog(p,ok?r:null);   // the diesel-only PIDs
+                sched.done(p,System.currentTimeMillis(),ok);
+                if(ok){byte[] d=new byte[r.length-p.req.length];System.arraycopy(r,p.req.length,d,0,d.length);sink.value(p.key,d);}
+                nap(ObdSchedule.gapAfter(r==null?0:r.length));
             }
         }finally{try{call(svc,2,listener,token);}catch(Throwable e){}}
     }
     /** Raw DPF replies (and the drop) into the log, so a diesel owner's diagnostics record shows what the ECU sends. */
-    private void dpfLog(int k,int pid,byte[] r){
-        long now=System.currentTimeMillis();
-        if(r!=null&&now-logged[k]<10000)return;
-        if(r==null&&misses[k]!=DPF_MISSES-1)return;   // log only the miss that drops it
-        logged[k]=now;StringBuilder b=new StringBuilder();
+    private void dpfLog(ObdSchedule.Poll p,byte[] r){
+        long now=System.currentTimeMillis();int k=p.key&255;
+        if(r!=null&&now-dpfLogged[k]<10000)return;
+        if(r==null&&p.misses()!=p.dropAfter()-1)return;   // log only the miss that drops it
+        dpfLogged[k]=now;StringBuilder b=new StringBuilder();
         if(r!=null)for(byte x:r)b.append(String.format("%02X ",x&255));
-        android.util.Log.i("VehicleDash","OBD "+String.format("%02X",pid)+(r==null?": no reply "+DPF_MISSES+"x, dropped":": "+b.toString().trim()));
+        android.util.Log.i("VehicleDash","OBD "+String.format("%02X",k)+(r==null?": no reply "+p.dropAfter()+"x, dropped":": "+b.toString().trim()));
     }
-    private void clutch(Sink sink,IBinder svc){
-        byte[] r=askRaw(svc,TCU,new byte[]{0x22,0x01,(byte)0xA4},600);
-        if(r==null||r.length<4||(r[0]&255)!=0x62||(r[1]&255)!=0x01||(r[2]&255)!=0xA4){clutchMisses++;return;}
-        clutchMisses=0;byte[] d=new byte[r.length-3];System.arraycopy(r,3,d,0,d.length);sink.value(Telemetry.DID_CLUTCH,d);
+    /** A positive reply to req: its service + 0x40, then the same PID / data identifier. */
+    static boolean positive(byte[] r,byte[] req){
+        if(r==null||r.length<=req.length||(r[0]&255)!=(req[0]&255)+0x40)return false;
+        for(int i=1;i<req.length;i++)if(r[i]!=req[i])return false;
+        return true;
     }
     /** One round of the mode 22 probe into the log: the whole reply in hex, a negative response code, or no reply. */
     private void probe(IBinder svc,int round){
@@ -119,17 +108,12 @@ public final class ObdLive {
             String what=String.format("ecu %02X ",p[0])+q+": "+(r==null?"no reply":b.toString().trim()+" ("+r.length+" B)");
             android.util.Log.i("VehicleDash","OBD probe round "+round+" "+what);
             if(round==1)coldProbe.add(what);
-            nap(250);
+            nap(ObdSchedule.gapAfter(r==null?0:r.length));   // the probe keeps to the same budget (its replies run to 104 B)
         }
         if(round>1)for(String s:coldProbe)android.util.Log.i("VehicleDash","OBD probe round 1 again "+s);
     }
     private void nap(long ms){try{Thread.sleep(ms);}catch(InterruptedException e){}}
 
-    /** One request; the positive reply (41 PID ...) or null on a negative reply or timeout. */
-    private byte[] ask(IBinder svc,int ecu,byte[] req){
-        byte[] r=askRaw(svc,ecu,req,REPLY_MS);
-        return r!=null&&(r[0]&255)==(req[0]&255)+0x40?r:null;
-    }
     /** One request; the positive reply, the negative one (7F sid code), or null on a timeout. */
     private byte[] askRaw(IBinder svc,int ecu,byte[] req,long waitMs){
         int sid=req[0]&255;

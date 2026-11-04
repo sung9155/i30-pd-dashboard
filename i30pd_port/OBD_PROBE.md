@@ -164,3 +164,23 @@ addresses ECUs by `MiComDefine` TP_DEVICE numbers, and the firmware's `<clinit>`
 already use). Which device the micom puts on 7A0 is not known, so the probe asks `22 C00B` of both
 TPMS (0x24) and BCM (0x30), and `21 06` of TPMS. The sensors only report after the car has moved, and
 they measure the air inside the tyre at the valve, not the tread.
+
+## Live request schedule (2026-11-04)
+
+Everything `ObdLive` asks while driving now goes through `ObdSchedule`: each request has its own period,
+set by how fast the value moves, and they all share one budget.
+
+| period | request | why |
+|-------:|---------|-----|
+| 1 s | EMS 01 43 absolute load | moves with the pedal (gauges) |
+| 2 s | TCU 22 01A4 clutch temperatures | heats fast in a launch or a crawl; 3 misses (6MT) drop it |
+| 5 s | EMS 01 3C catalyst temperature, 01 7A / 7C / 8B DPF | slow thermal values; DPF dropped after 3 misses (petrol) |
+| 30 s | EMS 01 46 ambient, 01 2F fuel level | drift over minutes |
+| (to add) ~10 s | tyre temperatures, once the probe finds the reply | TPMS sensors report every few tens of seconds |
+
+Budget: at most `BUDGET` = 4 requests a second, one in flight at a time, `GAP_MS` = 250 ms between
+them plus 15 ms per extra CAN frame of a multi-frame reply (01A4's 37 bytes = 6 frames; E003's 104 B =
+15). The table above is ~2.4 requests a second on a diesel and ~1.8 on a petrol, about 4–10 frames a
+second — well under 1 % of a 500 kbit/s bus. A late request is sent once and then waits a full
+period (no catch-up burst). The 5-minute probe rounds keep the same gap. `ObdScheduleTest` checks the
+table fits the budget, the pacing, and the drop rule.

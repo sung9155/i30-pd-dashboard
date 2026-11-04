@@ -61,8 +61,8 @@ public final class PitRenderer {
     public void setSettings(int cat,String language,int pick,int[] targets){settingsCat=cat;langSel=language;pickSlot=pick;modeTargets=targets;}
     /** Virtual engine sound settings: switch, route (SettingsLayout.SOUND_ROUTES), engine and exhaust, and the − / + values. */
     private boolean soundOn;private int soundRoute,soundEngine,soundExhaust;private int[] soundVals=SettingsLayout.SOUND_DEFAULT;
-    private boolean beepOn;private int beepSound;
-    public void setBeep(boolean on,int sound){beepOn=on;beepSound=sound;}
+    private boolean beepOn;private int beepSound,beepVol;
+    public void setBeep(boolean on,int sound,int vol){beepOn=on;beepSound=sound;beepVol=vol;}
     /** The shift cue of the last frame (rpm at the target, moving, not top gear): the optional beep follows it. */
     public boolean shiftCue(){return cue!=null&&cue.shift;}
     public void setSound(boolean on,int route,int engine,int exhaust,int[] vals){soundOn=on;soundRoute=route;soundEngine=engine;soundExhaust=exhaust;soundVals=vals;}
@@ -265,6 +265,7 @@ public final class PitRenderer {
                 case SettingsLayout.RPM:
                     if(i==SettingsLayout.RPM_BEEP){sel=beepOn;name="변속 알림음";sub="변속 목표에서 깜빡일 때 울림 · 앞 스피커";value=beepOn?"켬":"끔";break;}
                     if(i==SettingsLayout.RPM_BEEP_SOUND){name="알림음 종류";dim=!beepOn;sub="누를 때마다 바뀌고 한 번 들려줌";value=SettingsLayout.BEEP_SOUNDS[beepSound];break;}
+                    if(i==SettingsLayout.RPM_BEEP_VOL){name="알림음 음량";dim=!beepOn;sub="− / + 로 조절 · 한 번 들려줌";break;}
                     name=i==SettingsLayout.RPM_SHIFT?"변속 목표":"레드라인";
                     sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
                 case SettingsLayout.SOUND:
@@ -288,8 +289,8 @@ public final class PitRenderer {
             int ink=dim?MUTED:sel?BLUE:WHITE;
             if(sub==null)text(c,UiText.t(name),tx,t+h/2+7,18,ink,true);
             else{text(c,UiText.t(name),tx,t+h/2-3,18,ink,true);text(c,UiText.t(sub),tx,t+h/2+17,12,cat==SettingsLayout.SCREENS&&!dim?BLUE:MUTED,cat==SettingsLayout.SCREENS);}
-            if(cat==SettingsLayout.RPM&&i<SettingsLayout.RPM_BEEP||cat==SettingsLayout.SOUND&&i>=SettingsLayout.SOUND_VOLUME){   // value, then − and +
-                float by=t+(h-SettingsLayout.SBTN_W)/2;String v=cat==SettingsLayout.SOUND?soundValue(i):(i==SettingsLayout.RPM_SHIFT?shiftTarget:(int)profile.redline)+" rpm";
+            if(cat==SettingsLayout.RPM&&(i<SettingsLayout.RPM_BEEP||i==SettingsLayout.RPM_BEEP_VOL)||cat==SettingsLayout.SOUND&&i>=SettingsLayout.SOUND_VOLUME){   // value, then − and +
+                float by=t+(h-SettingsLayout.SBTN_W)/2;String v=cat==SettingsLayout.SOUND?soundValue(i):i==SettingsLayout.RPM_BEEP_VOL?beepVol+"%":(i==SettingsLayout.RPM_SHIFT?shiftTarget:(int)profile.redline)+" rpm";
                 paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);text(c,v,SettingsLayout.upBtnL()-14-paint.measureText(v),t+h/2+7,18,dim?MUTED:BLUE,true);   // a dimmed row (sound off, no turbo) greys its value and buttons too
                 button(c,"−",SettingsLayout.upBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);
                 button(c,"+",SettingsLayout.downBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);

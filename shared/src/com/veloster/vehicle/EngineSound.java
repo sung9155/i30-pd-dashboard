@@ -25,8 +25,16 @@ final class EngineSound implements Runnable {
     private volatile Thread thread;
     private volatile float volume=.7f;
     private int route=-1;
+    /** A one-shot beep (ShiftBeep.pcmMix, already at EngineSynth.RATE, mono) mixed into the stream so a shift beep is
+     *  heard over the engine sound: the car's single alarm path carries only one AudioTrack, so a second one is masked
+     *  by this stream. beepPos is set before beepMix so the audio thread never reads a stale position. */
+    private volatile short[] beepMix;
+    private volatile int beepPos;
+    private volatile float beepGain=1;
     EngineSound(Context context,Telemetry data){this.context=context;this.data=data;}
     void volume(int percent){volume=Math.max(0,Math.min(100,percent))/100f;}
+    /** Queue a beep to ride on the next blocks of the engine stream at gain g (0..1). A new beep replaces one still playing. */
+    void mixBeep(short[] pcm,float g){beepGain=Math.max(0,Math.min(1,g));beepPos=0;beepMix=pcm;}
     /** Engine and exhaust (EngineSynth tables), pop rate / turbo whistle / blow-off in percent of the voice's own, and
      *  the latency compensation in ms. Picked up by the audio thread on its next block. */
     private volatile EngineSynth.Voice voice=EngineSynth.voice(0,0);
@@ -70,6 +78,10 @@ final class EngineSound implements Runnable {
                 synth.popRate=popRate;synth.turboVol=turboVol;synth.bovVol=bovVol;synth.lead=lead;
                 synth.render(f,0,BLOCK,volume);
                 if(synth.flames!=flames){flames=synth.flames;if(volume>0)EngineSynth.flameAt=now+aheadMs;}
+                short[] bm=beepMix;
+                if(bm!=null){int bp=beepPos;float bg=beepGain;
+                    for(int i=0;i<BLOCK&&bp<bm.length;i++,bp++){float s=f[i]+(bm[bp]/32000f)*bg;f[i]=s>1?1:s<-1?-1:s;}
+                    beepPos=bp;if(bp>=bm.length)beepMix=null;}
                 for(int i=0;i<BLOCK;i++)pcm[i]=(short)Math.round(f[i]*32000);
                 // MODE_STREAM write blocks on a full buffer and paces the loop; a negative return is an error, not
                 // back-pressure, so stop rather than spin the CPU rewriting a dead track.

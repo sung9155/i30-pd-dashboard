@@ -38,10 +38,12 @@ public final class ObdLive {
         // on 7D6 (OBDb); which TP_DEVICE the micom maps to 7A0 is unknown, so ask the TPMS and the BCM
         {TPMS,0x22,0xC0,0x0B},{BCM,0x22,0xC0,0x0B},{TPMS,0x21,0x06},
         // diesel (OBDb Hyundai-i30): differential pressure E0F1, successful regenerations E0F2, KWP 21 06 regeneration state, 21 03 block
-        {EMS,0x22,0xE0,0xF1},{EMS,0x22,0xE0,0xF2},{EMS,0x21,0x06},{EMS,0x21,0x03}};
+        {EMS,0x22,0xE0,0xF1},{EMS,0x22,0xE0,0xF2},{EMS,0x21,0x06},{EMS,0x21,0x03},
+        // the live ED03 poll logs its drop only once, early, and the record keeps only the log tail: ask it here too
+        {EMS,0x22,0xED,0x03}};
     private static final long PROBE_FIRST=20000,PROBE_EVERY=300000;private static final int PROBE_ROUNDS=24;
     private final List<String> coldProbe=new ArrayList<String>();
-    private static final long REPLY_MS=300,SLOW_REPLY_MS=600;   // the engine answers fast; the TCU's multi-frame reply takes longer
+    private static final long REPLY_MS=300,SLOW_REPLY_MS=1200;   // a mode 01 PID is one frame; a mode 22 block (ED03 ~59 B, 01A4) is multi-frame and slower
     private final long[] dpfLogged=new long[256];
 
     private final Object lock=new Object();
@@ -74,9 +76,9 @@ public final class ObdLive {
                 else if(now>=nextProbe&&rounds<PROBE_ROUNDS){probe(svc,++rounds);nextProbe=now+PROBE_EVERY;continue;}
                 ObdSchedule.Poll p=sched.next(now);
                 if(p==null){long w=sched.untilNext(now);nap(w<0?1000:Math.min(w,500));continue;}
-                byte[] r=askRaw(svc,p.ecu,p.req,p.ecu==EMS?REPLY_MS:SLOW_REPLY_MS);
+                byte[] r=askRaw(svc,p.ecu,p.req,p.req[0]==0x01?REPLY_MS:SLOW_REPLY_MS);
                 boolean ok=positive(r,p.req);
-                if(p.dropAfter()>0&&p.ecu==EMS)dpfLog(p,ok?r:null);   // the diesel-only PIDs
+                if(p.dropAfter()>0&&p.ecu==EMS)dpfLog(p,r,ok);   // the diesel-only PIDs
                 sched.done(p,System.currentTimeMillis(),ok);
                 if(ok){byte[] d=new byte[r.length-p.req.length];System.arraycopy(r,p.req.length,d,0,d.length);sink.value(p.key,d);}
                 nap(ObdSchedule.gapAfter(r==null?0:r.length));
@@ -84,13 +86,13 @@ public final class ObdLive {
         }finally{try{call(svc,2,listener,token);}catch(Throwable e){}}
     }
     /** Raw DPF replies (and the drop) into the log, so a diesel owner's diagnostics record shows what the ECU sends. */
-    private void dpfLog(ObdSchedule.Poll p,byte[] r){
+    private void dpfLog(ObdSchedule.Poll p,byte[] r,boolean ok){
         long now=System.currentTimeMillis();int k=p.key&255;
-        if(r!=null&&now-dpfLogged[k]<10000)return;
-        if(r==null&&p.misses()!=p.dropAfter()-1)return;   // log only the miss that drops it
+        if(ok&&now-dpfLogged[k]<10000)return;
+        if(!ok&&p.misses()!=p.dropAfter()-1)return;   // log only the miss that drops it, with its 7F code if any
         dpfLogged[k]=now;StringBuilder b=new StringBuilder();
         if(r!=null)for(byte x:r)b.append(String.format("%02X ",x&255));
-        android.util.Log.i("VehicleDash","OBD "+String.format("%02X",p.key)+(r==null?": no reply "+p.dropAfter()+"x, dropped":": "+b.toString().trim()));
+        android.util.Log.i("VehicleDash","OBD "+String.format("%02X",p.key)+(ok?": "+b.toString().trim():": "+(r==null?"no reply":b.toString().trim())+" "+p.dropAfter()+"x, dropped"));
     }
     /** A positive reply to req: its service + 0x40, then the same PID / data identifier. */
     static boolean positive(byte[] r,byte[] req){

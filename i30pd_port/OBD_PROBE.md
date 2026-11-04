@@ -207,3 +207,9 @@ distance; its raw reply is logged every 10 s as `OBD ED03: …` for checking. Th
 22 E0F1, 22 E0F2, 21 06 (regeneration state) and 21 03. Not yet seen from a real PD diesel — the
 owner's diagnostics record decides; there is no live "regenerating" flag in ED03, so the amber
 REGEN state still needs 21 06.
+
+v1.8.2 owner report (2026-11-04): still "—" on every DPF cell. Without the record we cannot tell a
+timeout, a 7F refusal or a short reply apart, and the live poll logs its drop once, seconds after the
+start, which the record's log tail loses. So: the drop line now carries the 7F reply (`OBD ED03: 7F 22 31
+3x, dropped`), mode 22 polls wait 1.2 s like the probe (ED03 is ~9 CAN frames; beta waited 300 ms), and
+the probe asks 22 ED03 too, so every 5-minute round (and `round 1 again`) shows what the ECU says.

@@ -9,8 +9,9 @@ import java.util.Locale;
 
 /**
  * Taxi meter: seven-segment fare in the theme's accent, lamps, the classic running horse in an LED window, and a receipt. The fare is
- * TaxiFare (Seoul medium taxi, distance and time combined). The trip starts when the car moves and ends with the 빈차
- * button; it keeps counting while another page is up (tick runs every frame). The right panel is
+ * TaxiFare (Seoul medium taxi, distance and time combined). The trip starts when the car moves or with the 운행 시작
+ * button, and ends with the 운행 종료 button (the same button, labelled by state); it keeps counting while another
+ * page is up (tick runs every frame). The right panel is
  * the car radio (now playing) until a trip ends; then it is that trip's receipt until tapped or the next trip starts.
  */
 final class TaxiCluster extends ClusterKit {
@@ -74,9 +75,10 @@ final class TaxiCluster extends ClusterKit {
         if(hour<0||now-hourAt>=1000){hour=Calendar.getInstance().get(Calendar.HOUR_OF_DAY);hourAt=now;}
         float sur=sur();
         if(waitStop&&!Float.isNaN(v)&&v<=3)waitStop=false;
-        if(!hired&&!waitStop&&!Float.isNaN(v)&&v>3){hired=true;ended=false;km=0;slowSec=0;tripSec=0;fare.start(sur);}
+        if(!hired&&!waitStop&&!Float.isNaN(v)&&v>3)startTrip(sur);
         if(dt>0&&dt<2000&&hired&&!Float.isNaN(v)){km+=v*dt/3600000f;tripSec+=dt/1000f;if(v<=15)slowSec+=dt/1000f;fare.add(v,dt/1000f,sur);}
     }
+    private void startTrip(float sur){hired=true;ended=false;km=0;slowSec=0;tripSec=0;fare.start(sur);}
     @Override protected void draw(Canvas c){
         leds();float v=v(7),sur=sur();
         // Gallop phase by elapsed time, so frames step at the right rate between 50 ms redraws: 95 ms a frame (0.95 s a
@@ -104,16 +106,16 @@ final class TaxiCluster extends ClusterKit {
         seg7(c,shown,452,160,90,RED,RED_OFF,false);
         bold(c,t("원"),494,252,22,WON,Paint.Align.RIGHT);
         boolean slowNow=!Float.isNaN(v)&&v<=15;
-        text(c,!hired?t("출발하면 미터가 켜집니다"):slowNow?t("시간 요금 · 30초당 100원"):String.format(Locale.US,t("다음 100원까지 %.0f m"),Math.ceil(fare.toNext())),46,280,12,HINT,Paint.Align.LEFT,Typeface.DEFAULT);
+        text(c,waitStop?t("멈추면 다음 운행 준비"):!hired?t("움직이면 자동 시작 · 버튼으로 바로 시작"):slowNow?t("시간 요금 · 30초당 100원"):String.format(Locale.US,t("다음 100원까지 %.0f m"),Math.ceil(fare.toNext())),46,280,12,HINT,Paint.Align.LEFT,Typeface.DEFAULT);
         fill(c,290,272,490,280,RED_OFF);fill(c,290,272,290+200*fare.progress(),280,RED);
         // distance / time / slow time
         String[] lab={t("주행 거리 km"),t("주행 시간"),t("저속 시간")};
         String[] val={String.format(Locale.US,"%.2f",km),mmss(tripSec),mmss(slowSec)};
         for(int i=0;i<3;i++){float x=34+i*158;round(c,x,302,x+148,374,6,CELL_BG);text(c,lab[i],x+10,320,12,ALBL,Paint.Align.LEFT,Typeface.DEFAULT);
             seg7(c,val[i],x+138,330,34,AMB,AMB_OFF,false);}
-        // end-trip button
-        round(c,34,388,268,450,8,0xff232326);round(c,38,392,264,446,6,hired?0xff3a1d1b:0xff1d1d20);
-        bold(c,t("빈차 · 운행 종료"),151,425,17,hired?0xffd8d8dc:0xff5a5a60,Paint.Align.CENTER);
+        // one button, labelled by state: start (vacant), end (hired), or a note while an ended trip still rolls
+        round(c,34,388,268,450,8,0xff232326);round(c,38,392,264,446,6,hired?0xff3a1d1b:waitStop?0xff1d1d20:0xff1b3322);
+        bold(c,hired?t("운행 종료 · 버튼"):waitStop?t("정차 후 다음 운행"):t("운행 시작"),151,425,17,waitStop?0xff5a5a60:0xffd8d8dc,Paint.Align.CENTER);
         text(c,t("기본 4,800원 (1.6 km)"),282,414,13,0xff8a8a90,Paint.Align.LEFT,Typeface.DEFAULT);
         text(c,t("할증 22~04시 · 23~02시 40%"),282,438,13,0xff8a8a90,Paint.Align.LEFT,Typeface.DEFAULT);
         if(ended)receipt(c,total,v);else radio(c);
@@ -182,7 +184,10 @@ final class TaxiCluster extends ClusterKit {
     }
     @Override boolean showsMusic(){return !ended;}   // the radio panel, until a receipt replaces it
     @Override boolean tap(float x,float y){
-        if(x>=34&&x<=268&&y>=388&&y<=450&&hired){hired=false;ended=true;waitStop=true;return true;}
+        if(x>=34&&x<=268&&y>=388&&y<=450){
+            if(hired){hired=false;ended=true;waitStop=true;return true;}
+            if(!waitStop){startTrip(sur());return true;}   // 운행 시작 by hand (also starts it parked)
+        }
         if(x>=538&&x<=784&&y>=64&&y<=452&&ended){ended=false;return true;}   // receipt back to the radio
         return false;
     }

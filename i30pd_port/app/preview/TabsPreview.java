@@ -80,7 +80,7 @@ public final class TabsPreview {
         Telemetry none=new Telemetry();
         for(int i=0;i<layouts.length;i++)cluster(out,"x_"+layouts[i].substring(3)+"_empty",i,none,now,new DriveStats(),VehicleProfile.PETROL_DCT);
         cluster(out,"x_cluster_mt",0,model,now,rec.stats(),VehicleProfile.PETROL_MT);
-        // Taxi right panel: the radio during a trip (sample track), the receipt after 빈차 · 운행 종료.
+        // Taxi right panel: the radio during a trip (sample track), the receipt after 운행 종료 (x_cluster_taxi_empty: 운행 시작).
         MediaState ms=new MediaState();ms.mode(0x36);
         ms.update(1,true,"한강 따라 달리는 밤의 드라이브 (Night Drive Remix)",true,"City Lights Band",true,83000,true,214000,false,now);ms.playback(1,1);
         taxi(out,"9d_cluster_taxi_music",model,now,ms.snapshot(now),false);

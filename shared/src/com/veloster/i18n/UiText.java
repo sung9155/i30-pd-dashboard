@@ -195,6 +195,7 @@ public final class UiText {
         EN.put("마찰원","Friction circle");
         EN.put("막대","Bar");
         EN.put("맑음","Clear");
+        EN.put("멈추면 다음 운행 준비","Stop to ready the next trip");
         EN.put("모노","Mono");
         EN.put("모드 색","Mode colour");
         EN.put("모드 화면","Mode screen");
@@ -253,7 +254,6 @@ public final class UiText {
         EN.put("비작동","Inactive");
         EN.put("비행기 엔진 계기판","Airliner engine display");
         EN.put("빈차","Vacant");
-        EN.put("빈차 · 운행 종료","Vacant · end trip");
         EN.put("사용","On");
         EN.put("사용 안 함","Off");
         EN.put("사용 안 함 / Off","Off");
@@ -355,9 +355,12 @@ public final class UiText {
         EN.put("우주선 워프","Starship warp");
         EN.put("운전석","Driver");
         EN.put("운전석 문","Driver door");
+        EN.put("운행 시작","Start trip");
         EN.put("운행 종료","Trip ended");
+        EN.put("운행 종료 · 버튼","End trip");
         EN.put("운행 중","On a trip");
         EN.put("운행을 마치면 영수증이 나옵니다","The receipt appears when the trip ends");
+        EN.put("움직이면 자동 시작 · 버튼으로 바로 시작","Starts when you move · or tap Start");
         EN.put("워프","Warp");
         EN.put("원","won");
         EN.put("원래 화면","Previous screen");
@@ -420,6 +423,7 @@ public final class UiText {
         EN.put("정속 주행","Steady cruise");
         EN.put("정차 · 공회전 ","Stopped · idle ");
         EN.put("정차 상태에서 확인하세요. 이 화면을 여는 것만으로 무선 설정은 바뀌지 않습니다.","Check while parked. Opening this screen alone does not change wireless settings.");
+        EN.put("정차 후 다음 운행","Stop for next trip");
         EN.put("정차 후 출발하면 측정","starts when you pull away from a stop");
         EN.put("정차하면 트리가 켜집니다","Stop to light the tree");
         EN.put("제동","Braking");
@@ -479,7 +483,6 @@ public final class UiText {
         EN.put("최근 60초","Last 60 s");
         EN.put("최대 횡G","Max lat G");
         EN.put("출력 (계산)","Power (calc.)");
-        EN.put("출발하면 미터가 켜집니다","The meter starts when you drive off");
         EN.put("출발하세요","Go");
         EN.put("취소","Cancel");
         EN.put("취소 / Cancel","Cancel");
@@ -568,6 +571,7 @@ public final class UiText {
         KO.put("설정으로 / Back","설정으로");
         KO.put("실행 바로가기 / Quick entry","실행 바로가기");
         KO.put("알림만 / Notification only","알림만");
+        KO.put("운행 종료 · 버튼","운행 종료");
         KO.put("저장 / Save","저장");
         KO.put("취소 / Cancel","취소");
         KO.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.");

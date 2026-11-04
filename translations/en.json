@@ -355,7 +355,6 @@
   "부하": "Load",
   "부하 %": "Load %",
   "빈차": "Vacant",
-  "빈차 · 운행 종료": "Vacant · end trip",
   "사용 연료": "Fuel used",
   "세션 최대": "Session peaks",
   "순간 연비": "Instant economy",
@@ -409,7 +408,6 @@
   "최근 30초": "Last 30 s",
   "최근 60초": "Last 60 s",
   "최대 횡G": "Max lat G",
-  "출발하면 미터가 켜집니다": "The meter starts when you drive off",
   "출발하세요": "Go",
   "코치": "Coach",
   "타이어 공기압 낮음": "Low tire pressure",
@@ -546,5 +544,10 @@
   "DPF 재생 후 거리": "DPF km since regeneration",
   "DPF 평균 재생 간격": "DPF average km between regenerations",
   "레드": "Red",
-  "그린": "Green"
+  "그린": "Green",
+  "운행 시작": "Start trip",
+  "운행 종료 · 버튼": "End trip",
+  "정차 후 다음 운행": "Stop for next trip",
+  "움직이면 자동 시작 · 버튼으로 바로 시작": "Starts when you move · or tap Start",
+  "멈추면 다음 운행 준비": "Stop to ready the next trip"
 }

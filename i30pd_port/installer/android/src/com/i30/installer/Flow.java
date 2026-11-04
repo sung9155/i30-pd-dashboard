@@ -44,7 +44,7 @@ final class Flow {
     /** A failure the user should read as is (no stack trace). */
     static final class Stop extends Exception { Stop(String m) { super(m); } }
 
-    static final String VERSION = "2026-11-04";   // shown on screen and compared with the published source; raise on every change
+    static final String VERSION = "2026-11-04b";   // shown on screen and compared with the published source; raise on every change
     static final String RELEASES = "https://github.com/sung9155/i30-pd-dashboard/releases";
     static final String RAW = "https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/";
     static final String VERIFIED_BUILD = "eng.vmadmin.20260114.084130", LOW_BUILD = "eng.vmadmin.20260114.084725",
@@ -319,6 +319,73 @@ final class Flow {
         try (InputStream in = new FileInputStream(dst)) { if (in.read(magic) != 2) magic[0] = 0; }
         if (magic[0] != 'P' || magic[1] != 'K') throw new Stop("받은 파일이 APK가 아닙니다: " + url);
         ui.say(url.substring(url.lastIndexOf('/') + 1) + ": 받음 (" + dst.length() / 1024 + " KB)");
+    }
+
+    static final String API = "https://api.github.com/repos/sung9155/i30-pd-dashboard/releases/";
+    /** What a channel installs, for the screen: {"v1.8.2 · 2026-11-04", summary} for stable, {test title " · 갱신 " upload
+     *  date, summary} for test; null when offline. Same rules as the PC installers (install.ps1, 설치.command). */
+    static String[] release(boolean test, int heads) {
+        try {
+            URLConnection c = new URL(API + (test ? "tags/test" : "latest")).openConnection();
+            c.setConnectTimeout(8_000);
+            c.setReadTimeout(8_000);
+            c.setRequestProperty("User-Agent", "i30pd-installer");
+            ByteArrayOutputStream o = new ByteArrayOutputStream();
+            try (InputStream in = c.getInputStream()) { byte[] buf = new byte[8192]; for (int n; (n = in.read(buf)) > 0; ) o.write(buf, 0, n); }
+            return describe(o.toString("UTF-8"), test, heads);
+        } catch (IOException e) { return null; }
+    }
+    static String[] describe(String json, boolean test, int heads) {
+        String tag = field(json, "tag_name", 0), name = field(json, "name", json.indexOf("\"tag_name\"")), body = field(json, "body", 0);
+        String date = field(json, "published_at", 0);
+        int dash = json.indexOf("\"dashboard-i30pd-platform.apk\"");
+        if (test && dash >= 0) { String up = field(json, "updated_at", dash); if (up != null) date = up; }   // test: when its APK was last replaced
+        date = date == null ? "" : date.substring(0, Math.min(10, date.length()));
+        String title = test ? (name == null ? "test" : name.replaceFirst("^테스트\\s*[—-]\\s*", "")) + " · 갱신 " + date : tag + " · " + date;
+        return new String[]{title, summary(body == null ? "" : body, heads)};
+    }
+    /** The string value of "key" at or after from (JSON escapes decoded), or null. */
+    static String field(String json, String key, int from) {
+        int k = json.indexOf("\"" + key + "\"", Math.max(0, from));
+        if (k < 0) return null;
+        int i = k + key.length() + 2;
+        while (i < json.length() && (json.charAt(i) == ' ' || json.charAt(i) == ':')) i++;
+        if (i >= json.length() || json.charAt(i) != '"') return null;
+        StringBuilder b = new StringBuilder();
+        for (i++; i < json.length(); i++) {
+            char ch = json.charAt(i);
+            if (ch == '"') return b.toString();
+            if (ch != '\\') { b.append(ch); continue; }
+            char e = json.charAt(++i);
+            switch (e) {
+                case 'n': b.append('\n'); break;
+                case 'r': break;
+                case 't': b.append('\t'); break;
+                case 'u': b.append((char) Integer.parseInt(json.substring(i + 1, i + 5), 16)); i += 4; break;
+                default: b.append(e);
+            }
+        }
+        return null;
+    }
+    /** The release notes in a few lines: each section (### or a **bold** line) with its first bullet's first sentence,
+     *  up to heads sections, stopping at the install / signature sections or the test notes' history ("> ..."). */
+    static String summary(String body, int heads) {
+        StringBuilder b = new StringBuilder();int n = 0;boolean want = false;
+        for (String raw : body.split("\r?\n")) {
+            String l = raw.trim();
+            if (n > 0 && (l.startsWith("> ") || l.startsWith("### 설치") || l.startsWith("### 서명"))) break;
+            String h = l.startsWith("### ") ? l.substring(4) : l.length() > 4 && l.startsWith("**") && l.endsWith("**") ? l.substring(2, l.length() - 2) : null;
+            if (h != null) { if (n == heads) break; n++; b.append("■ ").append(clean(h)).append('\n'); want = true; continue; }
+            if (want && l.startsWith("- ")) { b.append("   ").append(shorten(clean(l.substring(2)))).append('\n'); want = false; }
+        }
+        return b.toString().trim();
+    }
+    private static String clean(String t) { return t.replaceAll("\\[([^\\]]+)\\]\\([^)]+\\)", "$1").replace("**", "").replace("`", ""); }
+    private static String shorten(String t) {
+        int i = t.indexOf("다. ");
+        if (i < 0) i = t.indexOf(". ");
+        if (i >= 0) t = t.substring(0, i + 2).trim();
+        return t.length() > 90 ? t.substring(0, 89) + "…" : t;
     }
 
     /** A line about a newer phone installer on main (stable) or beta (test); null when none or offline. */

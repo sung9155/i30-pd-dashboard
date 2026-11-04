@@ -45,7 +45,7 @@
 
 ## 동작
 
-- **버전 선택** — 시작할 때 `1) 안정화(권장)` / `2) 테스트` 를 묻는다(Enter = 안정화, `-Yes` 도 안정화). 안정화는 공개 레포의 **최신 정식 릴리스**(`releases/latest/download`), 테스트는 **`test` 태그 사전 배포**(`releases/download/test`, 실차 검증 전 새 기능)에서 받는다. `-Channel stable|test`(맥 `--channel`)로 묻지 않고 고를 수 있다. 사전 배포는 `latest` 에 잡히지 않아 안정화 사용자에게 섞이지 않는다.
+- **버전 선택** — 시작할 때 `1) 안정화(권장)` / `2) 테스트` 를 묻는다(Enter = 안정화, `-Yes` 도 안정화). 안정화는 공개 레포의 **최신 정식 릴리스**(`releases/latest/download`), 테스트는 **`test` 태그 사전 배포**(`releases/download/test`, 실차 검증 전 새 기능)에서 받는다. `-Channel stable|test`(맥 `--channel`)로 묻지 않고 고를 수 있다. 사전 배포는 `latest` 에 잡히지 않아 안정화 사용자에게 섞이지 않는다. 고르기 전에 GitHub 릴리스 API(`releases/latest`, `releases/tags/test`)에서 버전·날짜(테스트는 대시보드 APK를 마지막으로 바꾼 날)를 받아 두 줄 옆에 보여 주고, 고른 뒤 노트를 요약해 보여 준다: 소제목(`###` 또는 `**굵은 줄**`)마다 첫 항목의 첫 문장, 설치·서명 절이나 테스트 노트의 지난 기록(`> `)에서 멈춤, 최대 6개(휴대폰 앱 4개). 세 설치기가 같은 규칙(`install.ps1` NotesSummary, `설치.command` JXA, 휴대폰 앱 `Flow.summary` + FlowTest). 못 받으면 안내만 빠진다.
 - **APK** 를 폴더 옆에서 먼저 찾고, 없으면 **고른 버전의 공개 릴리스에서 받는다**(기본 `github.com/sung9155/i30-pd-dashboard/releases/latest/download/*.apk` — 소스 레포는 비공개라도 상관없다). 받은 파일이 APK(ZIP, `PK` 시그니처)인지 확인해 404 안내문 등을 거른다. 받기 실패하면 "APK 를 옆에 두거나 · `-ApkBase <공개 URL>` 지정" 하라고 알려 준다. base URL 은 `-ApkBase` 로 바꿀 수 있다.
 - **ADB** 를 이 순서로 찾는다: 폴더 옆 `platform-tools\adb.exe` → `adb.exe` → `PATH`. 셋 다 없으면 묻고 나서 Google 공식 주소(`dl.google.com/.../platform-tools-latest-windows.zip`)에서 받아 같은 폴더에 푼다. platform-tools 는 레포에 재배포하지 않는다.
 - **차에만 설치.** `adb devices -l` 에서 `product:pd_kr` 이고 상태가 `device` 인 기기만 쓴다. 휴대폰 등 다른 기기는 "차가 아닌 기기만 보입니다" 라고 알리고 건드리지 않는다.

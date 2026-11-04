@@ -76,6 +76,21 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         channel.addView(test);
         channel.check(1);
         root.addView(channel);
+        // what each channel installs right now (GitHub release: version, date, the notes in a few lines)
+        notes = new TextView(this);
+        notes.setTextSize(13);
+        notes.setText("버전 정보를 받는 중...");
+        root.addView(notes);
+        channel.setOnCheckedChangeListener((g, id) -> showNotes());
+        new Thread(() -> {
+            String[] s = Flow.release(false, 4), t = Flow.release(true, 4);
+            runOnUiThread(() -> {
+                rel[0] = s; rel[1] = t;
+                if (s != null) stable.setText("안정화 (권장) " + s[0] + " — 실차에서 확인된 버전");
+                if (t != null) test.setText("테스트 " + t[0] + " — 실차 검증 전");
+                showNotes();
+            });
+        }).start();
 
         LinearLayout buttons = new LinearLayout(this);
         installBtn = button(buttons, "설치", v -> start(Flow.Mode.INSTALL));
@@ -107,6 +122,17 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         new Thread(() -> { String n = Flow.newer(); if (n != null) say("\n" + n); }).start();
     }
 
+    private TextView notes;
+    private final String[][] rel = new String[2][];
+    /** The selected channel's notes summary, and where the full notes are. */
+    private void showNotes() {
+        boolean t = test.isChecked();String[] r = rel[t ? 1 : 0];
+        String url = Flow.RELEASES + (t ? "/tag/test" : "/latest");
+        notes.setText(r == null ? "버전 정보를 받지 못했습니다(인터넷 연결 확인). 설치는 그대로 할 수 있습니다.\n전체 설명: " + url
+                : "이번 버전에 들어 있는 것\n" + r[1] + "\n전체 설명: " + url);
+        android.text.util.Linkify.addLinks(notes, android.text.util.Linkify.WEB_URLS);
+    }
+
     private Button button(LinearLayout row, String text, android.view.View.OnClickListener l) {
         Button b = new Button(this);
         b.setText(text);
@@ -122,7 +148,8 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         cancelBtn.setText(recording ? "기록 끝" : "취소");
         log.setText("");
         String base = Flow.base(test.isChecked());
-        if (mode == Flow.Mode.INSTALL) say(test.isChecked() ? "버전: 테스트 (실차 검증 전)" : "버전: 안정화");
+        if (mode == Flow.Mode.INSTALL) { String[] r = rel[test.isChecked() ? 1 : 0];
+            say((test.isChecked() ? "버전: 테스트 (실차 검증 전)" : "버전: 안정화") + (r == null ? "" : " " + r[0])); }
         new Thread(() -> {
             try {
                 if (recording) extractDump();

@@ -9,7 +9,7 @@
 #              --diag(설치하지 않고 진단 기록 파일만 만든다)
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-INSTALLER_VERSION='2026-11-03'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+INSTALLER_VERSION='2026-11-04'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 VERIFIED_BUILD='eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 LOW_BUILD='eng.vmadmin.20260114.084725'        # 블루링크 없는 D-Audio Plus LOW — 2026-10-31 실차 설치·동작 확인
 OLD_BUILD='eng.vmadmin.20240205.105401'        # 블루링크 D-Audio Plus 2024-02 빌드 — 2026-11-03 같은 차종 실차에서 설치·값 확인
@@ -109,21 +109,56 @@ fi
 note "adb: $ADB"
 log "환경: macOS $(sw_vers -productVersion 2>/dev/null) / $(uname -m) / $("$ADB" version 2>&1 | head -1)"
 
+# --- 릴리스 정보: 고를 버전의 번호·날짜와 노트 요약 (install.ps1 NotesSummary, 휴대폰 앱 Flow.summary와 같은 규칙) ---
+API='https://api.github.com/repos/sung9155/i30-pd-dashboard/releases'
+# 첫 줄 = 화면용 제목, 나머지 = 노트 요약. 받지 못하면 아무것도 내지 않는다. JSON은 macOS 기본 JavaScript(osascript)로 읽는다.
+rel_info() {   # $1 = latest | tags/test, $2 = 1 이면 테스트
+  local f="$LOGDIR/release_$2.json"
+  curl -fsS --max-time 8 -H 'User-Agent: i30pd-installer' -o "$f" "$API/$1" 2>>"$LOG" || { log "릴리스 정보 실패($1)"; return 0; }
+  osascript -l JavaScript - "$f" "$2" 2>>"$LOG" <<'JXA'
+// RELEASE-JS-BEGIN (규칙은 휴대폰 앱 Flow.summary와 같다; 2026-11-04 실제 릴리스 응답 두 개에서 node로 돌려 Java 결과와 글자까지 같음을 확인)
+function clean(t){return t.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').split('**').join('').split('`').join('');}
+function shorten(t){var i=t.indexOf('다. ');if(i<0)i=t.indexOf('. ');if(i>=0)t=t.substring(0,i+2).trim();return t.length>90?t.substring(0,89)+'…':t;}
+// 소제목(### 또는 **굵은 줄**)마다 첫 항목의 첫 문장, 설치·서명 절이나 테스트 노트의 지난 기록('> ')에서 멈춘다.
+function summary(body,heads){var out=[],n=0,want=false,ls=body.split(/\r?\n/);
+  for(var k=0;k<ls.length;k++){var l=ls[k].trim();
+    if(n>0&&(l.indexOf('> ')===0||l.indexOf('### 설치')===0||l.indexOf('### 서명')===0))break;
+    var h=null;if(l.indexOf('### ')===0)h=l.substring(4);else if(l.length>4&&l.indexOf('**')===0&&l.slice(-2)==='**')h=l.substring(2,l.length-2);
+    if(h!==null){if(n===heads)break;n++;out.push('■ '+clean(h));want=true;continue;}
+    if(want&&l.indexOf('- ')===0){out.push('   '+shorten(clean(l.substring(2))));want=false;}}
+  return out;}
+function info(r,test){var d=r.published_at||'';
+  if(test)(r.assets||[]).forEach(function(a){if(a.name==='dashboard-i30pd-platform.apk')d=a.updated_at;});   // 테스트: APK를 마지막으로 바꾼 날
+  d=d.substring(0,10);
+  var title=test?(r.name||'test').replace(/^테스트\s*[—-]\s*/,'')+' · 갱신 '+d:r.tag_name+' · '+d;
+  return [title].concat(summary(r.body||'',6)).join('\n');}
+// RELEASE-JS-END
+function run(argv){ObjC.import('Foundation');var s=$.NSString.stringWithContentsOfFileEncodingError(argv[0],$.NSUTF8StringEncoding,null).js;return info(JSON.parse(s),argv[1]==='1');}
+JXA
+}
+show_notes() {   # $1 = rel_info 결과, $2 = 전체 노트 주소
+  if [ -z "$1" ]; then note "버전 정보를 받지 못했습니다(인터넷 확인). 설치는 그대로 계속합니다. 전체 설명: $2"; return; fi
+  head_ "이번 버전에 들어 있는 것 ($(printf '%s\n' "$1" | head -1))"
+  printf '%s\n' "$1" | tail -n +2 | while IFS= read -r l; do note "$l"; done
+  note "전체 설명: $2"
+}
+
 # --- 버전 고르기 --------------------------------------------------------------
 if [ -z "$UNINSTALL" ] && [ -z "$DIAG" ] && [ -z "$APK_BASE" ]; then
+  REL_S="$(rel_info latest 0)"; REL_T="$(rel_info tags/test 1)"
   if [ "$CHANNEL" != stable ] && [ "$CHANNEL" != test ]; then
     if [ -n "$YES" ]; then CHANNEL=stable; else
       head_ '받을 버전'
-      note '  1) 안정화 (권장) — 실차에서 확인된 버전'
-      note '  2) 테스트 — 새 기능, 아직 실차 검증 전. 문제가 있으면 안정화로 다시 설치하면 됩니다'
+      note "  1) 안정화 (권장)${REL_S:+ $(printf '%s\n' "$REL_S" | head -1)} — 실차에서 확인된 버전"
+      note "  2) 테스트${REL_T:+ $(printf '%s\n' "$REL_T" | head -1)} — 새 기능, 아직 실차 검증 전. 문제가 있으면 안정화로 다시 설치하면 됩니다"
       note '  3) 진단 기록 모으기 — 설치하지 않고, 문제를 알릴 때 보낼 파일만 만듭니다'
       read -r -p '번호를 입력하고 Enter [1] ' r
       case "$(printf '%s' "$r" | tr -d ' ')" in 2) CHANNEL=test ;; 3) DIAG=1 ;; *) CHANNEL=stable ;; esac
     fi
   fi
   if [ -z "$DIAG" ]; then
-    if [ "$CHANNEL" = test ]; then APK_BASE="$RELEASES/download/test"; note '버전: 테스트 (실차 검증 전)'
-    else APK_BASE="$RELEASES/latest/download"; note '버전: 안정화'; fi
+    if [ "$CHANNEL" = test ]; then APK_BASE="$RELEASES/download/test"; note '버전: 테스트 (실차 검증 전)'; show_notes "$REL_T" "$RELEASES/tag/test"
+    else APK_BASE="$RELEASES/latest/download"; note '버전: 안정화'; show_notes "$REL_S" "$RELEASES/latest"; fi
   fi
 fi
 

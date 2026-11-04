@@ -361,8 +361,8 @@ public final class Telemetry {
     /** i30 PD (pd_kr) hscan_mux: each slot carries a raw CAN frame. Slot numbers and byte layouts were
      * verified in-car on 2026-10-29 with action-tagged captures (i30pd_port/HSCAN_DECODE.md).
      * Every byte layout/scale is the commaai/opendbc hyundai_2015_ccan definition (the database openpilot
-     * uses), so e.g. brake pressure here is the exact value openpilot reads. Coolant, throttle, boost and
-     * transmission temperature have no matching slot and stay unknown rather than showing a guess. */
+     * uses), so e.g. brake pressure here is the exact value openpilot reads. Oil temperature (no sensor),
+     * transmission temperature, wheel speeds and SOC have no matching slot and stay unknown rather than showing a guess. */
     public synchronized void hscanPd(int cid,int funcLow,byte[] b,long now){
         if(cid!=0xc7||b==null)return;
         if(funcLow==0x02&&b.length==4){
@@ -428,7 +428,7 @@ public final class Telemetry {
             // Intake air temperature: byte2 * 0.75 - 48 (EMS15 IntAirTemp / EMS_DCT12 IndAirTemp, bit 16).
             // Cross-checked across captures: 45C right after a lunchtime drive (heat soak), 28.5C on an
             // evening cold start, rising 32->41C while driving - intake behaviour, not coolant (which would
-            // sit near 90C when hot). byte1 bit changes are door-lock status on the shared frame; ignore here.
+            // sit near 90C when hot; coolant is EMS12 in slot 0x09). byte1 is constant; only byte2 is read.
             int raw=b[2]&255;
             put(INTAKE,raw*0.75f-48,raw<255,now);
         }else if(funcLow==0x0a&&b.length==8){

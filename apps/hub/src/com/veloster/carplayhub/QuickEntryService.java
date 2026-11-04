@@ -31,7 +31,7 @@ import java.lang.ref.WeakReference;
 public final class QuickEntryService extends Service {
     private static final String PREFS="quick_entry",CHANNEL="vn_quick_entry",STOP="com.veloster.carplayhub.QUICK_ENTRY_OFF";
     private static final int NOTICE=9117;
-    private static final float IDLE_ALPHA=0.2f;   // faint at rest; opaque while touched and for FADE_DELAY after the last touch
+    private static final float IDLE_ALPHA=0.1f;   // very faint at rest (the badge's white arc and red are near-opaque, so it needs a low view alpha); opaque while touched and for FADE_DELAY after
     private static final long FADE_DELAY=3000;     // fade back to IDLE_ALPHA this long after the last operation (appear, tap, drag)
     private static WeakReference<Runnable> statusObserver=new WeakReference<Runnable>(null);
     private SharedPreferences prefs;

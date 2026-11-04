@@ -8,9 +8,9 @@
 
 CAN 메시지·신호의 배치와 배율은 [commaai/opendbc](https://github.com/commaai/opendbc)(MIT)의 Hyundai DBC(`hyundai_2015_ccan.dbc`, `hyundai_kia_generic.dbc`)를 참고했고, 실차 로그로 확인했습니다. DBC 파일 자체는 이 레포에 넣지 않았습니다. `i30pd_port/tools/`의 도구는 사용자가 받은 DBC 파일 경로를 인자로 받습니다.
 
-## 진단 요청 목록 (시험)
+## 진단 요청 (모드 22)
 
-`ObdLive`의 시험 요청(엔진·변속기 모드 22 데이터 식별자)은 [OBDb/Hyundai-i30](https://github.com/OBDb/Hyundai-i30)의 신호 정의(CC BY-SA 4.0)를 보고 어떤 식별자를 물어볼지 골랐습니다. 그 레포의 값 해석(바이트 위치·공식)은 넣지 않았고, 우리 차의 응답을 원본 그대로 기록만 합니다.
+`ObdLive`의 시험 요청(엔진·변속기 모드 22 데이터 식별자)은 [OBDb/Hyundai-i30](https://github.com/OBDb/Hyundai-i30)의 신호 정의(CC BY-SA 4.0)를 보고 어떤 식별자를 물어볼지 골랐고, 응답은 원본 그대로 기록합니다. **7DCT 클러치 온도**(변속기 `22 01A4`)는 그 정의의 바이트 위치와 식(16비트, ×2 − 40 °C)을 따라 해석하며, 우리 차의 응답으로 위치와 홀수·짝수 구분을 확인했습니다(`i30pd_port/OBD_PROBE.md`). 타이어 온도 시험 요청(`22 C00B`, `21 06`)은 같은 프로젝트의 형제 차종 정의(OBDb Kia-Ceed 등, CC BY-SA 4.0)를 참고했습니다. 정의 파일 자체는 이 레포에 넣지 않았습니다.
 
 ## 아케이드 화면의 차 그림
 

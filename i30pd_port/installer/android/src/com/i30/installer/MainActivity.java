@@ -76,10 +76,14 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         channel.addView(test);
         channel.check(1);
         root.addView(channel);
-        // what each channel installs right now (GitHub release: version, date, the notes in a few lines)
+        // what each channel installs right now (GitHub release: version, date, the notes in a few lines): one line here,
+        // the notes in a dialog on a tap, so they never squeeze the progress log below
         notes = new TextView(this);
-        notes.setTextSize(13);
+        notes.setTextSize(14);
+        notes.setTextColor(0xff3d8fd0);
+        notes.setPadding(0, pad / 4, 0, pad / 4);
         notes.setText("버전 정보를 받는 중...");
+        notes.setOnClickListener(v -> notesDialog());
         root.addView(notes);
         channel.setOnCheckedChangeListener((g, id) -> showNotes());
         new Thread(() -> {
@@ -124,13 +128,25 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
 
     private TextView notes;
     private final String[][] rel = new String[2][];
-    /** The selected channel's notes summary, and where the full notes are. */
+    /** One line under the channel buttons; the notes themselves open in notesDialog(). */
     private void showNotes() {
+        notes.setText(rel[test.isChecked() ? 1 : 0] == null ? "버전 정보를 받지 못했습니다 (설치는 그대로 됩니다) — 눌러서 전체 설명 주소 보기"
+                : "▸ 이번 버전에 들어 있는 것 보기");
+    }
+    /** The selected channel's notes summary and the link to the full notes, scrollable on its own. */
+    private void notesDialog() {
         boolean t = test.isChecked();String[] r = rel[t ? 1 : 0];
         String url = Flow.RELEASES + (t ? "/tag/test" : "/latest");
-        notes.setText(r == null ? "버전 정보를 받지 못했습니다(인터넷 연결 확인). 설치는 그대로 할 수 있습니다.\n전체 설명: " + url
-                : "이번 버전에 들어 있는 것\n" + r[1] + "\n전체 설명: " + url);
-        android.text.util.Linkify.addLinks(notes, android.text.util.Linkify.WEB_URLS);
+        TextView body = new TextView(this);
+        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        body.setPadding(pad, pad, pad, pad);
+        body.setTextSize(15);
+        body.setText((r == null ? "버전 정보를 받지 못했습니다. 인터넷 연결을 확인하세요." : r[1]) + "\n\n전체 설명: " + url);
+        android.text.util.Linkify.addLinks(body, android.text.util.Linkify.WEB_URLS);
+        ScrollView sv = new ScrollView(this);
+        sv.addView(body);
+        new AlertDialog.Builder(this).setTitle((t ? "테스트" : "안정화") + (r == null ? "" : " " + r[0]))
+                .setView(sv).setPositiveButton("닫기", null).show();
     }
 
     private Button button(LinearLayout row, String text, android.view.View.OnClickListener l) {

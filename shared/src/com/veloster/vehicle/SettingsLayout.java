@@ -28,7 +28,9 @@ public final class SettingsLayout {
         return z==1?Math.max(SOUND_MIN[k],value-SOUND_STEP[k]):z==2?Math.min(SOUND_MAX[k],value+SOUND_STEP[k]):SOUND_DEFAULT[k];
     }
     /** Output routes the 출력 경로 row cycles through, in EngineSound's route order. */
-    public static final String[] SOUND_ROUTES={"믹스 · 알림","믹스 · 내비","미디어 소스","기본 (예전)"};
+    /** Checked in the car 2026-11-03: only the alarm channel sounds (front speakers, no bass); the others stay silent on
+     *  this firmware and are kept for other head units. */
+    public static final String[] SOUND_ROUTES={"알림 채널 · 앞 스피커","내비 효과음 · 차에서 무음","미디어 소스 · 차에서 무음","안드로이드 기본 · 차에서 무음"};
     /** Mode pane rows: the two switches, then one row per ClusterPicker.MODES. */
     public static final int MODE_COLOR=0,MODE_SCREEN=1,MODE_FIRST=2;
     public static final float TITLE_H=30;

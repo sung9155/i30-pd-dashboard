@@ -119,6 +119,8 @@ public final class EngineSynth {
     /** elapsedRealtime when the latest of those pops leaves the speaker (set by EngineSound); PixelCluster shows it.
      *  Here, not in EngineSound, so the screens build without android.media (preview.sh). */
     static volatile long flameAt=Long.MIN_VALUE/2;
+    /** True while EngineSound plays this synth audibly: its pops drive the flames, so PixelCluster skips its own. */
+    static volatile boolean voiced;
     static final double FLAME_GAP=.5;
     private double flameHold;
     /** Latency compensation in seconds (0 = off). */

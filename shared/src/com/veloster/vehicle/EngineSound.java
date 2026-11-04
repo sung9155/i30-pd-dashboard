@@ -9,10 +9,10 @@ import android.os.SystemClock;
 /**
  * Plays EngineSynth from the shared Telemetry. On this head unit an app's PCM reaches the amplifier only after the
  * micom opens a path for it (MicomAudioService.startAudio; AudioService never asks), which is why the first version,
- * a plain media-stream AudioTrack, was silent in the car. ROUTES are the paths to try in the car (firmware analysis,
- * not yet verified): the navi mix channel (Android STREAM_NAVI 12, plays over radio and music) as a system alarm or as
- * a navi sound effect, the main channel as a music source (stops the radio while it plays), and the old plain media
- * stream. Silent in reverse and without fresh rpm.
+ * a plain media-stream AudioTrack, was silent in the car. ROUTES (firmware analysis; tried in the car 2026-11-03): the
+ * navi mix channel (Android STREAM_NAVI 12, plays over radio and music) as a system alarm, the only one that sounds
+ * (front speakers, no bass), or as a navi sound effect; the main channel as a music source; and the plain media
+ * stream without the micom. The last three were silent. Silent in reverse and without fresh rpm.
  */
 final class EngineSound implements Runnable {
     /** Android stream and micom stream type per route (SettingsLayout.SOUND_ROUTES names them). */
@@ -60,7 +60,7 @@ final class EngineSound implements Runnable {
             android.util.Log.i("VehicleDash","Engine sound on: route "+r+" stream "+ROUTE_STREAM[r]+" micom 0x"+Integer.toHexString(micom)+" min buffer "+min);
             EngineSynth.Voice playing=voice;EngineSynth synth=new EngineSynth(EngineSynth.RATE,playing);float[] f=new float[BLOCK];short[] pcm=new short[BLOCK];int flames=0;
             while(thread==Thread.currentThread()){
-                long now=SystemClock.elapsedRealtime();
+                long now=SystemClock.elapsedRealtime();EngineSynth.voiced=volume>0;
                 Telemetry.Sample rpm=data.sample(0,now),pedal=data.sample(9,now),boost=data.sample(Telemetry.BOOST,now),
                     selector=data.sample(Telemetry.GEAR_SELECTOR,now);
                 Telemetry.Sample gear=data.sample(8,now);
@@ -78,6 +78,7 @@ final class EngineSound implements Runnable {
             }
         }catch(RuntimeException e){android.util.Log.e("VehicleDash","Engine sound stopped",e);}
         finally{
+            EngineSynth.voiced=false;
             if(track!=null){try{track.stop();}catch(IllegalStateException ignored){/* never started */}track.release();}
             if(router!=null)endMicom(router,micom);
         }

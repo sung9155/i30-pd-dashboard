@@ -133,7 +133,6 @@ public final class UiText {
         EN.put("기기 페어링 상태를 확인할 수 없습니다.","The pairing state could not be verified.");
         EN.put("기록","Records");
         EN.put("기록은 앱을 닫으면 초기화","Records reset when the app closes");
-        EN.put("기본 (예전)","Plain (old)");
         EN.put("기본 4,800원 (1.6 km)","Base 4,800 won (1.6 km)");
         EN.put("기본 배치로 복원","Reset layout");
         EN.put("기본요금 1.6 km","Base fare 1.6 km");
@@ -155,6 +154,7 @@ public final class UiText {
         EN.put("내 앱 / My Apps","My Apps");
         EN.put("내 앱 열기 · 길게 끌어서 위치 변경 / My Apps","Open My Apps; drag to move");
         EN.put("내 앱에 표시할 앱","Apps to show in My Apps");
+        EN.put("내비 효과음 · 차에서 무음","Navi effects · silent in car");
         EN.put("내비게이션 시스템을 재시작합니다. 화면·음악·PC 연결이 잠시 끊깁니다. 정차 중에 사용하세요.","Restart the head unit. The display, music and PC connection will be interrupted briefly. Use while parked.");
         EN.put("내비게이션 재시작","Restart head unit");
         EN.put("내비게이션 재시작 요청을 전달했습니다.","Head-unit restart requested.");
@@ -214,11 +214,9 @@ public final class UiText {
         EN.put("문 열림","Door open");
         EN.put("미드나이트 퍼플","Midnight Purple");
         EN.put("미등","Position lamps");
-        EN.put("미디어 소스","Media source");
+        EN.put("미디어 소스 · 차에서 무음","Media source · silent in car");
         EN.put("미리 발을 떼면 더 아낍니다","Lift off earlier to save more");
         EN.put("미사용","Off");
-        EN.put("믹스 · 내비","Mix · navi");
-        EN.put("믹스 · 알림","Mix · alert");
         EN.put("바디 (BCM)","Body (BCM)");
         EN.put("바로가기 끄기","Turn shortcut off");
         EN.put("바로가기 서비스 종료 요청에 실패했습니다.","Could not request shortcut service shutdown.");
@@ -320,10 +318,12 @@ public final class UiText {
         EN.put("아이스","Ice");
         EN.put("아이언 그레이","Iron Grey");
         EN.put("아케이드","Arcade");
+        EN.put("안드로이드 기본 · 차에서 무음","Android default · silent in car");
         EN.put("안드로이드 기본앱","Android utilities");
         EN.put("안드로이드 블루투스 어댑터가 없습니다.","No Android Bluetooth adapter is available.");
         EN.put("안드로이드 설정","Android settings");
         EN.put("알림 바로가기를 만들지 못했습니다. 서비스가 중지되었습니다.","Could not create the shortcut notification. The service has stopped.");
+        EN.put("알림 채널 · 앞 스피커","Alert channel · front speakers");
         EN.put("알림만","Notification only");
         EN.put("알림만 / Notification only","Notification only");
         EN.put("알림음 종류","Beep sound");

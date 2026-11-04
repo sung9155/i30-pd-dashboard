@@ -17,7 +17,8 @@ import java.util.Locale;
  * signals their bits (which blink with the real lamps), shown on the car's lamps only. Scene pixels are 4x4 screen pixels.
  * Drive mode (CLU13): a banner when it changes and its own idle line; ECO pays 2 coins a second of fuel cut and sheds
  * leaves, SPORT sits the body a pixel lower and adds speed lines. Any mode: lifting off hard at high rpm pops a backfire,
- * and with the engine sound on, the odd big overrun pop flashes a short flame (EngineSynth.flames).
+ * and any lift above 2500 rpm may flash a short overrun flame or two: timed by the engine sound's big pops when it
+ * plays (EngineSynth.flames), by the lift itself when it is off.
  * Static art (both cars per lamp state, skyline and hill strips per sky, hearts, the headlamp beam) is painted once into
  * small bitmaps and stamped; the chase road stays one rectangle per row (about 200), the rest is a few dozen calls.
  */
@@ -160,7 +161,8 @@ final class PixelCluster extends ClusterKit {
     private float scroll,curve,bgX,coinSec,bumpE,frameDt;
     private final RoadJolt jolt=new RoadJolt();
     private int coins;
-    private long last,shiftAt=Long.MIN_VALUE/2,modeAt=Long.MIN_VALUE/2,pedHiAt=Long.MIN_VALUE/2,fireAt=Long.MIN_VALUE/2,popAt=Long.MIN_VALUE/2,seenFlame;
+    private long last,shiftAt=Long.MIN_VALUE/2,modeAt=Long.MIN_VALUE/2,pedHiAt=Long.MIN_VALUE/2,fireAt=Long.MIN_VALUE/2,popAt=Long.MIN_VALUE/2,seenFlame,liftAt=Long.MIN_VALUE/2,nextPop;
+    private int liftPops;private boolean liftArmed;
     /** CLU13 drive mode (0 NORMAL, 1 SPORT, 3 ECO, -1 unknown) and the last known one, for the change banner. */
     private int mode=-1,lastMode=-1;
     private static final int SPORT=1,ECO=3;
@@ -205,6 +207,13 @@ final class PixelCluster extends ClusterKit {
         float ped=v(9);   // backfire: the pedal let go from 40 %+ within 0.7 s while the engine is above 3000 rpm
         if(!Float.isNaN(ped)){if(ped>=40)pedHiAt=now;else if(ped<10&&now-pedHiAt<700&&!Float.isNaN(rpm)&&rpm>3000){fireAt=now;pedHiAt=Long.MIN_VALUE/2;}}
         long fa=EngineSynth.flameAt;if(fa!=seenFlame&&now>=fa){seenFlame=fa;if(now-fa<300)popAt=now;}   // a big overrun pop of the engine sound: a short flame
+        // Without the engine sound: a lift from 20 %+ to under 5 % above 2500 rpm gives one short flame 0.15-0.5 s later and,
+        // a third of the time, a second one 0.5-0.9 s after that, all inside 1.3 s (about what the stock exhaust's sound does).
+        if(!EngineSynth.voiced&&!Float.isNaN(ped)){
+            if(ped>=20)liftArmed=true;
+            else if(ped<5&&liftArmed){liftArmed=false;if(!Float.isNaN(rpm)&&rpm>2500){liftAt=now;liftPops=0;nextPop=now+150+(long)(Math.random()*350);}}
+            if(now-liftAt<1300&&liftPops<2&&now>=nextPop){popAt=now;liftPops++;nextPop=Math.random()<.35?now+500+(long)(Math.random()*400):Long.MAX_VALUE;}
+        }
         String g=gear();if(!g.equals(lastGear)){if(!lastGear.isEmpty())shiftAt=now;lastGear=g;}
         boolean brake=v(10)>5,left=v(Telemetry.TURN_LEFT)>0,right=v(Telemetry.TURN_RIGHT)>0;   // the bits blink with the real lamps
         if(chase){

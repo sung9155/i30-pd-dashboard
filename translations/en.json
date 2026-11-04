@@ -545,10 +545,6 @@
   "엔진 사운드": "Engine sound",
   "출력 경로": "Output route",
   "음량": "Volume",
-  "믹스 · 알림": "Mix · alert",
-  "믹스 · 내비": "Mix · navi",
-  "미디어 소스": "Media source",
-  "기본 (예전)": "Plain (old)",
   "배기": "Exhaust",
   "팝 빈도": "Pop rate",
   "터보 휘슬": "Turbo whistle",
@@ -588,5 +584,9 @@
   "삑": "Beep",
   "상승 3음": "Rising tones",
   "레이스 버저": "Race buzzer",
-  "틱틱": "Double tick"
+  "틱틱": "Double tick",
+  "알림 채널 · 앞 스피커": "Alert channel · front speakers",
+  "내비 효과음 · 차에서 무음": "Navi effects · silent in car",
+  "미디어 소스 · 차에서 무음": "Media source · silent in car",
+  "안드로이드 기본 · 차에서 무음": "Android default · silent in car"
 }

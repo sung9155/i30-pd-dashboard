@@ -3,7 +3,8 @@ header magic, byte-sum checksum, 4 KB payloads, the RSA token signature and the 
 Connection n plays scenario n: 1 new key (pubkey + prompt), 2 known key (signature) and a signature
 clash on the dashboard, 3 uninstall, 4 a navi that is not pd_kr, 5 install, 6 the same install again
 (pm path + RECV return what is installed), 7 diagnostics (log lines with a MAC, a phone number, a mail
-address), 8 install from a cached APK. Installed packages carry over between connections.
+address), 8 install from a cached APK, 9-10 a drive recording that drops (9) and goes on after the reconnect (10).
+Installed packages carry over between connections.
 usage: fake_adbd.py PORT LOG SERVER_DIR"""
 import os, socket, struct, sys, base64
 
@@ -103,6 +104,11 @@ def session(s, no):
             elif c.startswith('logcat -d -v time -s '): out = LOGCAT.replace('\n', '\r\n') * 2000
             elif c.startswith('rm -f '): files.pop(c[6:])
             elif c.startswith('am start '): out = 'Starting: Intent { cmp=com.veloster.carplayhub/.HubActivity }'
+            elif 'app_process' in c and 'HscanDump' in c and c.endswith(' raw'):
+                assert files.get('/data/local/tmp/hscandump.jar') == b'DEX-JAR', 'dumper pushed first'
+                lines = ''.join('T %d\r\nRAW ff 0b 8e 01 8b c7 conn%d %04d\r\n' % (1000 * i, no, i) for i in range(300))
+                if no == 9: reply(s, rid, local, lines.encode()); return   # the cable drops mid-drive: no CLSE
+                out = lines + '\r\n[hscandump] frames=300  functions seen:'
             if out: reply(s, rid, local, (out + '\r\n').encode())
             send(s, CLSE, rid, local)
         elif svc == 'sync:':

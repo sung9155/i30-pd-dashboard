@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 /**
  * The phone installer's steps, the same as install.ps1: get the APKs, find the car (pd_kr only),
  * check the build, push + pm install (a signature clash alone is fixed by uninstalling), open '내 앱'.
- * Also removes both apps, or only reads the car for a diagnostics file to mail.
+ * Also removes both apps, or only reads the car: a diagnostics file, or a drive's raw hscan recording to share.
  * No Android imports: MainActivity supplies the USB link and the screen, the desktop test a TCP link.
  */
 final class Flow {
@@ -39,12 +39,12 @@ final class Flow {
         default boolean cancelled() { return false; }
     }
     interface Car { Adb.Transport waitCar(Ui ui) throws Exception; }
-    enum Mode { INSTALL, UNINSTALL, DIAG }
+    enum Mode { INSTALL, UNINSTALL, DIAG, RECORD }
 
     /** A failure the user should read as is (no stack trace). */
     static final class Stop extends Exception { Stop(String m) { super(m); } }
 
-    static final String VERSION = "2026-11-03";   // shown on screen and compared with the published source; raise on every change
+    static final String VERSION = "2026-11-04";   // shown on screen and compared with the published source; raise on every change
     static final String RELEASES = "https://github.com/sung9155/i30-pd-dashboard/releases";
     static final String RAW = "https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/";
     static final String VERIFIED_BUILD = "eng.vmadmin.20260114.084130", LOW_BUILD = "eng.vmadmin.20260114.084725",
@@ -59,6 +59,19 @@ final class Flow {
             "ro.build.fingerprint", "sys.usb.config", "sys.usb.state", "persist.sys.usb.config", "persist.sys.dipo.state", "persist.sys.key.custom"};
     /** Our apps' tags, crashes and installs only: the whole log has phone names, numbers and contacts from Bluetooth. */
     static final String LOG_TAGS = "VehicleDash:V VNCarPlayHub:V VNQuickEntry:V NDashboard:V DtcDialog:V AndroidRuntime:E PackageManager:I";
+
+    /** Drive recording: the receive-only hscan dumper (i30pd_port/src/com/i30/diag/HscanDump.java), shipped inside this APK. */
+    static final String DUMP = "/data/local/tmp/hscandump.jar";
+    static final int RECORD_SECS = 60 * 60;   // [기록 끝] ends it sooner; about 1.2 MB of text a minute, ~13x smaller zipped
+    static final String[] MISSIONS = {
+            "폰은 거치대에 두고 화면을 켜 둔 채 평소처럼 운전하세요. 아래는 정차 중에만, 순서는 자유:",
+            "  1. 정차 중 AUTO HOLD 버튼 3번 껐다 켜기",
+            "  2. 오토홀드 켠 채 평지 정차 → 브레이크 떼고 5초 → 출발",
+            "  3. 오토홀드 끈 채 오르막 정차 → 브레이크 떼고 출발",
+            "  4. 전자식 주차 브레이크 채운 채 오르막에서 출발",
+            "  5. 신호 대기 중 기어 중립 + 클러치 뗌",
+            "  6. 주차하며 후진",
+            "다 했으면 [기록 끝] → 공유로 보내 주세요."};
 
     static String base(boolean test) { return test ? RELEASES + "/download/test" : RELEASES + "/latest/download"; }
 
@@ -77,22 +90,11 @@ final class Flow {
         ui.say("      (이미 설치돼 있으면 '내 앱' → USB 디버깅 → ON 으로 대신할 수 있습니다)");
         ui.say("  (4) 폰 — OTG 어댑터(USB-C→A 암) — A-A 케이블 — 차 USB 포트 연결");
 
-        Adb adb = new Adb(car.waitCar(ui));
+        Adb adb = connect(car, dir, ui);
         try {
-            ui.say("\n■ 차와 adb 연결");
-            ui.waiting("차와 연결 중");
-            adb.connect(key(dir), 180_000, () -> {
-                ui.say("→ 차 화면에 \"USB 디버깅 허용\" 창이 뜨면 [항상 허용]을 누르세요.");
-                ui.waiting("차 화면의 허용을 기다리는 중 (최대 3분)");
-            });
-            ui.waiting(null);
-            String product = prop(adb, "ro.product.name");
-            if (!product.equals("pd_kr")) throw new Stop("i30 PD 내비(pd_kr)가 아닙니다: " + product + "\n이 기기에는 아무것도 하지 않았습니다.");
-            String build = prop(adb, "ro.build.version.incremental"), device = prop(adb, "ro.product.device");
-            String board = device.contains("daudiopluslow") ? "D-Audio Plus LOW (블루링크 없음)"
-                    : device.contains("daudioplus") ? "D-Audio Plus (블루링크)" : "확인 안 됨 (" + device + ")";
-            ui.say("차 연결됨: " + board + " / 빌드 " + build);
+            String build = prop(adb, "ro.build.version.incremental");
             if (mode == Mode.DIAG) return diag(adb, dir, ui);
+            if (mode == Mode.RECORD) return record(adb, dir, car, ui);
             if (!build.isEmpty() && !build.equals(VERIFIED_BUILD) && !build.equals(LOW_BUILD) && !build.equals(OLD_BUILD)
                     && !ui.ask("검증된 빌드(" + VERIFIED_BUILD + ")와 다릅니다. 값이 틀릴 수 있습니다. 그래도 계속할까요?"))
                 throw new Stop("사용자 취소.");
@@ -126,6 +128,80 @@ final class Flow {
             adb.close();
         }
         return null;
+    }
+
+    /** USB, adb auth, and pd_kr only. The link is closed again when any of it fails. */
+    private static Adb connect(Car car, File dir, Ui ui) throws Exception {
+        Adb adb = new Adb(car.waitCar(ui));
+        try {
+            ui.say("\n■ 차와 adb 연결");
+            ui.waiting("차와 연결 중");
+            adb.connect(key(dir), 180_000, () -> {
+                ui.say("→ 차 화면에 \"USB 디버깅 허용\" 창이 뜨면 [항상 허용]을 누르세요.");
+                ui.waiting("차 화면의 허용을 기다리는 중 (최대 3분)");
+            });
+            ui.waiting(null);
+            String product = prop(adb, "ro.product.name");
+            if (!product.equals("pd_kr")) throw new Stop("i30 PD 내비(pd_kr)가 아닙니다: " + product + "\n이 기기에는 아무것도 하지 않았습니다.");
+            String device = prop(adb, "ro.product.device");
+            String board = device.contains("daudiopluslow") ? "D-Audio Plus LOW (블루링크 없음)"
+                    : device.contains("daudioplus") ? "D-Audio Plus (블루링크)" : "확인 안 됨 (" + device + ")";
+            ui.say("차 연결됨: " + board + " / 빌드 " + prop(adb, "ro.build.version.incremental"));
+            return adb;
+        } catch (Exception e) {
+            adb.close();
+            throw e;
+        }
+    }
+
+    /**
+     * The raw hscan stream (receive only, nothing is sent to the car) into one text file for up to RECORD_SECS,
+     * reconnecting when the link drops, then zipped for sharing. The driver taps nothing on the way: the scenes
+     * are found later from the signals already decoded (standstill, brake, slope, reverse camera).
+     */
+    private static File record(Adb adb, File dir, Car car, Ui ui) throws Exception {
+        File jar = new File(dir, "hscandump.jar");
+        if (!jar.isFile()) throw new Stop("기록 도구(hscandump.jar)가 앱 안에 없습니다. 휴대폰 설치 앱을 다시 받아 설치하세요.");
+        File txt = new File(new File(dir, "diag"), "i30pd_drive_" + stamp("yyyyMMdd_HHmmss") + ".txt");
+        if (!txt.getParentFile().isDirectory() && !txt.getParentFile().mkdirs()) throw new IOException("저장 폴더를 만들지 못했습니다");
+        ui.say("\n■ 주행 기록 (차에는 아무것도 보내지 않고 읽기만 합니다, 최대 " + RECORD_SECS / 60 + "분)");
+        for (String m : MISSIONS) ui.say(m);
+        long end = System.currentTimeMillis() + RECORD_SECS * 1000L;
+        try (OutputStream o = new java.io.BufferedOutputStream(new FileOutputStream(txt))) {
+            o.write(("# DRIVE 휴대폰 설치 앱 " + VERSION + " / 빌드 " + prop(adb, "ro.build.version.incremental")
+                    + " / 시작 " + stamp("yyyy-MM-dd HH:mm:ss") + "\n").getBytes(StandardCharsets.UTF_8));
+            for (int drops = 0; ; ) {
+                long left = (end - System.currentTimeMillis()) / 1000;
+                if (left < 5 || ui.cancelled()) break;
+                try {
+                    adb.push(jar, DUMP, 60_000);
+                    ui.waiting("주행 기록 중 — 다 했으면 [기록 끝]");
+                    adb.shell("mkdir -p /data/local/tmp/dalvik-cache; cd /data/local/tmp; ANDROID_DATA=/data/local/tmp CLASSPATH=" + DUMP
+                            + " app_process /data/local/tmp com.i30.diag.HscanDump " + left + " raw", o, 90_000);
+                    break;   // the dump ran its time out (or found no hscan: ignition off)
+                } catch (IOException e) {
+                    if (ui.cancelled()) break;
+                    o.write(("\n# DROP " + stamp("HH:mm:ss") + " " + e.getMessage() + "\n").getBytes(StandardCharsets.UTF_8));
+                    o.flush();
+                    adb.close();
+                    if (++drops > 5) { ui.say("\n연결이 계속 끊겨 기록을 마칩니다."); break; }
+                    ui.say("\n연결이 끊겼습니다 (" + e.getMessage() + "). 다시 연결합니다 — 시동과 케이블을 그대로 두세요.");
+                    try { adb = connect(car, dir, ui); }
+                    catch (Exception x) { ui.say("다시 연결하지 못했습니다: " + x.getMessage()); break; }
+                }
+            }
+        } finally {
+            ui.waiting(null);
+            adb.close();   // run() closes the first link again: harmless
+        }
+        File zip = new File(txt.getParentFile(), txt.getName().replace(".txt", ".zip"));
+        try (java.util.zip.ZipOutputStream z = new java.util.zip.ZipOutputStream(new FileOutputStream(zip))) {
+            z.putNextEntry(new java.util.zip.ZipEntry(txt.getName()));
+            Files.copy(txt.toPath(), z);
+        }
+        ui.say("\n주행 기록을 만들었습니다 (원본 " + txt.length() / 1024 + " KB → zip " + Math.max(1, zip.length() / 1024) + " KB).");
+        if (!txt.delete()) txt.deleteOnExit();
+        return zip;
     }
 
     private static void install(Adb adb, String[] app, File apk, Ui ui) throws Exception {

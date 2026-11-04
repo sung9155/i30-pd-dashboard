@@ -26,7 +26,7 @@ public final class DiagProvider extends ContentProvider {
     }
 
     @Override public boolean onCreate() { return true; }
-    @Override public String getType(Uri u) { return "text/plain"; }
+    @Override public String getType(Uri u) { return String.valueOf(u.getLastPathSegment()).endsWith(".zip") ? "application/zip" : "text/plain"; }
 
     @Override public ParcelFileDescriptor openFile(Uri u, String mode) throws FileNotFoundException {
         return ParcelFileDescriptor.open(file(u), ParcelFileDescriptor.MODE_READ_ONLY);

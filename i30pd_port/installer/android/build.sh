@@ -10,7 +10,7 @@ JAR="$SDK/platforms/android-17/android.jar"
 KS="${KS:?set KS to the release keystore path}"
 KS_PASS="${KS_PASS:?set KS_PASS to the keystore password}"
 # versionName = Flow.VERSION (one place); versionCode goes up by one with every published APK.
-VER_CODE="${VER_CODE:-3}"; VER_NAME="$(grep -o 'VERSION = "[^"]*"' "$(dirname "$0")/src/com/i30/installer/Flow.java" | head -1 | cut -d'"' -f2)"
+VER_CODE="${VER_CODE:-4}"; VER_NAME="$(grep -o 'VERSION = "[^"]*"' "$(dirname "$0")/src/com/i30/installer/Flow.java" | head -1 | cut -d'"' -f2)"
 cd "$(dirname "$0")"
 rm -rf build && mkdir -p build/classes
 "$BT/aapt2" link --manifest AndroidManifest.xml -I "$JAR" --min-sdk-version 26 --target-sdk-version 34 \
@@ -18,7 +18,9 @@ rm -rf build && mkdir -p build/classes
 # java.* (Base64, nio.file) comes from the JDK's API 8 surface; d8 maps it onto the phone's runtime (API 26+).
 javac --release 8 -encoding UTF-8 -cp "$JAR" -d build/classes src/com/i30/installer/*.java
 java -cp "$BT/lib/d8.jar" com.android.tools.r8.D8 --min-api 26 --lib "$JAR" --output build $(find build/classes -name '*.class')
-python -X utf8 -c "import zipfile; zipfile.ZipFile('build/base.apk','a').write('build/classes.dex','classes.dex')"
+# [주행 기록] pushes the receive-only hscan dumper to the car; it rides along as an asset.
+bash ../../build_dump.sh >/dev/null
+python -X utf8 -c "import zipfile; z=zipfile.ZipFile('build/base.apk','a'); z.write('build/classes.dex','classes.dex'); z.write('../../hscandump.jar','assets/hscandump.jar')"
 "$BT/zipalign" -f -p 4 build/base.apk build/aligned.apk
 [ -f "$KS" ] || keytool -genkeypair -keystore "$KS" -storetype PKCS12 -storepass "$KS_PASS" -alias installer \
   -keyalg RSA -keysize 3072 -validity 36500 -dname "CN=i30 PD dashboard installer"

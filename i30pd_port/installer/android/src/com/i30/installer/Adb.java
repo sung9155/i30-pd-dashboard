@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -18,7 +19,7 @@ import java.util.Base64;
 import javax.crypto.Cipher;
 
 /**
- * The host half of adb, just enough to install an APK: connect + RSA auth, shell:, and sync: push and pull.
+ * The host half of adb, just enough to install an APK and record a drive: connect + RSA auth, shell:, and sync: push and pull.
  * Speaks the old protocol the car's Android 4.2 adbd expects (version 0x01000000, 4 KB payloads,
  * byte-sum checksums). One stream at a time. No Android imports, so the desktop test drives it over TCP.
  */
@@ -162,6 +163,13 @@ final class Adb implements Closeable {
         while (!closed) pump(deadline);
         send(CLSE, local, remote, new byte[0]);
         return new String(inbox.toByteArray(), StandardCharsets.UTF_8).replace("\r", "");
+    }
+
+    /** Runs a shell command and writes its output to out as it arrives (a long drive log stays off the heap). Fails after idleMs of silence. */
+    void shell(String cmd, OutputStream out, long idleMs) throws IOException {
+        open("shell:" + cmd, System.currentTimeMillis() + idleMs);
+        while (!closed) { pump(System.currentTimeMillis() + idleMs); inbox.writeTo(out); inbox.reset(); }
+        send(CLSE, local, remote, new byte[0]);
     }
 
     /** sync: SEND path,mode / DATA... / DONE mtime, then OKAY or FAIL. */

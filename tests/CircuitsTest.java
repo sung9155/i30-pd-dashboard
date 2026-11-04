@@ -6,7 +6,7 @@ public final class CircuitsTest {
     private static void check(boolean b,String s){checks++;if(!b)throw new AssertionError(s);}
     private static int find(String id){for(int i=0;i<Circuits.count();i++)if(Circuits.id(i).equals(id))return i;throw new AssertionError(id);}
     public static void main(String[] args){
-        check(Circuits.count()==7,"seven circuits");
+        check(Circuits.count()==6,"six circuits (open to any car on track days)");
         for(int i=0;i<Circuits.count();i++){
             double[] s=Circuits.start(i);
             check(Circuits.distance(i,s[0],s[1])<1,Circuits.id(i)+": its start line is on its track");

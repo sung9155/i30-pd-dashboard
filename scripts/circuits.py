@@ -30,7 +30,6 @@ CIRCUITS = [
     ("taebaek", "태백 스피드웨이", "Taebaek Speedway", [240211101], [826496123], (37.082725, 129.017869)),   # circuit map: 348 m into the 651 m straight from T10
     ("amg", "AMG 스피드웨이", "AMG Speedway", [240199084, 671420801, 671420803, 671420804], [450059011], (37.296167, 127.206624)),   # circuit map: 185 m into the 446 m T17-T1 straight
     ("pocheon", "포천 레이스웨이", "Pocheon Raceway", [1559045138], [], None),   # OSM has no pit lane here
-    ("bmw", "BMW 드라이빙 센터", "BMW Driving Center", [530969647], [], None),
 ]
 
 

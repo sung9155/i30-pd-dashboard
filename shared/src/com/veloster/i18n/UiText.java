@@ -43,7 +43,6 @@ public final class UiText {
         EN.put("8비트 하늘","8-bit sky");
         EN.put("AMG 스피드웨이","AMG Speedway");
         EN.put("AP 상태 13 확인. IP 주소와 iPhone의 SSID 검색을 다음으로 확인하세요.","AP state 13 confirmed. Next check the IP address and whether the iPhone sees the SSID.");
-        EN.put("BMW 드라이빙 센터","BMW Driving Center");
         EN.put("CH1 횡G 0.2 g/div","CH1 lat G 0.2 g/div");
         EN.put("CH2 종G 0.2 g/div","CH2 long G 0.2 g/div");
         EN.put("DCT 짝수단 클러치 온도","DCT even-gear clutch temperature");

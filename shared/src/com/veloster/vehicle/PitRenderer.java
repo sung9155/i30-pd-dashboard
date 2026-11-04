@@ -61,7 +61,7 @@ public final class PitRenderer {
     public void setSettings(int cat,String language,int pick,int[] targets){settingsCat=cat;langSel=language;pickSlot=pick;modeTargets=targets;}
     /** Virtual engine sound settings: switch, route (SettingsLayout.SOUND_ROUTES), engine and exhaust, and the − / + values. */
     private boolean soundOn;private int soundRoute,soundEngine,soundExhaust;private int[] soundVals=SettingsLayout.SOUND_DEFAULT;
-    private boolean beepOn;private int beepSound,beepVol;
+    private boolean beepOn;private int beepSound,beepVol=70;
     public void setBeep(boolean on,int sound,int vol){beepOn=on;beepSound=sound;beepVol=vol;}
     /** The shift cue of the last frame (rpm at the target, moving, not top gear): the optional beep follows it. */
     public boolean shiftCue(){return cue!=null&&cue.shift;}

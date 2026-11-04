@@ -1,5 +1,6 @@
 package com.veloster.vehicle;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Typeface;
@@ -55,7 +56,7 @@ final class CircuitCluster extends ClusterKit {
     }
     /** A new circuit (or none): the laps start over, on that circuit's line. */
     private void atCircuit(){
-        lap.reset();track=null;trackPath=null;vmax=lastVmax=Float.NaN;lapsSeen=0;
+        lap.reset();track=null;trackPath=null;bmpFor=-1;vmax=lastVmax=Float.NaN;lapsSeen=0;
         if(circuit<0)return;
         double[] s=Circuits.start(circuit);
         track=Circuits.outline(circuit,s[0],s[1]);trackPath=new TrackPath(track);
@@ -171,31 +172,43 @@ final class CircuitCluster extends ClusterKit {
         float size=15;while(size>11&&width(s,size,Typeface.DEFAULT_BOLD)>MR-ML-24)size--;
         bold(c,s,(ML+MR)/2,y,size,MU,Paint.Align.CENTER);
     }
-    /** The circuit's track (fixed view), the lap so far over it, the line and the car; fitted to the panel. */
+    /** The circuit's track and line (a stamped bitmap), the lap so far over it, and the car. */
     private void map(Canvas c){
-        float[] a=track,b=lap.curPath();int an=a.length/2,bn=lap.curPoints();
+        if(trackBmp==null||bmpFor!=circuit||bmpTheme!=Theme.current())drawTrack();
+        blit(c,trackBmp,0,0,(int)(MR-ML),(int)(MB-MT),ML,MT,MR,MB);
+        float[] b=lap.curPath();int bn=lap.curPoints();
+        for(int i=1;i<bn;i++)line(c,sx(b[i*2-2]),sy(b[i*2-1]),sx(b[i*2]),sy(b[i*2+1]),3,ACC);
+        double[] d=Double.isNaN(lap.x())||dist[circuit]>1000?null:dot();   // far off (on the way there): no dot
+        if(d==null)return;
+        if(bn>0)line(c,sx(b[bn*2-2]),sy(b[bn*2-1]),sx(d[0]),sy(d[1]),3,ACC);   // the lap's line runs on to the dot
+        float px=clamp(sx(d[0]),ML+10,MR-10),py=clamp(sy(d[1]),MT+34,MB-30);   // off the map (paddock, the road in): pinned to its edge
+        dot(c,px,py,10,0xff040506);dot(c,px,py,7,BAD);ring(c,px,py,10,2,TX);
+    }
+    /** The track and its start / finish line, drawn once per circuit and theme into trackBmp: the outline alone is a few
+     *  hundred strokes (KIC about 550), too many to repeat every frame on the head unit. */
+    private Bitmap trackBmp;
+    private int bmpFor=-1;
+    private Theme bmpTheme;
+    /** The circuit's fixed view: its centre in metres, pixels per metre, and where the centre sits on screen. */
+    private double vx,vy;
+    private float vk,vox,voy;
+    private float sx(double x){return vox+(float)(x-vx)*vk;}
+    private float sy(double y){return voy-(float)(y-vy)*vk;}
+    private void drawTrack(){
+        float[] a=track;int an=a.length/2;
         double x0=Double.MAX_VALUE,x1=-Double.MAX_VALUE,y0=Double.MAX_VALUE,y1=-Double.MAX_VALUE;
         for(int i=0;i<an;i++){x0=Math.min(x0,a[i*2]);x1=Math.max(x1,a[i*2]);y0=Math.min(y0,a[i*2+1]);y1=Math.max(y1,a[i*2+1]);}
-        double mx=(x0+x1)/2,my=(y0+y1)/2;
-        float w=MR-ML-48,h=MB-MT-96,k=(float)Math.min(Math.min(w/Math.max(1,x1-x0),h/Math.max(1,y1-y0)),Math.min(w,h)/300),ox=(ML+MR)/2,oy=(MT+36+MB-36)/2;
+        vx=(x0+x1)/2;vy=(y0+y1)/2;float w=MR-ML-48,h=MB-MT-96;
+        vk=(float)Math.min(Math.min(w/Math.max(1,x1-x0),h/Math.max(1,y1-y0)),Math.min(w,h)/300);vox=(ML+MR)/2;voy=(MT+36+MB-36)/2;
+        trackBmp=bitmap((int)(MR-ML),(int)(MB-MT));Canvas bc=new Canvas(trackBmp);bc.translate(-ML,-MT);   // screen coordinates
         for(int i=0;i<an;i++){   // the track: thick, joints rounded with a dot
-            int j=(i+1)%an;float xa=ox+(float)(a[i*2]-mx)*k,ya=oy-(float)(a[i*2+1]-my)*k;
-            line(c,xa,ya,ox+(float)(a[j*2]-mx)*k,oy-(float)(a[j*2+1]-my)*k,10,TRACK);dot(c,xa,ya,5,TRACK);
+            int j=(i+1)%an;line(bc,sx(a[i*2]),sy(a[i*2+1]),sx(a[j*2]),sy(a[j*2+1]),10,TRACK);dot(bc,sx(a[i*2]),sy(a[i*2+1]),5,TRACK);
         }
-        for(int i=1;i<bn;i++)line(c,ox+(float)(b[i*2-2]-mx)*k,oy-(float)(b[i*2-1]-my)*k,ox+(float)(b[i*2]-mx)*k,oy-(float)(b[i*2+1]-my)*k,3,ACC);
-        double[] d=Double.isNaN(lap.x())||dist[circuit]>1000?null:dot();   // far off (on the way there): no dot
-        if(d!=null&&bn>0)line(c,ox+(float)(b[bn*2-2]-mx)*k,oy-(float)(b[bn*2-1]-my)*k,ox+(float)(d[0]-mx)*k,oy-(float)(d[1]-my)*k,3,ACC);   // the lap's line runs on to the dot
-        {   // the line across the track, 30 m each side (at least 14 px), chequered
-            float lx=ox+(float)(lap.lineX()-mx)*k,ly=oy-(float)(lap.lineY()-my)*k,half=Math.max(14,(float)CircuitLap.HALF_M*k);
-            float nx=(float)-lap.dirY(),ny=(float)lap.dirX();
-            line(c,lx-nx*half,ly+ny*half,lx+nx*half,ly-ny*half,6,0xfff2f2f4);
-            for(int s=-2;s<2;s+=2){float f0=s/2f,f1=(s+1)/2f;line(c,lx+nx*half*f0,ly-ny*half*f0,lx+nx*half*f1,ly-ny*half*f1,6,0xff111111);}
-        }
-        if(d!=null){
-            float px=ox+(float)(d[0]-mx)*k,py=oy-(float)(d[1]-my)*k;
-            px=clamp(px,ML+10,MR-10);py=clamp(py,MT+34,MB-30);   // off the map (paddock, the road in): pinned to its edge
-            dot(c,px,py,10,0xff040506);dot(c,px,py,7,BAD);ring(c,px,py,10,2,TX);
-        }
+        // the line across the track, 30 m each side (at least 14 px), chequered; either crossing direction draws the same
+        float lx=sx(lap.lineX()),ly=sy(lap.lineY()),half=Math.max(14,(float)CircuitLap.HALF_M*vk),nx=(float)-lap.dirY(),ny=(float)lap.dirX();
+        line(bc,lx-nx*half,ly+ny*half,lx+nx*half,ly-ny*half,6,0xfff2f2f4);
+        for(int s=-2;s<2;s+=2){float f0=s/2f,f1=(s+1)/2f;line(bc,lx+nx*half*f0,ly-ny*half*f0,lx+nx*half*f1,ly-ny*half*f1,6,0xff111111);}
+        bmpFor=circuit;bmpTheme=Theme.current();
     }
     @Override boolean tap(float x,float y){
         if(x>=ML&&x<=MR&&y>=MT&&y<MT+48){listing=!listing;return true;}   // the name: open / close the list

@@ -46,11 +46,11 @@ public final class Circuits {
         double m=MARGIN_M/110540*1e5,mx=MARGIN_M/(111320*Math.cos(Math.toRadians(lat)))*1e5,y=lat*1e5,x=lon*1e5;int[] b=box[i];
         return y>=b[0]-m&&y<=b[2]+m&&x>=b[1]-mx&&x<=b[3]+mx;
     }
-    /** Metres from the position to circuit i's track. */
+    /** Metres from the position to circuit i's track (no allocation: it runs for every circuit at every fix). */
     public static double distance(int i,double lat,double lon){
-        load();float[] o=outline(i,lat,lon);double best=Double.MAX_VALUE;int n=o.length;
+        load();int[] p=pts[i];double best=Double.MAX_VALUE,kx=111320*Math.cos(Math.toRadians(lat));int n=p.length;
         for(int k=0;k<n;k+=2){
-            double ax=o[k],ay=o[k+1],bx=o[(k+2)%n],by=o[(k+3)%n],dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy;
+            double ax=(p[k+1]/1e5-lon)*kx,ay=(p[k]/1e5-lat)*110540,bx=(p[(k+3)%n]/1e5-lon)*kx,by=(p[(k+2)%n]/1e5-lat)*110540,dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy;
             double t=l==0?0:Math.max(0,Math.min(1,-(ax*dx+ay*dy)/l));
             best=Math.min(best,Math.hypot(ax+t*dx,ay+t*dy));
         }

@@ -184,3 +184,11 @@ them plus 15 ms per extra CAN frame of a multi-frame reply (01A4's 37 bytes = 6 
 second — well under 1 % of a 500 kbit/s bus. A late request is sent once and then waits a full
 period (no catch-up burst). The 5-minute probe rounds keep the same gap. `ObdScheduleTest` checks the
 table fits the budget, the pacing, and the drop rule.
+
+### Update — budget 10 a second (2026-11-04)
+
+Owner call: 4 a second was more cautious than the bus needs. `BUDGET` is now 10 (`GAP_MS` 100), clutch
+temperatures every 1 s and the DPF PIDs every 2 s; load 1 s, catalyst 5 s, ambient / fuel 30 s stay. That is
+~2.2 requests a second on a petrol (~3.7 on a diesel), about 10 CAN frames a second. The tighter limit is the
+head unit's MICOM channel (shared with the OEM telematics and the trouble-code reader), and the OBD poller is
+still a suspect for the old in-car lag — if lag comes back, lower `BUDGET` / lengthen periods first.

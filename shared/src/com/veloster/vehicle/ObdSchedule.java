@@ -2,15 +2,17 @@ package com.veloster.vehicle;
 
 /**
  * When ObdLive asks what: every live diagnostic request has its own period, set by how fast the value moves and
- * where it shows (engine load on a gauge every second, clutch temperature every 2 s, catalyst / DPF every 5 s,
+ * where it shows (engine load on a gauge and clutch temperature every second, DPF every 2 s, catalyst every 5 s,
  * ambient and fuel level every 30 s), and all of them share one budget so the request traffic stays a small
  * fraction of the bus: one request at a time, at least GAP_MS apart, a longer pause after a multi-frame reply, and
  * the table itself must fit in BUDGET requests a second (ObdScheduleTest). A late request is sent once, never
  * caught up in a burst. Pure Java so the host tests can run it; ObdLive does the talking.
  */
 public final class ObdSchedule {
-    /** At most this many requests a second, everything included. */
-    public static final int BUDGET=4;
+    /** At most this many requests a second, everything included: a ceiling with room for more values, ~0.3 % of a
+     *  500 kbit/s bus even with multi-frame replies. The head unit's MICOM channel is the tighter limit (it also
+     *  carries the OEM telematics and our trouble-code reads), so if the car lags, lower this first. */
+    public static final int BUDGET=10;
     public static final long GAP_MS=1000/BUDGET;
     /** Pause after a reply: the gap, plus a little for each extra CAN frame a long (ISO-TP multi-frame) reply took. */
     public static long gapAfter(int replyBytes){return GAP_MS+(replyBytes<=7?0:(replyBytes-7+6)/7*15);}
@@ -29,9 +31,9 @@ public final class ObdSchedule {
     public static ObdSchedule standard(){
         return new ObdSchedule(
             pid(0x43,1000,0),                                                              // absolute load (gauges)
-            new Poll(TCU,new byte[]{0x22,0x01,(byte)0xA4},Telemetry.DID_CLUTCH,2000,3),    // 7DCT clutch temperatures; a 6MT has no TCU
+            new Poll(TCU,new byte[]{0x22,0x01,(byte)0xA4},Telemetry.DID_CLUTCH,1000,3),    // 7DCT clutch temperatures (a launch heats them in seconds); a 6MT has no TCU
             pid(0x3c,5000,0),                                                              // catalyst temperature
-            pid(0x7a,5000,3),pid(0x7c,5000,3),pid(0x8b,5000,3),                            // diesel DPF; a petrol engine drops them
+            pid(0x7a,2000,3),pid(0x7c,2000,3),pid(0x8b,2000,3),                            // diesel DPF (pressure moves during a regeneration); a petrol engine drops them
             pid(0x46,30000,0),pid(0x2f,30000,0));                                          // ambient, fuel level
     }
     private static Poll pid(int pid,long every,int dropAfter){return new Poll(EMS,new byte[]{0x01,(byte)pid},pid,every,dropAfter);}

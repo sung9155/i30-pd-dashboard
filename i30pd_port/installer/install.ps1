@@ -59,7 +59,7 @@ function Write-Host {
   foreach($part in ([string]$Object -split "`r?`n")){ foreach($l in (Fit $part)){ Microsoft.PowerShell.Utility\Write-Host $l @p } }
 }
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-04b'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-04c'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
 # 위와 같고, 2026-10-31 실차 설치·동작 확인(다른 LOW 차 한 대는 USB "장치 설명자 요청 실패" — 그 차 포트·배선 문제로 봄).
@@ -141,7 +141,8 @@ function Stuck($where,$hint){
 }
 
 Write-Host ''
-Write-Host $(if($Uninstall){ "  i30 PD 대시보드 삭제   (설치기 $InstallerVersion)" } elseif($Diag){ "  i30 PD 대시보드 진단 기록   (설치기 $InstallerVersion)" } else { "  i30 PD 대시보드 설치   (설치기 $InstallerVersion)" }) -ForegroundColor White
+try { $Host.UI.RawUI.WindowTitle = "i30 PD 대시보드 — Windows 설치기 $InstallerVersion" } catch {}   # 창 제목이 cmd 경로 대신 이 이름으로
+Write-Host $(if($Uninstall){ "  i30 PD 대시보드 삭제   (Windows 설치기 $InstallerVersion)" } elseif($Diag){ "  i30 PD 대시보드 진단 기록   (Windows 설치기 $InstallerVersion)" } else { "  i30 PD 대시보드 설치   (Windows 설치기 $InstallerVersion)" }) -ForegroundColor White
 Write-Host '  ----------------------' -ForegroundColor DarkGray
 Note '현대자동차 공식 앱이 아닙니다. 순정 시스템에 앱을 설치하는 작업이라 보증/AS 불이익이 있을 수 있고,' Yellow
 Note '책임은 본인에게 있습니다. 모든 작업은 정차 · 시동 켠 상태에서 하세요.' Yellow

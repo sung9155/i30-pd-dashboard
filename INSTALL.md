@@ -17,14 +17,14 @@
 - Windows 노트북 또는 맥 (Linux도 ADB만 있으면 됩니다)
 - ADB: [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools)를 받아 압축 풀기
 - 차 USB 포트와 노트북을 잇는 데이터 케이블. 원작 문서에 USB A–A 케이블로 성공한 기록이 있습니다.
-- [Releases](https://github.com/sung9155/i30-pd-dashboard/releases)의 `i30pd-installer.zip`(Windows) 또는 `i30pd-installer-mac.zip`(맥), 또는 직접 설치할 때는 APK 2개
+- [Releases](https://github.com/sung9155/i30-pd-dashboard/releases)의 `i30pd-installer-windows.zip`(Windows) 또는 `i30pd-installer-mac.zip`(맥), 또는 직접 설치할 때는 APK 2개
   - `dashboard-i30pd-platform.apk`: 대시보드 앱
   - `myapps-i30pd-platform.apk`: '내 앱'. 홈 화면 가장자리 버튼으로 대시보드를 여는 보조 앱
   - 릴리스에 적힌 SHA-256과 받은 파일이 같은지 확인하세요: `certutil -hashfile 파일.apk SHA256`
 
 ## 설치 프로그램으로 하기 (Windows, 쉬운 방법)
 
-[Releases](https://github.com/sung9155/i30-pd-dashboard/releases)에서 `i30pd-installer.zip`을 받아 압축을 풉니다. 안에 `설치.cmd`, `삭제.cmd`, `install.ps1`이 있습니다. APK 2개는 실행할 때 최신 릴리스에서 받아 오고(옆에 두면 그걸 씁니다), ADB가 없으면 Google 공식 주소에서 받아 줍니다.
+[Releases](https://github.com/sung9155/i30-pd-dashboard/releases)에서 `i30pd-installer-windows.zip`을 받아 압축을 풉니다. 안에 `설치.cmd`, `삭제.cmd`, `install.ps1`이 있습니다. APK 2개는 실행할 때 최신 릴리스에서 받아 오고(옆에 두면 그걸 씁니다), ADB가 없으면 Google 공식 주소에서 받아 줍니다.
 
 1. 아래 **1단계**(엔지니어 모드)와 **2단계**(Factory Test)를 차 화면에서 합니다.
 2. USB 케이블로 차와 노트북을 연결합니다.

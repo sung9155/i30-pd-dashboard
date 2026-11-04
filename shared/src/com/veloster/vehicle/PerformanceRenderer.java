@@ -91,7 +91,8 @@ public final class PerformanceRenderer {
         float by=ty+32;r.set(x0,by,x1,by+16);p.setColor(T(TRACK));c.drawRoundRect(r,3,3,p);
         if(!Float.isNaN(rpm)){
             float f=Math.max(0,Math.min(1,rpm/prof.maxRpm)),xr=x0+(x1-x0)*f,xred=x0+(x1-x0)*prof.redline/prof.maxRpm;
-            p.setShader(new LinearGradient(0,by,0,by+16,T(0xffffffff),T(0xffaebfc8),Shader.TileMode.CLAMP));
+            boolean match=RevMatch.matched(s,prof)>0;   // 6MT, clutch in: the blip is on a lower gear's rpm
+            p.setShader(match?null:new LinearGradient(0,by,0,by+16,T(0xffffffff),T(0xffaebfc8),Shader.TileMode.CLAMP));if(match)p.setColor(T(0xff3ddc84));
             r.set(x0,by,Math.min(xr,xred),by+16);c.drawRoundRect(r,3,3,p);p.setShader(null);
             if(xr>xred){p.setColor(T(RED));r.set(xred,by,xr,by+16);c.drawRoundRect(r,3,3,p);}
         }

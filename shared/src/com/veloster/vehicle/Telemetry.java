@@ -173,6 +173,17 @@ public final class Telemetry {
     // are EPB/ESC (drive-away, hill-start); on the 6MT it follows the clutch pedal (owner-verified 2026-11-01, v1.5.4). It
     // counts only once it has toggled (a manual needs the clutch in to crank); a frozen bit keeps the plain match.
     private int clutchLast=-1; private boolean clutchToggled;
+    /** 6MT downshift targets: the rpm one, two and three gears below `gear` would turn at this speed, rounded to 50 rpm
+     *  so a mark does not flicker; NaN where that gear does not exist, below 10 km/h, or with the gear unknown (N, R). */
+    public static float[] mtDownshift(float kmh,float gear){
+        float[] r={Float.NaN,Float.NaN,Float.NaN};
+        if(!(kmh>=10)||!(gear>=2&&gear<=MT_RATIO.length))return r;
+        int g=(int)gear;
+        for(int k=1;k<=3&&g-k>=1;k++)r[k-1]=mtRpmIn(kmh,g-k);
+        return r;
+    }
+    /** 6MT: the rpm `gear` (1..6) turns at this speed, to 50 rpm; NaN for no such gear. */
+    public static float mtRpmIn(float kmh,int gear){return gear<1||gear>MT_RATIO.length||Float.isNaN(kmh)?Float.NaN:Math.round(kmh*MT_K*MT_RATIO[gear-1]/50f)*50f;}
     public static int mtGear(float rpm,float kmh){
         if(kmh<8||rpm<600)return 0;
         float r=rpm/kmh/MT_K;

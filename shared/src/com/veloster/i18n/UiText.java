@@ -193,6 +193,7 @@ public final class UiText {
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
         EN.put("다른 칸과 위치 바꾸기","Swap with another slot");
         EN.put("다시 조회","Read again");
+        EN.put("다운시프트 RPM","Downshift rpm");
         EN.put("다음","Next");
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
         EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
@@ -323,6 +324,8 @@ public final class UiText {
         EN.put("속도 km/h","Speed km/h");
         EN.put("쇼","Show");
         EN.put("쇼 화면","Show screen");
+        EN.put("수동","Manual");
+        EN.put("수동(6MT) 전용 화면","For the 6-speed manual only");
         EN.put("순간 연료소모","Fuel rate");
         EN.put("순간 연비","Instant economy");
         EN.put("순정","Stock");

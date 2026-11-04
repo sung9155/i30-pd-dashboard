@@ -76,6 +76,7 @@ public final class UiText {
         EN.put("Wi-Fi/AP 상태가 안정된 꺼짐/켜짐 상태가 아닙니다. 변경하지 않았습니다.","Wi-Fi/AP is not in a stable on/off state. No changes were made.");
         EN.put("XY · 잔상 3 s","XY · 3 s afterglow");
         EN.put("e-LSD 수치","e-LSD value");
+        EN.put("− / + 로 조절 · 한 번 들려줌","Adjust with − / + · plays it once");
         EN.put("−1분","-1 min");
         EN.put("−2분30초","-2m30s");
         EN.put("−30초","-30 s");
@@ -326,6 +327,7 @@ public final class UiText {
         EN.put("알림 채널 · 앞 스피커","Alert channel · front speakers");
         EN.put("알림만","Notification only");
         EN.put("알림만 / Notification only","Notification only");
+        EN.put("알림음 음량","Beep volume");
         EN.put("알림음 종류","Beep sound");
         EN.put("앞 오른쪽 공기압","Front-right pressure");
         EN.put("앞 오른쪽 휠","Front-right wheel");

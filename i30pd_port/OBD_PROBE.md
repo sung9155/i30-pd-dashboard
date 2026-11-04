@@ -152,3 +152,15 @@ The same bix convention (data bytes counted after `62 01 A4`) puts OBDb's curren
 taken while reversing and #2 was the hot one; R rides on the even-gear clutch, so **#1 = odd gears
 (1 3 5 7), #2 = even gears (2 4 6 R)**. The dashboard shows them as `ODD` / `EVEN` (Telemetry
 `CLUTCH_ODD` / `CLUTCH_EVEN`). Still to see: values from a hard drive, to set the warning colours.
+
+## Tyre temperature candidates (added 2026-11-04)
+
+The broadcast `TPMS11` (0x593) carries pressures only. OBDb defines tyre temperatures for the PD's
+platform sibling Kia Ceed CD and for Kona, Veloster JS, Elantra, Tucson, Sportage, Niro, Forte: TPMS
+on CAN 7A0, `22 C00B`, one byte per tyre, raw − 50 °C (newer layout at data bytes 5 / 10 / 15 / 20,
+older at 5 / 9 / 13 / 17); older cars `21 06` on 7D6 at data bytes 1 / 5 / 9 / 13. The head unit
+addresses ECUs by `MiComDefine` TP_DEVICE numbers, and the firmware's `<clinit>` gives
+**TP_DEVICE_TPMS = 0x24** (the same table gives EMS 0x27, TCU 0x26, ABS 0x28, BCM 0x30 — the values we
+already use). Which device the micom puts on 7A0 is not known, so the probe asks `22 C00B` of both
+TPMS (0x24) and BCM (0x30), and `21 06` of TPMS. The sensors only report after the car has moved, and
+they measure the air inside the tyre at the valve, not the tread.

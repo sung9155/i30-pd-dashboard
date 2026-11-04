@@ -30,10 +30,13 @@ public final class ObdLive {
     private static final String SERVICE="com.hkmc.micom.hscanmicomservice";
     private static final String SIFACE="com.hkmc.hscan.IHscanMicomService";
     private static final String LIFACE="com.hkmc.hscan.IHscanMicomListener";
-    private static final int EMS=0x27,TCU=0x26;
+    private static final int EMS=0x27,TCU=0x26,TPMS=0x24,BCM=0x30;   // MiComDefine TP_DEVICE_* (TPMS 0x24 read from the firmware's <clinit>)
     /** ECU, then the request: 22 + data identifier. */
     private static final int[][] PROBE={{EMS,0x22,0xE0,0x01},{EMS,0x22,0xED,0x02},{EMS,0x22,0xE0,0x11},{EMS,0x22,0xE0,0x21},
-        {EMS,0x22,0xE0,0x0A},{EMS,0x22,0xE0,0x03},{TCU,0x22,0x01,0xA4},{TCU,0x22,0x01,0xA5}};
+        {EMS,0x22,0xE0,0x0A},{EMS,0x22,0xE0,0x03},{TCU,0x22,0x01,0xA4},{TCU,0x22,0x01,0xA5},
+        // tyre temperatures: Kia Ceed CD (the PD's sibling) and other Hyundai / Kia answer 22 C00B on 7A0, older ones 21 06
+        // on 7D6 (OBDb); which TP_DEVICE the micom maps to 7A0 is unknown, so ask the TPMS and the BCM
+        {TPMS,0x22,0xC0,0x0B},{BCM,0x22,0xC0,0x0B},{TPMS,0x21,0x06}};
     private static final long PROBE_FIRST=20000,PROBE_EVERY=300000;private static final int PROBE_ROUNDS=24;
     private final List<String> coldProbe=new ArrayList<String>();
     private static final int[] PIDS={0x46,0x2f,0x3c,0x43,0x7a,0x7c,0x8b};
@@ -112,7 +115,8 @@ public final class ObdLive {
             byte[] r=askRaw(svc,p[0],req,1200);
             StringBuilder b=new StringBuilder();
             if(r!=null)for(byte x:r)b.append(String.format("%02X ",x&255));
-            String what=String.format("ecu %02X %02X %02X%02X: ",p[0],p[1],p[2],p[3])+(r==null?"no reply":b.toString().trim()+" ("+r.length+" B)");
+            StringBuilder q=new StringBuilder();for(int i=1;i<p.length;i++)q.append(String.format(i==2?" %02X":"%02X",p[i]));
+            String what=String.format("ecu %02X ",p[0])+q+": "+(r==null?"no reply":b.toString().trim()+" ("+r.length+" B)");
             android.util.Log.i("VehicleDash","OBD probe round "+round+" "+what);
             if(round==1)coldProbe.add(what);
             nap(250);

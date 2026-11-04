@@ -292,6 +292,12 @@ public final class HscanPdTelemetryTest {
         {Telemetry dpf0=new Telemetry();dpf0.obd(0x8b,new byte[]{0x00,0x01,(byte)0x80,0,0,0,0},3415);
         check(!dpf0.sample(Telemetry.DPF_REGEN,3415).valid&&!dpf0.sample(Telemetry.DPF_TRIGGER,3415).valid,"unsupported fields stay unpublished");
         dpf0.obd(0x2f,new byte[]{0x7f},3416);check(Math.abs(dpf0.sample(Telemetry.FUEL_LEVEL,3416).value-49.8f)<0.5f,"single-byte PIDs still decode through the byte[] path");}
+        // Hyundai diesel DPF block 22 ED03 (OBDb layout): 35 -> 15.1 kPa, 58 -> 372 C upstream, 123 400 m since the regeneration
+        {Telemetry k=new Telemetry();byte[] e=new byte[56];e[36]=35;e[38]=58;e[45]=0;e[46]=1;e[47]=(byte)0xE2;e[48]=0x08;
+        k.obd(Telemetry.DID_DPF,e,3440);
+        check(Math.abs(k.sample(Telemetry.DPF_DP,3440).value-15.1f)<0.05f&&Math.abs(k.sample(Telemetry.DPF_TEMP,3440).value-372.2f)<0.1f
+            &&Math.abs(k.sample(Telemetry.DPF_SINCE_KM,3440).value-123.4f)<0.01f,"ED03 delta pressure, temperature, distance since regeneration");
+        k.obd(Telemetry.DID_DPF,new byte[40],3441);check(k.sample(Telemetry.DPF_DP,3441).value>15,"a short ED03 reply leaves them alone");}
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
 }

@@ -25,7 +25,9 @@ final class EngineCluster extends ClusterKit {
         row(c,0,"FF",fmt("%.1f",fuel),"L/h",Float.isNaN(fuel)?Float.NaN:fuel/40,WH,Float.NaN);
         row(c,1,"MAP",fmt("%+.2f",boost),"bar",Float.isNaN(boost)?Float.NaN:(boost+1)/(top+1),!Float.isNaN(boost)&&boost>top*0.9f?AM:WH,(top*0.9f+1)/(top+1));
         if(prof.fuel==VehicleProfile.Fuel.DIESEL){float tr=v(Telemetry.DPF_TRIGGER);   // no ignition timing: the DPF regeneration trigger
-            row(c,2,"DPF",fmt("%.0f",tr),"%",Float.isNaN(tr)?Float.NaN:tr/100,v(Telemetry.DPF_REGEN)>0?AM:WH,Float.NaN);}
+            float dp=v(Telemetry.DPF_DP);int ink=v(Telemetry.DPF_REGEN)>0?AM:WH;
+            if(Float.isNaN(tr)&&!Float.isNaN(dp))row(c,2,"DPF",fmt("%.1f",dp),"kPa",dp/50,ink,Float.NaN);   // only the Hyundai ED03 block: delta pressure
+            else row(c,2,"DPF",fmt("%.0f",tr),"%",Float.isNaN(tr)?Float.NaN:tr/100,ink,Float.NaN);}
         else row(c,2,"SPK",fmt("%+.1f",spark),"°",Float.isNaN(spark)?Float.NaN:(spark+15)/55,WH,Float.NaN);
         row(c,3,"IAT",fmt("%.0f",iat),"°C",Float.isNaN(iat)?Float.NaN:(iat-20)/60,!Float.isNaN(iat)&&iat>60?AM:WH,Float.NaN);
         row(c,4,"SPD",fmt("%.0f",spd),"km/h",Float.isNaN(spd)?Float.NaN:spd/260,WH,Float.NaN);

@@ -124,8 +124,10 @@ public final class RaceRenderer {
      *  small on the left; amber with DPF REGEN while one runs. Each reads "—" until the ECU answers (unconfirmed on a PD diesel). */
     private void dpf(Canvas c,float l,float t,float rr,float b){
         float tr=v(Telemetry.DPF_TRIGGER),dp=v(Telemetry.DPF_DP),tp=v(Telemetry.DPF_TEMP);boolean regen=v(Telemetry.DPF_REGEN)>0;int ink=regen?AMBER:WHITE;
-        cell(c,regen?"DPF REGEN":"DPF",fmt("%.0f",tr),"%",l,t,rr,b,24,ink);
-        text(c,"ΔP "+fmt("%.1f",dp),l+8,t+35,13,Float.isNaN(dp)?MUTED:ink,Paint.Align.LEFT);   // delta pressure, kPa
+        // no trigger (the PD diesel answers only the Hyundai ED03 block): the delta pressure takes the big number
+        if(Float.isNaN(tr)&&!Float.isNaN(dp))cell(c,regen?"DPF REGEN":"DPF ΔP",fmt("%.1f",dp),"kPa",l,t,rr,b,24,ink);
+        else{cell(c,regen?"DPF REGEN":"DPF",fmt("%.0f",tr),"%",l,t,rr,b,24,ink);
+            text(c,"ΔP "+fmt("%.1f",dp),l+8,t+35,13,Float.isNaN(dp)?MUTED:ink,Paint.Align.LEFT);}   // delta pressure, kPa
         // Top right (not while regenerating): km since the last regeneration, else the ECU's average between them;
         // with both, they take turns every 3 s.
         float since=v(Telemetry.DPF_SINCE_KM),avg=v(Telemetry.DPF_AVG_KM);

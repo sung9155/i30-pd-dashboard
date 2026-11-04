@@ -27,8 +27,9 @@ public final class ObdLive {
     private static final int EMS=0x27;
     private static final int[] PIDS={0x46,0x2f,0x3c,0x43,0x7a,0x7c,0x8b};
     private static final int FIRST_DPF=4,DPF_MISSES=3;
-    private final int[] misses=new int[PIDS.length];
-    private final long[] logged=new long[PIDS.length];
+    /** The last slot (k == PIDS.length) is the Hyundai diesel DPF block 22 ED03: the PD diesel ignores the standard DPF PIDs. */
+    private final int[] misses=new int[PIDS.length+1];
+    private final long[] logged=new long[PIDS.length+1];
     private static final long REPLY_MS=300;
 
     private final Object lock=new Object();
@@ -60,12 +61,19 @@ public final class ObdLive {
                     if(diagBusy)break;
                     if(k>=FIRST_DPF&&misses[k]>=DPF_MISSES)continue;   // not a diesel (or not answering): stop asking
                     int pid=PIDS[k];
-                    byte[] r=ask(svc,EMS,new byte[]{0x01,(byte)pid});
+                    byte[] r=ask(svc,EMS,new byte[]{0x01,(byte)pid},REPLY_MS);
                     boolean ok=r!=null&&r.length>=3&&(r[0]&255)==0x41&&(r[1]&255)==pid;
                     if(k>=FIRST_DPF)dpfLog(k,pid,ok?r:null);
                     if(ok){misses[k]=0;byte[] d=new byte[r.length-2];System.arraycopy(r,2,d,0,d.length);sink.value(pid,d);}
                     else misses[k]++;
                     nap(220);
+                }
+                if(running&&!diagBusy&&misses[PIDS.length]<DPF_MISSES){   // a petrol EMS answers 7F 31: dropped after three
+                    byte[] r=ask(svc,EMS,new byte[]{0x22,(byte)0xED,0x03},600);
+                    boolean ok=r!=null&&r.length>3&&(r[1]&255)==0xED&&(r[2]&255)==0x03;
+                    dpfLog(PIDS.length,0xED03,ok?r:null);
+                    if(ok){misses[PIDS.length]=0;byte[] d=new byte[r.length-3];System.arraycopy(r,3,d,0,d.length);sink.value(Telemetry.DID_DPF,d);}
+                    else misses[PIDS.length]++;
                 }
                 nap(500);
             }
@@ -83,7 +91,7 @@ public final class ObdLive {
     private void nap(long ms){try{Thread.sleep(ms);}catch(InterruptedException e){}}
 
     /** One request; the positive reply (41 PID ...) or null on a negative reply or timeout. */
-    private byte[] ask(IBinder svc,int ecu,byte[] req){
+    private byte[] ask(IBinder svc,int ecu,byte[] req,long waitMs){
         int sid=req[0]&255;
         synchronized(lock){replies.clear();expectEcu=ecu;}
         Parcel in=Parcel.obtain(),out=Parcel.obtain();
@@ -95,14 +103,14 @@ public final class ObdLive {
             svc.transact(3,in,out,0);out.readException();
         }catch(Throwable e){return null;}
         finally{in.recycle();out.recycle();}
-        long end=System.currentTimeMillis()+REPLY_MS;
+        long end=System.currentTimeMillis()+waitMs;
         synchronized(lock){
             try{
                 while(true){
                     while(!replies.isEmpty()){
                         byte[] a=replies.remove(0);
                         if(a.length>=1&&(a[0]&255)==sid+0x40)return a;
-                        if(a.length>=3&&(a[0]&255)==0x7f&&(a[1]&255)==sid)return null;
+                        if(a.length>=3&&(a[0]&255)==0x7f&&(a[1]&255)==sid){if((a[2]&255)==0x78)continue;return null;}   // 78: still working, keep waiting
                     }
                     long left=end-System.currentTimeMillis();
                     if(left<=0)return null;

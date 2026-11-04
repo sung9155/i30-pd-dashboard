@@ -51,6 +51,8 @@ public final class TabsPreview {
         race(out,"4c_race_mt_out",rec,model,now,VehicleProfile.PETROL_MT,0);   // and released
         race(out,"4c_race_mt_hint",rec,model,now,VehicleProfile.PETROL_MT,0,4); // the ECU's shift hint (▲4) on its red band
         race(out,"4c_race_diesel",rec,model,now,VehicleProfile.DIESEL_DCT,-1); // DPF slot instead of SPARK
+        {Telemetry dz=new Telemetry();byte[] e=new byte[56];e[36]=35;e[38]=58;e[46]=1;e[47]=(byte)0xE2;e[48]=0x08;   // only the Hyundai ED03 block: 15.1 kPa, 372 C, 123.4 km
+         for(int n=0;n<=last;n++)feed(dz,raw.get(n),1_000_000+n*step);dz.obd(Telemetry.DID_DPF,e,now);race(out,"4c_race_diesel_ed03",rec,dz,now,VehicleProfile.DIESEL_DCT,-1);}
         model.obd(0x8b,new byte[]{0x11,0x01,(byte)0x9e,0,0,0,0},now);model.obd(0x7a,new byte[]{0x01,0x05,(byte)0xdc,0,0,0,0},now);model.obd(0x7c,new byte[]{0x01,0x19,0x64,0,0,0,0,0,0},now);   // standard DPF PIDs: regenerating, trigger 62 %, 15 kPa, 610 °C
         race(out,"4c_race_diesel_regen",rec,model,now,VehicleProfile.DIESEL_DCT,-1);
         // after it: trigger 38 %, 6.5 kPa, 310 °C, 123 km since the regeneration ended (ECU average 480 km, shown in turn)

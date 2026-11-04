@@ -250,10 +250,17 @@ public final class Telemetry {
                 if(n>=7&&(d[0]&0x40)!=0)put(DPF_AVG_KM,u16(d,5),true,now);   // average distance between regenerations, km
                 if(odo.valid&&!Float.isNaN(regenEndOdo)&&odo.value>=regenEndOdo)put(DPF_SINCE_KM,odo.value-regenEndOdo,true,now);
                 break;}
+            // Hyundai diesel DPF block 62 ED 03 (OBDb Hyundai-i30, CC BY-SA 4.0, not yet seen on our side): data byte 36
+            // differential pressure x4.31373 (hPa, so x0.431373 kPa), 38 exhaust temperature upstream of the DPF x4.7098 + 99 °C,
+            // 45..48 distance since the last regeneration in metres. The ECU keeps that distance, so it beats our odometer count.
+            case DID_DPF: if(n>=56){put(DPF_DP,(d[36]&255)*0.431373f,true,now);put(DPF_TEMP,(d[38]&255)*4.7098f+99,true,now);
+                put(DPF_SINCE_KM,(((long)u16(d,45)<<16)|u16(d,47))/1000f,true,now);} break;
             default: obd(pid,n>0?d[0]&255:0,n>1?d[1]&255:0,now);
         }
     }
     private static int u16(byte[] d,int i){return (d[i]&255)<<8|(d[i+1]&255);}
+    /** Sink key for the diesel engine's mode 22 DID ED03 reply (Hyundai DPF block; the standard DPF PIDs get no answer on a PD diesel). */
+    public static final int DID_DPF=0xED03;
     private int lastRegen=-1;
     private float regenEndOdo=Float.NaN;
     /** Odometer (km) where the last regeneration the app saw ended, NaN before the first; VehicleDash keeps it in prefs. */

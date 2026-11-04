@@ -16,6 +16,8 @@ public final class CircuitsTest {
         check(!Circuits.lineEstimated(inje)&&!Circuits.lineEstimated(kic),"Inje (official map) and KIC (OSM finish node) have real lines");
         double[] il=Circuits.start(inje);   // the control line read off the 2025 SuperRace map
         check(Math.abs(il[0]-38.000451)*110540<15&&Math.abs(il[1]-128.291362)*87700<15,"Inje's line is where the official map puts it: "+il[0]+","+il[1]);
+        int tb=find("taebaek");double[] tl=Circuits.start(tb);   // the circuit map's line, mid straight between T10 and T1
+        check(!Circuits.lineEstimated(tb)&&Math.abs(tl[0]-37.082725)*110540<15&&Math.abs(tl[1]-129.017869)*88400<15,"Taebaek's line is where its map puts it: "+tl[0]+","+tl[1]);
         double[] s=Circuits.start(inje);
         check(Circuits.pick(s[0],s[1],-1)==inje,"at Inje's line: Inje");
         check(Circuits.pick(37.5663,126.9779,-1)<0,"Seoul City Hall: no circuit");

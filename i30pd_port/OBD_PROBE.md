@@ -213,3 +213,38 @@ timeout, a 7F refusal or a short reply apart, and the live poll logs its drop on
 start, which the record's log tail loses. So: the drop line now carries the 7F reply (`OBD ED03: 7F 22 31
 3x, dropped`), mode 22 polls wait 1.2 s like the probe (ED03 is ~9 CAN frames; beta waited 300 ms), and
 the probe asks 22 ED03 too, so every 5-minute round (and `round 1 again`) shows what the ECU says.
+
+## Evening run — a clean cold→warm sweep, our car (2026-11-04 18:20→18:35, build 2c8cf77)
+
+A proper cold start (the car had cooled since lunch) with four rounds 5 minutes apart over ~15 min of
+normal driving. No wide-open pull, so boost (E003) is still not captured.
+
+Cold round 1 (18:20) and the warmest round 4 (18:35), EMS E001 and TCU 01A4:
+
+```
+r1 27 22 E001: 62 E0 01 D9 BD FF FF D0 D0 AF B6 0B 4C 00 00 00 00 6B 00 EC 21 80 1D 07 97 01 13 01 83 00 00 53 3B 03 E0 01 62 78 13 D6 FB 00 ... (51 B)
+r4 27 22 E001: 62 E0 01 D9 BD FF FF CF CF B0 C8 1B 5F 00 00 00 00 CB 00 80 40 F0 2B 1A 97 01 7E 00 AE 00 00 53 37 03 AE 01 69 BC 0E BA 05 00 ... (51 B)
+r1 26 22 01A4: 62 01 A4 FF FF E0 00 ... F0 FC C0 FF 00 18 00 19 00 (37 B)
+r4 26 22 01A4: 62 01 A4 FF FF E0 00 ... F0 FC C0 FF 00 36 00 33 00 (37 B)
+```
+
+**Clutch temperatures (01A4, u16 [32..33] / [34..35], ×2 − 40 °C) over the sweep** — confirms the
+OBDb scale and gives the live range for the warning colours:
+
+| round | elapsed | #1 odd [33] → °C | #2 even [35] → °C |
+|-------|---------|:----------------:|:-----------------:|
+| 1 | cold | 0x18=24 → 8 | 0x19=25 → 10 |
+| 2 | ~5 min | 0x29=41 → 42 | 0x23=35 → 30 |
+| 3 | ~10 min | 0x2D=45 → 50 | 0x31=49 → 58 |
+| 4 | ~15 min | 0x36=54 → 68 | 0x33=51 → 62 |
+
+Cold ≈ the cool evening ambient, climbing smoothly to 60–70 °C in 15 min of ordinary driving — so a
+normal band is well under ~90 °C; a launch/crawl would show the top of the range.
+
+**EMS E001 — engine temperature candidate found.** The u16 at whole-reply bytes **[11..12]** (big-endian)
+climbs monotonically with warm-up: `0B4C → 0C54 → 145F → 1B5F` = 2892 / 3156 / 5215 / 7007. Read as
+**÷100 °C that is 28.9 → 31.6 → 52.2 → 70.1 °C** — a believable oil/coolant warm-up curve from a cold
+start. Best guess: engine oil (or coolant) temperature, scale ≈ ÷100 °C. Still to confirm against the
+OBDb E001 field map or the dash's own gauge before it is shown; the other E001 movers ([14..20] etc.)
+track rpm/airflow at the sample instant, not temperature. Boost (E003) and knock (E00A) still need a
+wide-open pull on a round tick.

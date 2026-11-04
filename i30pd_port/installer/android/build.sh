@@ -10,7 +10,7 @@ JAR="$SDK/platforms/android-17/android.jar"
 KS="${KS:?set KS to the release keystore path}"
 KS_PASS="${KS_PASS:?set KS_PASS to the keystore password}"
 # versionName = Flow.VERSION (one place); versionCode goes up by one with every published APK.
-VER_CODE="${VER_CODE:-5}"; VER_NAME="$(grep -o 'VERSION = "[^"]*"' "$(dirname "$0")/src/com/i30/installer/Flow.java" | head -1 | cut -d'"' -f2)"
+VER_CODE="${VER_CODE:-6}"; VER_NAME="$(grep -o 'VERSION = "[^"]*"' "$(dirname "$0")/src/com/i30/installer/Flow.java" | head -1 | cut -d'"' -f2)"
 cd "$(dirname "$0")"
 rm -rf build && mkdir -p build/classes
 "$BT/aapt2" link --manifest AndroidManifest.xml -I "$JAR" --min-sdk-version 26 --target-sdk-version 34 \

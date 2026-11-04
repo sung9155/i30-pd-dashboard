@@ -12,6 +12,7 @@ for n,k in (('dashboard-i30pd-platform.apk',170000),('myapps-i30pd-platform.apk'
     open(os.path.join(sys.argv[1],n),'wb').write(b'PK'+os.urandom(k))" "$T/server"; }
 apks
 javac -encoding UTF-8 -d "$T/cls" ../src/com/i30/installer/Adb.java ../src/com/i30/installer/Flow.java FlowTest.java
+java -ea -Dsun.stdout.encoding=UTF-8 -cp "$T/cls" com.i30.installer.FlowTest notes || { echo "FAIL: release notes"; exit 1; }
 PORT=$((20000 + RANDOM % 20000))
 python -X utf8 fake_adbd.py $PORT "$T/fake.log" "$T/server" & FAKE=$!
 for _ in $(seq 50); do grep -q ready "$T/fake.log" 2>/dev/null && break; sleep 0.1; done

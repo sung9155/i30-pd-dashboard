@@ -55,7 +55,7 @@ function Write-Host {
   foreach($part in ([string]$Object -split "`r?`n")){ foreach($l in (Fit $part)){ Microsoft.PowerShell.Utility\Write-Host $l @p } }
 }
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-03b'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-04'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
 # 위와 같고, 2026-10-31 실차 설치·동작 확인(다른 LOW 차 한 대는 USB "장치 설명자 요청 실패" — 그 차 포트·배선 문제로 봄).
@@ -168,13 +168,54 @@ if(-not $script:adbExe){
 Note "adb: $script:adbExe" DarkGray
 Log ("환경: Windows $([Environment]::OSVersion.Version) / PowerShell $($PSVersionTable.PSVersion) / " + ((& $script:adbExe version 2>&1 | Select-Object -First 1) -join ''))
 
+# --- 릴리스 정보: 고를 버전의 번호·날짜와 노트 요약 (휴대폰 앱 Flow.describe/summary, 설치.command와 같은 규칙) ---
+$Api = 'https://api.github.com/repos/sung9155/i30-pd-dashboard/releases'
+function CleanMd([string]$t){ $t = [regex]::Replace($t, '\[([^\]]+)\]\([^)]+\)', '$1'); return $t.Replace('**','').Replace('`','') }
+function ShortLine([string]$t){
+  $i = $t.IndexOf('다. '); if($i -lt 0){ $i = $t.IndexOf('. ') }
+  if($i -ge 0){ $t = $t.Substring(0, $i + 2).TrimEnd() }
+  if($t.Length -gt 90){ $t = $t.Substring(0, 89) + '…' }
+  return $t
+}
+# 노트를 몇 줄로: 소제목(### 또는 **굵은 줄**)마다 첫 항목의 첫 문장, 설치·서명 절이나 테스트 노트의 지난 기록('> ')에서 멈춘다.
+function NotesSummary([string]$body,[int]$heads=6){
+  $out = New-Object System.Collections.Generic.List[string]; $n = 0; $want = $false
+  foreach($raw in ($body -split "`r?`n")){
+    $l = $raw.Trim()
+    if($n -gt 0 -and ($l.StartsWith('> ') -or $l.StartsWith('### 설치') -or $l.StartsWith('### 서명'))){ break }
+    $h = $null
+    if($l.StartsWith('### ')){ $h = $l.Substring(4) } elseif($l.Length -gt 4 -and $l.StartsWith('**') -and $l.EndsWith('**')){ $h = $l.Substring(2, $l.Length - 4) }
+    if($h){ if($n -eq $heads){ break }; $n++; $out.Add('■ ' + (CleanMd $h)); $want = $true; continue }
+    if($want -and $l.StartsWith('- ')){ $out.Add('   ' + (ShortLine (CleanMd $l.Substring(2)))); $want = $false }
+  }
+  return ,$out
+}
+function ReleaseInfo([string]$which,[bool]$test){
+  try {
+    $r = Invoke-WebRequest -Uri "$Api/$which" -UseBasicParsing -TimeoutSec 8 -Headers @{ 'User-Agent' = 'i30pd-installer' } -ErrorAction Stop
+    $j = [Text.Encoding]::UTF8.GetString($r.RawContentStream.ToArray()) | ConvertFrom-Json
+    $d = $j.published_at
+    if($test){ foreach($a in $j.assets){ if($a.name -eq 'dashboard-i30pd-platform.apk'){ $d = $a.updated_at } } }   # 테스트: APK를 마지막으로 바꾼 날
+    $d = $(if($d -is [datetime]){ $d.ToString('yyyy-MM-dd') } else { ([string]$d).Substring(0, 10) })
+    $t = $(if($test){ ([string]$j.name -replace '^테스트\s*[—-]\s*', '') + " · 갱신 $d" } else { "$($j.tag_name) · $d" })
+    return [pscustomobject]@{ title = $t; lines = (NotesSummary ([string]$j.body)) }
+  } catch { Log "릴리스 정보 실패($which): $($_.Exception.Message)"; return $null }
+}
+function ShowNotes($rel,[string]$url){
+  if(-not $rel){ Note "버전 정보를 받지 못했습니다(인터넷 확인). 설치는 그대로 계속합니다. 전체 설명: $url" DarkGray; return }
+  Head "이번 버전에 들어 있는 것 ($($rel.title))"
+  foreach($l in $rel.lines){ Note $l Gray }
+  Note "전체 설명: $url" DarkGray
+}
+
 # --- 버전 고르기 (-ApkBase 를 주면 그 주소를 그대로 쓴다) ---------------------
 if(-not $Uninstall -and -not $Diag -and -not $ApkBase){
+  $Rel = @{ stable = (ReleaseInfo 'latest' $false); test = (ReleaseInfo 'tags/test' $true) }
   if($Channel -ne 'stable' -and $Channel -ne 'test'){
     if($Yes){ $Channel = 'stable' } else {
       Head '받을 버전'
-      Note '  1) 안정화 (권장) — 실차에서 확인된 버전' Gray
-      Note '  2) 테스트 — 새 기능, 아직 실차 검증 전. 문제가 있으면 안정화로 다시 설치하면 됩니다' Gray
+      Note ('  1) 안정화 (권장)' + $(if($Rel.stable){ " $($Rel.stable.title)" }) + ' — 실차에서 확인된 버전') Gray
+      Note ('  2) 테스트' + $(if($Rel.test){ " $($Rel.test.title)" }) + ' — 새 기능, 아직 실차 검증 전. 문제가 있으면 안정화로 다시 설치하면 됩니다') Gray
       Note '  3) 진단 기록 모으기 — 설치하지 않고, 문제를 알릴 때 보낼 파일만 만듭니다' Gray
       $r = (Read-Host '번호를 입력하고 Enter [1]').Trim()
       if($r -eq '3'){ $Diag = $true } else { $Channel = $(if($r -eq '2'){ 'test' } else { 'stable' }) }
@@ -183,6 +224,7 @@ if(-not $Uninstall -and -not $Diag -and -not $ApkBase){
   if(-not $Diag){
     $ApkBase = $(if($Channel -eq 'test'){ "$Releases/download/test" } else { "$Releases/latest/download" })
     if($Channel -eq 'test'){ Note '버전: 테스트 (실차 검증 전)' Yellow } else { Note '버전: 안정화' Green }
+    ShowNotes $Rel[$Channel] $(if($Channel -eq 'test'){ "$Releases/tag/test" } else { "$Releases/latest" })
   }
 }
 

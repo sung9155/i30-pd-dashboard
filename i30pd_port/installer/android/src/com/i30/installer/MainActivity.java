@@ -29,11 +29,11 @@ import java.nio.file.Files;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** One screen: channel, 설치 / 삭제 / 취소 / 진단 기록 / 공유, a wait line with seconds, and the running log. The steps live in Flow. */
+/** One screen: channel, 설치 / 삭제 / 취소 / 진단 기록 / 주행 기록 / 공유, a wait line with seconds, and the running log. The steps live in Flow. */
 public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
     private TextView log;
     private ScrollView scroll;
-    private Button installBtn, removeBtn, diagBtn, cancelBtn;
+    private Button installBtn, removeBtn, diagBtn, recordBtn, cancelBtn;
     private TextView waitLine;
     private String waitLabel;   // UI thread only
     private long waitStart;
@@ -46,6 +46,7 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         }
     };
     private RadioButton test;
+    private volatile boolean recording;
 
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -79,11 +80,12 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         LinearLayout buttons = new LinearLayout(this);
         installBtn = button(buttons, "설치", v -> start(Flow.Mode.INSTALL));
         removeBtn = button(buttons, "삭제", v -> start(Flow.Mode.UNINSTALL));
-        cancelBtn = button(buttons, "취소", v -> { cancel.set(true); cancelBtn.setEnabled(false); say("\n취소하는 중..."); });
+        cancelBtn = button(buttons, "취소", v -> { cancel.set(true); cancelBtn.setEnabled(false); say(recording ? "\n기록을 마무리하는 중..." : "\n취소하는 중..."); });
         cancelBtn.setEnabled(false);
         root.addView(buttons);
         LinearLayout report = new LinearLayout(this);
         diagBtn = button(report, "진단 기록", v -> start(Flow.Mode.DIAG));
+        recordBtn = button(report, "주행 기록", v -> start(Flow.Mode.RECORD));
         button(report, "공유", v -> new Thread(() -> {
             try { share(save("i30pd_log_", "")); } catch (IOException e) { say("기록 저장 실패: " + e.getMessage()); }
         }).start());
@@ -101,6 +103,7 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(root);
         say("[진단 기록]은 차를 연결해 상태와 앱 기록만 읽어 공유할 파일을 만듭니다. 차에는 아무것도 바꾸지 않습니다.");
+        say("[주행 기록]은 운전하는 동안 차 신호를 읽기만 해서 기록합니다(최대 60분). 연결해 두고 운전한 뒤 [기록 끝]을 누르면 공유 화면이 뜹니다.");
         new Thread(() -> { String n = Flow.newer(); if (n != null) say("\n" + n); }).start();
     }
 
@@ -115,11 +118,14 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
     private void start(Flow.Mode mode) {
         enable(false);
         cancel.set(false);
+        recording = mode == Flow.Mode.RECORD;
+        cancelBtn.setText(recording ? "기록 끝" : "취소");
         log.setText("");
         String base = Flow.base(test.isChecked());
         if (mode == Flow.Mode.INSTALL) say(test.isChecked() ? "버전: 테스트 (실차 검증 전)" : "버전: 안정화");
         new Thread(() -> {
             try {
+                if (recording) extractDump();
                 File diag = Flow.run(base, mode, getFilesDir(), this, this);
                 if (diag != null) share(diag);
             } catch (Exception e) {
@@ -132,7 +138,21 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         }).start();
     }
 
-    private void enable(boolean on) { installBtn.setEnabled(on); removeBtn.setEnabled(on); diagBtn.setEnabled(on); cancelBtn.setEnabled(!on); }
+    private void enable(boolean on) {
+        installBtn.setEnabled(on); removeBtn.setEnabled(on); diagBtn.setEnabled(on); recordBtn.setEnabled(on); cancelBtn.setEnabled(!on);
+        if (on) cancelBtn.setText("취소");
+    }
+
+    /** build.sh puts hscandump.jar into the APK at assets/; Flow pushes it to the car from files/. */
+    private void extractDump() throws IOException {
+        try (java.util.zip.ZipFile z = new java.util.zip.ZipFile(getApplicationInfo().sourceDir)) {
+            java.util.zip.ZipEntry e = z.getEntry("assets/hscandump.jar");
+            if (e == null) return;   // Flow says what is missing
+            try (java.io.InputStream in = z.getInputStream(e)) {
+                Files.copy(in, new File(getFilesDir(), "hscandump.jar").toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+    }
 
     @Override public boolean cancelled() { return cancel.get(); }
 
@@ -161,18 +181,20 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
 
     /** The system share sheet with the file attached; the user picks the app and the person. */
     private void share(File f) throws IOException {
-        if (!f.getName().startsWith("i30pd_log_")) {   // a diagnostics file: add this run's screen to it
+        boolean zip = f.getName().endsWith(".zip");   // a drive recording goes as it is
+        if (!zip && !f.getName().startsWith("i30pd_log_")) {   // a diagnostics file: add this run's screen to it
             File merged = save("i30pd_diag_", new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
             if (!f.delete()) f.deleteOnExit();
             f = merged;
         }
         android.net.Uri uri = DiagProvider.uri(f);
-        Intent send = new Intent(Intent.ACTION_SEND).setType("text/plain")
+        Intent send = new Intent(Intent.ACTION_SEND).setType(zip ? "application/zip" : "text/plain")
                 .putExtra(Intent.EXTRA_SUBJECT, "i30 PD 대시보드 기록")
                 .putExtra(Intent.EXTRA_STREAM, uri)
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         send.setClipData(ClipData.newRawUri("", uri));   // the chooser passes the read grant on only through ClipData
-        say("\n공유 화면에서 보낼 앱을 고르세요. 증상(언제, 어떤 화면에서, 무엇이)도 같이 알려 주세요.");
+        say(zip ? "\n공유 화면에서 보낼 앱을 고르세요. 오르막에서 멈춘 곳 등 기억나는 것을 같이 적어 주면 찾기 쉽습니다."
+                : "\n공유 화면에서 보낼 앱을 고르세요. 증상(언제, 어떤 화면에서, 무엇이)도 같이 알려 주세요.");
         runOnUiThread(() -> startActivity(Intent.createChooser(send, "공유").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)));
     }
 

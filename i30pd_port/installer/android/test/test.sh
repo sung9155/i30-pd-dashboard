@@ -29,6 +29,8 @@ run install 5 || fail "5 install"
 run install 6 || fail "6 same install again"
 run diag 7 || fail "7 diagnostics"
 BASE="file:///nowhere/download" run install 8 || fail "8 kept APKs"
+printf 'DEX-JAR' > "$T/key/hscandump.jar"
+run record 9 || fail "9-10 drive recording"
 
 L="$T/fake.log"
 grep -q 'FAKE ERROR' "$L" && fail "fake adbd rejected something"
@@ -51,4 +53,18 @@ grep -q 'persist.sys.key.custom: com.hkmc.intent.action.MYMENU_SHORTCUT' "$D" &&
 ! grep -qE '00:1A:7D|1234-5678|kim@example' "$D" && grep -q '<MAC>' "$D" && grep -q '<전화번호>' "$D" && grep -q '<메일>' "$D" || fail "7 diagnostics must be masked"
 [ "$(grep -c 'draw avg' "$D")" -le 1000 ] || fail "7 log tail is capped"
 grep -q '전에 받아 둔' "$T/out8.txt" && ! c 8 | grep -q '^push ' || fail "8 falls back to the kept APKs"
-echo "OK: phone installer flow (8 scenarios)"
+for n in 9 10; do
+  c $n | grep -q '^push /data/local/tmp/hscandump.jar 7' && c $n | grep -q 'HscanDump [0-9]* raw' || fail "$n pushes the dumper and runs it"
+  ! c $n | grep -qE 'pm |service call|rm ' || fail "$n recording must not change the car"
+done
+Z=$(sed -n 's/^DIAG //p' "$T/out9.txt"); [ -f "$Z" ] && [ "${Z%.zip}" != "$Z" ] || fail "9 no zip"
+python -X utf8 -c "
+import sys, zipfile
+z = zipfile.ZipFile(sys.argv[1]); [n] = z.namelist(); t = z.read(n).decode()
+assert n.startswith('i30pd_drive_') and t.startswith('# DRIVE'), n
+assert t.count('RAW ') == 600 and 'conn9 0299' in t and 'conn10 0299' in t, 'both parts'
+assert t.index('# DROP') < t.index('conn10 0000'), 'drop marked between the parts'
+" "$Z" || fail "9-10 zip content"
+grep -q '다시 연결합니다' "$T/out9.txt" && grep -q '주행 기록을 만들었습니다' "$T/out9.txt" || fail "9-10 messages"
+[ ! -f "${Z%.zip}.txt" ] || fail "9 text left next to the zip"
+echo "OK: phone installer flow (9 scenarios)"

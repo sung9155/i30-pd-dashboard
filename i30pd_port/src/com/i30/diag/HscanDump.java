@@ -40,7 +40,7 @@ public final class HscanDump {
         byte[] frame = new byte[264];
         int used = 0;
         long end = System.currentTimeMillis() + seconds * 1000L;
-        long frames = 0;
+        long frames = 0, nextT = 0;   // raw mode: a "T <epoch ms>" line each second, so long drive logs carry time
         // function -> [count, lastSize, lastPayloadHex]
         Map<Integer, long[]> counts = new LinkedHashMap<Integer, long[]>();
         Map<Integer, String> sample = new LinkedHashMap<Integer, String>();
@@ -56,7 +56,11 @@ public final class HscanDump {
                 for (byte b : frame) xor ^= b & 255;
                 if (xor == 0) {
                     frames++;
-                    if (dumpRaw) System.out.println("RAW " + hex(frame, 0, 264));
+                    if (dumpRaw) {
+                        long now = System.currentTimeMillis();
+                        if (now >= nextT) { System.out.println("T " + now); nextT = now + 1000; }
+                        System.out.println("RAW " + hex(frame, 0, 264));
+                    }
                     batch(frame, counts, sample);
                     used = 0;
                 } else {

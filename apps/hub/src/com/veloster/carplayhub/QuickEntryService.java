@@ -31,7 +31,8 @@ import java.lang.ref.WeakReference;
 public final class QuickEntryService extends Service {
     private static final String PREFS="quick_entry",CHANNEL="vn_quick_entry",STOP="com.veloster.carplayhub.QUICK_ENTRY_OFF";
     private static final int NOTICE=9117;
-    private static final float IDLE_ALPHA=0.35f;   // faint at rest (dark disc + thin gauge, so 0.35 reads like the old grey button at 0.2); opaque while touched
+    private static final float IDLE_ALPHA=0.2f;   // faint at rest; opaque while touched and for FADE_DELAY after the last touch
+    private static final long FADE_DELAY=3000;     // fade back to IDLE_ALPHA this long after the last operation (appear, tap, drag)
     private static WeakReference<Runnable> statusObserver=new WeakReference<Runnable>(null);
     private SharedPreferences prefs;
     private WindowManager windows;
@@ -151,7 +152,8 @@ public final class QuickEntryService extends Service {
             final View created=new View(this){   // a small speedometer face (DashBadge), not a text button
                 protected void onDraw(Canvas canvas){DashBadge.draw(canvas,Math.min(getWidth(),getHeight()),isPressed());}
             };
-            created.setAlpha(IDLE_ALPHA);   // faint at rest so it doesn't distract; opaque while touched (below)
+            created.setAlpha(1f);   // appears opaque, then fades to IDLE_ALPHA a few seconds after the last touch (below)
+            final Runnable fade=new Runnable(){public void run(){created.setAlpha(IDLE_ALPHA);}};
             created.setContentDescription(UiText.t("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard"));
             created.setOnClickListener(new View.OnClickListener(){public void onClick(View view){
                 if(!unlockedScreen())return;
@@ -174,7 +176,7 @@ public final class QuickEntryService extends Service {
                     int action=event.getActionMasked();
                     if(action==MotionEvent.ACTION_DOWN){
                         downX=event.getRawX();downY=event.getRawY();initialX=layout.x;initialY=layout.y;dragged=false;longPressed=false;
-                        created.setAlpha(1f);created.setPressed(true);created.invalidate();created.postDelayed(openHub,500);return true;
+                        created.removeCallbacks(fade);created.setAlpha(1f);created.setPressed(true);created.invalidate();created.postDelayed(openHub,500);return true;
                     }
                     if(action==MotionEvent.ACTION_MOVE){
                         float dx=event.getRawX()-downX,dy=event.getRawY()-downY;
@@ -183,18 +185,20 @@ public final class QuickEntryService extends Service {
                         return true;
                     }
                     if(action==MotionEvent.ACTION_UP||action==MotionEvent.ACTION_CANCEL){
-                        created.removeCallbacks(openHub);created.setAlpha(IDLE_ALPHA);created.setPressed(false);created.invalidate();
+                        created.removeCallbacks(openHub);created.setPressed(false);created.invalidate();
                         if(dragged){
                             boolean right=QuickEntryPolicy.right(layout.x,width,size);
                             layout.x=QuickEntryPolicy.edge(right,width,size);
                             prefs.edit().putBoolean("right",right).putFloat("relative_y",QuickEntryPolicy.relativeY(layout.y,height,size)).commit();updateOverlay();
                         }else if(action==MotionEvent.ACTION_UP&&!longPressed)created.performClick();
+                        created.postDelayed(fade,FADE_DELAY);   // stay opaque, then fade a few seconds after the last touch
                         return true;
                     }
                     return true;
                 }
             });
             windows.addView(created,layout);button=created;
+            created.postDelayed(fade,FADE_DELAY);   // opaque on appear, then fade so it stops distracting
         }catch(RuntimeException e){
             Log.w("VNQuickEntry","Overlay unavailable; retaining notification",e);removeOverlay();overlayFailed=true;
             error(this,"가장자리 버튼을 표시할 수 없어 알림 바로가기를 유지합니다. 시스템의 다른 앱 위 표시 권한을 확인하세요.");

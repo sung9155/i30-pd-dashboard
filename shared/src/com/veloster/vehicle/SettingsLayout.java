@@ -5,20 +5,41 @@ package com.veloster.vehicle;
  * VehicleDash hit-tests it; a choice applies at once. No Android: host-tested.
  */
 public final class SettingsLayout {
-    public static final int SCREENS=0,THEME=1,PAINT=2,MODE=3,RPM=4,LANG=5,DIAG=6,DONE=7;
+    public static final int SCREENS=0,THEME=1,PAINT=2,MODE=3,RPM=4,SOUND=5,LANG=6,DIAG=7,DONE=8;
     /** Not a category: the screen chooser a mode row opens (every screen, then 원래 화면), under a title line. */
-    public static final int PICK=8;
-    /** RPM pane rows, each with − and + at the right (screenZone 1 and 2); the rest of the row resets it. */
-    public static final int RPM_SHIFT=0,RPM_RED=1;
+    public static final int PICK=9;
+    /** RPM pane rows: the two values have − and + at the right (screenZone 1 and 2), the rest of the row resets it;
+     *  RPM_BEEP is an on/off switch (the optional shift beep, ShiftBeep) and RPM_BEEP_SOUND cycles its sound. */
+    public static final int RPM_SHIFT=0,RPM_RED=1,RPM_BEEP=2,RPM_BEEP_SOUND=3;
+    /** Shift beep sounds, in ShiftBeep.SOUNDS order. */
+    public static final String[] BEEP_SOUNDS={"삐빅","삑","상승 3음","레이스 버저","틱틱"};
+    /** Sound pane rows: the virtual engine sound switch, its output route (cycles), and its volume with − and +. */
+    public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_POP=5,SOUND_TURBO=6,SOUND_BOV=7,SOUND_LEAD=8;
+    /** Rows from SOUND_VOLUME on have − and + (screenZone 1 and 2); the rest of the row puts the default back. */
+    public static final int[] SOUND_MIN={10,0,0,0,0},SOUND_MAX={100,200,200,200,150},SOUND_STEP={10,10,10,10,10},SOUND_DEFAULT={70,100,100,100,80};
+    /** EngineSynth.ENGINES and EXHAUSTS names, in their order. */
+    public static final String[] SOUND_ENGINES={"1.6 터보 4기통","직렬 6기통 터보","V6 트윈터보","V8 크로스플레인","V8 플랫플레인"};
+    /** Engines with a turbo (whistle and blow-off rows apply), per SOUND_ENGINES. */
+    public static final boolean[] SOUND_HAS_TURBO={true,true,true,false,false};
+    public static final String[] SOUND_EXHAUSTS={"순정","스포츠 머플러","중통 제거","풀 배기 · 팝앤뱅"};
+    /** A − / + row's value after a tap in zone z (1 −, 2 +, 0 default). */
+    public static int soundStep(int row,int value,int z){
+        int k=row-SOUND_VOLUME;
+        return z==1?Math.max(SOUND_MIN[k],value-SOUND_STEP[k]):z==2?Math.min(SOUND_MAX[k],value+SOUND_STEP[k]):SOUND_DEFAULT[k];
+    }
+    /** Output routes the 출력 경로 row cycles through, in EngineSound's route order. */
+    /** Checked in the car 2026-11-03: only the alarm channel sounds (front speakers, no bass); the others stay silent on
+     *  this firmware and are kept for other head units. */
+    public static final String[] SOUND_ROUTES={"알림 채널 · 앞 스피커","내비 효과음 · 차에서 무음","미디어 소스 · 차에서 무음","안드로이드 기본 · 차에서 무음"};
     /** Mode pane rows: the two switches, then one row per ClusterPicker.MODES. */
     public static final int MODE_COLOR=0,MODE_SCREEN=1,MODE_FIRST=2;
     public static final float TITLE_H=30;
-    public static final String[] CATS={"화면","테마","차량 색","주행 모드","RPM","언어","진단","완료"};
+    public static final String[] CATS={"화면","테마","차량 색","주행 모드","RPM","사운드","언어","진단","완료"};
     /** Display names for Theme.IDS, in that order. */
     public static final String[] THEME_NAMES={"N","람보","BMW","아이스","모노","앰버","틸","나이트","로즈","코퍼","레드","그린"};
     /** Language choices (LanguageSettings ids) and their names. */
     public static final String[] LANGS={"auto","ko","en"},LANG_NAMES={"시스템","한국어","English"};
-    public static final float TOP=60,BOTTOM=472,CAT_L=12,CAT_W=152,CAT_H=46,GAP=6,PANE_L=178,PANE_R=788,MAX_ITEM_H=72;
+    public static final float TOP=60,BOTTOM=472,CAT_L=12,CAT_W=152,CAT_H=40,GAP=6,PANE_L=178,PANE_R=788,MAX_ITEM_H=72;
     private SettingsLayout(){}
 
     public static float catTop(int i){return TOP+i*(CAT_H+GAP);}
@@ -32,7 +53,7 @@ public final class SettingsLayout {
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
         switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
-            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return 2;case LANG:return LANGS.length;case DIAG:return 1;
+            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_BEEP_SOUND+1;case SOUND:return SOUND_LEAD+1;case LANG:return LANGS.length;case DIAG:return 1;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
     public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME||cat==PAINT?2:1;}

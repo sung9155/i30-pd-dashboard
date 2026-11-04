@@ -10,6 +10,17 @@ public final class ShiftGuide {
         public final boolean shift;
         Cue(int n,boolean s) { leds=n;shift=s; }
     }
+    /** When the optional shift beep sounds: on the cue's rising edge only, and not again within MIN_GAP ms, so rpm
+     *  hovering at the target does not chirp on every flicker. Pure, host-tested; ShiftBeep plays it. */
+    public static final class Beep {
+        public static final long MIN_GAP=1500;
+        private boolean was;private long lastAt=Long.MIN_VALUE/2;
+        public boolean fire(boolean shift,long now){
+            boolean edge=shift&&!was;was=shift;
+            if(!edge||now-lastAt<MIN_GAP)return false;
+            lastAt=now;return true;
+        }
+    }
     public static Cue evaluate(Telemetry.Sample[] s,int target) { return evaluate(s,target,VehicleProfile.PETROL_DCT); }
     public static Cue evaluate(Telemetry.Sample[] s,int target,VehicleProfile p) {
         target=clamp(target,p.shiftMin,p.shiftTop());

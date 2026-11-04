@@ -16,7 +16,9 @@ import java.util.Locale;
  * own signals at any hour: headlamps and tail lamps the HeadLampLow bit, brake lights the brake, and the turn
  * signals their bits (which blink with the real lamps), shown on the car's lamps only. Scene pixels are 4x4 screen pixels.
  * Drive mode (CLU13): a banner when it changes and its own idle line; ECO pays 2 coins a second of fuel cut and sheds
- * leaves, SPORT sits the body a pixel lower and adds speed lines. Any mode: lifting off hard at high rpm pops a backfire.
+ * leaves, SPORT sits the body a pixel lower and adds speed lines. Any mode: lifting off hard at high rpm pops a backfire,
+ * and any lift above 2500 rpm may flash a short overrun flame or two: timed by the engine sound's big pops when it
+ * plays (EngineSynth.flames), by the lift itself when it is off.
  * Static art (both cars per lamp state, skyline and hill strips per sky, hearts, the headlamp beam) is painted once into
  * small bitmaps and stamped; the chase road stays one rectangle per row (about 200), the rest is a few dozen calls.
  */
@@ -159,7 +161,8 @@ final class PixelCluster extends ClusterKit {
     private float scroll,curve,bgX,coinSec,bumpE,frameDt;
     private final RoadJolt jolt=new RoadJolt();
     private int coins;
-    private long last,shiftAt=Long.MIN_VALUE/2,modeAt=Long.MIN_VALUE/2,pedHiAt=Long.MIN_VALUE/2,fireAt=Long.MIN_VALUE/2;
+    private long last,shiftAt=Long.MIN_VALUE/2,modeAt=Long.MIN_VALUE/2,pedHiAt=Long.MIN_VALUE/2,fireAt=Long.MIN_VALUE/2,popAt=Long.MIN_VALUE/2,seenFlame,liftAt=Long.MIN_VALUE/2,nextPop;
+    private int liftPops;private boolean liftArmed;
     /** CLU13 drive mode (0 NORMAL, 1 SPORT, 3 ECO, -1 unknown) and the last known one, for the change banner. */
     private int mode=-1,lastMode=-1;
     private static final int SPORT=1,ECO=3;
@@ -203,6 +206,14 @@ final class PixelCluster extends ClusterKit {
         if(!Float.isNaN(fuel)&&fuel==0&&vk>0){coinSec+=dt;while(coinSec>=1){coinSec-=1;coins+=mode==ECO?2:1;}}
         float ped=v(9);   // backfire: the pedal let go from 40 %+ within 0.7 s while the engine is above 3000 rpm
         if(!Float.isNaN(ped)){if(ped>=40)pedHiAt=now;else if(ped<10&&now-pedHiAt<700&&!Float.isNaN(rpm)&&rpm>3000){fireAt=now;pedHiAt=Long.MIN_VALUE/2;}}
+        long fa=EngineSynth.flameAt;if(fa!=seenFlame&&now>=fa){seenFlame=fa;if(now-fa<300)popAt=now;}   // a big overrun pop of the engine sound: a short flame
+        // Without the engine sound: a lift from 20 %+ to under 5 % above 2500 rpm gives one short flame 0.15-0.5 s later and,
+        // a third of the time, a second one 0.5-0.9 s after that, all inside 1.3 s (about what the stock exhaust's sound does).
+        if(!EngineSynth.voiced&&!Float.isNaN(ped)){
+            if(ped>=20)liftArmed=true;
+            else if(ped<5&&liftArmed){liftArmed=false;if(!Float.isNaN(rpm)&&rpm>2500){liftAt=now;liftPops=0;nextPop=now+150+(long)(Math.random()*350);}}
+            if(now-liftAt<1300&&liftPops<2&&now>=nextPop){popAt=now;liftPops++;nextPop=Math.random()<.35?now+500+(long)(Math.random()*400):Long.MAX_VALUE;}
+        }
         String g=gear();if(!g.equals(lastGear)){if(!lastGear.isEmpty())shiftAt=now;lastGear=g;}
         boolean brake=v(10)>5,left=v(Telemetry.TURN_LEFT)>0,right=v(Telemetry.TURN_RIGHT)>0;   // the bits blink with the real lamps
         if(chase){
@@ -263,7 +274,7 @@ final class PixelCluster extends ClusterKit {
         if(!Float.isNaN(boost)&&boost>0.3f)for(int i=0;i<4;i++){float age=((now/60+i*3)%12)/12f;px(c,cx+2-age*14,cy+12-age*3,2,2,boost>0.9f&&age<0.3f?0xffffcc33:age<0.6f?0xffbbbbbb:0xff666677);}
         float ped=v(9);   // exhaust smoke from the tailpipe under throttle (more gas, more smoke)
         if(!Float.isNaN(ped)&&ped>20)for(int i=0;i<2+(int)(ped/40);i++){float ag=((now/70+i*5)%14)/14f;if(ag<0.66f)px(c,cx-4-ag*18,cy+11-ag*2,2+ag*3,2+ag*2,smoke(ag));}
-        if(now-fireAt<450){boolean big=(now/60)%2==0;px(c,cx-(big?9:7),cy+(big?10:11),big?6:4,big?3:2,0xffff7a1a);px(c,cx-(big?6:5),cy+11,big?3:2,1,0xffffe14a);}   // backfire pop
+        if(flame()){boolean big=(now/60)%2==0;px(c,cx-(big?9:7),cy+(big?10:11),big?6:4,big?3:2,0xffff7a1a);px(c,cx-(big?6:5),cy+11,big?3:2,1,0xffffe14a);}   // backfire pop
         if(mode==ECO&&v>5)for(int i=0;i<3;i++){float ag=((now/90+i*8)%24)/24f;leaf(c,cx-2-ag*26,cy+8-ag*12+(float)Math.sin(ag*9+i)*2,i);}   // ECO: leaves blow off behind
         spray(c,cx-8,cy+14,cx-8,cy+14,9);   // rear tyre only, thrown back
         precip(c,frameDt,62);
@@ -398,7 +409,7 @@ final class PixelCluster extends ClusterKit {
         else if(!Float.isNaN(boost)&&boost>0.3f){int k=(int)(now/125%3);for(int ex:new int[]{8,37})px(c,ox+ex+k,oy+34+k%2,3,1,0xffc8c8d2);}
         float ped=v(9);   // exhaust smoke from both tailpipes under throttle (more gas, more smoke)
         if(!Float.isNaN(ped)&&ped>20){int puffs=1+(int)(ped/35);for(int ex:new int[]{8,37})for(int i=0;i<puffs;i++){float ag=((now/80+i*4)%12)/12f;if(ag<0.66f)px(c,ox+ex-(int)(ag*5),oy+34+(int)(ag*10),2+(int)(ag*3),2+(int)(ag*2),smoke(ag));}}
-        if(now-fireAt<450){boolean big=(now/60)%2==0;for(int ex:new int[]{8,37}){px(c,ox+ex-(big?1:0),oy+34,big?6:4,big?4:3,0xffff7a1a);px(c,ox+ex+1,oy+34,2,big?2:1,0xffffe14a);}}   // backfire pop
+        if(flame()){boolean big=(now/60)%2==0;for(int ex:new int[]{8,37}){px(c,ox+ex-(big?1:0),oy+34,big?6:4,big?4:3,0xffff7a1a);px(c,ox+ex+1,oy+34,2,big?2:1,0xffffe14a);}}   // backfire pop
         spray(c,ox-4,oy+34,ox+41,oy+34,12);   // a wet road throws spray off both rear tyres
         if(mode==ECO)for(int i=0;i<3;i++){float ag=((now/90+i*11)%32)/32f;int side=i%2==0?-1:1;   // ECO: leaves kicked off the rear wheels: a hop, then out and toward the camera (growing)
             leaf(c,ox+24+side*(20+ag*60),oy+34-(float)Math.sin(ag*Math.PI)*12+ag*6,i,ag<0.5f?1:2);}
@@ -471,6 +482,8 @@ final class PixelCluster extends ClusterKit {
             sh(c,msg!=null?msg:mode==SPORT?"BATTLE MODE... PUSH IT!":mode==ECO?"ECO RUN... EASY ON THE GAS":"CRUISING...",46,446,17,W);if(blink(now,600))sh(c,"v",752,448,15,Y);
         }
     }
+    /** Backfire on screen: a hard lift (450 ms, with the banner) or a big pop of the engine sound (160 ms). */
+    private boolean flame(){return now-fireAt<450||now-popAt<160;}
     /** The event of the moment, or null for a plain cruise. */
     private String message(float rpm,float v){
         float brake=v(10),lat=v(11),lon=v(12),fuel=v(Telemetry.FUEL_RATE),pedal=v(9);

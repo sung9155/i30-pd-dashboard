@@ -52,7 +52,8 @@ public final class TabsPreview {
         race(out,"4c_race_mt_hint",rec,model,now,VehicleProfile.PETROL_MT,0,4); // the ECU's shift hint (▲4) on its red band
         race(out,"4c_race_diesel",rec,model,now,VehicleProfile.DIESEL_DCT,-1); // DPF slot instead of SPARK
         {Telemetry dz=new Telemetry();byte[] e=new byte[56];e[36]=35;e[38]=58;e[46]=1;e[47]=(byte)0xE2;e[48]=0x08;   // only the Hyundai ED03 block: 15.1 kPa, 372 C, 123.4 km
-         for(int n=0;n<=last;n++)feed(dz,raw.get(n),1_000_000+n*step);dz.obd(Telemetry.DID_DPF,e,now);race(out,"4c_race_diesel_ed03",rec,dz,now,VehicleProfile.DIESEL_DCT,-1);}
+         for(int n=0;n<=last;n++)feed(dz,raw.get(n),1_000_000+n*step);dz.obd(Telemetry.DID_DPF,e,now);race(out,"4c_race_diesel_ed03",rec,dz,now,VehicleProfile.DIESEL_DCT,-1);
+         dz.obd(Telemetry.DID_SOOT,new byte[]{0,0,0,0,0x0C,(byte)0xCD,0,0},now);race(out,"4c_race_diesel_soot",rec,dz,now,VehicleProfile.DIESEL_DCT,-1);}   // + 22 ED1D: 12.8 g leads the cell
         {byte[] ct=new byte[33];ct[30]=(byte)76;ct[32]=(byte)98;model.obd(Telemetry.DID_CLUTCH,ct,now);}   // 7DCT clutch temperatures odd 112 / even 156 C (TCU 22 01A4, x2-40)
         race(out,"4c_race_dct_clutch",rec,model,now,VehicleProfile.PETROL_DCT,-1); // odd / even clutch left of the brake, amber from 150 C
         model.obd(0x8b,new byte[]{0x11,0x01,(byte)0x9e,0,0,0,0},now);model.obd(0x7a,new byte[]{0x01,0x05,(byte)0xdc,0,0,0,0},now);model.obd(0x7c,new byte[]{0x01,0x19,0x64,0,0,0,0,0,0},now);   // standard DPF PIDs: regenerating, trigger 62 %, 15 kPa, 610 °C

@@ -658,5 +658,6 @@
   "서킷 선택": "Choose circuit",
   "자동 · 가장 가까운 서킷": "Auto · nearest circuit",
   "직접 선택": "Chosen by you",
-  "서킷까지 %s": "%s to the circuit"
+  "서킷까지 %s": "%s to the circuit",
+  "DPF 포집량": "DPF soot"
 }

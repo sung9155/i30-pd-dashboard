@@ -40,7 +40,7 @@ public final class ObdLive {
         // diesel (OBDb Hyundai-i30): differential pressure E0F1, successful regenerations E0F2, KWP 21 06 regeneration state, 21 03 block
         {EMS,0x22,0xE0,0xF1},{EMS,0x22,0xE0,0xF2},{EMS,0x21,0x06},{EMS,0x21,0x03},
         // the live ED03 poll logs its drop only once, early, and the record keeps only the log tail: ask it here too
-        {EMS,0x22,0xED,0x03}};
+        {EMS,0x22,0xED,0x03},{EMS,0x22,0xED,0x06}};   // ED06: regeneration completed state (Kia Ceed 2018 in OBDb)
     private static final long PROBE_FIRST=20000,PROBE_EVERY=300000;private static final int PROBE_ROUNDS=24;
     private final List<String> coldProbe=new ArrayList<String>();
     private static final long REPLY_MS=300,SLOW_REPLY_MS=1200;   // a mode 01 PID is one frame; a mode 22 block (ED03 ~59 B, 01A4) is multi-frame and slower

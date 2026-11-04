@@ -214,6 +214,13 @@ start, which the record's log tail loses. So: the drop line now carries the 7F r
 3x, dropped`), mode 22 polls wait 1.2 s like the probe (ED03 is ~9 CAN frames; beta waited 300 ms), and
 the probe asks 22 ED03 too, so every 5-minute round (and `round 1 again`) shows what the ECU says.
 
+Kia Ceed CD 2018 (the PD's sibling, same U2 1.6 diesel) is the only year OBDb marks verified for the Hyundai
+diesel blocks (`dbgfilter` = unverified years): 22 ED03 (our layout), 22 ED1D soot (data [4..5] u16 ×256/65535,
+read as g) and 22 ED06 (regeneration completed, [25]). v1.8.6 polls ED1D every 2 s and shows the soot as the DPF
+tile's lead value; ED06 joins the probe. A Tucson NX4 tool (JohnnieBravo/HyundaiDpfMonitor, observed logs) reads
+ED1D's bytes little-endian and has a different ED03 layout (u16 LE temperatures in K/16): if a PD's soot reads
+nonsense, swap the byte order first. Old KWP 21 06 / 21 03 / 21 1B are verified only on the pre-2016 i30.
+
 ## Evening run — a clean cold→warm sweep, our car (2026-11-04 18:20→18:35, build 2c8cf77)
 
 A proper cold start (the car had cooled since lunch) with four rounds 5 minutes apart over ~15 min of

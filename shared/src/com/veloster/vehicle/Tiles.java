@@ -54,12 +54,12 @@ public final class Tiles {
         {10,43,35,22,23,24},
         {TIRES,18,19,20,21},
         {26,25,31,45,47,48,49,53,54,55,46,50,51},
-        {DPF,60,61,62,63,64,65}};
+        {DPF,68,60,61,62,63,64,65}};
     /** Whether this car has the signal: DPF only on a diesel, the clutch pedal only on a 6MT, the DCT clutch
      *  temperatures only on a DCT, no ignition timing on a diesel. */
     public static boolean available(int s,VehicleProfile p){
         boolean diesel=p.fuel==VehicleProfile.Fuel.DIESEL,mt=p.trans==VehicleProfile.Trans.MT;
-        if(s==DPF||s>=Telemetry.DPF_DP&&s<=Telemetry.DPF_AVG_KM)return diesel;
+        if(s==DPF||s>=Telemetry.DPF_DP&&s<=Telemetry.DPF_AVG_KM||s==Telemetry.DPF_SOOT)return diesel;
         if(s==Telemetry.CLUTCH)return mt;
         if(s==CLUTCH||s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN)return !mt;
         if(s==Telemetry.SPARK)return !diesel;
@@ -91,7 +91,7 @@ public final class Tiles {
         "SOC","BATT","STEER RATE","E-LSD","INTAKE","SELECTOR","ODO","LOAD","YAW","MODE","PARK BRK","THROTTLE","FUEL FLOW","RANGE",
         "AVG","TQ CORR","TQ FRIC","SPARK","BRK SW","STR TORQUE","DOOR L","WIPER","DOOR R","TRUNK","HOOD","TURN L","TURN R","SHIFT",
         "HEADLAMP","TAIL","HIGH BEAM","CLUTCH","FUEL","CAT","ABS LOAD","DPF ΔP","DPF TEMP","DPF REGEN","DPF TRIG","DPF LAST","DPF AVG",
-        "CLUTCH ODD","CLUTCH EVEN"};
+        "CLUTCH ODD","CLUTCH EVEN","DPF SOOT"};
     public static String caption(int s){
         switch(s){case TIRES:return "TPMS";case CLUTCH:return "CLUTCH";case DPF:return "DPF";case CORNER_MIN_SPEED:return "BTM SPEED";case CORNER_MAX_LAT:return "PREV LAT G";}
         return s>=0&&s<CAPTION.length?CAPTION[s]:"—";
@@ -101,6 +101,11 @@ public final class Tiles {
         return Telemetry.UNITS[s];
     }
     /** The reading as text, "—" when there is none; on / off and gear style signals as their words. */
+    /** The DPF bundle's main reading: soot g (22 ED1D) when the engine gives it, else the regeneration trigger %
+     *  (01 8B), else the delta pressure kPa (ED03); the trigger ("—") when none has answered. */
+    public static int dpfLead(float soot,float trigger,float dp){
+        return !Float.isNaN(soot)?Telemetry.DPF_SOOT:!Float.isNaN(trigger)?Telemetry.DPF_TRIGGER:!Float.isNaN(dp)?Telemetry.DPF_DP:Telemetry.DPF_TRIGGER;
+    }
     public static String text(int s,float v){
         if(Float.isNaN(v))return "—";
         if(s<TIRES){String w=Telemetry.label(s,v);if(w!=null)return w;}
@@ -110,7 +115,7 @@ public final class Tiles {
         if(s==Telemetry.BOOST||s==11||s==12||s==CORNER_MAX_LAT)return "%+.2f";
         if(s==Telemetry.STEERING||s==Telemetry.STEER_TORQUE||s==Telemetry.YAW)return "%+.1f";
         String u=s>=TIRES?unit(s):Telemetry.UNITS[s];
-        if(s==10||"V".equals(u)||"L/h".equals(u)||"km/L".equals(u)||"kPa".equals(u))return "%.1f";
+        if(s==10||s==Telemetry.DPF_SOOT||"V".equals(u)||"L/h".equals(u)||"km/L".equals(u)||"kPa".equals(u))return "%.1f";
         return "%.0f";
     }
     /** 0 normal, 1 warm / low (amber), 2 critical (red). */
@@ -129,6 +134,7 @@ public final class Tiles {
         if(s==0){lo=0;hi=8000;}else if(s==1||s==2){lo=40;hi=120;}else if(s==Telemetry.INTAKE){lo=0;hi=80;}
         else if(s==Telemetry.AMBIENT){lo=-20;hi=40;}else if(s==Telemetry.CAT_TEMP){lo=0;hi=900;}
         else if(s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN){lo=0;hi=250;}else if(s==Telemetry.DPF_TEMP){lo=0;hi=700;}
+        else if(s==Telemetry.DPF_SOOT){lo=0;hi=30;}else if(s==Telemetry.DPF_DP){lo=0;hi=50;}
         else if(s==Telemetry.BOOST){lo=-1;hi=1.5f;}else if(s==10){lo=0;hi=100;}else if(s==Telemetry.BAT_VOLTAGE){lo=10;hi=15;}
         else if(s>=Telemetry.TPMS_FL&&s<=Telemetry.TPMS_RR){lo=0;hi=45;}else if(s==11||s==12||s==CORNER_MAX_LAT){return Float.isNaN(v)?Float.NaN:Math.abs(v)/1.5f;}
         else if(s==7||s>=3&&s<=6||s==CORNER_MIN_SPEED){lo=0;hi=240;}else if("%".equals(unit(s))){lo=0;hi=100;}

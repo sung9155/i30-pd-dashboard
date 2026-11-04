@@ -269,7 +269,8 @@ public final class PitRenderer {
                     name=i==SettingsLayout.RPM_SHIFT?"변속 목표":"레드라인";
                     sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
                 case SettingsLayout.SOUND:
-                    if(i==SettingsLayout.SOUND_ON){sel=soundOn;name="엔진 사운드";value=soundOn?"켬":"끔";}
+                    if(!SettingsLayout.ENGINE_SOUND){name="엔진 사운드";dim=true;value="사용 안 함";}
+                    else if(i==SettingsLayout.SOUND_ON){sel=soundOn;name="엔진 사운드";value=soundOn?"켬":"끔";}
                     else if(i==SettingsLayout.SOUND_ROUTE){name="출력 경로";dim=!soundOn;value=SettingsLayout.SOUND_ROUTES[soundRoute];}
                     else if(i==SettingsLayout.SOUND_ENGINE){name="엔진";dim=!soundOn;value=SettingsLayout.SOUND_ENGINES[soundEngine];}
                     else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}
@@ -562,9 +563,9 @@ public final class PitRenderer {
         int sig=Tiles.signal(Tiles.F1,i,profile);String txt;int lv=0;float size=22;
         if(sig==Tiles.TIRES){StringBuilder b=new StringBuilder();for(int k=0;k<4;k++){float x=clutchT(Telemetry.TPMS_FL+k);lv=Math.max(lv,Tiles.level(Telemetry.TPMS_FL+k,x));b.append(k>0?" ":"").append(Tiles.text(Telemetry.TPMS_FL+k,x));}txt=b.toString();size=16;}
         else if(sig==Tiles.CLUTCH){float o=clutchT(Telemetry.CLUTCH_ODD),e=clutchT(Telemetry.CLUTCH_EVEN);lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));txt=Tiles.text(Telemetry.CLUTCH_ODD,o)+" / "+Tiles.text(Telemetry.CLUTCH_EVEN,e);size=18;}
-        else if(sig==Tiles.DPF){float tr=clutchT(Telemetry.DPF_TRIGGER),dp=clutchT(Telemetry.DPF_DP);boolean useDp=Float.isNaN(tr)&&!Float.isNaN(dp);
-            txt=useDp?Tiles.text(Telemetry.DPF_DP,dp):Tiles.text(Telemetry.DPF_TRIGGER,tr);lv=clutchT(Telemetry.DPF_REGEN)>0?1:0;
-            text(c,useDp?"kPa":"%",unitX,310,11,MUTED,false);}
+        else if(sig==Tiles.DPF){int k=Tiles.dpfLead(clutchT(Telemetry.DPF_SOOT),clutchT(Telemetry.DPF_TRIGGER),clutchT(Telemetry.DPF_DP));
+            txt=Tiles.text(k,clutchT(k));lv=clutchT(Telemetry.DPF_REGEN)>0?1:0;
+            text(c,Telemetry.UNITS[k],unitX,310,11,MUTED,false);}
         else{float v=Tiles.value(sig,samples,stats);lv=Tiles.level(sig,v);txt=Tiles.text(sig,v);}
         text(c,Tiles.caption(sig),capX,307,11,MUTED,true);
         boolean several=sig==Tiles.TIRES||sig==Tiles.CLUTCH;   // a longer line starts right after the caption, clear of the unit

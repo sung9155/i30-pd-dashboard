@@ -119,8 +119,8 @@ public final class ClusterRenderer {
             return;
         }
         if(sig==Tiles.DPF){   // the regeneration trigger, or the delta pressure when the ECU gives only that
-            float tr=v(Telemetry.DPF_TRIGGER),dp=v(Telemetry.DPF_DP);boolean regen=v(Telemetry.DPF_REGEN)>0,useDp=Float.isNaN(tr)&&!Float.isNaN(dp);
-            meter(c,l,t,rr,b,regen?"DPF REGEN":"DPF",useDp?"kPa":"%",fmt(useDp?"%.1f":"%.0f",useDp?dp:tr),regen?AMBER:WHITE,useDp?dp/50:tr/100,regen?AMBER:hero,false);
+            int k=Tiles.dpfLead(v(Telemetry.DPF_SOOT),v(Telemetry.DPF_TRIGGER),v(Telemetry.DPF_DP));boolean regen=v(Telemetry.DPF_REGEN)>0;float x=v(k);
+            meter(c,l,t,rr,b,regen?"DPF REGEN":"DPF",Telemetry.UNITS[k],Tiles.text(k,x),regen?AMBER:WHITE,Tiles.fraction(k,x),regen?AMBER:hero,false);
             return;
         }
         float val=Tiles.value(sig,s,st);int lv=Tiles.level(sig,val);
@@ -138,7 +138,7 @@ public final class ClusterRenderer {
             mono(c,b.toString(),x+10,r[3]-18,24,lv==2?LCD_RED:lv==1?R_YELLOW:R_AMBER,Paint.Align.LEFT);return;}
         if(sig==Tiles.CLUTCH){float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);int lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));
             txt=fmt("%.0f",o)+"/"+fmt("%.0f",e);col=lv==2?LCD_RED:lv==1?R_YELLOW:R_AMBER;}
-        else if(sig==Tiles.DPF){float tr=v(Telemetry.DPF_TRIGGER),dp=v(Telemetry.DPF_DP);txt=Float.isNaN(tr)&&!Float.isNaN(dp)?fmt("%.1f",dp):fmt("%.0f",tr);if(v(Telemetry.DPF_REGEN)>0)col=R_YELLOW;}
+        else if(sig==Tiles.DPF){int k=Tiles.dpfLead(v(Telemetry.DPF_SOOT),v(Telemetry.DPF_TRIGGER),v(Telemetry.DPF_DP));txt=Tiles.text(k,v(k));if(v(Telemetry.DPF_REGEN)>0)col=R_YELLOW;}
         else{float val=Tiles.value(sig,s,st);int lv=Tiles.level(sig,val);txt=Tiles.text(sig,val);col=lv==2?LCD_RED:lv==1?R_YELLOW:R_AMBER;}
         mono(c,txt,x+10,r[3]-16,txt.length()>7?26:36,col,Paint.Align.LEFT);
     }

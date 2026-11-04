@@ -93,10 +93,44 @@ under real load.
 offset 14 (0x1B→0x49), 19–21, 26–36, 39–40. A manifold-pressure byte should jump on a wide-open pull;
 this short drive never loaded the engine, so the boost byte can't be isolated yet.
 
-### Still needed: one longer drive with a wide-open pull
+## Round 3 — ~11 min after start, warmer (2026-11-04)
 
-Round 2 is only lukewarm and saw no boost, so only the clutch-temperature bytes are pinned. A drive
-that gets the engine fully warm and includes a hard (wide-open-throttle) pull, captured as another
-round, would move the oil-temperature, boost and knock bytes far enough to pin them against the
-dash's own gauges. The probe logs a round every 5 minutes on its own; keep the cable connected and it
-is captured.
+```
+ecu 27 22 E001: 62 E0 01 D9 BD FF FF D5 D4 AC C2 11 55 00 00 00 00 58 00 08 1B 10 20 0B 97 01 7D 00 AD 00 00 55 3D 03 9F 01 6B A7 10 85 00 00 00 00 00 00 00 00 00 00 00 (51 B)
+ecu 27 22 E00A: 62 E0 0A F0 F0 F0 FF 30 10 19 10 E1 0E DE 0F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 FC 00 FD 00 00 00 00 00 00 00 00 00 00 00 00 (47 B)
+ecu 27 22 E003: 62 E0 03 F2 7F EA E3 40 CC FF FF 00 05 00 00 00 00 22 00 00 00 00 0F B2 F2 7C 01 6F 0E 23 03 01 FE 00 3E 02 B1 0D 6B 33 00 00 BE 15 00 00 7F 26 ... (104 B)
+ecu 26 22 01A4: 62 01 A4 FF FF E0 00 14 02 00 26 00 FE 94 1B 9E BD C3 14 94 08 F6 C4 10 02 03 0E 0E F0 FC C0 FF 00 31 00 44 00 (37 B)
+ecu 26 22 01A5: 62 01 A5 FF F0 00 00 00 A4 14 E4 00 00 FF 32 00 06 02 77 00 01 00 01 03 CB 03 C9 00 08 (29 B)
+```
+
+### Decoded so far (3-point: cold → 5 min → 11 min)
+
+**TCU 01A4 — DCT clutch temperatures, confirmed.** Whole-reply bytes [33] and [35], each raw °C:
+
+| round | elapsed | byte [33] = clutch #1 | byte [35] = clutch #2 |
+|-------|---------|:---------------------:|:---------------------:|
+| 1 | 20 s, cold | 0x22 = 34 °C | 0x23 = 35 °C |
+| 2 | ~5 min | 0x24 = 36 °C | 0x25 = 37 °C |
+| 3 | ~11 min | 0x31 = 49 °C | 0x44 = 68 °C |
+
+Monotonic and in a sane °C range; clutch #2 runs hotter, as a DCT's two clutches do. This is enough
+to show the clutch temperatures.
+
+### Still candidates (no wide-open pull hit a 5-min tick; no gauge reading to anchor °C)
+
+- **EMS E001 — oil / engine temperature.** Bytes that climb monotonically cold→11 min (whole-reply
+  index): [10] 0x7C→0x92→0xC2 (124→146→194), [12] 0x43→0x55→0x55 (67→85), [28] 0x8C→0x9D→0xAD
+  (140→157→173), [37] 0x7C→0x8A→0xA7 (124→138→167). One of these is oil temperature, but with no
+  known reading to anchor the scale (raw? raw−40? ×0.75?), none is called yet.
+- **EMS E003 — boost / MAP.** Byte [17] swings with load (0x1B→0x49→0x22 = 27→73→34) but never read
+  boost because no wide-open pull coincided with a 5-min round. Needs a round taken mid-pull.
+- **EMS E00A — knock.** Leading `F0 F0 F0` (retard, flat = none) then four little-endian u16 that
+  rise with rpm (per-cylinder knock-sensor level): cold `0590 08F5 084B 05D0`, 11 min
+  `1030 1019 0EE1 0FDE`. Confirm under load.
+
+### To finish E001 / E003 / E00A
+
+One more drive would pin them: get the engine fully hot, read the dash's own oil-temperature gauge at
+a moment, and do a wide-open pull — the probe logs a round every 5 minutes on its own, so keep the
+cable connected and note the dash reading near a round. The gauge value anchors the oil-temp byte and
+scale; the pull moves the boost and knock bytes.

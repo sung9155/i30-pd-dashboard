@@ -77,7 +77,7 @@ public final class VehicleDash extends View implements Runnable {
     private static final String[] SOUND_KEYS={"engine_sound_volume","engine_sound_pop","engine_sound_turbo","engine_sound_bov","engine_sound_lead_ms"};
     private EngineSound sound;
     /** Optional shift beep (설정 → RPM → 변속 알림음, off by default). */
-    private final int[] downSounds={-1,-1,-1};private int downScope;private final RevMatch.Cue downCue=new RevMatch.Cue();
+    private final int[] downSounds=SettingsLayout.DOWN_DEFAULT.clone();private int downScope;private final RevMatch.Cue downCue=new RevMatch.Cue();
     private ShiftBeep beep;private boolean beepOn;private int beepSound;private int beepVol=70;private final ShiftGuide.Beep beepEdge=new ShiftGuide.Beep();
     private float regenEnd=Float.NaN;   // odometer at the last DPF regeneration's end, saved when Telemetry moves it   // as saved, 0 = the profile's default
     private final java.util.concurrent.atomic.AtomicBoolean mediaPending=new java.util.concurrent.atomic.AtomicBoolean();
@@ -144,7 +144,7 @@ public final class VehicleDash extends View implements Runnable {
             beepSound=Math.max(0,Math.min(SettingsLayout.BEEP_SOUNDS.length-1,p.getInt("shift_beep_sound",0)));
             beepVol=Math.max(0,Math.min(100,p.getInt("shift_beep_vol",70)));
             downScope=Math.max(0,Math.min(SettingsLayout.DOWN_SCOPES.length-1,p.getInt("downshift_scope",0)));
-            for(int k=0;k<3;k++)downSounds[k]=Math.max(-1,Math.min(SettingsLayout.BEEP_SOUNDS.length-1,p.getInt("downshift_sound_"+(k+1),-1)));}catch(ClassCastException e){/* off, first sound */}
+            for(int k=0;k<3;k++)downSounds[k]=Math.max(-1,Math.min(SettingsLayout.BEEP_SOUNDS.length-1,p.getInt("downshift_sound_"+(k+1),SettingsLayout.DOWN_DEFAULT[k])));}catch(ClassCastException e){/* off, first sound */}
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);soundOn=SettingsLayout.ENGINE_SOUND&&p.getBoolean("engine_sound",false);
             soundRoute=Math.max(0,Math.min(SettingsLayout.SOUND_ROUTES.length-1,p.getInt("engine_sound_route",0)));
             soundEngine=Math.max(0,Math.min(EngineSynth.engines()-1,p.getInt("engine_sound_engine",0)));
@@ -444,9 +444,9 @@ public final class VehicleDash extends View implements Runnable {
                     if(i==SettingsLayout.RPM_BEEP){beepOn=!beepOn;e.putBoolean("shift_beep",beepOn);if(beepOn)beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}   // a sample beep when switched on
                     if(i==SettingsLayout.RPM_BEEP_SOUND){if(!beepOn)break;beepSound=(beepSound+1)%SettingsLayout.BEEP_SOUNDS.length;e.putInt("shift_beep_sound",beepSound);beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}
                     if(i==SettingsLayout.RPM_DOWN_SCOPE){downScope=(downScope+1)%SettingsLayout.DOWN_SCOPES.length;e.putInt("downshift_scope",downScope);break;}
-                    if(i>=SettingsLayout.RPM_DOWN1){int k=i-SettingsLayout.RPM_DOWN1;   // 끔 -> each sound in turn -> 끔
-                        downSounds[k]=downSounds[k]+1>=SettingsLayout.BEEP_SOUNDS.length?-1:downSounds[k]+1;e.putInt("downshift_sound_"+(k+1),downSounds[k]);
-                        if(downSounds[k]>=0)beep.play(soundOn&&soundRoute==0?sound:null,downSounds[k],beepVol/100f);break;}
+                    if(i>=SettingsLayout.RPM_DOWN1){int dk=i-SettingsLayout.RPM_DOWN1;   // 끔 -> each sound in turn -> 끔
+                        downSounds[dk]=downSounds[dk]+1>=SettingsLayout.BEEP_SOUNDS.length?-1:downSounds[dk]+1;e.putInt("downshift_sound_"+(dk+1),downSounds[dk]);
+                        if(downSounds[dk]>=0)beep.play(soundOn&&soundRoute==0?sound:null,downSounds[dk],beepVol/100f);break;}
                     if(i==SettingsLayout.RPM_BEEP_VOL){if(!beepOn&&downSounds[0]<0&&downSounds[1]<0&&downSounds[2]<0)break;int zv=SettingsLayout.screenZone(x);if(zv!=SettingsLayout.screenZone(downX))break;   // − / + 10%; the rest of the row puts 70% back
                         beepVol=zv==1?Math.max(0,beepVol-10):zv==2?Math.min(100,beepVol+10):70;e.putInt("shift_beep_vol",beepVol);beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}
                     int z=SettingsLayout.screenZone(x);if(z!=SettingsLayout.screenZone(downX))break;

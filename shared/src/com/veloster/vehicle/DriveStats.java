@@ -44,7 +44,7 @@ public final class DriveStats {
     private static float[] nan(int n){float[] a=new float[n];for(int i=0;i<n;i++)a[i]=Float.NaN;return a;}
     private static float max(float a,float b){return Float.isNaN(a)?b:Float.isNaN(b)?a:Math.max(a,b);}
 
-    /** 6MT shift grades for the 수동 screen, and the gear ratios learned for gearboxes without a table (7DCT, diesel). */
+    /** 6MT shift measurements for the 수동 screen, and the gear ratios learned for gearboxes without a table (7DCT, diesel). */
     public final ShiftCoach coach=new ShiftCoach();public final GearRatios ratios=new GearRatios();
     public void update(Telemetry.Sample[] s,long now){
         update(now,f(s,7),at(s,7,now),f(s,0),f(s,Telemetry.BOOST),f(s,11),f(s,12),at(s,12,now),f(s,2),f(s,9));

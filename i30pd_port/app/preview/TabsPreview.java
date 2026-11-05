@@ -161,7 +161,7 @@ public final class TabsPreview {
             BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
             PitRenderer bgR=new PitRenderer();bgR.draw(c,800,480,false,model,now,0,false,null);android.graphics.Paint bg=new android.graphics.Paint(1);bg.setColor(Theme.current().map(0xff040506));c.drawRect(0,53,800,480,bg);
             if(k==0||k==4)q[9]=new Telemetry.Sample(28,true,false,true,false,0);if(k==5)q[9]=new Telemetry.Sample(100,true,false,true,false,0);   // heel-toe: throttle blipped with the brake on, clutch in
-            DriveStats dst=new DriveStats();ShiftCoach co=dst.coach;co.grades[0]=7;co.grades[1]=3;co.grades[2]=1;co.count=11;co.streak=k==2?0:5;co.bestStreak=7;
+            DriveStats dst=new DriveStats();ShiftCoach co=dst.coach;co.count=11;
             co.last=k==1||k==5?new ShiftCoach.Shift(2,3,false,-60,0.31f,0.06f):k==2?new ShiftCoach.Shift(4,3,false,-320,0.55f,0.21f):k==3?null:new ShiftCoach.Shift(5,4,true,40,0.42f,0.08f);
             new LambdaCluster().frame(c,q,model,dst,VehicleProfile.PETROL_MT,now,null);
             ImageIO.write(img,"png",new File(out,"9p_manual_"+dsn[k]+".png"));

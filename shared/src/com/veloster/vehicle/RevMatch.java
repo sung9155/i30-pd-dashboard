@@ -24,11 +24,13 @@ public final class RevMatch {
         if(applies(p))return Telemetry.mtRpmIn(kmh,g);
         return learned==null?Float.NaN:learned.rpmIn(kmh,g);
     }
-    /** Fills gear[] / rpm[] (length 3, one gear down first) with the gears worth showing; returns how many. */
+    /** Fills gear[] / rpm[] (length 3, one gear down first) with the gears worth showing; returns how many. A 6MT gets
+     *  up to three gears down (skip shifts); a DCT only the next one down (the paddle steps one gear at a time). */
     public static int targets(Telemetry.Sample[] s,VehicleProfile p,GearRatios learned,int[] gear,float[] rpm){
         Telemetry.Sample g=s[8],v=s[7];if(!g.valid||!v.valid||!(v.value>=10))return 0;
         int cur=(int)g.value,n=0;if(cur<2||cur>p.topGear)return 0;
-        for(int k=1;k<=3&&cur-k>=1;k++){float t=rpmIn(p,learned,v.value,cur-k);
+        int most=p.trans==VehicleProfile.Trans.MT?3:1;
+        for(int k=1;k<=most&&cur-k>=1;k++){float t=rpmIn(p,learned,v.value,cur-k);
             if(t>=LOW_RPM&&t<p.redline){gear[n]=cur-k;rpm[n]=t;n++;}}
         return n;
     }

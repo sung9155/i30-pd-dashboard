@@ -90,6 +90,7 @@ public final class UiText {
         EN.put("Wi-Fi/AP 상태가 안정된 꺼짐/켜짐 상태가 아닙니다. 변경하지 않았습니다.","Wi-Fi/AP is not in a stable on/off state. No changes were made.");
         EN.put("XY · 잔상 3 s","XY · 3 s afterglow");
         EN.put("e-LSD 수치","e-LSD value");
+        EN.put("Λ RPM·속도계","Λ rpm and speed");
         EN.put("− / + 로 조절 · 한 번 들려줌","Adjust with − / + · plays it once");
         EN.put("−1분","-1 min");
         EN.put("−2분30초","-2m30s");
@@ -193,7 +194,6 @@ public final class UiText {
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
         EN.put("다른 칸과 위치 바꾸기","Swap with another slot");
         EN.put("다시 조회","Read again");
-        EN.put("다운시프트 RPM","Downshift rpm");
         EN.put("다음","Next");
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
         EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
@@ -213,6 +213,7 @@ public final class UiText {
         EN.put("드래그 출발 트리","Drag start tree");
         EN.put("디젤 DPF","Diesel DPF");
         EN.put("라바 오렌지","Lava Orange");
+        EN.put("람다","Lambda");
         EN.put("람보","Lambo");
         EN.put("랠리","Rally");
         EN.put("랩 타이머","Lap timer");
@@ -324,7 +325,6 @@ public final class UiText {
         EN.put("속도 km/h","Speed km/h");
         EN.put("쇼","Show");
         EN.put("쇼 화면","Show screen");
-        EN.put("수동","Manual");
         EN.put("수동(6MT) 전용 화면","For the 6-speed manual only");
         EN.put("순간 연료소모","Fuel rate");
         EN.put("순간 연비","Instant economy");

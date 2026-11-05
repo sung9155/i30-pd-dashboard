@@ -6,7 +6,7 @@ public final class ClusterPickerTest {
     private static void check(boolean b,String s){checks++;if(!b)throw new AssertionError(s);}
     public static void main(String[] args){
         check(ClusterPicker.COUNT==24&&ClusterPicker.NAMES.length==24&&ClusterPicker.DESC.length==24,"24 screens, one name and line each");
-        check(ClusterPicker.NAMES[ClusterPicker.MANUAL].equals("수동"),"the 수동 screen last");
+        check(ClusterPicker.NAMES[ClusterPicker.MANUAL].equals("람다"),"the 람다 (twin Λ) screen last");
         {int[] old=new int[23];for(int i=0;i<23;i++)old[i]=22-i;int[] o=ClusterPicker.validOrder(old);
          check(o.length==24&&o[0]==22&&o[22]==0&&o[23]==23,"an order saved with 23 screens keeps its arrangement, 수동 last");}
         {int[] old=new int[22];for(int i=0;i<22;i++)old[i]=21-i;int[] o=ClusterPicker.validOrder(old);

@@ -660,7 +660,7 @@
   "직접 선택": "Chosen by you",
   "서킷까지 %s": "%s to the circuit",
   "DPF 포집량": "DPF soot",
-  "수동": "Manual",
-  "다운시프트 RPM": "Downshift rpm",
-  "수동(6MT) 전용 화면": "For the 6-speed manual only"
+  "수동(6MT) 전용 화면": "For the 6-speed manual only",
+  "람다": "Lambda",
+  "Λ RPM·속도계": "Λ rpm and speed"
 }

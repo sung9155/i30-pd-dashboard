@@ -341,6 +341,10 @@ public final class HscanPdTelemetryTest {
         check(Math.abs(k.sample(Telemetry.DPF_DP,3440).value-15.1f)<0.05f&&Math.abs(k.sample(Telemetry.DPF_TEMP,3440).value-372.2f)<0.1f
             &&Math.abs(k.sample(Telemetry.DPF_SINCE_KM,3440).value-123.4f)<0.01f,"ED03 delta pressure, temperature, distance since regeneration");
         k.obd(Telemetry.DID_DPF,new byte[40],3441);check(k.sample(Telemetry.DPF_DP,3441).value>15,"a short ED03 reply leaves them alone");
+        // the same block over KWP 21 03 (OBDb): byte 46 exhaust temperature x4.7098 + 99, 53..56 metres since the regeneration
+        byte[] w=new byte[57];w[46]=58;w[54]=(byte)0x01;w[55]=(byte)0xe2;w[56]=0x40;   // 123 456 m
+        k.obd(Telemetry.LID_DPF,w,3443);
+        check(Math.abs(k.sample(Telemetry.DPF_TEMP,3443).value-(58*4.709803922f+99))<0.01f&&Math.abs(k.sample(Telemetry.DPF_SINCE_KM,3443).value-123.456f)<0.01f,"21 03 exhaust temperature and distance since regeneration");
         // 22 ED1D soot (OBDb Kia-Ceed 2018): u16 at data 4..5 x256/65535 -> 0x1000 = 16.0 g; the soot leads the DPF tile
         k.obd(Telemetry.DID_SOOT,new byte[]{0,0,0,0,0x10,0x00,0,0},3442);check(Math.abs(k.sample(Telemetry.DPF_SOOT,3442).value-16f)<0.01f,"ED1D soot 16.0 g");
         check(com.veloster.vehicle.Tiles.dpfLead(16,Float.NaN,15)==Telemetry.DPF_SOOT&&com.veloster.vehicle.Tiles.dpfLead(Float.NaN,40,15)==Telemetry.DPF_TRIGGER&&com.veloster.vehicle.Tiles.dpfLead(Float.NaN,Float.NaN,15)==Telemetry.DPF_DP,"DPF lead: soot, trigger, pressure");}

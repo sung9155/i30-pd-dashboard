@@ -42,7 +42,9 @@ public final class ObdLive {
         // the live ED03 poll logs its drop only once, early, and the record keeps only the log tail: ask it here too
         {EMS,0x22,0xED,0x03},{EMS,0x22,0xED,0x06},   // ED06: regeneration completed state (Kia Ceed 2018 in OBDb)
         // ED1D, the soot load the DPF tile leads with: on a v1.8.6 diesel it showed "—" and its one drop line can fall off the tail
-        {EMS,0x22,0xED,0x1D}};
+        {EMS,0x22,0xED,0x1D},
+        // exhaust gas temperature bank 1, the standard PID (01 7C, DPF temperature, got no answer on a diesel PD)
+        {EMS,0x01,0x78}};
     private static final long PROBE_FIRST=20000,PROBE_EVERY=300000;private static final int PROBE_ROUNDS=24;
     private final List<String> coldProbe=new ArrayList<String>();
     private static final long REPLY_MS=300,SLOW_REPLY_MS=1200;   // a mode 01 PID is one frame; a mode 22 block (ED03 ~59 B, 01A4) is multi-frame and slower

@@ -296,10 +296,13 @@ public final class PitRenderer {
                         dim=!soundOn||noTurbo;}   // one line per row: nine rows fill the pane
                     break;
                 case SettingsLayout.LANG:sel=SettingsLayout.LANGS[i].equals(langSel);name=SettingsLayout.LANG_NAMES[i];break;
-                default:if(i==1){sel=speedCalOn;name="GPS 속도 보정";value=speedCalOn?"켬":"끔";
-                        sub=Float.isNaN(speedCalRatio)?String.format(Locale.US,UiText.t("배우는 중 · 정속 직진 표본 %d / %d"),speedCalSamples,SpeedCal.MIN_SAMPLES)
-                            :String.format(Locale.US,UiText.t("배운 비율 %+.1f %% · 표본 %,d · 표시 속도와 측정에 적용"),(speedCalRatio-1)*100,speedCalSamples);}
-                    else if(i==2){name="다시 배우기";sub="배운 GPS 속도 비율을 지우고 처음부터";dim=speedCalSamples==0;}
+                default:if(i==1){sel=speedCalOn;name="실제 속도로 표시";value=speedCalOn?"켬":"끔";
+                        // plain words: how far the speedometer is off, not the ratio (speedometer = GPS / ratio)
+                        if(Float.isNaN(speedCalRatio))sub=String.format(Locale.US,UiText.t("GPS로 속도계 오차 재는 중 · %d %%"),Math.min(99,speedCalSamples*100/SpeedCal.MIN_SAMPLES));
+                        else{float off=(1/speedCalRatio-1)*100;
+                            sub=String.format(Locale.US,UiText.t(Math.abs(off)<0.05f?"속도계가 실제와 같음":off>0?"속도계가 실제보다 %.1f %% 높게 나옴":"속도계가 실제보다 %.1f %% 낮게 나옴"),Math.abs(off))
+                                +UiText.t(speedCalOn?" · 실제 속도로 표시 중":" · 켜면 실제 속도로 표시");}}
+                    else if(i==2){name="다시 재기";sub="잰 값을 지우고 처음부터";dim=speedCalSamples==0;}
                     else{name="고장코드 읽기";sub="엔진·변속기·제동·조향·에어백·바디 (읽기만)";}
             }
             box(c,l,t,l+w,t+h,sel?0xff1c303b:dim?0xff08090a:0xff101315);

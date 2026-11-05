@@ -19,7 +19,9 @@ public final class UiText {
         EN.put("\n비밀번호: ","\nPassword: ");
         EN.put(" L/h 지금"," L/h now");
         EN.put(" L/h를 씁니다"," L/h in use");
+        EN.put(" · 실제 속도로 표시 중"," · showing the true speed");
         EN.put(" · 이 기기에서 실행할 수 없음"," - unavailable on this device");
+        EN.put(" · 켜면 실제 속도로 표시"," · turn on to show the true speed");
         EN.put(" · 표시 항목"," - Signal");
         EN.put(" 실행 실패: "," launch failed: ");
         EN.put(" 전환 요청 완료. 실제 PC 연결은 별도로 확인하세요."," change requested. Verify the actual PC connection separately.");
@@ -71,10 +73,10 @@ public final class UiText {
         EN.put("G-포스","G-force");
         EN.put("GPS 끊김","GPS lost");
         EN.put("GPS 랩 타이머","GPS lap timer");
-        EN.put("GPS 속도 보정","GPS speed calibration");
         EN.put("GPS 신호를 기다리는 중","Waiting for GPS");
         EN.put("GPS 없음","no GPS");
         EN.put("GPS·오디오 등 실제 연결은 해당 앱에서 진행합니다. 기기를 선택해 확인할 때만 페어링을 요청합니다.","Use the relevant app for GPS or audio connections. Pairing is requested only after you select and confirm a device.");
+        EN.put("GPS로 속도계 오차 재는 중 · %d %%","Measuring the speedometer against GPS · %d %%");
         EN.put("KIC 상설 서킷","KIC Permanent Circuit");
         EN.put("L · 가속 페달","L · accelerator");
         EN.put("N 계기판","N Dashboard");
@@ -201,7 +203,7 @@ public final class UiText {
         EN.put("눌러서 화면 고르기","Tap to choose a screen");
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
         EN.put("다른 칸과 위치 바꾸기","Swap with another slot");
-        EN.put("다시 배우기","Learn again");
+        EN.put("다시 재기","Measure again");
         EN.put("다시 조회","Read again");
         EN.put("다운시프트 맞춤 소리가 나는 화면 · 누르면 바뀜","Where the downshift match sounds play · tap to change");
         EN.put("다음","Next");
@@ -270,9 +272,6 @@ public final class UiText {
         EN.put("바로가기: ","Shortcut: ");
         EN.put("반응 시간","Reaction");
         EN.put("배기","Exhaust");
-        EN.put("배우는 중 · 정속 직진 표본 %d / %d","Learning · steady straight samples %d / %d");
-        EN.put("배운 GPS 속도 비율을 지우고 처음부터","Forget the learned GPS speed ratio and start over");
-        EN.put("배운 비율 %+.1f %% · 표본 %,d · 표시 속도와 측정에 적용","Learned %+.1f %% · %,d samples · applied to the shown speed and runs");
         EN.put("배터리 SOC","Battery SOC");
         EN.put("배터리 전압","Battery voltage");
         EN.put("백업 저장 실패. 무선 설정을 변경하지 않았습니다.","Backup could not be saved. Wireless settings were not changed.");
@@ -351,6 +350,9 @@ public final class UiText {
         EN.put("세션 최대","Session peaks");
         EN.put("세종","Sejong");
         EN.put("속도 km/h","Speed km/h");
+        EN.put("속도계가 실제보다 %.1f %% 낮게 나옴","The speedometer reads %.1f %% low");
+        EN.put("속도계가 실제보다 %.1f %% 높게 나옴","The speedometer reads %.1f %% high");
+        EN.put("속도계가 실제와 같음","The speedometer reads true");
         EN.put("쇼","Show");
         EN.put("쇼 화면","Show screen");
         EN.put("수동(6MT) 전용 화면","For the 6-speed manual only");
@@ -376,6 +378,7 @@ public final class UiText {
         EN.put("시스템","System");
         EN.put("시험 접속정보 보기","Show test credentials");
         EN.put("시험 핫스팟 켜기","Test hotspot");
+        EN.put("실제 속도로 표시","Show the true speed");
         EN.put("실행 가능한 기본 앱이 더 없습니다.","No other system apps are available to open.");
         EN.put("실행 가능한 액티비티가 없습니다: ","No launchable activity: ");
         EN.put("실행 바로가기 / Quick entry","Quick entry");
@@ -506,6 +509,7 @@ public final class UiText {
         EN.put("재시작","Restart");
         EN.put("재시작 요청 실패: ","Restart request failed: ");
         EN.put("재시작 요청이 취소되었습니다.","Restart request cancelled.");
+        EN.put("잰 값을 지우고 처음부터","Forget the measurement and start over");
         EN.put("저속 시간","Slow time");
         EN.put("저장","Save");
         EN.put("저장 / Save","Save");

@@ -233,7 +233,8 @@ public final class HscanPdTelemetryTest {
         dzb.hscanPd(0xc7,0x0e,b(0x16,0x36,0x39,0xd9,0x0b,0x00,0x0c,0x75),917);
         check(Math.abs(dzb.sample(Telemetry.DPF_SOOT,917).value-16f)<0.01f,"ED1D soot replaces the hscan byte");
         // Brake lamps: another PD (diesel drives 2026-11-05, a 6MT owner's photo) sends switch 0 and 1-2 bar with the foot off.
-        check(!Telemetry.braking(0,1.9f)&&Telemetry.braking(0,59.3f)&&Telemetry.braking(1,0)&&!Telemetry.braking(Float.NaN,Float.NaN),"braking = switch on or over 3 bar");
+        check(Telemetry.braking(1,0)&&!Telemetry.braking(0,59.3f),"braking: the switch decides when it is known (a held brake keeps pressure)");
+        check(Telemetry.braking(Float.NaN,59.3f)&&!Telemetry.braking(Float.NaN,1.9f)&&!Telemetry.braking(Float.NaN,Float.NaN),"no switch: over 3 bar");
         Telemetry pdp=new Telemetry();   // a petrol never shows DPF from this slot
         pdp.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x39,0x2e,0x15,0x01,0x80,0),900);
         check(!pdp.sample(Telemetry.DPF_REGEN,900).valid&&!pdp.sample(Telemetry.DPF_SOOT,900).valid,"no DPF before a diesel is known");
@@ -267,8 +268,10 @@ public final class HscanPdTelemetryTest {
         // EMS16 spark timing, TCS13 DriverBraking, MDPS11 driver torque (bytes from the 10/29 drive log).
         t.hscanPd(0xc7,0x0c,b(0x01,0x4d,0x4f,0x30,0xff,0xde,0xa7,0x4a),3200);equal(t,Telemetry.SPARK,27.0f,3200);
         t.hscanPd(0xc7,0x0c,b(0x01,0x4d,0x4f,0x30,0xff,0xde,0xff,0x4a),3201);check(!t.sample(Telemetry.SPARK,3201).valid,"spark sentinel withheld");
-        t.hscanPd(0xc7,0x1b,b(0x00,0xa0,0,0,0x6c,0x24,0x9d,0x80),3200);equal(t,Telemetry.BRAKE_SWITCH,1,3200);
-        t.hscanPd(0xc7,0x1b,b(0x00,0xa0,0,0,0x6c,0x24,0x1d,0x80),3201);equal(t,Telemetry.BRAKE_SWITCH,0,3201);
+        // Brake switch = EMS12 BRAKE_ACT byte4 bits 0-1 (2 pressed, 1 released); TCS13 DriverBraking no longer writes it.
+        t.hscanPd(0xc7,0x09,b(0x00,0xa0,0,0,0x02,0x24,0,0),3200);equal(t,Telemetry.BRAKE_SWITCH,1,3200);
+        t.hscanPd(0xc7,0x1b,b(0x00,0xa0,0,0,0x6c,0x24,0x1d,0x80),3201);equal(t,Telemetry.BRAKE_SWITCH,1,3201);
+        t.hscanPd(0xc7,0x09,b(0x00,0xa0,0,0,0x01,0x24,0,0),3202);equal(t,Telemetry.BRAKE_SWITCH,0,3202);
         t.hscanPd(0xc7,0x17,b(0x80,0x70,0x44,0,0,0x13,0x4c,0x05),3200);equal(t,Telemetry.STEER_TORQUE,2190*0.01f-20.48f,3200);
         // CGW1 body: driver door (byte1 bit0) and wiper speed (byte3) from the 10/30 action-tagged captures.
         t.hscanPd(0xc7,0x01,b(0x03,0x04,0x61,0x00,0,0,0,0),3300);equal(t,Telemetry.DOOR_DRIVER,0,3300);equal(t,Telemetry.WIPER,0,3300);

@@ -144,15 +144,26 @@ public final class TabsPreview {
         rec.setPage(PitRenderer.PAGE_RETRO);save(out,"x_tiles_retro",rec,model,now,false,false);
         for(int[] t:Tiles.picked)java.util.Arrays.fill(t,-1);
         cluster(out,"x_tiles_classic_mt",0,model,now,rec.stats(),VehicleProfile.PETROL_MT);   // a 6MT: engine load instead of the DCT clutches
-        // 수동 screen (race page + 6MT rpm sweep): {gear, km/h, rpm, clutch, brake bar}; the race and performance pages turn the rpm green on a match
-        float[][] ds={{4,80,1500,1,0},{5,100,2800,0,0},{3,60,2800,0,25},{6,96,2200,0,0},{4,80,3720,1,0}};String[] dsn={"a_4th80_clutch","b_5th100_cruise","c_3rd60_brake","d_6th96","e_4th80_match"};
+        {Telemetry.Sample[] q=model.snapshot(now);DriveStats dst=new DriveStats();   // 수동 on a 7DCT: learned ratios, M gate, clutch temperatures
+         float[] perKmh={0,49.5f,29.4f,19.4f,14.6f,11.6f,9.5f,8.0f};
+         for(int g=1;g<=7;g++){dst.ratios.update(0,g,perKmh[g]*150,150,false);dst.ratios.update(2000,g,perKmh[g]*150,150,false);}
+         q[8]=new Telemetry.Sample(4,true,false,true,false,0);q[7]=new Telemetry.Sample(90,true,false,true,false,0);q[0]=new Telemetry.Sample(90*14.6f,true,false,true,false,0);
+         q[Telemetry.CLUTCH_ODD]=new Telemetry.Sample(112,true,false,true,false,0);q[Telemetry.CLUTCH_EVEN]=new Telemetry.Sample(156,true,false,true,false,0);q[10]=new Telemetry.Sample(18,true,false,true,false,0);
+         BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+         new PitRenderer().draw(c,800,480,false,model,now,0,false,null);new LambdaCluster().frame(c,q,model,dst,VehicleProfile.PETROL_DCT,now,null);
+         ImageIO.write(img,"png",new File(out,"9p_manual_dct.png"));}
+        // 수동 screen (the Λ layout, 6MT): {gear, km/h, rpm, clutch, brake bar}; the race and performance pages turn the rpm green on a match
+        float[][] ds={{4,80,1500,1,22},{5,100,2800,0,0},{3,60,2800,0,25},{6,96,2200,0,0},{4,80,3720,1,22},{3,122,5750,0,0}};String[] dsn={"a_4th80_clutch","b_5th100_cruise","c_3rd60_brake","d_6th96","e_4th80_match","f_3rd122_upshift"};
         for(int k=0;k<ds.length;k++){Telemetry.Sample[] q=model.snapshot(now);float[] d=ds[k];
             q[8]=new Telemetry.Sample(d[0],true,false,true,false,0);q[7]=new Telemetry.Sample(d[1],true,false,true,false,0);q[0]=new Telemetry.Sample(d[2],true,false,true,false,0);
             q[Telemetry.CLUTCH]=new Telemetry.Sample(d[3],true,false,true,false,0);q[10]=new Telemetry.Sample(d[4],true,false,true,false,0);q[Telemetry.SHIFT_HINT]=new Telemetry.Sample(0,true,false,true,false,0);
             ShiftGuide.Cue cue=ShiftGuide.evaluate(q,ShiftGuide.target(0,VehicleProfile.PETROL_MT),VehicleProfile.PETROL_MT);
             BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
             PitRenderer bgR=new PitRenderer();bgR.draw(c,800,480,false,model,now,0,false,null);android.graphics.Paint bg=new android.graphics.Paint(1);bg.setColor(Theme.current().map(0xff040506));c.drawRect(0,53,800,480,bg);
-            new RaceRenderer().drawManual(c,q,cue,now,rec.stats(),VehicleProfile.PETROL_MT);
+            if(k==0||k==4)q[9]=new Telemetry.Sample(28,true,false,true,false,0);if(k==5)q[9]=new Telemetry.Sample(100,true,false,true,false,0);   // heel-toe: throttle blipped with the brake on, clutch in
+            DriveStats dst=new DriveStats();ShiftCoach co=dst.coach;co.grades[0]=7;co.grades[1]=3;co.grades[2]=1;co.count=11;co.streak=k==2?0:5;co.bestStreak=7;
+            co.last=k==1||k==5?new ShiftCoach.Shift(2,3,false,-60,0.31f,0.06f):k==2?new ShiftCoach.Shift(4,3,false,-320,0.55f,0.21f):k==3?null:new ShiftCoach.Shift(5,4,true,40,0.42f,0.08f);
+            new LambdaCluster().frame(c,q,model,dst,VehicleProfile.PETROL_MT,now,null);
             ImageIO.write(img,"png",new File(out,"9p_manual_"+dsn[k]+".png"));
             if(k==4){img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);c=new android.graphics.Canvas(img.createGraphics());bgR.draw(c,800,480,false,model,now,0,false,null);c.drawRect(0,53,800,480,bg);
                 new RaceRenderer().draw(c,q,cue,now,rec.stats(),VehicleProfile.PETROL_MT,false,null,null);ImageIO.write(img,"png",new File(out,"x_race_mt_match.png"));

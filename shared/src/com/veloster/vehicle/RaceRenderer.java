@@ -1,6 +1,5 @@
 package com.veloster.vehicle;
 
-import com.veloster.i18n.UiText;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -34,10 +33,7 @@ public final class RaceRenderer {
     private VehicleProfile prof=VehicleProfile.PETROL_DCT;
     private long now,popAt=Long.MIN_VALUE/2,turnLeftAt=Long.MIN_VALUE/2,turnRightAt=Long.MIN_VALUE/2;
     private int lastGear;
-    private boolean mediaOn,sweep;
-    /** One colour per gear (index = gear) for the 수동 screen's chips, from the owner's sketch: 5 teal, 4 yellow, 3 red, 2 purple. */
-    private static final int[] GEAR_INK={0,0xffff5fa8,0xff9b5cff,0xffff6a4d,0xffffe04a,0xff2fe0c4,0xff5ab4ff};
-    private final int[] sweepGear=new int[3];private final float[] sweepRpm=new float[3];
+    private boolean mediaOn;
     private MediaState.Snapshot music;
     private Bitmap artwork;
 
@@ -49,7 +45,7 @@ public final class RaceRenderer {
         s=samples;cue=shiftCue;now=frameTime;st=stats;prof=profile;mediaOn=media;music=track;artwork=cover;
         float gv=v(8);int gi=Float.isNaN(gv)?0:(int)gv;
         if(gi>=1&&gi<=7){if(lastGear>0&&gi!=lastGear)popAt=now;lastGear=gi;}
-        if(sweep)sweep(c);else{status(c);shiftBar(c);}
+        status(c);shiftBar(c);
         float rpm=v(0),boost=v(Telemetry.BOOST);
         float brake=v(10),pedal=v(9);
         int matched=RevMatch.matched(s,prof);   // 6MT, clutch in: the blip sits on a lower gear's rpm
@@ -191,32 +187,6 @@ public final class RaceRenderer {
     }
     /** Steering-wheel style shift lights: both ends fill toward the middle over the last quarter below the shift
      * target (ShiftGuide's 15 LEDs: 1500 rpm at 6000), green -> amber -> red; at the target the whole bar blinks blue. */
-    /** The 수동 screen: the race page with an rpm sweep in place of the status row and the shift-light strip. */
-    public void drawManual(Canvas c,Telemetry.Sample[] samples,ShiftGuide.Cue shiftCue,long frameTime,DriveStats stats,VehicleProfile profile){
-        sweep=true;try{draw(c,samples,shiftCue,frameTime,stats,profile,false,null,null);}finally{sweep=false;}
-    }
-    /** rpm sweep across the top (56..100): fills with the rpm (blinking at the shift point, green on a rev match); a
-     *  notch, gear chip and rpm for each lower gear the engine can take (RevMatch), all inside the bar. */
-    private void sweep(Canvas c){
-        float t=56,b=100,x0=L,x1=R,rpm=v(0);int matched=RevMatch.matched(s,prof);
-        box(c,x0,t,x1,b,PANEL);
-        float xr=Float.isNaN(rpm)?x0:x0+(x1-x0)*Math.max(0,Math.min(1,rpm/prof.maxRpm));
-        p.setStyle(Paint.Style.FILL);
-        if(xr>x0+1){p.setColor(T(matched>0?GREEN:cue.shift?(blink()?RED:BLUE):BLUE));c.drawRect(x0+1,t+1,xr,b-1,p);}
-        boolean manual=RevMatch.applies(prof);int n=manual?RevMatch.targets(s,prof,sweepGear,sweepRpm):0,alpha=RevMatch.active(s)?0xff:0x80;
-        for(int k=1;k*500<prof.maxRpm;k++){float x=x0+(x1-x0)*k*500/prof.maxRpm;boolean major=k%2==0,on=x<xr,free=true;
-            p.setColor(on?0x66000000:T(LINE));c.drawRect(x-(major?1:.5f),b-(major?12:6),x+(major?1:.5f),b-1,p);
-            for(int i=0;i<n;i++){float lx=Math.min(x0+(x1-x0)*sweepRpm[i]/prof.maxRpm+5,x1-46);if(x+14>lx-4&&x<lx+44)free=false;}   // a gear's label sits there
-            if(major&&free)text(c,String.valueOf(k/2),x+3,b-4,10,on?BG:MUTED,Paint.Align.LEFT);}
-        if(!manual){text(c,UiText.t("수동(6MT) 전용 화면"),x1-10,t+27,13,MUTED,Paint.Align.RIGHT);return;}
-        for(int i=0;i<n;i++){float x=x0+(x1-x0)*sweepRpm[i]/prof.maxRpm;boolean ok=sweepGear[i]==matched,covered=x<=xr;
-            p.setColor((T(ok?GREEN:covered?BG:WHITE)&0xffffff)|(alpha<<24));c.drawRect(x-1.5f,t+1,x+1.5f,b-1,p);
-            float l=Math.min(x+5,x1-46);   // chip on top, its rpm under it, right of the notch
-            p.setColor((T(ok?GREEN:GEAR_INK[sweepGear[i]])&0xffffff)|(alpha<<24));r.set(l,t+5,l+26,t+25);c.drawRoundRect(r,4,4,p);
-            p.setColor(T(BG));p.setTypeface(Typeface.DEFAULT_BOLD);p.setTextSize(16);p.setTextAlign(Paint.Align.CENTER);c.drawText(String.valueOf(sweepGear[i]),l+13,t+21,p);
-            p.setColor((T(covered?BG:WHITE)&0xffffff)|(alpha<<24));p.setTextSize(13);p.setTextAlign(Paint.Align.LEFT);
-            c.drawText(String.format(Locale.US,"%,d",(int)sweepRpm[i]),l,t+39,p);p.setTypeface(Typeface.DEFAULT);}
-    }
     private void shiftBar(Canvas c){
         int n=40,half=n/2,lit=Math.round(cue.leds/15f*half);float w=(R-L-2*(n-1))/n;
         for(int i=0;i<n;i++){int d=i<half?i:n-1-i;

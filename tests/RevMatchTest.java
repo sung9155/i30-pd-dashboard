@@ -22,6 +22,11 @@ public final class RevMatchTest {
         // the match window: within 100 rpm of the 3rd-gear target
         check(RevMatch.matched(3720,80,4,6500)==3&&RevMatch.matched(3860,80,4,6500)==0&&RevMatch.matched(5650,80,4,6500)==2,"rev match within 100 rpm");
         check(Float.isNaN(Telemetry.mtRpmIn(80,7))&&Telemetry.mtRpmIn(80,3)==3750,"mtRpmIn: 3rd at 80 km/h, no 7th");
-        System.out.println("PASS "+checks+" rev-match checks");
+        // learned ratios (7DCT): a gear counts after 1.5 s steady above 20 km/h with the clutch closed
+        com.veloster.vehicle.GearRatios lr=new com.veloster.vehicle.GearRatios();
+        lr.update(0,3,1800,60,false);lr.update(1000,3,1800,60,false);check(Float.isNaN(lr.rpmIn(80,3)),"not before 1.5 s");
+        lr.update(1600,3,1800,60,false);check(lr.rpmIn(80,3)==2400,"3rd learned: 30 rpm per km/h, 2400 at 80");
+        lr.update(1700,4,1500,60,false);lr.update(2000,4,9999,10,false);check(Float.isNaN(lr.rpmIn(80,4)),"a new gear starts its hold; under 20 km/h never counts");
+                System.out.println("PASS "+checks+" rev-match checks");
     }
 }

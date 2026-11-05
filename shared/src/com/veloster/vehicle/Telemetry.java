@@ -31,6 +31,10 @@ public final class Telemetry {
     /** Display orientation follows the driver's reported left/right convention. Raw SAS stays unchanged. */
     /** GPS speed calibration (SpeedCal) applied to the shown vehicle speed; 1 when off or not learned yet. */
     public static volatile float speedScale=1;
+    /** Brake pressure (bar) above which the foot is on the brake. Only our car sends the TCS13 switch (it agrees with
+     *  pressure over 3 bar 98 %); another PD's switch stays 0 and its pressure reads 1-2 bar with the foot off. */
+    public static final float BRAKING_BAR=3;
+    public static boolean braking(float sw,float bar){return sw>0||bar>BRAKING_BAR;}
     public static float displayValue(int signal,float raw){return signal==STEERING?(raw==0?0:-raw):signal==7?raw*speedScale:raw;}
     /** String.format(Locale.US,f,x), but a value that rounds to zero loses its minus: idle boost -0.004 reads 0.00
      * (+0.00 under a '+' flag), not -0.00. */

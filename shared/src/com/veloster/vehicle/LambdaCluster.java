@@ -118,7 +118,7 @@ final class LambdaCluster extends ClusterKit {
             lamp(c,y+1.05f*dy,"CLU",clutch,BLUE);lamp(c,y+3.9f*dy,"H/T",heel,OR);}
         else{int lv=Math.max(Telemetry.clutchLevel(v(Telemetry.CLUTCH_ODD)),Telemetry.clutchLevel(v(Telemetry.CLUTCH_EVEN)));
             lamp(c,y+1.05f*dy,"MAN",shown.startsWith("M"),acc);lamp(c,y+3.9f*dy,"CLT",lv>0,lv==2?RED:AMBER);}
-        lamp(c,y+2.0f*dy,"BRK",brake>1,RED);lamp(c,y+2.95f*dy,"THR",pedal>5,GREEN);
+        lamp(c,y+2.0f*dy,"BRK",Telemetry.braking(v(Telemetry.BRAKE_SWITCH),brake),RED);lamp(c,y+2.95f*dy,"THR",pedal>5,GREEN);
     }
     /** A lamp as a pill with its name in English (the whole screen is English; three letters: CLU BRK THR H/T, DCT MAN BRK THR CLT), every pill the
      *  same width whatever its word: filled in its colour while on. */

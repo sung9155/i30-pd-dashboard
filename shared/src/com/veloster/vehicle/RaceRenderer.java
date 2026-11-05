@@ -165,6 +165,7 @@ public final class RaceRenderer {
         float aw=32,sl=L+aw+4,sr=R-aw-4,w=(sr-sl-4*7)/8;
         for(int i=0;i<8;i++){
             float l=sl+i*(w+4),val=v(sig[i]);
+            if(i==6){float bar=v(10);if(!Float.isNaN(val)||!Float.isNaN(bar))val=Telemetry.braking(val,bar)?1:0;}
             int fill=i==7?(val==1?RED:val==3?GREEN:0):!Float.isNaN(val)&&val>0?on[i]:0;
             box(c,l,56,l+w,80,fill!=0?fill:PANEL);if(fill==D())ThemeShapes.ring(c,p,l,56,l+w,80);
             text(c,name[i],l+w/2,73,12,fill!=0?BG:Float.isNaN(val)?0xff4a5860:MUTED,Paint.Align.CENTER);

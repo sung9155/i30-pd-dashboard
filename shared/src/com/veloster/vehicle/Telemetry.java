@@ -266,17 +266,11 @@ public final class Telemetry {
                 if(n>=3&&(d[0]&1)!=0)put(DPF_TEMP,u16(d,1)/10f-40,true,now);
                 else if(n>=5&&(d[0]&2)!=0)put(DPF_TEMP,u16(d,3)/10f-40,true,now);
                 break;
-            case 0x8b:{
-                Sample odo=sample(ODOMETER,now);
-                if(n>=2&&(d[0]&1)!=0){
-                    int r=d[1]&1;put(DPF_REGEN,r,true,now);
-                    if(lastRegen==1&&r==0&&odo.valid)regenEndOdo=odo.value;   // a regeneration just ended: count from here
-                    lastRegen=r;
-                }
+            case 0x8b:
+                if(n>=2&&(d[0]&1)!=0)regen(d[1]&1,now);
                 if(n>=3&&(d[0]&0x10)!=0)put(DPF_TRIGGER,(d[2]&255)*100f/255,true,now);
                 if(n>=7&&(d[0]&0x40)!=0)put(DPF_AVG_KM,u16(d,5),true,now);   // average distance between regenerations, km
-                if(odo.valid&&!Float.isNaN(regenEndOdo)&&odo.value>=regenEndOdo)put(DPF_SINCE_KM,odo.value-regenEndOdo,true,now);
-                break;}
+                break;
             // 7DCT clutch temperatures (OBDb Hyundai-i30, CC BY-SA 4.0): u16 at data bytes 29 and 31 after 62 01 A4, x2 - 40 °C.
             // Our car: 28/30 cold, 32/34 at 5 min, 58/96 at 11 min. #2 ran hot while the same reply's gear byte read R,
             // and R rides on the even clutch, so #1 = odd gears, #2 = even gears (i30pd_port/OBD_PROBE.md).
@@ -286,7 +280,7 @@ public final class Telemetry {
             // 45..48 distance since the last regeneration in metres. The ECU keeps that distance, so it beats our odometer count.
             // 62 ED 1D (OBDb Kia-Ceed 2018): u16 at data bytes 4..5, x256/65535, read as grams (Hyundai's GDS shows soot in g;
             // a newer Tucson NX4 tool reads the same bytes little-endian, so the raw reply in the log settles the order on a PD)
-            case DID_SOOT: if(n>=6)put(DPF_SOOT,u16(d,4)*256f/65535,true,now); break;
+            case DID_SOOT: if(n>=6){sootObd=true;put(DPF_SOOT,u16(d,4)*256f/65535,true,now);} break;
             case DID_DPF: if(n>=56){put(DPF_DP,(d[36]&255)*0.431373f,true,now);put(DPF_TEMP,(d[38]&255)*4.7098f+99,true,now);
                 put(DPF_SINCE_KM,(((long)u16(d,45)<<16)|u16(d,47))/1000f,true,now);} break;
             default: obd(pid,n>0?d[0]&255:0,n>1?d[1]&255:0,now);
@@ -295,6 +289,15 @@ public final class Telemetry {
     private static int u16(byte[] d,int i){return (d[i]&255)<<8|(d[i+1]&255);}
     private int lastRegen=-1;
     private float regenEndOdo=Float.NaN;
+    private boolean sootObd;   // 22 ED1D answered: its soot (g) replaces the hscan byte
+    /** Regeneration on (1) or off (0), from OBD 01 8B or the diesel's EMS19 slot; counts the km since the last one ended. */
+    private void regen(int r,long now){
+        Sample odo=sample(ODOMETER,now);
+        put(DPF_REGEN,r,true,now);
+        if(lastRegen==1&&r==0&&odo.valid)regenEndOdo=odo.value;   // a regeneration just ended: count from here
+        lastRegen=r;
+        if(odo.valid&&!Float.isNaN(regenEndOdo)&&odo.value>=regenEndOdo)put(DPF_SINCE_KM,odo.value-regenEndOdo,true,now);
+    }
     /** Odometer (km) where the last regeneration the app saw ended, NaN before the first; VehicleDash keeps it in prefs. */
     public synchronized float dpfRegenEnd(){return regenEndOdo;}
     public synchronized void dpfRegenEnd(float odo){regenEndOdo=odo;}
@@ -492,6 +495,15 @@ public final class Telemetry {
             if(diesel()){int r=b[1]&255;ok=r>0&&r<255&&!Float.isNaN(baroHpa);v=(r*20f-baroHpa)/1000f;}
             else{int raw=((b[2]&255)>>4)|((b[3]&255)<<4);ok=sparkSeen&&raw!=0xfff&&!Float.isNaN(baroHpa);v=(raw*1.322f-baroHpa)/1000f;}
             boost(ok?v:0,ok,now);
+            if(diesel()){
+                // DPF from the same frame (diesel drives 2026-11-05): byte5 bits 0-1 (the DBC's DPF_LAMP_STAT) went 0 -> 1 a
+                // minute into a drive where the owner felt a regeneration; warm idle fuel doubled meanwhile (0.59 -> 1.18 L/h)
+                // and byte4 fell 21 -> 11, about one a minute (20 all morning, no regeneration). 3 = no value.
+                // ponytail: byte4 read as 1 g a count, fitted on nothing but the range; 22 ED1D (g) wins once it answers.
+                int lamp=b[5]&3,soot=b[4]&255;
+                if(lamp!=3)regen(lamp!=0?1:0,now);
+                if(!sootObd)put(DPF_SOOT,soot,soot<255,now);
+            }
         }else if(funcLow==0x04&&b.length==8){
             // CLU13 CF_Clu_DrivingModeSwi @16|2: 0 normal, 1 sport, 3 eco (10/30 tagged captures; 2 never seen).
             int mode=b[2]&3;

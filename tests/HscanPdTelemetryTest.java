@@ -220,6 +220,21 @@ public final class HscanPdTelemetryTest {
         check(Math.abs(dzb.sample(Telemetry.BOOST,910).value-(52*20f-baro)/1000f)<0.001f&&Math.abs(dzb.sample(Telemetry.BOOST,910).value)<0.1f,"diesel idle: byte1 52 is about baro, near 0 bar: "+dzb.sample(Telemetry.BOOST,910).value);
         dzb.hscanPd(0xc7,0x0e,b(0,0x81,0x3a,0xb5,0x14,0,0x13,0x77),911);dzb.hscanPd(0xc7,0x0e,b(0,0x81,0x3a,0xb5,0x14,0,0x13,0x77),912);
         check(Math.abs(dzb.sample(Telemetry.BOOST,912).value-(129*20f-baro)/1000f)<0.001f,"diesel flat out: byte1 129 is about +1.6 bar");
+        // DPF from the same slot (evening drive 2026-11-05, the owner felt the regeneration): byte5 1 = regenerating, byte4 soot.
+        check(dzb.sample(Telemetry.DPF_SOOT,912).value==20&&dzb.sample(Telemetry.DPF_REGEN,912).value==0,"diesel morning: soot 20, no regeneration");
+        dzb.hscanPd(0xc7,0x03,new byte[]{(byte)0xfe,(byte)0xe3,0x1f,0},913);   // CLU12 odometer 208998.2 km
+        float odo0=dzb.sample(Telemetry.ODOMETER,913).value;
+        dzb.hscanPd(0xc7,0x0e,b(0,0x3a,0x39,0x55,0x15,0x01,0x0f,0x7f),914);
+        check(dzb.sample(Telemetry.DPF_REGEN,914).value==1&&dzb.sample(Telemetry.DPF_SOOT,914).value==21,"byte5 1: regenerating, soot 21");
+        dzb.hscanPd(0xc7,0x0e,b(0x16,0x36,0x39,0xd9,0x0b,0x00,0x0c,0x75),915);
+        check(dzb.sample(Telemetry.DPF_REGEN,915).value==0&&dzb.sample(Telemetry.DPF_SOOT,915).value==11,"regeneration over at soot 11");
+        check(Math.abs(odo0-208998.2f)<0.05f&&dzb.dpfRegenEnd()==odo0,"the end of a regeneration marks the odometer");
+        dzb.obd(Telemetry.DID_SOOT,new byte[]{0,0,0,0,0x10,0},916);   // 22 ED1D answers: its grams win from then on
+        dzb.hscanPd(0xc7,0x0e,b(0x16,0x36,0x39,0xd9,0x0b,0x00,0x0c,0x75),917);
+        check(Math.abs(dzb.sample(Telemetry.DPF_SOOT,917).value-16f)<0.01f,"ED1D soot replaces the hscan byte");
+        Telemetry pdp=new Telemetry();   // a petrol never shows DPF from this slot
+        pdp.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x39,0x2e,0x15,0x01,0x80,0),900);
+        check(!pdp.sample(Telemetry.DPF_REGEN,900).valid&&!pdp.sample(Telemetry.DPF_SOOT,900).valid,"no DPF before a diesel is known");
         Telemetry ptb=new Telemetry();   // a petrol never takes the diesel path, even with a few zero timing frames first
         ptb.hscanPd(0xc7,0x0a,b(0xd8,0x80,0,0x8e,0,0,0,0),900);
         for(int k=0;k<3;k++){ptb.hscanPd(0xc7,0x08,b(0,0,0x60,0x0d,0,0,0,0),901+k);ptb.hscanPd(0xc7,0x0c,b(0,0,0,0,0,0,0,0),901+k);}

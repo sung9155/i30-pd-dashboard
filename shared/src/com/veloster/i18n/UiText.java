@@ -36,6 +36,7 @@ public final class UiText {
         EN.put("3 × 2 보기","3 x 2 grid");
         EN.put("3단 아래 맞춤 소리","Sound: matched 3 gears down");
         EN.put("4 × 3 보기","4 x 3 grid");
+        EN.put("5도 위로","Up a fifth");
         EN.put("5분","5 min");
         EN.put("80년대","80s");
         EN.put("80년대 디지털","80s digital");
@@ -171,10 +172,13 @@ public final class UiText {
         EN.put("기존 설정 복구","Restore original settings");
         EN.put("기존 핫스팟 설정을 읽지 못했습니다. 백업 불가로 변경하지 않았습니다.","Could not read the existing hotspot configuration. No backup or changes were made.");
         EN.put("기존 핫스팟이 이미 켜져 있습니다. 설정을 변경하지 않았습니다.","The existing hotspot is already on. No settings were changed.");
+        EN.put("긴 비프","Long beep");
         EN.put("꺼짐","Off");
         EN.put("끄기","Disable");
         EN.put("끔","Off");
         EN.put("나이트","Night");
+        EN.put("낮은 차임","Low chime");
+        EN.put("낮은 톤","Low tone");
         EN.put("내 앱","My Apps");
         EN.put("내 앱 / My Apps","My Apps");
         EN.put("내 앱 열기 · 길게 끌어서 위치 변경 / My Apps","Open My Apps; drag to move");
@@ -208,6 +212,8 @@ public final class UiText {
         EN.put("대칭","Sym");
         EN.put("데미타스 브라운","Demitasse Brown");
         EN.put("돌아가기","Back");
+        EN.put("두 번 · 길고 짧게","Long then short");
+        EN.put("두 음 차임","Two-tone chime");
         EN.put("뒤 오른쪽 공기압","Rear-right pressure");
         EN.put("뒤 오른쪽 휠","Rear-right wheel");
         EN.put("뒤 왼쪽 공기압","Rear-left pressure");
@@ -216,6 +222,7 @@ public final class UiText {
         EN.put("드래그","Drag");
         EN.put("드래그 출발 트리","Drag start tree");
         EN.put("디젤 DPF","Diesel DPF");
+        EN.put("디지털 3틱","Digital 3 ticks");
         EN.put("라바 오렌지","Lava Orange");
         EN.put("람다","Lambda");
         EN.put("람다 · 레이스 · F1 · 퍼포먼스","람다 · Race · F1 · Performance");
@@ -234,6 +241,7 @@ public final class UiText {
         EN.put("마찰 토크","Friction torque");
         EN.put("마찰원","Friction circle");
         EN.put("막대","Bar");
+        EN.put("맑은 차임","Clear chime");
         EN.put("맑음","Clear");
         EN.put("맞춤 소리 화면","Match-sound screens");
         EN.put("멈추면 다음 운행 준비","Stop to ready the next trip");
@@ -305,13 +313,19 @@ public final class UiText {
         EN.put("비작동","Inactive");
         EN.put("비행기 엔진 계기판","Airliner engine display");
         EN.put("빈차","Vacant");
+        EN.put("빠른 상승 4음","Quick rising 4 tones");
         EN.put("삐빅","Double beep");
+        EN.put("삐빅 · 3번","Beep · 3 times");
+        EN.put("삐빅 · 4번 빠르게","Beep · 4 quick");
+        EN.put("삐빅 · 낮게","Double beep · low");
+        EN.put("삐빅 · 높게","Double beep · high");
         EN.put("삑","Beep");
         EN.put("사용","On");
         EN.put("사용 안 함","Off");
         EN.put("사용 안 함 / Off","Off");
         EN.put("사용 연료","Fuel used");
         EN.put("사운드","Sound");
+        EN.put("상승 2음","Rising 2 tones");
         EN.put("상승 3음","Rising tones");
         EN.put("상태 새로 확인","Refresh status");
         EN.put("상태 확인 실패: ","Status check failed: ");
@@ -408,6 +422,7 @@ public final class UiText {
         EN.put("연료 차단","Fuel cut");
         EN.put("연료 차단 · ","Fuel cut · ");
         EN.put("연료 차단 중","Fuel cut");
+        EN.put("연타 · 5번","Rapid · 5 taps");
         EN.put("영 수 증","RECEIPT");
         EN.put("예상","PREDICTED");
         EN.put("예약","Booked");
@@ -416,6 +431,7 @@ public final class UiText {
         EN.put("오실로","Scope");
         EN.put("오실로스코프","Oscilloscope");
         EN.put("오일 온도","Oil temperature");
+        EN.put("옥타브 위로","Up an octave");
         EN.put("온도","Temperatures");
         EN.put("와이퍼","Wiper");
         EN.put("완료","Done");
@@ -441,6 +457,7 @@ public final class UiText {
         EN.put("원래 화면","Previous screen");
         EN.put("원형","Dial");
         EN.put("위치를 바꿀 칸","Choose a slot to swap");
+        EN.put("유리 톡","Glass tap");
         EN.put("유온","Oil");
         EN.put("유온 (냉각수 대체)","Oil (coolant sub)");
         EN.put("유온(대체)","Oil (ECT)");
@@ -556,6 +573,7 @@ public final class UiText {
         EN.put("진단","DTC");
         EN.put("진단 서비스에 연결하지 못했습니다.","Could not connect to the diagnostic service.");
         EN.put("짝수단","Even");
+        EN.put("짧은 펄스 · 낮게","Short pulse · low");
         EN.put("차량 계산값","From the car");
         EN.put("차량 색","Car colour");
         EN.put("차량 속도","Vehicle speed");
@@ -656,6 +674,8 @@ public final class UiText {
         EN.put("풀부하 기준","Full-load line");
         EN.put("풀부하에서 점화가 기준선보다","Spark later than the full-load line");
         EN.put("플래티넘 실버","Platinum Silver");
+        EN.put("하강 2음","Falling 2 tones");
+        EN.put("하강 3음","Falling 3 tones");
         EN.put("한 번 더 누르면 초기화","Tap again to reset");
         EN.put("한국어","Korean");
         EN.put("할증","Night");

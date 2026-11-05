@@ -21,7 +21,10 @@ public final class SettingsLayout {
         return s>=2||screen==ClusterPicker.MANUAL||s==1&&screen>=ClusterPicker.F1&&screen<=ClusterPicker.F1+2;
     }
     /** Shift beep sounds, in ShiftBeep.SOUNDS order. */
-    public static final String[] BEEP_SOUNDS={"삐빅","삑","상승 3음","레이스 버저","틱틱"};
+    public static final String[] BEEP_SOUNDS={"삐빅","삑","상승 3음","레이스 버저","틱틱",
+        "삐빅 · 3번","삐빅 · 4번 빠르게","연타 · 5번","삐빅 · 낮게","삐빅 · 높게","두 번 · 길고 짧게","상승 2음","하강 2음","하강 3음","빠른 상승 4음","5도 위로","옥타브 위로","맑은 차임","두 음 차임","낮은 차임","유리 톡","디지털 3틱","짧은 펄스 · 낮게","긴 비프","낮은 톤"};
+    /** Default downshift sounds, one/two/three gears down: the count tells the gear (2, 3, 4 beeps). */
+    public static final int[] DOWN_DEFAULT={0,5,6};
     /** Sound pane rows: the virtual engine sound switch, its output route (cycles), and its volume with − and +. */
     /** Virtual engine sound (off 2026-11-04, back 2026-11-05 at the user's word). false: the 사운드 pane shows one dimmed
      *  line and the sound never starts, whatever was saved. ponytail: a flag, not a removal. */

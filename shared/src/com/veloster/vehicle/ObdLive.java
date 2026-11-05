@@ -61,7 +61,12 @@ public final class ObdLive {
     private volatile boolean running;
     private static volatile ObdSchedule current;
     /** The live requests' tally for the diagnostics line; empty before the poller starts (or off the PD). */
-    public static String summary(){ObdSchedule s=current;return s==null?"":" | obd "+s.summary();}
+    public static String summary(){ObdSchedule s=current;if(s==null)return "";StringBuilder b=new StringBuilder(" | obd ").append(s.summary());
+        synchronized(STRAY){for(int i=0;i<128;i++)if(STRAY[i]>0)b.append(" | stray ").append(String.format("%02X",i)).append(' ').append(STRAY[i]).append(' ').append(strayHead[i]);}
+        return b.toString();}
+    /** Replies that came back from another device than the one asked (per TP_DEVICE code), with the last one's first bytes:
+     *  shows an ECU answering under another code (a diesel engine, say), which the matching would otherwise drop unseen. */
+    private static final int[] STRAY=new int[128];private static final String[] strayHead=new String[128];
     private Thread thread;
 
     public void start(final Sink sink,final Gate gate){
@@ -184,7 +189,9 @@ public final class ObdLive {
             if(code==3){
                 int rcv=data.readByte()&255;data.readByte();int fl=data.readByte()&255;
                 byte[] d=data.createByteArray();
-                if(rcv==0xc7&&(fl&0x80)!=0&&d!=null)synchronized(lock){if((fl&0x7f)==expectEcu){replies.add(d);lock.notifyAll();}}
+                if(rcv==0xc7&&(fl&0x80)!=0&&d!=null)synchronized(lock){if((fl&0x7f)==expectEcu){replies.add(d);lock.notifyAll();}
+                    else if(expectEcu>=0)synchronized(STRAY){int k=fl&0x7f;STRAY[k]++;StringBuilder x=new StringBuilder();
+                        for(int i=0;i<Math.min(3,d.length);i++)x.append(i==0?"":" ").append(String.format("%02X",d[i]&255));strayHead[k]=x.toString();}}
             }
             if(reply!=null)reply.writeNoException();
             return true;

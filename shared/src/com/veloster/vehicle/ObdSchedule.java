@@ -33,6 +33,7 @@ public final class ObdSchedule {
     public static ObdSchedule standard(){
         return new ObdSchedule(
             pid(0x43,1000,0),                                                              // absolute load (gauges)
+            pid(0x00,10000,0),                                                             // supported PIDs: every OBD engine answers it, so its tally says whether the engine answers at all (a diesel's 43 / 3C / 2F may simply be unsupported)
             new Poll(TCU,new byte[]{0x22,0x01,(byte)0xA4},Telemetry.DID_CLUTCH,1000,3),    // 7DCT clutch temperatures (a launch heats them in seconds); a 6MT has no TCU
             pid(0x3c,5000,0),                                                              // catalyst temperature
             pid(0x7a,2000,3),pid(0x7c,2000,3),pid(0x8b,2000,3),                            // diesel DPF (pressure moves during a regeneration); a petrol engine drops them

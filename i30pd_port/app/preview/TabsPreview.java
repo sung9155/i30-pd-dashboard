@@ -89,6 +89,11 @@ public final class TabsPreview {
         rec.setBeep(true,2,70,new int[]{0,2,-1},1);rec.setSettings(4,"auto",-1,targets);save(out,"9_settings_rpm_beep",rec,model,now,false,false);rec.setBeep(false,0,70,new int[]{-1,-1,-1},0);
         rec.setModeOptions(true,true);rec.setSettings(3,"auto",-1,targets);save(out,"9_settings_mode_on",rec,model,now,false,false);
         rec.setSettings(3,"auto",0,targets);save(out,"9_settings_mode_pick",rec,model,now,false,false);
+        {Telemetry.Sample[] q=model.snapshot(now);q[7]=new Telemetry.Sample(103,true,false,true,false,0);   // GPS speed calibration off / on: the speedometer's 103 shown as a true 100
+         for(int on=0;on<2;on++){Telemetry.speedScale=on==1?0.971f:1;BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+          new PitRenderer().draw(c,800,480,false,model,now,0,false,null);android.graphics.Paint bg=new android.graphics.Paint(1);bg.setColor(Theme.current().map(0xff040506));c.drawRect(0,53,800,480,bg);
+          new RaceRenderer().draw(c,q,ShiftGuide.evaluate(q,ShiftGuide.target(0,VehicleProfile.PETROL_DCT),VehicleProfile.PETROL_DCT),now,rec.stats(),VehicleProfile.PETROL_DCT,false,null,null);
+          ImageIO.write(img,"png",new File(out,on==1?"x_speedcal_on.png":"x_speedcal_off.png"));}Telemetry.speedScale=1;}
         rec.setSpeedCal(true,0.968f,1240);rec.setSettings(7,"auto",-1,targets);save(out,"9_settings_diag_speedcal",rec,model,now,false,false);rec.setSpeedCal(false,Float.NaN,0);   // GPS speed calibration learned, on
         rec.setPicker(false,false,0);rec.setModeOptions(false,false);
         // Missing signals (empty model) and a 6MT profile, drawn straight through ClusterRenderer.

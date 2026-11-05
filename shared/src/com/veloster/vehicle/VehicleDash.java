@@ -321,7 +321,7 @@ public final class VehicleDash extends View implements Runnable {
         renderer.setSymmetric(symmetric);
         renderer.setPage(page);
         {Telemetry.Sample sp=DATA.sample(7,now),yw=DATA.sample(Telemetry.YAW,now),bs=DATA.sample(Telemetry.BRAKE_SWITCH,now),bp=DATA.sample(10,now);
-         boolean braking=bs.valid&&bs.value>0||bp.valid&&bp.value>1;
+         boolean braking=Telemetry.braking(bs.valid?bs.value:Float.NaN,bp.valid?bp.value:Float.NaN);
          speedCal.update(now,sp.valid&&sp.ageMs<=500?sp.value:Float.NaN,yw.valid?yw.value:Float.NaN,braking,GpsFix.seq,GpsFix.fresh()?GpsFix.speedKmh:Float.NaN,GpsFix.accuracy);
          float r=speedCal.ratio();Telemetry.speedScale=speedCalOn&&!Float.isNaN(r)?r:1;
          if(!Float.isNaN(r)&&speedCal.samples()!=speedCalSavedN&&now-speedCalSavedAt>60000){speedCalSavedAt=now;speedCalSavedN=speedCal.samples();

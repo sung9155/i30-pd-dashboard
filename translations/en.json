@@ -660,8 +660,6 @@
   "직접 선택": "Chosen by you",
   "서킷까지 %s": "%s to the circuit",
   "DPF 포집량": "DPF soot",
-  "수동": "Manual",
-  "다운시프트 RPM": "Downshift rpm",
   "수동(6MT) 전용 화면": "For the 6-speed manual only",
   "실제 속도로 표시": "Show the true speed",
   "GPS로 속도계 오차 재는 중 · %d %%": "Measuring the speedometer against GPS · %d %%",
@@ -671,5 +669,7 @@
   " · 실제 속도로 표시 중": " · showing the true speed",
   " · 켜면 실제 속도로 표시": " · turn on to show the true speed",
   "잰 값을 지우고 처음부터": "Forget the measurement and start over",
-  "속도 GPS 보정 값 초기화": "Reset the GPS speed correction"
+  "속도 GPS 보정 값 초기화": "Reset the GPS speed correction",
+  "람다": "Lambda",
+  "Λ RPM·속도계": "Λ rpm and speed"
 }

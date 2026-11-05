@@ -10,9 +10,16 @@ public final class SettingsLayout {
     public static final int PICK=9;
     /** RPM pane rows: RPM_SHIFT/RPM_RED and RPM_BEEP_VOL have − and + at the right (screenZone 1 and 2), the rest of the
      *  row resets it; RPM_BEEP is an on/off switch (the optional shift beep, ShiftBeep), RPM_BEEP_SOUND cycles its sound,
-     *  RPM_BEEP_VOL is the beep volume in percent (the downshift sounds too). RPM_DOWN1..+2 pick the 람다 screen's
-     *  sound for a blip matched one, two or three gears down (cycles 끔 and BEEP_SOUNDS). */
-    public static final int RPM_SHIFT=0,RPM_RED=1,RPM_BEEP=2,RPM_BEEP_SOUND=3,RPM_BEEP_VOL=4,RPM_DOWN1=5;
+     *  RPM_BEEP_VOL is the beep volume in percent (the downshift sounds too). RPM_DOWN_SCOPE cycles DOWN_SCOPES, the
+     *  screens with the downshift sounds (and the shift beep held while the clutch is in); RPM_DOWN1..+2 pick the sound
+     *  for a blip matched one, two or three gears down (cycles 끔 and BEEP_SOUNDS). */
+    public static final int RPM_SHIFT=0,RPM_RED=1,RPM_BEEP=2,RPM_BEEP_SOUND=3,RPM_BEEP_VOL=4,RPM_DOWN_SCOPE=5,RPM_DOWN1=6;
+    public static final String[] DOWN_SCOPES={"람다만","람다 · 레이스 · F1 · 퍼포먼스","모든 화면"};
+    /** Whether screen (ClusterPicker index) is in downshift-sound scope s: 람다 always, the rev-match screens (F1,
+     *  퍼포먼스, 레이스: their rpm turns green on a match too) from 1, every screen at 2. */
+    public static boolean downScreen(int s,int screen){
+        return s>=2||screen==ClusterPicker.MANUAL||s==1&&screen>=ClusterPicker.F1&&screen<=ClusterPicker.F1+2;
+    }
     /** Shift beep sounds, in ShiftBeep.SOUNDS order. */
     public static final String[] BEEP_SOUNDS={"삐빅","삑","상승 3음","레이스 버저","틱틱"};
     /** Sound pane rows: the virtual engine sound switch, its output route (cycles), and its volume with − and +. */

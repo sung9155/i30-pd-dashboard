@@ -14,10 +14,10 @@
 
 ## 준비물
 
-- Windows 노트북 또는 맥 (Linux도 ADB만 있으면 됩니다)
+- Windows 노트북, 맥, 또는 리눅스(라즈베리파이 포함)
 - ADB: [Android SDK Platform-Tools](https://developer.android.com/tools/releases/platform-tools)를 받아 압축 풀기
 - 차 USB 포트와 노트북을 잇는 데이터 케이블. 원작 문서에 USB A–A 케이블로 성공한 기록이 있습니다.
-- [Releases](https://github.com/sung9155/i30-pd-dashboard/releases)의 `i30pd-installer-windows.zip`(Windows) 또는 `i30pd-installer-mac.zip`(맥), 또는 직접 설치할 때는 APK 2개
+- [Releases](https://github.com/sung9155/i30-pd-dashboard/releases)의 `i30pd-installer-windows.zip`(Windows), `i30pd-installer-mac.zip`(맥), `i30pd-installer-linux.zip`(리눅스), 또는 직접 설치할 때는 APK 2개
   - `dashboard-i30pd-platform.apk`: 대시보드 앱
   - `myapps-i30pd-platform.apk`: '내 앱'. 홈 화면 가장자리 버튼으로 대시보드를 여는 보조 앱
   - 릴리스에 적힌 SHA-256과 받은 파일이 같은지 확인하세요: `certutil -hashfile 파일.apk SHA256`
@@ -58,6 +58,20 @@
 - USB-C만 있는 맥은 USB-A 어댑터가 필요합니다.
 - 앱 삭제는 `삭제.command` 더블클릭(위 "지우기"와 같음), 기록 파일은 `~/Library/Logs/i30pd-installer/`에 있습니다.
 - 맥 설치기는 실제 맥으로 차에 설치해 확인했습니다(2026-11-03). 안 되면 기록 파일을 함께 보내 주세요.
+
+### 리눅스·라즈베리파이라면
+
+[Releases](https://github.com/sung9155/i30-pd-dashboard/releases)에서 `i30pd-installer-linux.zip`을 받아 풀면 `install.sh`(맥 `설치.command`와 같은 스크립트), `uninstall.sh`, `diag.sh`가 나옵니다. 위 1~2번을 한 뒤 터미널에서:
+
+```
+unzip i30pd-installer-linux.zip -d i30pd && cd i30pd && bash install.sh
+```
+
+- 데비안·우분투·라즈베리파이 OS에서 돌아갑니다. `curl`이 필요하고(`sudo apt install curl`), 노트 요약에 `python3`를 씁니다(없으면 요약만 빠짐).
+- adb가 없으면: x86_64 PC는 Google 공식 platform-tools를 받고, **라즈베리파이 같은 ARM 기기**는 Google이 ARM용을 내지 않으므로 `sudo apt-get install adb`로 설치할지 묻습니다.
+- 차가 `no permissions`로 보이면(USB 권한 규칙 없음) 차 장치(VID `18d1`, PID `d00d`)에만 규칙 한 줄(`/etc/udev/rules.d/51-i30pd.rules`)을 넣을지 묻습니다. 넣은 뒤 USB 케이블을 뺐다가 다시 꽂으면 됩니다.
+- 앱 삭제는 `bash uninstall.sh`, 진단 기록은 `bash diag.sh`(바탕화면, 없으면 홈 폴더에 저장). 기록 파일은 `~/.local/state/i30pd-installer/`에 있습니다.
+- 화면 없이 SSH로 접속한 라즈베리파이에서도 됩니다(차 화면에서 Factory Test만 하면 됨). 가짜 adb로 설치·삭제·진단 기록 흐름은 확인했고, 실제 리눅스 기기로 차에 설치해 본 기록은 아직 없습니다. 안 되면 기록 파일을 함께 보내 주세요.
 
 ### 휴대폰으로 하기 (안드로이드)
 

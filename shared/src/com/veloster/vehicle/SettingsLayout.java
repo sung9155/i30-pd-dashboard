@@ -15,9 +15,9 @@ public final class SettingsLayout {
     /** Shift beep sounds, in ShiftBeep.SOUNDS order. */
     public static final String[] BEEP_SOUNDS={"삐빅","삑","상승 3음","레이스 버저","틱틱"};
     /** Sound pane rows: the virtual engine sound switch, its output route (cycles), and its volume with − and +. */
-    /** Virtual engine sound switched off (user, 2026-11-04): the 사운드 pane shows one dimmed line and the sound never
-     *  starts, whatever was saved. ponytail: a flag, not a removal; true brings the pane and EngineSound back. */
-    public static final boolean ENGINE_SOUND=false;
+    /** Virtual engine sound (off 2026-11-04, back 2026-11-05 at the user's word). false: the 사운드 pane shows one dimmed
+     *  line and the sound never starts, whatever was saved. ponytail: a flag, not a removal. */
+    public static final boolean ENGINE_SOUND=true;
     public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_POP=5,SOUND_TURBO=6,SOUND_BOV=7,SOUND_LEAD=8;
     /** Rows from SOUND_VOLUME on have − and + (screenZone 1 and 2); the rest of the row puts the default back. */
     public static final int[] SOUND_MIN={10,0,0,0,0},SOUND_MAX={100,200,200,200,150},SOUND_STEP={10,10,10,10,10},SOUND_DEFAULT={70,100,100,100,80};

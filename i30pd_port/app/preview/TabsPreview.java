@@ -87,6 +87,7 @@ public final class TabsPreview {
         rec.setBeep(true,2,70);rec.setSettings(4,"auto",-1,targets);save(out,"9_settings_rpm_beep",rec,model,now,false,false);rec.setBeep(false,0,70);
         rec.setModeOptions(true,true);rec.setSettings(3,"auto",-1,targets);save(out,"9_settings_mode_on",rec,model,now,false,false);
         rec.setSettings(3,"auto",0,targets);save(out,"9_settings_mode_pick",rec,model,now,false,false);
+        rec.setSpeedCal(true,0.968f,1240);rec.setSettings(7,"auto",-1,targets);save(out,"9_settings_diag_speedcal",rec,model,now,false,false);rec.setSpeedCal(false,Float.NaN,0);   // GPS speed calibration learned, on
         rec.setPicker(false,false,0);rec.setModeOptions(false,false);
         // Missing signals (empty model) and a 6MT profile, drawn straight through ClusterRenderer.
         Telemetry none=new Telemetry();

@@ -56,6 +56,8 @@ public final class PitRenderer {
     /** Drive-mode options shown on their edit tiles: accent colour by mode, screen by mode. */
     private boolean modeColor,modeScreen;
     public void setModeOptions(boolean color,boolean screen){modeColor=color;modeScreen=screen;}
+    private boolean speedCalOn;private float speedCalRatio=Float.NaN;private int speedCalSamples;
+    public void setSpeedCal(boolean on,float ratio,int samples){speedCalOn=on;speedCalRatio=ratio;speedCalSamples=samples;}
     /** Settings category open on the left (SettingsLayout) and the saved language choice, for the gear's settings. */
     private int settingsCat,pickSlot=-1;
     private String langSel="auto";
@@ -283,7 +285,11 @@ public final class PitRenderer {
                         dim=!soundOn||noTurbo;}   // one line per row: nine rows fill the pane
                     break;
                 case SettingsLayout.LANG:sel=SettingsLayout.LANGS[i].equals(langSel);name=SettingsLayout.LANG_NAMES[i];break;
-                default:name="고장코드 읽기";sub="엔진·변속기·제동·조향·에어백·바디 (읽기만)";
+                default:if(i==1){sel=speedCalOn;name="GPS 속도 보정";value=speedCalOn?"켬":"끔";
+                        sub=Float.isNaN(speedCalRatio)?String.format(Locale.US,UiText.t("배우는 중 · 정속 직진 표본 %d / %d"),speedCalSamples,SpeedCal.MIN_SAMPLES)
+                            :String.format(Locale.US,UiText.t("배운 비율 %+.1f %% · 표본 %,d · 표시 속도와 측정에 적용"),(speedCalRatio-1)*100,speedCalSamples);}
+                    else if(i==2){name="다시 배우기";sub="배운 GPS 속도 비율을 지우고 처음부터";dim=speedCalSamples==0;}
+                    else{name="고장코드 읽기";sub="엔진·변속기·제동·조향·에어백·바디 (읽기만)";}
             }
             box(c,l,t,l+w,t+h,sel?0xff1c303b:dim?0xff08090a:0xff101315);
             if(sel){box(c,l,t,l+w,t+3,BLUE);box(c,l,t+h-3,l+w,t+h,BLUE);box(c,l,t,l+3,t+h,BLUE);box(c,l+w-3,t,l+w,t+h,BLUE);}

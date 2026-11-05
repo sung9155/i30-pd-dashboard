@@ -41,7 +41,7 @@ final class LambdaCluster extends ClusterKit {
         int rc=matched>0?GREEN:shift?(blink(now,120)?BLUE:DIM):acc;
         lambda(c,LCX,Float.isNaN(rpm)?0:rpm/prof.maxRpm,prof.redline/prof.maxRpm,rc,matched>0||shift);
         for(int k=1;k*1000<=prof.maxRpm;k++)scale(c,LCX,k*1000/prof.maxRpm,String.valueOf(k),k*1000>=prof.redline?RED:WH);
-        gears(c,rpm,kmh,gear,shown,mt,matched);
+        gears(c,rpm,s[7].valid?s[7].value:Float.NaN,gear,shown,mt,matched);   // the car's speed: ratios are learned against it
         bold(c,fmt("%.0f",rpm),LCX,BOT+4,20,matched>0?GREEN:WH,Paint.Align.CENTER);mono(c,"x1000 rpm",LCX,BOT+22,11,GREY,Paint.Align.CENTER);
         lambda(c,RCX,Float.isNaN(kmh)?0:kmh/SPEED_MAX,2,GREEN,false);
         for(int k=20;k<=SPEED_MAX;k+=40)scale(c,RCX,k/SPEED_MAX,String.valueOf(k),WH);

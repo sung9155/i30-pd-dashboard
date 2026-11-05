@@ -29,7 +29,9 @@ public final class Telemetry {
     public static final long HISTORY_MS=300000,HISTORY_STEP_MS=250;
     private final History[] history=new History[LABELS.length];
     /** Display orientation follows the driver's reported left/right convention. Raw SAS stays unchanged. */
-    public static float displayValue(int signal,float raw){return signal==STEERING?(raw==0?0:-raw):raw;}
+    /** GPS speed calibration (SpeedCal) applied to the shown vehicle speed; 1 when off or not learned yet. */
+    public static volatile float speedScale=1;
+    public static float displayValue(int signal,float raw){return signal==STEERING?(raw==0?0:-raw):signal==7?raw*speedScale:raw;}
     /** String.format(Locale.US,f,x), but a value that rounds to zero loses its minus: idle boost -0.004 reads 0.00
      * (+0.00 under a '+' flag), not -0.00. */
     public static String format(String f,float x){

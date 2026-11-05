@@ -18,7 +18,7 @@ final class Gps implements LocationListener {
     private static Gps running;
     private LocationManager lm;
     private int fixes;
-    private long logAt,startAt;
+    private long logAt,startAt;private boolean extrasLogged;
 
     static void start(Context c){
         if(running!=null)return;
@@ -41,12 +41,22 @@ final class Gps implements LocationListener {
     @Override public void onLocationChanged(Location l){
         long now=SystemClock.elapsedRealtime();
         if(!GpsFix.any())android.util.Log.i("VehicleDash","GPS first fix after "+(now-startAt)/1000+" s");
-        GpsFix.set(l.getLatitude(),l.getLongitude(),l.hasAccuracy()?l.getAccuracy():Float.NaN);fixes++;
+        GpsFix.set(l.getLatitude(),l.getLongitude(),l.hasAccuracy()?l.getAccuracy():Float.NaN,l.hasSpeed()?l.getSpeed()*3.6f:Float.NaN);fixes++;
+        if(!extrasLogged){extrasLogged=true;logExtras(l);}
         if(now-logAt>=60000){
             int z=TaxiZones.at(GpsFix.lat,GpsFix.lon);
-            android.util.Log.i("VehicleDash","GPS "+fixes+" fixes in "+(now-logAt)/1000+" s, accuracy "+Math.round(GpsFix.accuracy)+" m, fare table "+(z<0?"none":TaxiZones.tariff(z)));
+            android.util.Log.i("VehicleDash","GPS "+fixes+" fixes in "+(now-logAt)/1000+" s, accuracy "+Math.round(GpsFix.accuracy)+" m, speed "+(Float.isNaN(GpsFix.speedKmh)?"none":Math.round(GpsFix.speedKmh)+" km/h")+", fare table "+(z<0?"none":TaxiZones.tariff(z)));
             fixes=0;logAt=now;
         }
+    }
+    /** Once: the firmware's own Location getters (Hyundai adds GNSS / dead-reckoning fields), so a [진단 기록] shows whether a
+     *  pure satellite speed exists beside getSpeed (the Trimble receiver may blend in the wheel speed). Values only, no position. */
+    private static void logExtras(Location l){
+        StringBuilder b=new StringBuilder();
+        for(java.lang.reflect.Method m:l.getClass().getMethods()){String n=m.getName().toLowerCase(java.util.Locale.US);
+            if(m.getParameterTypes().length!=0||!(n.contains("gnss")||n.contains("dr")||n.contains("gpsstatus")))continue;
+            try{b.append(m.getName()).append('=').append(m.invoke(l)).append(' ');}catch(Exception e){b.append(m.getName()).append("=? ");}}
+        android.util.Log.i("VehicleDash","GPS fields: speed "+(l.hasSpeed()?l.getSpeed()*3.6f:-1)+" km/h, "+b.toString().trim());
     }
     @Override public void onStatusChanged(String provider,int status,Bundle extras){}
     @Override public void onProviderEnabled(String provider){android.util.Log.i("VehicleDash","GPS provider enabled");}

@@ -152,6 +152,12 @@ public final class TabsPreview {
          BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
          new PitRenderer().draw(c,800,480,false,model,now,0,false,null);new LambdaCluster().frame(c,q,model,dst,VehicleProfile.PETROL_DCT,now,null);
          ImageIO.write(img,"png",new File(out,"9p_manual_dct.png"));}
+        {Telemetry.Sample[] q=model.snapshot(now);   // 수동 with 모드 색 on in SPORT: the accent turns red
+         q[8]=new Telemetry.Sample(3,true,false,true,false,0);q[7]=new Telemetry.Sample(90,true,false,true,false,0);q[0]=new Telemetry.Sample(4200,true,false,true,false,0);
+         q[Telemetry.DRIVE_MODE]=new Telemetry.Sample(1,true,false,true,false,0);q[Telemetry.CLUTCH]=new Telemetry.Sample(0,true,false,true,false,0);q[9]=new Telemetry.Sample(80,true,false,true,false,0);
+         Theme.mode(1);BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+         new PitRenderer().draw(c,800,480,false,model,now,0,false,null);new LambdaCluster().frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_MT,now,null);
+         ImageIO.write(img,"png",new File(out,"9p_manual_sport_color.png"));Theme.mode(-1);}
         // 수동 screen (the Λ layout, 6MT): {gear, km/h, rpm, clutch, brake bar}; the race and performance pages turn the rpm green on a match
         float[][] ds={{4,80,1500,1,22},{5,100,2800,0,0},{3,60,2800,0,25},{6,96,2200,0,0},{4,80,3720,1,22},{3,122,5750,0,0}};String[] dsn={"a_4th80_clutch","b_5th100_cruise","c_3rd60_brake","d_6th96","e_4th80_match","f_3rd122_upshift"};
         for(int k=0;k<ds.length;k++){Telemetry.Sample[] q=model.snapshot(now);float[] d=ds[k];

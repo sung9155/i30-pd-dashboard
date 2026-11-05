@@ -17,7 +17,7 @@ import java.util.Locale;
  * G meter, four small arcs, and the last shift's numbers (6MT) or the clutch temperatures (DCT).
  */
 final class LambdaCluster extends ClusterKit {
-    private static final int CY_=0xff5fe3e0,WH=0xfff2f6f8,DIM=0xff17302f,OR=0xffff8a3a,LINE_=0xff36575a,GREY=0xff7f9a9c,
+    private static final int CYAN=0xff5fe3e0,WH=0xfff2f6f8,DIM=0xff17302f,OR=0xffff8a3a,LINE_=0xff36575a,GREY=0xff7f9a9c,
         GREEN=0xff3ddc84,BLUE=0xff4aa8ff,RED=0xffff4059,AMBER=0xffffb84d,INK=0xff000000;
     /** One colour per gear (index = gear), from the owner's sketch: 5 teal, 4 yellow, 3 red, 2 purple. */
     private static final int[] GEAR_INK={0,0xffff5fa8,0xff9b5cff,0xffff6a4d,0xffffe04a,0xff2fe0c4,0xff5ab4ff,0xffc0c8ff};
@@ -25,6 +25,8 @@ final class LambdaCluster extends ClusterKit {
     private static final float LCX=172,RCX=628,COL_Y0=TOP+32,COL_Y1=403;   // the two Λ centres, mirrored about x = 400
     int shiftTarget=6000;   // set by PitRenderer from 설정 → RPM
     private final int[] tg=new int[3];private final float[] tr=new float[3];
+    /** The accent: cyan, or the drive mode's colour while 설정 → 주행 모드 → 모드 색 is on (Theme.mode). */
+    private int acc=CYAN;
 
     private float legX(float cx,boolean left,float f){float b=left?cx-HALF:cx+HALF,t=left?cx-APEX:cx+APEX;return b+(t-b)*f;}
     private float legY(float f){return BOT+(TOP-BOT)*f;}
@@ -32,10 +34,11 @@ final class LambdaCluster extends ClusterKit {
 
     @Override protected void draw(Canvas c){
         fill(c,0,52,800,480,0xff000000);
+        int ma=Theme.modeAccent();acc=ma!=0?0xff000000|ma:CYAN;
         float rpm=v(0),kmh=v(7),gear=v(8);boolean mt=prof.trans==VehicleProfile.Trans.MT;int matched=RevMatch.matched(s,prof);
         boolean shift=!Float.isNaN(rpm)&&rpm>=shiftTarget;
         String shown=Telemetry.gearText(gear,v(Telemetry.GEAR_SELECTOR),prof);
-        int rc=matched>0?GREEN:shift?(blink(now,120)?BLUE:DIM):CY_;
+        int rc=matched>0?GREEN:shift?(blink(now,120)?BLUE:DIM):acc;
         lambda(c,LCX,Float.isNaN(rpm)?0:rpm/prof.maxRpm,prof.redline/prof.maxRpm,rc,matched>0||shift);
         for(int k=1;k*1000<=prof.maxRpm;k++)scale(c,LCX,k*1000/prof.maxRpm,String.valueOf(k),k*1000>=prof.redline?RED:WH);
         gears(c,rpm,kmh,gear,shown,mt,matched);
@@ -90,9 +93,9 @@ final class LambdaCluster extends ClusterKit {
                 // a gear down: joined to its rpm like the current gear, but faint (dashed two or more gears away); green and full on a match
                 join(c,LCX,tr[t]/prof.maxRpm,y,rad+1,ok?2.5f:1.6f,ok?col:(col&0xffffff)|0x66000000,!ok&&g-tg[t]>=2);
                 dot(c,LCX,y,rad,col);mono(c,gs[i],LCX,y+6,rad>12?17:15,INK,Paint.Align.CENTER);}
-            else if(isUp){join(c,LCX,up/prof.maxRpm,y,rad+1,1.6f,(CY_&0xffffff)|0x66000000);   // the gear up, faint: where it would land
-                dot(c,LCX,y,rad,INK);ring(c,LCX,y,rad,2.5f,CY_);mono(c,gs[i],LCX,y+6,rad>12?17:15,CY_,Paint.Align.CENTER);}
-            else{ring(c,LCX,y,rad,on?3:1.2f,on?CY_:LINE_);mono(c,gs[i],LCX,y+6,on?17:rad>12?14:13,on?WH:GREY,Paint.Align.CENTER);}
+            else if(isUp){join(c,LCX,up/prof.maxRpm,y,rad+1,1.6f,(acc&0xffffff)|0x66000000);   // the gear up, faint: where it would land
+                dot(c,LCX,y,rad,INK);ring(c,LCX,y,rad,2.5f,acc);mono(c,gs[i],LCX,y+6,rad>12?17:15,acc,Paint.Align.CENTER);}
+            else{ring(c,LCX,y,rad,on?3:1.2f,on?acc:LINE_);mono(c,gs[i],LCX,y+6,on?17:rad>12?14:13,on?WH:GREY,Paint.Align.CENTER);}
             if(on&&!Float.isNaN(rpm))join(c,LCX,rpm/prof.maxRpm,y,rad,2,WH);}   // the current gear points at the rpm level
     }
     /** Mirroring the gear column: the speed ring and the lamps. */
@@ -106,7 +109,7 @@ final class LambdaCluster extends ClusterKit {
             boolean heel=clutch&&brake>ShiftCoach.HEEL_BRAKE_BAR&&pedal>ShiftCoach.HEEL_PEDAL;
             lamp(c,y+1.05f*dy,"C",clutch,BLUE);lamp(c,y+3.9f*dy,"HT",heel,OR);}
         else{int lv=Math.max(Telemetry.clutchLevel(v(Telemetry.CLUTCH_ODD)),Telemetry.clutchLevel(v(Telemetry.CLUTCH_EVEN)));
-            lamp(c,y+1.05f*dy,"M",shown.startsWith("M"),CY_);lamp(c,y+3.9f*dy,"CL",lv>0,lv==2?RED:AMBER);}
+            lamp(c,y+1.05f*dy,"M",shown.startsWith("M"),acc);lamp(c,y+3.9f*dy,"CL",lv>0,lv==2?RED:AMBER);}
         lamp(c,y+2.0f*dy,"B",brake>1,RED);lamp(c,y+2.95f*dy,"T",pedal>5,GREEN);
     }
     private void lamp(Canvas c,float y,String k,boolean on,int col){
@@ -116,13 +119,15 @@ final class LambdaCluster extends ClusterKit {
     /** Centre column: G grid, four small arcs, the last shift's numbers (6MT) or the clutch temperatures (DCT). */
     private void centre(Canvas c,boolean mt){
         float cx=400,top=64,bot=124,wt=130,wb=96;
-        for(int i=0;i<=6;i++){float f=i/6f;line(c,cx-wt/2+wt*f,top,cx-wb/2+wb*f,bot,1,i==3?CY_:LINE_);}
+        for(int i=0;i<=6;i++){float f=i/6f;line(c,cx-wt/2+wt*f,top,cx-wb/2+wb*f,bot,1,i==3?acc:LINE_);}
         for(int j=0;j<=4;j++){float f=j/4f,y=top+(bot-top)*f,w=wt+(wb-wt)*f,bow=5*(1-Math.abs(f-.5f)*2);
-            line(c,cx-w/2,y,cx,y+bow,1,j==2?CY_:LINE_);line(c,cx,y+bow,cx+w/2,y,1,j==2?CY_:LINE_);}
+            line(c,cx-w/2,y,cx,y+bow,1,j==2?acc:LINE_);line(c,cx,y+bow,cx+w/2,y,1,j==2?acc:LINE_);}
         float lat=v(11),lon=v(12);
         if(!Float.isNaN(lat)&&!Float.isNaN(lon)){float k=Telemetry.pinG(lat,lon,1.2f)/1.2f,fy=clamp(.5f-lon*k*.5f,0,1),w=wt+(wb-wt)*fy;
             dot(c,cx+lat*k*w/2,top+(bot-top)*fy,6,GREEN);}
-        mono(c,String.format(Locale.US,"%.2f G",Float.isNaN(lat)||Float.isNaN(lon)?0:Math.hypot(lat,lon)),cx,bot+18,12,WH,Paint.Align.CENTER);
+        mono(c,String.format(Locale.US,"%.2f G",Float.isNaN(lat)||Float.isNaN(lon)?0:Math.hypot(lat,lon)),cx+wt/2,bot+18,12,WH,Paint.Align.RIGHT);
+        float m=v(Telemetry.DRIVE_MODE);int mode=Float.isNaN(m)?-1:(int)m;   // the drive mode, in its own colour (SPORT red, ECO green)
+        mono(c,mode<0?"MODE —":Telemetry.driveModeLabel(mode),cx-wt/2,bot+18,12,mode==1?RED:mode==3?GREEN:GREY,Paint.Align.LEFT);
         mini(c,364,196,t("냉각수"),v(2),40,120,"%.0f");mini(c,436,196,"BOOST",v(Telemetry.BOOST),-1,1.5f,"%+.1f");
         mini(c,364,290,t("흡기"),v(Telemetry.INTAKE),0,80,"%.0f");mini(c,436,290,"BATT",v(Telemetry.BAT_VOLTAGE),10,15,"%.1f");
         if(!mt){float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);
@@ -143,7 +148,7 @@ final class LambdaCluster extends ClusterKit {
     }
     private void mini(Canvas c,float cx,float cy,String name,float val,float lo,float hi,String f){
         float r=24,a0=-55,a1=55,on=Float.isNaN(val)?-1:clamp((val-lo)/(hi-lo),0,1);
-        for(int i=0;i<=14;i++){float a=a0+(a1-a0)*i/14f;line(c,px(cx,r,a),py(cy,r,a),px(cx,r+6,a),py(cy,r+6,a),2,i/14f<=on?CY_:DIM);}
+        for(int i=0;i<=14;i++){float a=a0+(a1-a0)*i/14f;line(c,px(cx,r,a),py(cy,r,a),px(cx,r+6,a),py(cy,r+6,a),2,i/14f<=on?acc:DIM);}
         mono(c,name,cx,cy-r-10,10,GREY,Paint.Align.CENTER);mono(c,fmt(f,val),cx,cy+8,14,WH,Paint.Align.CENTER);
     }
 }

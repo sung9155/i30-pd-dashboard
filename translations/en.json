@@ -670,6 +670,6 @@
   "속도계가 실제보다 %.1f %% 낮게 나옴": "The speedometer reads %.1f %% low",
   " · 실제 속도로 표시 중": " · showing the true speed",
   " · 켜면 실제 속도로 표시": " · turn on to show the true speed",
-  "다시 재기": "Measure again",
-  "잰 값을 지우고 처음부터": "Forget the measurement and start over"
+  "잰 값을 지우고 처음부터": "Forget the measurement and start over",
+  "속도 GPS 보정 값 초기화": "Reset the GPS speed correction"
 }

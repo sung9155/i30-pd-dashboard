@@ -232,6 +232,8 @@ public final class HscanPdTelemetryTest {
         dzb.obd(Telemetry.DID_SOOT,new byte[]{0,0,0,0,0x10,0},916);   // 22 ED1D answers: its grams win from then on
         dzb.hscanPd(0xc7,0x0e,b(0x16,0x36,0x39,0xd9,0x0b,0x00,0x0c,0x75),917);
         check(Math.abs(dzb.sample(Telemetry.DPF_SOOT,917).value-16f)<0.01f,"ED1D soot replaces the hscan byte");
+        // Brake lamps: another PD (diesel drives 2026-11-05, a 6MT owner's photo) sends switch 0 and 1-2 bar with the foot off.
+        check(!Telemetry.braking(0,1.9f)&&Telemetry.braking(0,59.3f)&&Telemetry.braking(1,0)&&!Telemetry.braking(Float.NaN,Float.NaN),"braking = switch on or over 3 bar");
         Telemetry pdp=new Telemetry();   // a petrol never shows DPF from this slot
         pdp.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x39,0x2e,0x15,0x01,0x80,0),900);
         check(!pdp.sample(Telemetry.DPF_REGEN,900).valid&&!pdp.sample(Telemetry.DPF_SOOT,900).valid,"no DPF before a diesel is known");

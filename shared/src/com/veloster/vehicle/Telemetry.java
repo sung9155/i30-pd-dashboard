@@ -28,6 +28,10 @@ public final class Telemetry {
     public static final long STALE_MS = 60000; // UI freshness threshold, not an OEM timeout.
     public static final long HISTORY_MS=300000,HISTORY_STEP_MS=250;
     private final History[] history=new History[LABELS.length];
+    /** Brake pressure (bar) above which the foot is on the brake. Only our car sends the TCS13 switch (it agrees with
+     *  pressure over 3 bar 98 %); another PD's switch stays 0 and its pressure reads 1-2 bar with the foot off. */
+    public static final float BRAKING_BAR=3;
+    public static boolean braking(float sw,float bar){return sw>0||bar>BRAKING_BAR;}
     /** Display orientation follows the driver's reported left/right convention. Raw SAS stays unchanged. */
     public static float displayValue(int signal,float raw){return signal==STEERING?(raw==0?0:-raw):raw;}
     /** String.format(Locale.US,f,x), but a value that rounds to zero loses its minus: idle boost -0.004 reads 0.00

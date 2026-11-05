@@ -24,6 +24,10 @@ CAN 메시지·신호의 배치와 배율은 [commaai/opendbc](https://github.co
 
 8비트 아케이드 화면의 i30 N 뒷모습(`ArcadeCarFrames`)은 Sketchfab의 3D 모델 [hyundai i30 n](https://sketchfab.com/3d-models/hyundai-i30-n-90c3bd24390b46299cf01c16d5e8091f)(amogusstrikesback2, CC BY 표시)을 13개 각도로 그린 뒤 앱 팔레트의 도트 표(각도마다 81×41칸)로 줄인 것입니다. 모델 파일과 텍스처는 이 레포와 APK에 넣지 않았습니다. 모델 설명에 따르면 게임에서 가져온 모델이라 원래 권리자가 따로 있을 수 있습니다. 권리자가 요청하면 이 그림을 빼겠습니다.
 
+## 수동 화면 글꼴
+
+수동 화면(Λ 계기)의 글자는 Chakra Petch(Medium·Bold)로 그립니다. Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch), SIL Open Font License 1.1. 글꼴 파일은 `apps/dashboard/res/raw/`에, 라이선스 전문은 `i30pd_port/licenses/ChakraPetch-OFL.txt`에 있습니다. 글꼴은 고치지 않고 그대로 앱에 넣었습니다.
+
 ## 이 레포에 넣지 않은 것
 
 - 현대자동차 순정 펌웨어, 순정 앱, 그 디컴파일 결과. 문서의 "PD 펌웨어 대조"는 공개된 펌웨어를 받아 확인한 사실(클래스·액티비티 이름 등)만 적은 것입니다.

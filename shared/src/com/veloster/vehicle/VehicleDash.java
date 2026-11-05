@@ -147,6 +147,7 @@ public final class VehicleDash extends View implements Runnable {
             for(int k=0;k<soundVals.length;k++)soundVals[k]=Math.max(SettingsLayout.SOUND_MIN[k],Math.min(SettingsLayout.SOUND_MAX[k],p.getInt(SOUND_KEYS[k],SettingsLayout.SOUND_DEFAULT[k])));}
         catch(ClassCastException e){/* Sound off for an incompatible saved value. */}
         applySound();
+        if(LambdaCluster.FACE==null){LambdaCluster.FACE=rawFont(a,"chakra_petch_medium");LambdaCluster.FACE_BOLD=rawFont(a,"chakra_petch_bold");}
         try{regenEnd=a.getSharedPreferences("pit_vehicle_ui",0).getFloat("dpf_regen_end_odo",Float.NaN);DATA.dpfRegenEnd(regenEnd);}
         catch(ClassCastException e){/* Incompatible saved value: count from the next regeneration. */}
         try{Theme.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("theme","n"));}
@@ -272,6 +273,15 @@ public final class VehicleDash extends View implements Runnable {
     public static void obd(int pid,byte[] d){DATA.obd(pid,d,SystemClock.elapsedRealtime());}
     /** The latest valid value of a signal, NaN when there is none (the OBD poller's sports-drive burst reads rpm and pedal). */
     public static float now(int i){Telemetry.Sample x=DATA.sample(i,SystemClock.elapsedRealtime());return x.valid?x.value:Float.NaN;}
+    /** A TTF from res/raw (API 17 has no font resources): copied once into the cache, then Typeface.createFromFile; null on any failure. */
+    private static android.graphics.Typeface rawFont(android.content.Context c,String name){
+        try{int id=c.getResources().getIdentifier(name,"raw",c.getPackageName());if(id==0)return null;
+            java.io.File f=new java.io.File(c.getCacheDir(),name+".ttf");
+            if(!f.isFile()||f.length()==0){java.io.InputStream in=c.getResources().openRawResource(id);java.io.FileOutputStream out=new java.io.FileOutputStream(f);
+                try{byte[] b=new byte[8192];for(int n;(n=in.read(b))>0;)out.write(b,0,n);}finally{in.close();out.close();}}
+            return android.graphics.Typeface.createFromFile(f);
+        }catch(Throwable e){android.util.Log.w("VehicleDash","font "+name+": "+e);return null;}
+    }
     protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity);Gps.start(activity); post(this); }
     protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();mediaReceiver.stop();artwork.close();Gps.stop();super.onDetachedFromWindow(); }
     public void run() {

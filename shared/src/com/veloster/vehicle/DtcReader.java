@@ -10,6 +10,9 @@ import java.util.List;
  * Reads stored trouble codes from each ECU through the head unit's diagnostic service, the way the stock telematics
  * (com.hkmc.telematics.hscan DiagManager) does it. READ ONLY: it sends UDS 19 02 (or KWP 18 00 FF 00 when an ECU
  * refuses UDS) and nothing else; no clear (14), no session change (10), no security access (27).
+ * The status mask is FF (every code the ECU keeps, as a scan tool asks), not the stock 0D/0C: 0C (pending or
+ * confirmed) hid a C1620-78 a scan tool read on a PD (2026-11-05). An ECU that refuses FF (7F 19 31) is asked again
+ * with the stock mask. Every raw reply goes to the log (tag VehicleDash) for the diagnostic record.
  *
  *   ServiceManager "com.hkmc.micom.hscanmicomservice", IHscanMicomService (no permission check)
  *   request  sendPacket(0xC7, 0x40, 0x80, 0x40, 0x80|ECU, service bytes)            transact 3
@@ -61,13 +64,20 @@ public final class DtcReader {
     }
 
     private Result read(IBinder svc,String name,int ecu,int mask) throws Exception {
-        byte[] uds=ask(svc,ecu,new byte[]{0x19,0x02,(byte)mask});
+        byte[] uds=ask(svc,ecu,new byte[]{0x19,0x02,(byte)0xff});
+        log(name,"19 02 FF",uds);
+        if(uds!=null&&uds.length>=3&&(uds[0]&255)==0x7f&&(uds[2]&255)==0x31){   // FF out of range: the stock mask
+            uds=ask(svc,ecu,new byte[]{0x19,0x02,(byte)mask});
+            log(name,String.format("19 02 %02X",mask),uds);
+        }
         List<Dtc> codes=Dtc.parseUds(uds);
         if(codes==null){
             byte[] kwp=ask(svc,ecu,new byte[]{0x18,0x00,(byte)0xff,0x00});
+            log(name,"18 00 FF 00",kwp);
             codes=Dtc.parseKwp(kwp);
+            // Both refused: show the UDS refusal (the one that matters on a UDS car), the KWP one only without it.
             if(codes==null)return uds==null&&kwp==null?new Result(name,null,"응답 없음 (미장착일 수 있음)",null)
-                                                      :new Result(name,null,"읽기 거부",hex(kwp!=null?kwp:uds));
+                                                      :new Result(name,null,"읽기 거부",hex(uds!=null?uds:kwp));
         }
         if(ecu==ACU){
             // The airbag unit's status byte means the opposite on this car's stock code (0 = lamp on); show no status
@@ -137,6 +147,11 @@ public final class DtcReader {
             svc.transact(code,in,out,0);
             out.readException();
         }finally{in.recycle();out.recycle();}
+    }
+    private static void log(String ecu,String request,byte[] reply){
+        StringBuilder s=new StringBuilder();
+        if(reply==null)s.append("no reply");else for(byte x:reply)s.append(String.format("%02X ",x&255));
+        android.util.Log.i("VehicleDash","DTC "+ecu+" "+request+": "+s.toString().trim());
     }
     private static String hex(byte[] b){
         StringBuilder s=new StringBuilder();

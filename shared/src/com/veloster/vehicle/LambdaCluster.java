@@ -9,9 +9,10 @@ import java.util.Locale;
  * 수동 screen, after the layout of the Reventón's digital mode (not its artwork): thin glowing lines on black, two
  * mirrored Λ gauges. Left Λ = rpm, right Λ = speed; each fills its legs upward together, and its ring (the current gear,
  * the speed) is joined to that level on both legs. Under the left apex hangs the gear column (6MT: 6-1 N R; 7DCT: 7-1
- * N R P); each gear one to three down that the engine can take is drawn in its colour, joined to its rpm on the legs,
- * with the rpm beside it (RevMatch: the 6MT's ratio table, else ratios learned while driving). On a 6MT the gear the
- * blip is matched to turns green. Under the right apex: the speed ring, where the next gear up would land, and lamps
+ * N R P); the predicted gears are drawn on it the same way as the current one, joined to their rpm on the legs instead
+ * of a number: each gear down that the engine can take in its colour (6MT one to three down, DCT the next one), the gear
+ * up ringed cyan at where it would land (RevMatch: the 6MT's ratio table, else ratios learned while driving). On a 6MT
+ * the gear the blip is matched to turns green. Under the right apex: the speed ring and lamps
  * (6MT: clutch, brake, throttle, heel-and-toe; DCT: manual gate, brake, throttle, clutch heat). Centre: a curved-grid
  * G meter, four small arcs, and the last shift's grade (6MT) or the clutch temperatures (DCT).
  */
@@ -37,11 +38,11 @@ final class LambdaCluster extends ClusterKit {
         int rc=matched>0?GREEN:shift?(blink(now,120)?BLUE:DIM):CY_;
         lambda(c,LCX,Float.isNaN(rpm)?0:rpm/prof.maxRpm,prof.redline/prof.maxRpm,rc,matched>0||shift);
         for(int k=1;k*1000<=prof.maxRpm;k++)scale(c,LCX,k*1000/prof.maxRpm,String.valueOf(k),k*1000>=prof.redline?RED:WH);
-        gears(c,rpm,shown,mt,matched);
+        gears(c,rpm,kmh,gear,shown,mt,matched);
         bold(c,fmt("%.0f",rpm),LCX,BOT+4,20,matched>0?GREEN:WH,Paint.Align.CENTER);mono(c,"x1000 rpm",LCX,BOT+22,11,GREY,Paint.Align.CENTER);
         lambda(c,RCX,Float.isNaN(kmh)?0:kmh/SPEED_MAX,2,GREEN,false);
         for(int k=20;k<=SPEED_MAX;k+=40)scale(c,RCX,k/SPEED_MAX,String.valueOf(k),WH);
-        lamps(c,kmh,gear,shown,mt);
+        lamps(c,kmh,shown,mt);
         bold(c,"MAX "+fmt("%.0f",st==null?Float.NaN:st.maxSpeed),RCX,BOT+4,18,WH,Paint.Align.CENTER);mono(c,"km/h",RCX,BOT+22,11,GREY,Paint.Align.CENTER);
         centre(c,mt);
     }
@@ -69,28 +70,30 @@ final class LambdaCluster extends ClusterKit {
         mono(c,label,xl-14,y+5,14,col,Paint.Align.RIGHT);mono(c,label,xr+14,y+5,14,col,Paint.Align.LEFT);
     }
     /** The gear column under the rpm apex, with the downshift targets drawn onto it. */
-    private void gears(Canvas c,float rpm,String shown,boolean mt,int matched){
+    private void gears(Canvas c,float rpm,float kmh,float gear,String shown,boolean mt,int matched){
         String[] gs=mt?new String[]{"6","5","4","3","2","1","N","R"}:new String[]{"7","6","5","4","3","2","1","N","R","P"};
         String cur=shown.startsWith("M")?shown.substring(1):shown;   // the DCT manual gate: M4 rings 4
         float dy=(COL_Y1-COL_Y0)/(gs.length-1),rad=Math.min(13,dy/2-2);
         int n=RevMatch.targets(s,prof,learned(),tg,tr),alpha=RevMatch.active(s)?0xff:0x80;
+        int g=Float.isNaN(gear)?0:(int)gear;   // the gear up and where it would land
+        float up=g>=1&&g<prof.topGear&&!Float.isNaN(kmh)&&kmh>=10?RevMatch.rpmIn(prof,learned(),kmh,g+1):Float.NaN;
         for(int i=0;i<gs.length;i++){float y=COL_Y0+i*dy;boolean on=gs[i].equals(cur);
             int t=-1;for(int j=0;j<n;j++)if(String.valueOf(tg[j]).equals(gs[i]))t=j;
+            boolean isUp=!Float.isNaN(up)&&gs[i].equals(String.valueOf(g+1))&&!gs[i].equals(cur);
             if(t>=0){boolean ok=tg[t]==matched;int col=((ok?GREEN:GEAR_INK[tg[t]])&0xffffff)|(alpha<<24);
-                join(c,LCX,tr[t]/prof.maxRpm,y,rad+1,1.5f,(col&0xffffff)|0x88000000);
-                dot(c,LCX,y,rad,col);mono(c,gs[i],LCX,y+6,rad>12?17:15,INK,Paint.Align.CENTER);
-                mono(c,String.format(Locale.US,"%,d",(int)tr[t]),LCX+rad+7,y+5,12,(WH&0xffffff)|(alpha<<24),Paint.Align.LEFT);}
+                join(c,LCX,tr[t]/prof.maxRpm,y,rad+1,2,col);   // a gear down: joined to its rpm, like the current gear
+                dot(c,LCX,y,rad,col);mono(c,gs[i],LCX,y+6,rad>12?17:15,INK,Paint.Align.CENTER);}
+            else if(isUp){join(c,LCX,up/prof.maxRpm,y,rad+1,2,CY_);   // the gear up: where it would land
+                dot(c,LCX,y,rad,INK);ring(c,LCX,y,rad,2.5f,CY_);mono(c,gs[i],LCX,y+6,rad>12?17:15,CY_,Paint.Align.CENTER);}
             else{ring(c,LCX,y,rad,on?3:1.2f,on?CY_:LINE_);mono(c,gs[i],LCX,y+6,on?17:rad>12?14:13,on?WH:GREY,Paint.Align.CENTER);}
             if(on&&!Float.isNaN(rpm))join(c,LCX,rpm/prof.maxRpm,y,rad,2,WH);}   // the current gear points at the rpm level
     }
-    /** Mirroring the gear column: the speed ring, where the next gear up would land, and the lamps. */
-    private void lamps(Canvas c,float kmh,float gear,String shown,boolean mt){
+    /** Mirroring the gear column: the speed ring and the lamps. */
+    private void lamps(Canvas c,float kmh,String shown,boolean mt){
         float dy=(COL_Y1-COL_Y0)/7,ry=COL_Y0+1.5f*dy;
         if(!Float.isNaN(kmh))join(c,RCX,kmh/SPEED_MAX,ry,38,2,WH);   // the speed ring points at the speed level
         dot(c,RCX,ry,38,INK);ring(c,RCX,ry,38,3,WH);bold(c,fmt("%.0f",kmh),RCX,ry+11,30,WH,Paint.Align.CENTER);
-        int g=Float.isNaN(gear)?0:(int)gear;float y=COL_Y0+3.0f*dy;
-        float up=g>=1&&g<prof.topGear&&!Float.isNaN(kmh)&&kmh>=10?RevMatch.rpmIn(prof,learned(),kmh,g+1):Float.NaN;
-        if(!Float.isNaN(up)){mono(c,"▲"+(g+1),RCX,y+2,14,CY_,Paint.Align.CENTER);mono(c,String.format(Locale.US,"%,d",(int)up),RCX,y+18,12,WH,Paint.Align.CENTER);}
+        float y=COL_Y0+2.3f*dy;
         float brake=v(10),pedal=v(9);
         if(mt){Telemetry.Sample k0=s[Telemetry.CLUTCH];boolean clutch=k0.valid&&k0.value>0;
             boolean heel=clutch&&brake>ShiftCoach.HEEL_BRAKE_BAR&&pedal>ShiftCoach.HEEL_PEDAL;

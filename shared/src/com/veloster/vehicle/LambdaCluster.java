@@ -75,7 +75,7 @@ final class LambdaCluster extends ClusterKit {
     }
     private void seg(Canvas c,float x1,float y1,float x2,float y2,float w,int col,boolean dashed){
         if(!dashed){line(c,x1,y1,x2,y2,w,col);return;}
-        float len=(float)Math.hypot(x2-x1,y2-y1),on=6,off=5;
+        float len=(float)Math.hypot(x2-x1,y2-y1),on=10,off=6;
         for(float d=0;d<len;d+=on+off){float a=d/len,b=Math.min(len,d+on)/len;line(c,x1+(x2-x1)*a,y1+(y2-y1)*a,x1+(x2-x1)*b,y1+(y2-y1)*b,w,col);}
     }
     /** A tick and numeral outside both legs at fraction f. */
@@ -98,10 +98,12 @@ final class LambdaCluster extends ClusterKit {
             int t=-1;for(int j=0;j<n;j++)if(String.valueOf(tg[j]).equals(gs[i]))t=j;
             boolean isUp=!Float.isNaN(up)&&gs[i].equals(String.valueOf(g+1))&&!gs[i].equals(cur);
             if(t>=0){boolean ok=tg[t]==matched;int col=((ok?GREEN:GEAR_INK[tg[t]])&0xffffff)|(alpha<<24);
-                // a gear down: joined to its rpm like the current gear, but faint (dashed two or more gears away); green and full on a match
-                join(c,LCX,tr[t]/prof.maxRpm,y,rad+1,ok?2.5f:1.6f,ok?col:(col&0xffffff)|0x66000000,!ok&&g-tg[t]>=2);
+                // a gear down: joined to its rpm like the current gear, a little lighter (dashed two or more gears away); green
+                // on a match. 3 px nearly opaque: the 1.6 px 40 % line read dark and stepped on the 8-inch screen (6MT owner).
+                int a=(g-tg[t]>=2?0xb3:0xe6)*alpha/0xff;
+                join(c,LCX,tr[t]/prof.maxRpm,y,rad+1,ok?3.5f:3f,ok?col:(col&0xffffff)|(a<<24),!ok&&g-tg[t]>=2);
                 dot(c,LCX,y,rad,col);mono(c,gs[i],LCX,y+fs*0.36f,fs,INK,Paint.Align.CENTER);}
-            else if(isUp){join(c,LCX,up/prof.maxRpm,y,rad+1,1.6f,(acc&0xffffff)|0x66000000);   // the gear up, faint: where it would land
+            else if(isUp){join(c,LCX,up/prof.maxRpm,y,rad+1,2.5f,(acc&0xffffff)|0x99000000);   // the gear up, lighter: where it would land
                 dot(c,LCX,y,rad,INK);ring(c,LCX,y,rad,2.5f,acc);mono(c,gs[i],LCX,y+fs*0.36f,fs,acc,Paint.Align.CENTER);}
             else{ring(c,LCX,y,rad,on?3:1.2f,on?(gs[i].equals("R")?RED:acc):LINE_);mono(c,gs[i],LCX,y+fs*0.36f,fs,on?WH:GREY,Paint.Align.CENTER);}
             if(on&&!Float.isNaN(rpm))join(c,LCX,rpm/prof.maxRpm,y,rad,2,WH);}   // the current gear points at the rpm level

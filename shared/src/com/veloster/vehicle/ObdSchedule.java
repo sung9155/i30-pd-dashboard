@@ -20,6 +20,8 @@ public final class ObdSchedule {
     public static final class Poll {
         public final int ecu,key;public final byte[] req;public final long every;final int dropAfter;
         long due;int misses;
+        /** For the diagnostics line: requests sent, positive answers, the last bad reply ("none" = timeout, else its first bytes). */
+        int sent,answered;public String bad="";
         /** key is what the sink gets (a mode 01 PID, or Telemetry.DID_*); dropAfter = misses in a row that stop it, 0 = never. */
         public Poll(int ecu,byte[] req,int key,long every,int dropAfter){this.ecu=ecu;this.req=req;this.key=key;this.every=every;this.dropAfter=dropAfter;}
         public boolean active(){return dropAfter==0||misses<dropAfter;}
@@ -55,7 +57,18 @@ public final class ObdSchedule {
         return w;
     }
     /** After an answer (ok) or a miss: next due one period from now, so a late request does not burst. */
-    public void done(Poll p,long now,boolean ok){p.due=now+p.every;p.misses=ok?0:p.misses+1;}
+    public void done(Poll p,long now,boolean ok){p.due=now+p.every;p.misses=ok?0:p.misses+1;p.sent++;if(ok)p.answered++;}
+    /** Every request's tally on one short line ("ED1D 0/3 7F 22 31 off, 43 40/40, ..."): the 5 s diagnostics line
+     *  carries it, so a record whose log tail lost the early drop lines still shows how each request went. */
+    public String summary(){
+        StringBuilder b=new StringBuilder();
+        for(Poll p:polls){if(b.length()>0)b.append(", ");
+            for(int i=1;i<p.req.length;i++)b.append(String.format("%02X",p.req[i]&255));
+            b.append(' ').append(p.answered).append('/').append(p.sent);
+            if(p.answered<p.sent&&p.bad.length()>0)b.append(' ').append(p.bad);
+            if(!p.active())b.append(" off");}
+        return b.toString();
+    }
     /** Requests a second if every entry stays active. */
     public double perSecond(){double s=0;for(Poll p:polls)s+=1000.0/p.every;return s;}
 }

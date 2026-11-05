@@ -307,7 +307,7 @@ public final class VehicleDash extends View implements Runnable {
             if(header.flinging())delay=16;   // a flicked tab strip coasts
             float re=DATA.dpfRegenEnd();
             if(Float.compare(re,regenEnd)!=0){regenEnd=re;activity.getSharedPreferences("pit_vehicle_ui",0).edit().putFloat("dpf_regen_end_odo",re).apply();}
-            if(now-lastDiagnostic>=5000) { lastDiagnostic=now;android.util.Log.i("VehicleDash",DATA.diagnostics(now)+drawStats()); }
+            if(now-lastDiagnostic>=5000) { lastDiagnostic=now;android.util.Log.i("VehicleDash",DATA.diagnostics(now)+drawStats()+ObdLive.summary()); }
         }
         postDelayed(this,delay);
     }

@@ -33,6 +33,8 @@ public final class ObdScheduleTest {
         check(u.next(60000)==null&&u.untilNext(60000)==5000,"next one a period after the late answer");
         ObdSchedule.Poll r=new ObdSchedule.Poll(0x26,new byte[]{0x22,1,(byte)0xA4},1,2000,3);ObdSchedule v=new ObdSchedule(r);
         v.done(r,0,false);v.done(r,2000,false);v.done(r,4000,true);check(r.active()&&r.misses()==0,"an answer resets the miss count");
+        r.bad="7F 22 31";v.done(r,6000,false);v.done(r,8000,false);v.done(r,10000,false);
+        check(v.summary().equals("01A4 1/6 7F 22 31 off"),"summary: answered/sent, last bad reply, dropped ("+v.summary()+")");
         System.out.println("PASS "+checks+" OBD schedule checks");
     }
 }

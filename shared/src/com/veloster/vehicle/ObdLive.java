@@ -59,6 +59,9 @@ public final class ObdLive {
     private final List<byte[]> replies=new ArrayList<byte[]>();
     private int expectEcu=-1;
     private volatile boolean running;
+    private static volatile ObdSchedule current;
+    /** The live requests' tally for the diagnostics line; empty before the poller starts (or off the PD). */
+    public static String summary(){ObdSchedule s=current;return s==null?"":" | obd "+s.summary();}
     private Thread thread;
 
     public void start(final Sink sink,final Gate gate){
@@ -76,7 +79,7 @@ public final class ObdLive {
         if(svc==null)return;
         Binder listener=new Listener(),token=new Binder();
         try{call(svc,1,listener,token);}catch(Throwable e){return;}
-        long nextProbe=-1;int rounds=0;ObdSchedule sched=ObdSchedule.standard();
+        long nextProbe=-1;int rounds=0;ObdSchedule sched=ObdSchedule.standard();current=sched;
         try{
             while(running){
                 if(diagBusy||gate==null||!gate.open()){nap(500);continue;}
@@ -91,6 +94,7 @@ public final class ObdLive {
                 byte[] r=askRaw(svc,p.ecu,p.req,p.req[0]==0x01?REPLY_MS:SLOW_REPLY_MS);
                 boolean ok=positive(r,p.req);
                 if(p.dropAfter()>0&&p.ecu==EMS)dpfLog(p,r,ok);   // the diesel-only PIDs
+                if(!ok){StringBuilder x=new StringBuilder();if(r!=null)for(int i=0;i<Math.min(3,r.length);i++)x.append(i==0?"":" ").append(String.format("%02X",r[i]&255));p.bad=r==null?"none":x.toString();}
                 sched.done(p,System.currentTimeMillis(),ok);
                 if(ok){byte[] d=new byte[r.length-p.req.length];System.arraycopy(r,p.req.length,d,0,d.length);sink.value(p.key,d);}
                 nap(ObdSchedule.gapAfter(r==null?0:r.length));

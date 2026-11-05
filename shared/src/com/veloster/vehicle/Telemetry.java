@@ -28,10 +28,10 @@ public final class Telemetry {
     public static final long STALE_MS = 60000; // UI freshness threshold, not an OEM timeout.
     public static final long HISTORY_MS=300000,HISTORY_STEP_MS=250;
     private final History[] history=new History[LABELS.length];
-    /** Brake pressure (bar) above which the foot is on the brake. Only our car sends the TCS13 switch (it agrees with
-     *  pressure over 3 bar 98 %); another PD's switch stays 0 and its pressure reads 1-2 bar with the foot off. */
+    /** Foot on the brake: the brake switch (EMS12 BRAKE_ACT) when it is known, else pressure over 3 bar. Pressure alone
+     *  is a poor test: another PD reads 1-2 bar with the foot off, and a held brake (auto hold) keeps pressure up. */
     public static final float BRAKING_BAR=3;
-    public static boolean braking(float sw,float bar){return sw>0||bar>BRAKING_BAR;}
+    public static boolean braking(float sw,float bar){return !Float.isNaN(sw)?sw>0:bar>BRAKING_BAR;}
     /** Display orientation follows the driver's reported left/right convention. Raw SAS stays unchanged. */
     public static float displayValue(int signal,float raw){return signal==STEERING?(raw==0?0:-raw):raw;}
     /** String.format(Locale.US,f,x), but a value that rounds to zero loses its minus: idle boost -0.004 reads 0.00
@@ -477,6 +477,11 @@ public final class Telemetry {
             // PV_AV_CAN @48|8 *0.3906 % accelerator pedal: 0-58 % driving, r=0.90 with EMS11 TQI.
             int coolant=b[1]&255,pedal=b[6]&255;
             put(2,coolant*0.75f-48,coolant>0&&coolant<255,now);
+            // BRAKE_ACT @32|2: 1 released, 2 pressed. The engine ECU's brake-light switch, on every PD: our car 99.7 % with
+            // TCS13 DriverBraking over a 10-min drive; a diesel DCT (three drives 2026-11-05, DriverBraking always 0)
+            // 100 % of samples over 5 bar and 96-97 % of those under 2 bar.
+            int act=b[4]&3;
+            put(BRAKE_SWITCH,act==2?1:0,act==1||act==2,now);
             // The Gamma 1.6 T-GDI has no oil temperature sensor (EMS19 CR_Ems_EngOilTemp is always 0), so the oil slot
             // mirrors this cylinder-head coolant sensor and every oil label says so. Real oil runs hotter under load.
             put(1,coolant*0.75f-48,coolant>0&&coolant<255,now);
@@ -553,8 +558,8 @@ public final class Telemetry {
             put(SPARK,spark*0.375f-35.625f,spark>0&&spark<255,now);
             if(spark==0&&rpmMax>400&&zeroSpark<1000)zeroSpark++;
         }else if(funcLow==0x1b&&b.length==8){
-            // TCS13 DriverBraking @55|1 (AliveCounterTCS/CheckSum cycling): agrees with ESP12 pressure >3 bar 98 %.
-            put(BRAKE_SWITCH,(b[6]>>7)&1,true,now);
+            // TCS13 DriverBraking @55|1 agrees with pressure >3 bar 98 % on our car but stays 0 on another PD (a diesel
+            // DCT, a 6MT owner's race page BRAKE never lit), so the brake switch comes from EMS12 BRAKE_ACT instead.
         }else if(funcLow==0x17&&b.length==8){
             // MDPS11 CR_Mdps_DrvTq @11|12 *0.01-20.48 Nm driver steering torque (-4.3..3.3 in-car, sign not yet verified).
             int tq=(((b[1]&255)>>3)|((b[2]&255)<<5))&0xfff;

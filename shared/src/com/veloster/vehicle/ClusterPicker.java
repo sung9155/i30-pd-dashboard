@@ -15,7 +15,7 @@ public final class ClusterPicker {
     public static final String[] DESC={"모든 값 한눈에","고른 값 게이지","시간 그래프","F1 스타일 계기판","랩 타이머","변속 표시·음악","주행 기록","쇼 화면",
         "계단 회전 곡선","주황 LCD","흰 네모 숫자","택시 미터기","80년대 디지털","전투기 HUD","8비트 게임","8비트 추격 시점","마찰원","야간 미니멀","드래그 출발 트리",
         "비행기 엔진 계기판","카세트 데크","우주선 워프","GPS 랩 타이머","다운시프트 RPM"};
-    public static final int OVERVIEW=0,GAUGES=1,GRAPHS=2,F1=3,CLASSIC=8,MANUAL=23,COUNT=NAMES.length,COLS=6,SLOTS=30;   // MANUAL: the race page with the 6MT rpm sweep
+    public static final int OVERVIEW=0,GAUGES=1,GRAPHS=2,F1=3,CLASSIC=8,MANUAL=23,COUNT=NAMES.length,COLS=6,SLOTS=30;   // MANUAL: the Λ screen (LambdaCluster), 6MT and 7DCT
     public static final float LEFT=17,TOP=60,TILE_W=121,TILE_H=76,GAP=8;
     private ClusterPicker(){}
     /** PitRenderer page of a screen after F1. */

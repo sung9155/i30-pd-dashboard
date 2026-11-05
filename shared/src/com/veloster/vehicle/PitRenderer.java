@@ -38,11 +38,12 @@ public final class PitRenderer {
     private final GraphRenderer graphRenderer=new GraphRenderer();
     private final PerformanceRenderer performanceRenderer=new PerformanceRenderer();
     private final RaceRenderer raceRenderer=new RaceRenderer();
+    private final LambdaCluster mtSport=new LambdaCluster();
     private final ShowRenderer showRenderer=new ShowRenderer();
     private final ClusterRenderer clusterRenderer=new ClusterRenderer();
     public static final int PAGE_PERFORMANCE=1,PAGE_RACE=2,PAGE_RECORDS=3,PAGE_SHOW=4,PAGE_CLASSIC=5,PAGE_RETRO=6,PAGE_RALLY=7;
     /** Pages ClusterRenderer draws: PAGE_CLASSIC and up (layout = page - PAGE_CLASSIC, screen = ClusterPicker.CLASSIC + layout). */
-    /** The 수동 screen: drawn by the race renderer (its sweep variant), not a cluster layout. */
+    /** The 수동 screen (LambdaCluster): drawn here, not through the cluster layout list. */
     public static final int PAGE_MANUAL=ClusterPicker.MANUAL-ClusterPicker.F1;
     public static boolean isCluster(int page){return page>=PAGE_CLASSIC&&page<PAGE_MANUAL;}
     private boolean picker,editing;
@@ -145,7 +146,7 @@ public final class PitRenderer {
         else if(symmetric&&page==PAGE_SHOW)showRenderer.draw(c,samples,frameTime,profile);
         else if(symmetric&&page==PAGE_RACE)raceRenderer.draw(c,samples,cue,frameTime,stats,profile,media,music,artwork);
         else if(symmetric&&page==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
-        else if(symmetric&&page==PAGE_MANUAL)raceRenderer.drawManual(c,samples,cue,frameTime,stats,profile);
+        else if(symmetric&&page==PAGE_MANUAL){mtSport.shiftTarget=shiftTarget;mtSport.frame(c,samples,model,stats,profile,frameTime,null);}
         else if(symmetric&&isCluster(page))clusterRenderer.draw(c,page-PAGE_CLASSIC,samples,frameTime,stats,profile,model,music);
         else if(mediaPage)drawCombined(c);else if(cluster)drawCluster(c);else drawDashboard(c);
         // Pages without their own shift light (performance, show, every cluster layout) get the race tab's cue from the same
@@ -371,7 +372,7 @@ public final class PitRenderer {
             else if(pg==PAGE_SHOW)showRenderer.draw(c,samples,frameTime,profile);
             else if(pg==PAGE_RACE)raceRenderer.draw(c,samples,cue,frameTime,stats,profile,false,null,null);
             else if(pg==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
-            else if(pg==PAGE_MANUAL)raceRenderer.drawManual(c,samples,cue,frameTime,stats,profile);
+            else if(pg==PAGE_MANUAL)mtSport.frame(c,samples,thModel,stats,profile,frameTime,null);
             else if(isCluster(pg))clusterRenderer.draw(c,pg-PAGE_CLASSIC,samples,frameTime,stats,profile,thModel,null);
         }
     }

@@ -94,7 +94,7 @@ final class TaxiCluster extends ClusterKit {
         if(o==outside)flip=0;else if(++flip>=FLIP){outside=o;flip=0;}
     }
     @Override protected void tick(){
-        float v=v(7);
+        float v=s[7].valid?s[7].value:Float.NaN;   // the car's own speed: the fare distance is not GPS-calibrated
         long dt=last==0?0:now-last;last=now;
         if(hour<0||now-hourAt>=1000){hour=Calendar.getInstance().get(Calendar.HOUR_OF_DAY);hourAt=now;place();}
         float sur=sur();

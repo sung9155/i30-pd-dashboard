@@ -41,6 +41,8 @@ public final class VehicleDash extends View implements Runnable {
     private boolean picker,editing;
     /** Options: accent colour follows the drive mode; SPORT/ECO open their screen (ClusterPicker.onMode). */
     private boolean modeColor,modeScreen;
+    /** GPS speed calibration (설정 → 진단): learned all the time, applied to the shown speed and the runs only when on. */
+    private boolean speedCalOn;private final SpeedCal speedCal=new SpeedCal();private long speedCalSavedAt;private int speedCalSavedN;
     private int lastMode=-1,modeBack=-1;
     /** Settings category open on the left of the gear's settings (SettingsLayout). */
     private int settingsCat=SettingsLayout.SCREENS;
@@ -159,7 +161,7 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){CarPaint.select("blue");}
         try{Weather.selectSky(a.getSharedPreferences("pit_vehicle_ui",0).getString("sky_8bit","auto"));}
         catch(ClassCastException e){Weather.selectSky("auto");}
-        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);modeColor=p.getBoolean("mode_color",false);modeScreen=p.getBoolean("mode_screen",false);
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);modeColor=p.getBoolean("mode_color",false);speedCalOn=p.getBoolean("speed_cal",false);speedCal.restore(p.getFloat("speed_cal_ratio",Float.NaN),p.getInt("speed_cal_samples",0));modeScreen=p.getBoolean("mode_screen",false);
             for(int k=0;k<modeTargets.length;k++)modeTargets[k]=ClusterPicker.validTarget(p.getInt("mode_screen_"+ClusterPicker.MODE_NAMES[k].toLowerCase(java.util.Locale.US),ClusterPicker.MODE_DEFAULT[k]));}
         catch(ClassCastException e){/* Both options off for an incompatible saved value. */}
         try{
@@ -316,6 +318,13 @@ public final class VehicleDash extends View implements Runnable {
         renderer.setGraphLayout(graphs?graphLayout:null);
         renderer.setSymmetric(symmetric);
         renderer.setPage(page);
+        {Telemetry.Sample sp=DATA.sample(7,now),yw=DATA.sample(Telemetry.YAW,now),bs=DATA.sample(Telemetry.BRAKE_SWITCH,now),bp=DATA.sample(10,now);
+         boolean braking=bs.valid&&bs.value>0||bp.valid&&bp.value>1;
+         speedCal.update(now,sp.valid&&sp.ageMs<=500?sp.value:Float.NaN,yw.valid?yw.value:Float.NaN,braking,GpsFix.seq,GpsFix.fresh()?GpsFix.speedKmh:Float.NaN,GpsFix.accuracy);
+         float r=speedCal.ratio();Telemetry.speedScale=speedCalOn&&!Float.isNaN(r)?r:1;
+         if(!Float.isNaN(r)&&speedCal.samples()!=speedCalSavedN&&now-speedCalSavedAt>60000){speedCalSavedAt=now;speedCalSavedN=speedCal.samples();
+             activity.getSharedPreferences("pit_vehicle_ui",0).edit().putFloat("speed_cal_ratio",r).putInt("speed_cal_samples",speedCalSavedN).apply();}}
+        renderer.setSpeedCal(speedCalOn,speedCal.ratio(),speedCal.samples());
         Telemetry.Sample ms=DATA.sample(Telemetry.DRIVE_MODE,now);int mode=ms.valid?(int)ms.value:-1;
         Theme.mode(modeColor?mode:-1);
         if(mode!=lastMode){
@@ -451,7 +460,10 @@ public final class VehicleDash extends View implements Runnable {
                     applySound();
                     e.putBoolean("engine_sound",soundOn).putInt("engine_sound_route",soundRoute).putInt("engine_sound_engine",soundEngine).putInt("engine_sound_exhaust",soundExhaust);
                     sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);break;
-                case SettingsLayout.DIAG:DtcDialog.show(activity);break;   // read-only trouble codes
+                case SettingsLayout.DIAG:
+                    if(i==1){speedCalOn=!speedCalOn;e.putBoolean("speed_cal",speedCalOn);break;}
+                    if(i==2){speedCal.reset();e.remove("speed_cal_ratio").remove("speed_cal_samples");break;}
+                    DtcDialog.show(activity);break;   // read-only trouble codes
             }
             e.apply();invalidate();return true;
         }

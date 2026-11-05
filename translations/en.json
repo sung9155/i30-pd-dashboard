@@ -692,5 +692,10 @@
   "DPF 포집량": "DPF soot",
   "수동(6MT) 전용 화면": "For the 6-speed manual only",
   "람다": "Lambda",
-  "Λ RPM·속도계": "Λ rpm and speed"
+  "Λ RPM·속도계": "Λ rpm and speed",
+  "GPS 속도 보정": "GPS speed calibration",
+  "다시 배우기": "Learn again",
+  "배운 GPS 속도 비율을 지우고 처음부터": "Forget the learned GPS speed ratio and start over",
+  "배우는 중 · 정속 직진 표본 %d / %d": "Learning · steady straight samples %d / %d",
+  "배운 비율 %+.1f %% · 표본 %,d · 표시 속도와 측정에 적용": "Learned %+.1f %% · %,d samples · applied to the shown speed and runs"
 }

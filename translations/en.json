@@ -663,9 +663,13 @@
   "수동": "Manual",
   "다운시프트 RPM": "Downshift rpm",
   "수동(6MT) 전용 화면": "For the 6-speed manual only",
-  "GPS 속도 보정": "GPS speed calibration",
-  "다시 배우기": "Learn again",
-  "배운 GPS 속도 비율을 지우고 처음부터": "Forget the learned GPS speed ratio and start over",
-  "배우는 중 · 정속 직진 표본 %d / %d": "Learning · steady straight samples %d / %d",
-  "배운 비율 %+.1f %% · 표본 %,d · 표시 속도와 측정에 적용": "Learned %+.1f %% · %,d samples · applied to the shown speed and runs"
+  "실제 속도로 표시": "Show the true speed",
+  "GPS로 속도계 오차 재는 중 · %d %%": "Measuring the speedometer against GPS · %d %%",
+  "속도계가 실제와 같음": "The speedometer reads true",
+  "속도계가 실제보다 %.1f %% 높게 나옴": "The speedometer reads %.1f %% high",
+  "속도계가 실제보다 %.1f %% 낮게 나옴": "The speedometer reads %.1f %% low",
+  " · 실제 속도로 표시 중": " · showing the true speed",
+  " · 켜면 실제 속도로 표시": " · turn on to show the true speed",
+  "다시 재기": "Measure again",
+  "잰 값을 지우고 처음부터": "Forget the measurement and start over"
 }

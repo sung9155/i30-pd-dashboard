@@ -92,7 +92,7 @@ public final class TabsPreview {
           new PitRenderer().draw(c,800,480,false,model,now,0,false,null);android.graphics.Paint bg=new android.graphics.Paint(1);bg.setColor(Theme.current().map(0xff040506));c.drawRect(0,53,800,480,bg);
           new RaceRenderer().draw(c,q,ShiftGuide.evaluate(q,ShiftGuide.target(0,VehicleProfile.PETROL_DCT),VehicleProfile.PETROL_DCT),now,rec.stats(),VehicleProfile.PETROL_DCT,false,null,null);
           ImageIO.write(img,"png",new File(out,on==1?"x_speedcal_on.png":"x_speedcal_off.png"));}Telemetry.speedScale=1;}
-        rec.setSpeedCal(true,0.968f,1240);rec.setSettings(7,"auto",-1,targets);save(out,"9_settings_diag_speedcal",rec,model,now,false,false);rec.setSpeedCal(false,Float.NaN,0);   // GPS speed calibration learned, on
+        rec.setSpeedCal(true,0.968f,1240);rec.setSettings(7,"auto",-1,targets);save(out,"9_settings_diag_speedcal",rec,model,now,false,false);rec.setSpeedCal(false,0.968f,1240);save(out,"9_settings_diag_speedcal_off",rec,model,now,false,false);rec.setSpeedCal(false,Float.NaN,35);save(out,"9_settings_diag_measuring",rec,model,now,false,false);rec.setSpeedCal(false,Float.NaN,0);   // GPS speed calibration learned, on
         rec.setPicker(false,false,0);rec.setModeOptions(false,false);
         // Missing signals (empty model) and a 6MT profile, drawn straight through ClusterRenderer.
         Telemetry none=new Telemetry();

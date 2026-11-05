@@ -20,7 +20,8 @@ public class Paint {
     public void setTextSize(float s){size=s;}
     public void setTextAlign(Align a){align=a;}
     public Shader setShader(Shader s){shader=s;return s;}
-    public Typeface setTypeface(Typeface t){bold=t!=null&&t.bold;mono=t!=null&&t.mono;return t;}
+    Font file;
+    public Typeface setTypeface(Typeface t){bold=t!=null&&t.bold;mono=t!=null&&t.mono;file=t==null?null:t.file;return t;}
     public void setTextScaleX(float v){scaleX=v;}
     public void setTextSkewX(float v){skewX=v;}
     public float measureText(String s){return Canvas.measure(this,s);}
@@ -28,5 +29,5 @@ public class Paint {
     /** Android's textScaleX / textSkewX as a glyph transform (negative skew leans right, as on Android). */
     private Font shaped(Font f){return scaleX==1&&skewX==0?f:f.deriveFont(new java.awt.geom.AffineTransform(scaleX,0,skewX,1,0,0));}
     /** Android 4.2 Roboto when -Dpreview.fonts points at it, else null (Hangul always falls back to font()). */
-    Font latin(){return Canvas.ROBOTO==null||mono?null:shaped(Canvas.ROBOTO[bold?1:0].deriveFont(size));}
+    Font latin(){if(file!=null)return shaped(file.deriveFont(size));return Canvas.ROBOTO==null||mono?null:shaped(Canvas.ROBOTO[bold?1:0].deriveFont(size));}
 }

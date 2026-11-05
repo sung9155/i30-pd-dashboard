@@ -18,7 +18,9 @@ public final class TabsPreview {
         List<String> raw=new ArrayList<>();
         for(String line:Files.readAllLines(new File(a[0]).toPath(),StandardCharsets.UTF_8))if(line.startsWith("RAW "))raw.add(line.substring(4).replace(" ","").trim());
         File out=new File(a[1]);out.mkdirs();
-        Theme.select(System.getProperty("preview.theme","n"));   // PREVIEW_THEME=lambo|bmw|ice|mono|amber|teal|night|rose|copper|red|green in preview.sh
+        Theme.select(System.getProperty("preview.theme","n"));
+        {String r=System.getProperty("preview.root","");java.io.File m=new java.io.File(r,"apps/dashboard/res/raw/chakra_petch_medium.ttf");   // the 수동 screen's face, as the car loads it
+         if(m.isFile()){LambdaCluster.FACE=android.graphics.Typeface.createFromFile(m);LambdaCluster.FACE_BOLD=android.graphics.Typeface.createFromFile(new java.io.File(r,"apps/dashboard/res/raw/chakra_petch_bold.ttf"));}}   // PREVIEW_THEME=lambo|bmw|ice|mono|amber|teal|night|rose|copper|red|green in preview.sh
         CarPaint.select(System.getProperty("preview.paint","blue"));   // PREVIEW_PAINT=white|red|black|grey|navy|brown|intense|orange|marina|silver|copper|purple|khaki
         float at=a.length>2?Float.parseFloat(a[2]):1f;   // 0..1 position in the log
         long secs=600_000;for(String line:Files.readAllLines(new File(a[0]).toPath(),StandardCharsets.UTF_8))
@@ -158,6 +160,11 @@ public final class TabsPreview {
          BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
          new PitRenderer().draw(c,800,480,false,model,now,0,false,null);new LambdaCluster().frame(c,q,model,dst,VehicleProfile.PETROL_DCT,now,null);
          ImageIO.write(img,"png",new File(out,"9p_manual_dct.png"));}
+        for(int rv=0;rv<2;rv++){Telemetry.Sample[] q=model.snapshot(now);   // 수동, 6MT in R and in N: the one N/R/P circle shows it
+         q[8]=new Telemetry.Sample(rv==0?14:0,true,false,true,false,0);q[7]=new Telemetry.Sample(rv==0?4:0,true,false,true,false,0);q[0]=new Telemetry.Sample(rv==0?1200:800,true,false,true,false,0);
+         BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+         new PitRenderer().draw(c,800,480,false,model,now,0,false,null);new LambdaCluster().frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_MT,now,null);
+         ImageIO.write(img,"png",new File(out,rv==0?"9p_manual_reverse.png":"9p_manual_neutral.png"));}
         {Telemetry.Sample[] q=model.snapshot(now);   // 수동 with 모드 색 on in SPORT: the accent turns red
          q[8]=new Telemetry.Sample(3,true,false,true,false,0);q[7]=new Telemetry.Sample(90,true,false,true,false,0);q[0]=new Telemetry.Sample(4200,true,false,true,false,0);
          q[Telemetry.DRIVE_MODE]=new Telemetry.Sample(1,true,false,true,false,0);q[Telemetry.CLUTCH]=new Telemetry.Sample(0,true,false,true,false,0);q[9]=new Telemetry.Sample(80,true,false,true,false,0);

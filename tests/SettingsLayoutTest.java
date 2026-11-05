@@ -25,6 +25,7 @@ public final class SettingsLayoutTest {
             check(h>=40,"cat "+cat+" items tall enough to tap");
         }
         check(SettingsLayout.item(SettingsLayout.THEME,SettingsLayout.CAT_L+10,SettingsLayout.TOP+10)==-1,"the category column is not a choice");
+        check(SettingsLayout.downScreen(0,ClusterPicker.MANUAL)&&!SettingsLayout.downScreen(0,ClusterPicker.F1)&&SettingsLayout.downScreen(1,ClusterPicker.F1+2)&&!SettingsLayout.downScreen(1,ClusterPicker.CLASSIC)&&SettingsLayout.downScreen(2,ClusterPicker.CLASSIC),"downshift-sound screens: 람다, then +F1/퍼포먼스/레이스, then all");
         System.out.println("PASS "+checks+" settings layout checks");
     }
 }

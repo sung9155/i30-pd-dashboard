@@ -197,6 +197,7 @@ public final class UiText {
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
         EN.put("다른 칸과 위치 바꾸기","Swap with another slot");
         EN.put("다시 조회","Read again");
+        EN.put("다운시프트 맞춤 소리가 나는 화면 · 누르면 바뀜","Where the downshift match sounds play · tap to change");
         EN.put("다음","Next");
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
         EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
@@ -217,7 +218,8 @@ public final class UiText {
         EN.put("디젤 DPF","Diesel DPF");
         EN.put("라바 오렌지","Lava Orange");
         EN.put("람다","Lambda");
-        EN.put("람다 · 클러치 밟고 블립이 목표 RPM에 맞을 때","람다 · clutch in, the blip on the target rpm");
+        EN.put("람다 · 레이스 · F1 · 퍼포먼스","람다 · Race · F1 · Performance");
+        EN.put("람다만","람다 only");
         EN.put("람보","Lambo");
         EN.put("랠리","Rally");
         EN.put("랩 타이머","Lap timer");
@@ -233,6 +235,7 @@ public final class UiText {
         EN.put("마찰원","Friction circle");
         EN.put("막대","Bar");
         EN.put("맑음","Clear");
+        EN.put("맞춤 소리 화면","Match-sound screens");
         EN.put("멈추면 다음 운행 준비","Stop to ready the next trip");
         EN.put("모노","Mono");
         EN.put("모드 색","Mode colour");
@@ -240,6 +243,7 @@ public final class UiText {
         EN.put("모드를 바꾸면 아래 화면으로","Changing mode opens the screen below");
         EN.put("모든 값 한눈에","Every value at a glance");
         EN.put("모든 게이지의 항목과 모양을 초기화합니다.","Reset all gauge signals and styles to their defaults.");
+        EN.put("모든 화면","Every screen");
         EN.put("목록 편집","Edit app list");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
@@ -266,7 +270,7 @@ public final class UiText {
         EN.put("변속 레버","Shift lever");
         EN.put("변속 목표","Shift target");
         EN.put("변속 목표에서 깜빡일 때 울림 · 앞 스피커","Sounds with the shift flash · front speakers");
-        EN.put("변속 목표에서 울림 · 람다는 클러치를 뗐을 때만","At the shift target · on 람다 only with the clutch out");
+        EN.put("변속 목표에서 울림 · 맞춤 소리 화면에선 클러치를 뗐을 때만","At the shift target · on match-sound screens only with the clutch out");
         EN.put("변속 알림음","Shift beep");
         EN.put("변속 표시·음악","Shift lights, music");
         EN.put("변속·구동","Transmission");
@@ -604,6 +608,7 @@ public final class UiText {
         EN.put("클러치","Clutch");
         EN.put("클러치 (수동)","Clutch (manual)");
         EN.put("클러치 과열","Clutch overheating");
+        EN.put("클러치 밟고 블립이 그 단의 목표 RPM에 맞을 때","Clutch in, the blip on that gear's target rpm");
         EN.put("클러치 온도 높음","Clutch hot");
         EN.put("클러치 홀 %s° · 짝 %s°","Clutch odd %s° · even %s°");
         EN.put("타이어","Tyres");

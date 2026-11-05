@@ -1,4 +1,4 @@
-# 설치 프로그램 (Windows `설치.cmd` + `install.ps1`, macOS `설치.command`)
+# 설치 프로그램 (Windows `설치.cmd` + `install.ps1`, macOS·리눅스 `설치.command`)
 
 차주가 노트북에서 실행한다. [`INSTALL.md`](../../INSTALL.md)의 3~5단계(연결 확인 · 설치 · '내 앱' 실행)를 대신 한다. 1~2단계(엔지니어 모드 · Factory Test)는 차 화면에서 사람이 해야 하므로 콘솔에 안내만 띄운다.
 
@@ -42,6 +42,16 @@
 - 진단 기록의 가림 처리는 macOS 기본 `perl`을 쓴다.
 - 줄바꿈은 LF여야 하고(`.gitattributes`), ZIP 안에서 실행 권한(755)이 있어야 더블클릭으로 열린다. Windows `Compress-Archive`는 권한을 못 넣으므로 RELEASE.md의 Python 명령으로 만든다.
 - 가짜 adb로 정상 설치 · 서명 충돌 재설치 · 삭제 · 폴더 APK 사용 · 공개 릴리스에서 APK 받기 · 404/비 APK 거르기 · 차 없음(종료 1)을 확인했다(Windows Git Bash에서. 실제 맥·실차로는 아직 안 해 봤다).
+
+## 리눅스 (`i30pd-installer-linux.zip`)
+
+맥과 같은 `설치.command`가 `uname`으로 리눅스를 알아보고 몇 가지만 다르게 한다. ZIP에는 그 파일을 `install.sh`로, `linux/uninstall.sh`·`linux/diag.sh`(= `--uninstall`·`--diag`)와 함께 넣는다(실행 권한 755, LF).
+
+- **adb**: x86_64는 `platform-tools-latest-linux.zip`을 받는다(unzip이 없으면 `python3 -m zipfile`). ARM(라즈베리파이 등)은 Google 배포본이 없어 `sudo apt-get install adb`(안 되면 `android-tools-adb`)를 묻고 설치한다. 배포판 패키지는 USB 권한 규칙도 함께 깐다.
+- **USB 권한**: `adb devices`에 `no permissions`가 보이면 처음 한 번, 차(VID 18d1, PID d00d)에만 `/etc/udev/rules.d/51-i30pd.rules`(MODE 0666)를 넣을지 묻고 `udevadm` 다시 읽기 → adb 서버 재시작 → 케이블 다시 꽂기 안내.
+- **노트 요약**: 맥의 JavaScript(`osascript`) 대신 `python3`로 같은 규칙(`RELEASE-PY`). 2026-11-05 실제 릴리스 응답 두 개에서 node로 돈 `RELEASE-JS` 결과와 바이트까지 같음을 확인했다. python3가 없으면 요약만 빠진다.
+- **그 밖**: 기록 `${XDG_STATE_HOME:-~/.local/state}/i30pd-installer/`, 진단 기록은 `xdg-user-dir DESKTOP`(없으면 홈), 화면이 있을 때만 `xdg-open`으로 폴더를 연다, 못 찾을 때 USB 목록은 `lsusb`. `curl`이 없으면 설치 방법을 알리고 멈춘다.
+- 시험: `bash test/run.sh linux`(Windows Git Bash에서 `I30PD_OS=Linux`로 리눅스 경로를 돈다; `mac`도 이제 `I30PD_OS=Darwin`). 실제 리눅스 기기·실차로는 아직 안 해 봤다.
 
 ## 동작
 

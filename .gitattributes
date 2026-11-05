@@ -6,3 +6,4 @@
 i30pd_port/installer/*.cmd text eol=crlf
 i30pd_port/installer/*.ps1 text eol=crlf
 i30pd_port/installer/*.command text eol=lf
+i30pd_port/installer/linux/*.sh text eol=lf

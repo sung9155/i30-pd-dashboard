@@ -2,8 +2,8 @@
 # PC installers without a car: install.ps1 / 설치.command against fakeadb.py, in Windows Git Bash (powershell.exe, cygpath).
 # Covers install, the same install again (skipped), a new release (installed), diagnostics (masked, read only),
 # uninstall (☆ put back), and the new-installer notice (reads raw.githubusercontent.com, so it needs the network).
-# usage: bash run.sh win|mac
-F="$(cd "$(dirname "$0")" && pwd)"; I="$(dirname "$F")"; WHO="$1"
+# usage: bash run.sh win|mac|linux   (mac and linux both run 설치.command, with I30PD_OS set: this is Git Bash, neither)
+F="$(cd "$(dirname "$0")" && pwd)"; I="$(dirname "$F")"; WHO="$1"; [ "$WHO" = linux ] && OSV=Linux || OSV=Darwin
 SRV="$F/server"; FW="$(cygpath -w "$F")"
 apks(){ mkdir -p "$SRV"; python -c "
 import os,sys
@@ -13,7 +13,7 @@ reset(){ rm -rf "$F/inst" "$F/tmp" "$F/calls.log" "$F/home"; echo com.veloster.c
 run(){ # args after mode
   rm -f "$F/calls.log"
   if [ $WHO = win ]; then powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$I/install.ps1")" -AdbPath "$FW\\adb.cmd" -Yes "$@"
-  else HOME="$F/home" bash "$I/설치.command" --adb "$F/adb" --yes "$@"; fi > "$F/out.txt" 2>&1; echo $? > "$F/rc"
+  else HOME="$F/home" I30PD_OS=$OSV bash "$I/설치.command" --adb "$F/adb" --yes "$@"; fi > "$F/out.txt" 2>&1; echo $? > "$F/rc"
 }
 fail(){ echo "FAIL[$WHO]: $1"; cat "$F/out.txt"; exit 1; }
 BASE="file:///$(cygpath -m "$SRV")"
@@ -36,7 +36,7 @@ if [ $WHO = win ]; then run -Uninstall; else run --uninstall; fi
 if [ $WHO = win ]; then sed "s/^\(\$InstallerVersion = \)'[^']*'/\1'2026-01-01'/" "$I/install.ps1" > "$I/old.ps1"
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$I/old.ps1")" -AdbPath "$FW\\adb.cmd" -Yes -Uninstall > "$F/out.txt" 2>&1; rm -f "$I/old.ps1"
 else sed "s/^INSTALLER_VERSION='[^']*'/INSTALLER_VERSION='2026-01-01'/" "$I/설치.command" > "$I/old.command"
-  HOME="$F/home" bash "$I/old.command" --adb "$F/adb" --yes --uninstall > "$F/out.txt" 2>&1; rm -f "$I/old.command"; fi
+  HOME="$F/home" I30PD_OS=$OSV bash "$I/old.command" --adb "$F/adb" --yes --uninstall > "$F/out.txt" 2>&1; rm -f "$I/old.command"; fi
 grep -q '새 설치기가 있습니다(안정화' $F/out.txt || fail "6 old installer notice"
 grep -q '새 설치기가 있습니다' <(run "${A[@]}"; cat $F/out.txt) && fail "6 current installer must not be told" || true
 echo "OK[$WHO]: install, skip identical, new release, diag (masked, read only), uninstall + ☆, installer notice"

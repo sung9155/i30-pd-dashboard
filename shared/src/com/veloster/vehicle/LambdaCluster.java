@@ -58,10 +58,16 @@ final class LambdaCluster extends ClusterKit {
         float sg=left?1:-1,xa=legX(cx,left,a)+3*sg,xb=legX(cx,left,b)+3*sg;
         path.reset();path.moveTo(xa,legY(a));path.lineTo(xb,legY(b));path.lineTo(xb+BAND*sg,legY(b));path.lineTo(xa+BAND*sg,legY(a));path.close();poly(c,col);
     }
-    /** Lines from both legs' inner edge at fraction f to the two sides of a ring at (cx, y). */
-    private void join(Canvas c,float cx,float f,float y,float half,float w,int col){
-        float ly=legY(clamp(f,0,1));
-        line(c,legX(cx,true,clamp(f,0,1))+3+BAND,ly,cx-half,y,w,col);line(c,legX(cx,false,clamp(f,0,1))-3-BAND,ly,cx+half,y,w,col);
+    /** Lines from both legs' inner edge at fraction f to the two sides of a ring at (cx, y), solid or dashed. */
+    private void join(Canvas c,float cx,float f,float y,float half,float w,int col){join(c,cx,f,y,half,w,col,false);}
+    private void join(Canvas c,float cx,float f,float y,float half,float w,int col,boolean dashed){
+        f=clamp(f,0,1);float ly=legY(f);
+        seg(c,legX(cx,true,f)+3+BAND,ly,cx-half,y,w,col,dashed);seg(c,legX(cx,false,f)-3-BAND,ly,cx+half,y,w,col,dashed);
+    }
+    private void seg(Canvas c,float x1,float y1,float x2,float y2,float w,int col,boolean dashed){
+        if(!dashed){line(c,x1,y1,x2,y2,w,col);return;}
+        float len=(float)Math.hypot(x2-x1,y2-y1),on=6,off=5;
+        for(float d=0;d<len;d+=on+off){float a=d/len,b=Math.min(len,d+on)/len;line(c,x1+(x2-x1)*a,y1+(y2-y1)*a,x1+(x2-x1)*b,y1+(y2-y1)*b,w,col);}
     }
     /** A tick and numeral outside both legs at fraction f. */
     private void scale(Canvas c,float cx,float f,String label,int col){
@@ -81,9 +87,10 @@ final class LambdaCluster extends ClusterKit {
             int t=-1;for(int j=0;j<n;j++)if(String.valueOf(tg[j]).equals(gs[i]))t=j;
             boolean isUp=!Float.isNaN(up)&&gs[i].equals(String.valueOf(g+1))&&!gs[i].equals(cur);
             if(t>=0){boolean ok=tg[t]==matched;int col=((ok?GREEN:GEAR_INK[tg[t]])&0xffffff)|(alpha<<24);
-                join(c,LCX,tr[t]/prof.maxRpm,y,rad+1,2,col);   // a gear down: joined to its rpm, like the current gear
+                // a gear down: joined to its rpm like the current gear, but faint (dashed two or more gears away); green and full on a match
+                join(c,LCX,tr[t]/prof.maxRpm,y,rad+1,ok?2.5f:1.6f,ok?col:(col&0xffffff)|0x66000000,!ok&&g-tg[t]>=2);
                 dot(c,LCX,y,rad,col);mono(c,gs[i],LCX,y+6,rad>12?17:15,INK,Paint.Align.CENTER);}
-            else if(isUp){join(c,LCX,up/prof.maxRpm,y,rad+1,2,CY_);   // the gear up: where it would land
+            else if(isUp){join(c,LCX,up/prof.maxRpm,y,rad+1,1.6f,(CY_&0xffffff)|0x66000000);   // the gear up, faint: where it would land
                 dot(c,LCX,y,rad,INK);ring(c,LCX,y,rad,2.5f,CY_);mono(c,gs[i],LCX,y+6,rad>12?17:15,CY_,Paint.Align.CENTER);}
             else{ring(c,LCX,y,rad,on?3:1.2f,on?CY_:LINE_);mono(c,gs[i],LCX,y+6,on?17:rad>12?14:13,on?WH:GREY,Paint.Align.CENTER);}
             if(on&&!Float.isNaN(rpm))join(c,LCX,rpm/prof.maxRpm,y,rad,2,WH);}   // the current gear points at the rpm level

@@ -69,6 +69,8 @@ public final class Theme {
     private static final int ECO_ACCENT=0x6fe39a,ECO_DIM=0x103a22,SPORT_ACCENT=0xff5a36,SPORT_DIM=0x3a160c;
     private static volatile int modeAccent,modeDim;
     /** CLU13 drive mode code (0 NORMAL, 1 SPORT, 3 ECO), or -1 to drop the mode accent. */
+    /** The drive mode's accent (0xRRGGBB, SPORT red / ECO green) while 모드 색 is on, else 0. */
+    public static int modeAccent(){return modeAccent;}
     public static void mode(int code){modeAccent=code==3?ECO_ACCENT:code==1?SPORT_ACCENT:0;modeDim=code==3?ECO_DIM:code==1?SPORT_DIM:0;}
 
     public static Theme current(){return current;}

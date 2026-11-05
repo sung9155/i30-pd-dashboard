@@ -64,8 +64,13 @@ public final class PitRenderer {
     public void setSettings(int cat,String language,int pick,int[] targets){settingsCat=cat;langSel=language;pickSlot=pick;modeTargets=targets;}
     /** Virtual engine sound settings: switch, route (SettingsLayout.SOUND_ROUTES), engine and exhaust, and the − / + values. */
     private boolean soundOn;private int soundRoute,soundEngine,soundExhaust;private int[] soundVals=SettingsLayout.SOUND_DEFAULT;
-    private boolean beepOn;private int beepSound,beepVol=70;
-    public void setBeep(boolean on,int sound,int vol){beepOn=on;beepSound=sound;beepVol=vol;}
+    private boolean beepOn;private int beepSound,beepVol=70;private int[] downSounds={-1,-1,-1};
+    public void setBeep(boolean on,int sound,int vol,int[] downs){beepOn=on;beepSound=sound;beepVol=vol;downSounds=downs;}
+    private int downs;private boolean clutchIn;
+    /** On the 람다 screen: how many gears down the blip is matched to (RevMatch.downs), else 0. */
+    public int revMatchDowns(){return page==PAGE_MANUAL?downs:0;}
+    /** On the 람다 screen with a 6MT's clutch in: the shift beep stays quiet (a downshift blip crosses the target). */
+    public boolean lambdaClutch(){return page==PAGE_MANUAL&&clutchIn;}
     /** The shift cue of the last frame (rpm at the target, moving, not top gear): the optional beep follows it. */
     public boolean shiftCue(){return cue!=null&&cue.shift;}
     public void setSound(boolean on,int route,int engine,int exhaust,int[] vals){soundOn=on;soundRoute=route;soundEngine=engine;soundExhaust=exhaust;soundVals=vals;}
@@ -138,6 +143,8 @@ public final class PitRenderer {
         // The profile's range, so the "목표" label shows the target the cue really uses (a diesel's is 2100-4700).
         shiftTarget=ShiftGuide.target(target,profile);
         cue=ShiftGuide.evaluate(samples,shiftTarget,profile);stats.update(samples,now);
+        downs=RevMatch.downs(samples,profile);
+        clutchIn=profile.trans==VehicleProfile.Trans.MT&&samples[Telemetry.CLUTCH].valid&&samples[Telemetry.CLUTCH].value>0;
         c.save();c.scale(width/800f,height/480f);
         chrome(c,width,height,cluster);
         if(graphLayout!=null)graphRenderer.draw(c,model,now,graphLayout);
@@ -267,9 +274,12 @@ public final class PitRenderer {
                 case SettingsLayout.PICK:{int s=i<ClusterPicker.COUNT?i:-1;sel=modeTargets[pickSlot]==s;name=screenName(s);
                     if(s>=0&&(hidden&(1<<s))!=0){dim=true;sub="미사용";}break;}
                 case SettingsLayout.RPM:
-                    if(i==SettingsLayout.RPM_BEEP){sel=beepOn;name="변속 알림음";sub="변속 목표에서 깜빡일 때 울림 · 앞 스피커";value=beepOn?"켬":"끔";break;}
+                    if(i==SettingsLayout.RPM_BEEP){sel=beepOn;name="변속 알림음";sub="변속 목표에서 울림 · 람다는 클러치를 뗐을 때만";value=beepOn?"켬":"끔";break;}
                     if(i==SettingsLayout.RPM_BEEP_SOUND){name="알림음 종류";dim=!beepOn;sub="누를 때마다 바뀌고 한 번 들려줌";value=SettingsLayout.BEEP_SOUNDS[beepSound];break;}
-                    if(i==SettingsLayout.RPM_BEEP_VOL){name="알림음 음량";dim=!beepOn;sub="− / + 로 조절 · 한 번 들려줌";break;}
+                    if(i==SettingsLayout.RPM_BEEP_VOL){name="알림음 음량";dim=!beepOn&&downSounds[0]<0&&downSounds[1]<0&&downSounds[2]<0;sub="− / + 로 조절 · 한 번 들려줌";break;}
+                    if(i>=SettingsLayout.RPM_DOWN1){int k=i-SettingsLayout.RPM_DOWN1,d=downSounds[k];
+                        name=k==0?"1단 아래 맞춤 소리":k==1?"2단 아래 맞춤 소리":"3단 아래 맞춤 소리";sub="람다 · 클러치 밟고 블립이 목표 RPM에 맞을 때";
+                        dim=d<0;value=d<0?"끔":SettingsLayout.BEEP_SOUNDS[d];break;}
                     name=i==SettingsLayout.RPM_SHIFT?"변속 목표":"레드라인";
                     sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
                 case SettingsLayout.SOUND:

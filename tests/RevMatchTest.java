@@ -27,6 +27,10 @@ public final class RevMatchTest {
         lr.update(0,3,1800,60,false);lr.update(1000,3,1800,60,false);check(Float.isNaN(lr.rpmIn(80,3)),"not before 1.5 s");
         lr.update(1600,3,1800,60,false);check(lr.rpmIn(80,3)==2400,"3rd learned: 30 rpm per km/h, 2400 at 80");
         lr.update(1700,4,1500,60,false);lr.update(2000,4,9999,10,false);check(Float.isNaN(lr.rpmIn(80,4)),"a new gear starts its hold; under 20 km/h never counts");
+        // 람다 downshift sounds: once as the blip lands on a gear's target, a different gear at once, the same not within 800 ms
+        RevMatch.Cue q=new RevMatch.Cue();
+        check(q.fire(0,0)==0&&q.fire(1,100)==1&&q.fire(1,140)==0,"one sound per landing, not every frame in the window");
+        check(q.fire(2,300)==2&&q.fire(0,400)==0&&q.fire(2,500)==0&&q.fire(0,600)==0&&q.fire(2,1200)==2,"another gear at once; the same gear again after 800 ms");
                 System.out.println("PASS "+checks+" rev-match checks");
     }
 }

@@ -29,9 +29,12 @@ public final class UiText {
         EN.put("%s 요금","%s fare");
         EN.put(". 백업이 남아 있으면 원상복구하세요.",". Restore the original settings if a backup remains.");
         EN.put("1.6 터보 4기통","1.6 turbo I4");
+        EN.put("1단 아래 맞춤 소리","Sound: matched 1 gear down");
         EN.put("1분","1 min");
         EN.put("201 m (1/8마일)","201 m (1/8 mile)");
+        EN.put("2단 아래 맞춤 소리","Sound: matched 2 gears down");
         EN.put("3 × 2 보기","3 x 2 grid");
+        EN.put("3단 아래 맞춤 소리","Sound: matched 3 gears down");
         EN.put("4 × 3 보기","4 x 3 grid");
         EN.put("5분","5 min");
         EN.put("80년대","80s");
@@ -214,6 +217,7 @@ public final class UiText {
         EN.put("디젤 DPF","Diesel DPF");
         EN.put("라바 오렌지","Lava Orange");
         EN.put("람다","Lambda");
+        EN.put("람다 · 클러치 밟고 블립이 목표 RPM에 맞을 때","람다 · clutch in, the blip on the target rpm");
         EN.put("람보","Lambo");
         EN.put("랠리","Rally");
         EN.put("랩 타이머","Lap timer");
@@ -262,6 +266,7 @@ public final class UiText {
         EN.put("변속 레버","Shift lever");
         EN.put("변속 목표","Shift target");
         EN.put("변속 목표에서 깜빡일 때 울림 · 앞 스피커","Sounds with the shift flash · front speakers");
+        EN.put("변속 목표에서 울림 · 람다는 클러치를 뗐을 때만","At the shift target · on 람다 only with the clutch out");
         EN.put("변속 알림음","Shift beep");
         EN.put("변속 표시·음악","Shift lights, music");
         EN.put("변속·구동","Transmission");

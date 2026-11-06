@@ -35,6 +35,12 @@ public final class ObdScheduleTest {
         v.done(r,0,false);v.done(r,2000,false);v.done(r,4000,true);check(r.active()&&r.misses()==0,"an answer resets the miss count");
         r.bad="7F 22 31";v.done(r,6000,false);v.done(r,8000,false);v.done(r,10000,false);
         check(v.summary().equals("01A4 1/6 7F 22 31 off"),"summary: answered/sent, last bad reply, dropped ("+v.summary()+")");
+        // replies another tester asked for (an OBD dongle on a diesel PD, 2026-11-06): used when they answer one of our requests
+        ObdSchedule m=ObdSchedule.standard();
+        ObdSchedule.Poll cl=m.match(0x26,new byte[]{0x62,0x01,(byte)0xA4,1,2,3});
+        check(cl!=null&&cl.key==com.veloster.vehicle.Telemetry.DID_CLUTCH,"a dongle's 62 01 A4 from the TCU is our clutch request");
+        check(m.match(0x27,new byte[]{0x41,0x0b,0x7d}).key==0x0b&&m.match(0x27,new byte[]{0x41,0x10,0x08})==null,"41 0B is ours (MAP), 41 10 (MAF) is not");
+        check(m.match(0x26,new byte[]{0x41,0x0b,0x7d})==null&&m.match(0x27,new byte[]{0x62,(byte)0xED,0x01,0})==null&&m.match(0x27,new byte[]{0x7f,0x22,0x31})==null,"another ECU, an unknown identifier, a refusal: none");
         System.out.println("PASS "+checks+" OBD schedule checks");
     }
 }

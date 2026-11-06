@@ -64,12 +64,29 @@ public final class ObdLive {
     private static volatile ObdSchedule current;
     /** The live requests' tally for the diagnostics line; empty before the poller starts (or off the PD). */
     public static String summary(){ObdSchedule s=current;if(s==null)return "";StringBuilder b=new StringBuilder(" | obd ").append(s.summary());
+        if(passive>0)b.append(" | passive ").append(passive);
         synchronized(STRAY){for(int i=0;i<128;i++)if(STRAY[i]>0)b.append(" | stray ").append(String.format("%02X",i)).append(' ').append(STRAY[i]).append(' ').append(strayHead[i]);}
         return b.toString();}
     /** Replies that came back from another device than the one asked (per TP_DEVICE code), with the last one's first bytes:
      *  shows an ECU answering under another code (a diesel engine, say), which the matching would otherwise drop unseen. */
     private static final int[] STRAY=new int[128];private static final String[] strayHead=new String[128];
     private Thread thread;
+    private volatile Sink sink;
+    /** Replies another tester asked for that we could use (the same request as one of ours), and the kinds we could not. */
+    private static volatile int passive;
+    private static final java.util.Set<String> OTHER=new java.util.HashSet<String>();
+    /** A positive reply that is not the answer to our request in flight: if it answers one of our requests, use it; else
+     *  log the first reply of each kind (ECU + first three bytes) once, up to 40 kinds, so a record shows who else asks. */
+    private void passive(int ecu,byte[] r){
+        ObdSchedule s=current;Sink k=sink;
+        if(r==null||r.length<2||(r[0]&255)==0x7f)return;
+        ObdSchedule.Poll p=s==null?null:s.match(ecu,r);
+        if(p!=null&&k!=null){byte[] d=new byte[r.length-p.req.length];System.arraycopy(r,p.req.length,d,0,d.length);k.value(p.key,d);passive++;return;}
+        StringBuilder head=new StringBuilder(String.format("%02X",ecu));for(int i=0;i<Math.min(3,r.length);i++)head.append(String.format(" %02X",r[i]&255));
+        synchronized(OTHER){if(OTHER.size()>=40||!OTHER.add(head.toString()))return;}
+        StringBuilder b=new StringBuilder();for(byte x:r)b.append(String.format("%02X ",x&255));
+        android.util.Log.i("VehicleDash","OBD other ecu "+String.format("%02X",ecu)+": "+b.toString().trim()+" ("+r.length+" B)");
+    }
 
     public void start(final Sink sink,final Gate gate){
         if(running||!"pd_kr".equals(android.os.Build.PRODUCT))return;
@@ -86,7 +103,7 @@ public final class ObdLive {
         if(svc==null)return;
         Binder listener=new Listener(),token=new Binder();
         try{call(svc,1,listener,token);}catch(Throwable e){return;}
-        long nextProbe=-1;int rounds=0;ObdSchedule sched=ObdSchedule.standard();current=sched;
+        long nextProbe=-1;int rounds=0;ObdSchedule sched=ObdSchedule.standard();current=sched;this.sink=sink;
         try{
             while(running){
                 if(diagBusy||gate==null||!gate.open()){nap(500);continue;}
@@ -117,12 +134,7 @@ public final class ObdLive {
         if(r!=null)for(byte x:r)b.append(String.format("%02X ",x&255));
         android.util.Log.i("VehicleDash","OBD "+String.format("%02X",p.key)+(ok?": "+b.toString().trim():": "+(r==null?"no reply":b.toString().trim())+" "+p.dropAfter()+"x, dropped"));
     }
-    /** A positive reply to req: its service + 0x40, then the same PID / data identifier. */
-    static boolean positive(byte[] r,byte[] req){
-        if(r==null||r.length<=req.length||(r[0]&255)!=(req[0]&255)+0x40)return false;
-        for(int i=1;i<req.length;i++)if(r[i]!=req[i])return false;
-        return true;
-    }
+    static boolean positive(byte[] r,byte[] req){return ObdSchedule.positive(r,req);}
     /** One round of the mode 22 probe into the log: the whole reply in hex, a negative response code, or no reply. */
     private void probe(IBinder svc,int round){
         for(int[] p:PROBE){
@@ -171,7 +183,8 @@ public final class ObdLive {
                 while(true){
                     while(!replies.isEmpty()){
                         byte[] a=replies.remove(0);
-                        if(a.length>=1&&(a[0]&255)==sid+0x40)return a;
+                        // a positive reply to another request (a dongle's, on the same ECU): use it, keep waiting for ours
+                        if(a.length>=1&&(a[0]&255)==sid+0x40){if(positive(a,req))return a;passive(ecu,a);continue;}
                         if(a.length>=3&&(a[0]&255)==0x7f&&(a[1]&255)==sid){if((a[2]&255)==0x78)continue;return a;}   // 78: still working, keep waiting
                     }
                     long left=end-System.currentTimeMillis();
@@ -191,9 +204,11 @@ public final class ObdLive {
             if(code==3){
                 int rcv=data.readByte()&255;data.readByte();int fl=data.readByte()&255;
                 byte[] d=data.createByteArray();
-                if(rcv==0xc7&&(fl&0x80)!=0&&d!=null)synchronized(lock){if((fl&0x7f)==expectEcu){replies.add(d);lock.notifyAll();}
-                    else if(expectEcu>=0)synchronized(STRAY){int k=fl&0x7f;STRAY[k]++;StringBuilder x=new StringBuilder();
-                        for(int i=0;i<Math.min(3,d.length);i++)x.append(i==0?"":" ").append(String.format("%02X",d[i]&255));strayHead[k]=x.toString();}}
+                if(rcv==0xc7&&(fl&0x80)!=0&&d!=null){int k=fl&0x7f;boolean mine,asking;
+                    synchronized(lock){mine=k==expectEcu;asking=expectEcu>=0;if(mine){replies.add(d);lock.notifyAll();}}
+                    if(!mine){if(asking)synchronized(STRAY){STRAY[k]++;StringBuilder x=new StringBuilder();
+                            for(int i=0;i<Math.min(3,d.length);i++)x.append(i==0?"":" ").append(String.format("%02X",d[i]&255));strayHead[k]=x.toString();}
+                        passive(k,d);}}   // another ECU's reply, or one while we ask nothing: another tester's
             }
             if(reply!=null)reply.writeNoException();
             return true;

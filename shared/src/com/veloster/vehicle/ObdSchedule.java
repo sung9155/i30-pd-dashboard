@@ -62,6 +62,19 @@ public final class ObdSchedule {
     public void done(Poll p,long now,boolean ok){p.due=now+p.every;p.misses=ok?0:p.misses+1;p.sent++;if(ok)p.answered++;}
     /** Every request's tally on one short line ("ED1D 0/3 7F 22 31 off, 43 40/40, ..."): the 5 s diagnostics line
      *  carries it, so a record whose log tail lost the early drop lines still shows how each request went. */
+    /** The request a positive reply answers (its service + 0x40, then the same PID / identifier from ecu), or null. ObdLive
+     *  uses it on replies another tester asked for: an OBD dongle on the same engine (a diesel PD, 2026-11-06) gets the
+     *  answers while ours go unanswered, and the head unit hears them all. */
+    public Poll match(int ecu,byte[] reply){
+        for(Poll p:polls)if(p.ecu==ecu&&positive(reply,p.req))return p;
+        return null;
+    }
+    /** A positive reply to req: its service + 0x40, then the same PID / data identifier. */
+    public static boolean positive(byte[] r,byte[] req){
+        if(r==null||r.length<=req.length||(r[0]&255)!=(req[0]&255)+0x40)return false;
+        for(int i=1;i<req.length;i++)if(r[i]!=req[i])return false;
+        return true;
+    }
     public String summary(){
         StringBuilder b=new StringBuilder();
         for(Poll p:polls){if(b.length()>0)b.append(", ");

@@ -58,7 +58,7 @@ public final class VehicleDash extends View implements Runnable {
     private boolean lapHeld;   // the hold already acted; the finger's release is not a tap
     private long introStart;
     private float downX,downY;
-    private long lastDiagnostic;
+    private long lastDiagnostic,lastFullDiagnostic;
     /** Frame cost since the last diagnostics line (logcat VehicleDash every 5 s), to judge the heavier layouts on the car. */
     private long drawNs,drawMaxNs;
     private int drawFrames;
@@ -310,7 +310,10 @@ public final class VehicleDash extends View implements Runnable {
             if(header.flinging())delay=16;   // a flicked tab strip coasts
             float re=DATA.dpfRegenEnd();
             if(Float.compare(re,regenEnd)!=0){regenEnd=re;activity.getSharedPreferences("pit_vehicle_ui",0).edit().putFloat("dpf_regen_end_odo",re).apply();}
-            if(now-lastDiagnostic>=5000) { lastDiagnostic=now;android.util.Log.i("VehicleDash",DATA.diagnostics(now)+drawStats()+ObdLive.summary()); }
+            // every 5 s the short line; the per-signal dump (about 3 KB) once a minute: at 5 s it filled the head unit's small
+            // log buffer in seconds and pushed the OBD probe rounds out of a diagnostic record (a diesel PD, 2026-11-06)
+            if(now-lastDiagnostic>=5000) { lastDiagnostic=now;boolean full=now-lastFullDiagnostic>=60000;if(full)lastFullDiagnostic=now;
+                android.util.Log.i("VehicleDash",(full?DATA.diagnostics(now):"status")+drawStats()+ObdLive.summary()); }
         }
         postDelayed(this,delay);
     }

@@ -65,6 +65,9 @@ public final class ObdLive {
     /** The live requests' tally for the diagnostics line; empty before the poller starts (or off the PD). */
     public static String summary(){ObdSchedule s=current;if(s==null)return "";StringBuilder b=new StringBuilder(" | obd ").append(s.summary());
         if(passive>0)b.append(" | passive ").append(passive);
+        // repeated every 5 s: the head unit's log keeps only the last seconds, so a one-off line never reaches a record
+        synchronized(PROBED){if(!PROBED.isEmpty()){b.append(" | probe");for(java.util.Map.Entry<String,String> e:PROBED.entrySet())b.append(' ').append(e.getKey()).append('=').append(e.getValue());}}
+        synchronized(OTHER){if(!OTHER.isEmpty()){b.append(" | other");for(String o:OTHER)b.append(" [").append(o).append(']');}}
         synchronized(STRAY){for(int i=0;i<128;i++)if(STRAY[i]>0)b.append(" | stray ").append(String.format("%02X",i)).append(' ').append(STRAY[i]).append(' ').append(strayHead[i]);}
         return b.toString();}
     /** Replies that came back from another device than the one asked (per TP_DEVICE code), with the last one's first bytes:
@@ -74,7 +77,9 @@ public final class ObdLive {
     private volatile Sink sink;
     /** Replies another tester asked for that we could use (the same request as one of ours), and the kinds we could not. */
     private static volatile int passive;
-    private static final java.util.Set<String> OTHER=new java.util.HashSet<String>();
+    private static final java.util.Set<String> OTHER=new java.util.LinkedHashSet<String>();
+    /** The latest probe answer per request ("27 22ED03" -> "none" / "7F 22 31" / "62 ED 03 59B"), for the status line. */
+    private static final java.util.Map<String,String> PROBED=new java.util.LinkedHashMap<String,String>();
     /** A positive reply that is not the answer to our request in flight: if it answers one of our requests, use it; else
      *  log the first reply of each kind (ECU + first three bytes) once, up to 40 kinds, so a record shows who else asks. */
     private void passive(int ecu,byte[] r){
@@ -83,7 +88,7 @@ public final class ObdLive {
         ObdSchedule.Poll p=s==null?null:s.match(ecu,r);
         if(p!=null&&k!=null){byte[] d=new byte[r.length-p.req.length];System.arraycopy(r,p.req.length,d,0,d.length);k.value(p.key,d);passive++;return;}
         StringBuilder head=new StringBuilder(String.format("%02X",ecu));for(int i=0;i<Math.min(3,r.length);i++)head.append(String.format(" %02X",r[i]&255));
-        synchronized(OTHER){if(OTHER.size()>=40||!OTHER.add(head.toString()))return;}
+        synchronized(OTHER){if(OTHER.size()>=40||!OTHER.add(head.toString()+" "+r.length+"B"))return;}
         StringBuilder b=new StringBuilder();for(byte x:r)b.append(String.format("%02X ",x&255));
         android.util.Log.i("VehicleDash","OBD other ecu "+String.format("%02X",ecu)+": "+b.toString().trim()+" ("+r.length+" B)");
     }
@@ -147,6 +152,9 @@ public final class ObdLive {
             String what=String.format("ecu %02X ",p[0])+q+": "+(r==null?"no reply":b.toString().trim()+" ("+r.length+" B)");
             android.util.Log.i("VehicleDash","OBD probe round "+round+" "+what);
             if(round==1)coldProbe.add(what);
+            StringBuilder k=new StringBuilder(String.format("%02X ",p[0]));for(int i=1;i<p.length;i++)k.append(String.format("%02X",p[i]));
+            StringBuilder v=new StringBuilder();if(r==null)v.append("none");else{for(int i=0;i<Math.min(3,r.length);i++)v.append(i==0?"":" ").append(String.format("%02X",r[i]&255));if(r[0]!=0x7f)v.append(' ').append(r.length).append('B');}
+            synchronized(PROBED){PROBED.put(k.toString(),v.toString());}
             nap(ObdSchedule.gapAfter(r==null?0:r.length));   // the probe keeps to the same budget (its replies run to 104 B)
         }
         if(round>1)for(String s:coldProbe)android.util.Log.i("VehicleDash","OBD probe round 1 again "+s);

@@ -10,7 +10,7 @@ public final class Tiles {
     private Tiles(){}
     /** Not Telemetry signals: a tile that shows several values (the four tyres, both DCT clutches, the DPF cell) or a
      *  session statistic. Above every Telemetry index, stable because they are saved. */
-    public static final int TIRES=1000,CLUTCH=1001,DPF=1002,CORNER_MIN_SPEED=1003,CORNER_MAX_LAT=1004;
+    public static final int TIRES=1000,CLUTCH=1001,DPF=1002,CORNER_MIN_SPEED=1003,CORNER_MAX_LAT=1004,EXHAUST=1005;
     public static final int CLASSIC=0,RACE=1,F1=2,RETRO=3;
     public static final String[] KEYS={"classic","race","f1","retro"};
     /** Tile rectangles {l,t,r,b} on the 800 x 480 page, drawn and hit-tested alike. */
@@ -24,7 +24,7 @@ public final class Tiles {
         boolean mt=p.trans==VehicleProfile.Trans.MT,diesel=p.fuel==VehicleProfile.Fuel.DIESEL;
         switch(layout){
             case CLASSIC:return new int[]{2,Telemetry.INTAKE,Telemetry.BOOST,9,TIRES,Telemetry.AMBIENT,Telemetry.FUEL_LEVEL,mt?Telemetry.ENGINE_LOAD:CLUTCH};
-            case RACE:return new int[]{2,Telemetry.INTAKE,Telemetry.THROTTLE_POS,diesel?DPF:Telemetry.SPARK};
+            case RACE:return new int[]{2,Telemetry.INTAKE,diesel?EXHAUST:Telemetry.THROTTLE_POS,diesel?DPF:Telemetry.SPARK};   // a diesel's DPF splits in two: soot | temperatures
             case F1:return new int[]{Telemetry.INTAKE,2};
             default:return new int[]{CORNER_MIN_SPEED,CORNER_MAX_LAT,11,Telemetry.BAT_VOLTAGE};
         }
@@ -54,12 +54,12 @@ public final class Tiles {
         {10,43,35,22,23,24},
         {TIRES,18,19,20,21},
         {26,25,31,45,47,48,49,53,54,55,46,50,51},
-        {DPF,68,60,61,62,63,64,65}};
+        {DPF,EXHAUST,68,60,61,69,62,63,64,65}};
     /** Whether this car has the signal: DPF only on a diesel, the clutch pedal only on a 6MT, the DCT clutch
      *  temperatures only on a DCT, no ignition timing on a diesel. */
     public static boolean available(int s,VehicleProfile p){
         boolean diesel=p.fuel==VehicleProfile.Fuel.DIESEL,mt=p.trans==VehicleProfile.Trans.MT;
-        if(s==DPF||s>=Telemetry.DPF_DP&&s<=Telemetry.DPF_AVG_KM||s==Telemetry.DPF_SOOT)return diesel;
+        if(s==DPF||s==EXHAUST||s>=Telemetry.DPF_DP&&s<=Telemetry.DPF_AVG_KM||s==Telemetry.DPF_SOOT||s==Telemetry.EGT_CAT)return diesel;
         if(s==Telemetry.CLUTCH)return mt;
         if(s==CLUTCH||s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN)return !mt;
         if(s==Telemetry.SPARK)return !diesel;
@@ -80,7 +80,7 @@ public final class Tiles {
     public static int groupOf(int s){for(int g=0;g<MEMBERS.length;g++)for(int m:MEMBERS[g])if(m==s)return g;return -1;}
     /** List name (Korean, through UiText at the call). */
     public static String label(int s){
-        switch(s){case TIRES:return "타이어 공기압 (4바퀴 묶음)";case CLUTCH:return "DCT 클러치 온도 (홀·짝 묶음)";case DPF:return "DPF (차압·온도·재생 묶음)";
+        switch(s){case TIRES:return "타이어 공기압 (4바퀴 묶음)";case CLUTCH:return "DCT 클러치 온도 (홀·짝 묶음)";case DPF:return "DPF (차압·온도·재생 묶음)";case EXHAUST:return "배기 온도 (DPF 앞·산화촉매 앞 묶음)";
             case CORNER_MIN_SPEED:return "직전 코너 최저 속도";case CORNER_MAX_LAT:return "직전 코너 최대 횡가속";}
         return Telemetry.LABELS[s];
     }
@@ -91,13 +91,13 @@ public final class Tiles {
         "SOC","BATT","STEER RATE","E-LSD","INTAKE","SELECTOR","ODO","LOAD","YAW","MODE","PARK BRK","THROTTLE","FUEL FLOW","RANGE",
         "AVG","TQ CORR","TQ FRIC","SPARK","BRK SW","STR TORQUE","DOOR L","WIPER","DOOR R","TRUNK","HOOD","TURN L","TURN R","SHIFT",
         "HEADLAMP","TAIL","HIGH BEAM","CLUTCH","FUEL","CAT","ABS LOAD","DPF ΔP","DPF TEMP","DPF REGEN","DPF TRIG","DPF LAST","DPF AVG",
-        "CLUTCH ODD","CLUTCH EVEN","DPF SOOT"};
+        "CLUTCH ODD","CLUTCH EVEN","DPF SOOT","EGT CAT"};
     public static String caption(int s){
-        switch(s){case TIRES:return "TPMS";case CLUTCH:return "CLUTCH";case DPF:return "DPF";case CORNER_MIN_SPEED:return "BTM SPEED";case CORNER_MAX_LAT:return "PREV LAT G";}
+        switch(s){case TIRES:return "TPMS";case CLUTCH:return "CLUTCH";case DPF:return "DPF";case EXHAUST:return "EXHAUST";case CORNER_MIN_SPEED:return "BTM SPEED";case CORNER_MAX_LAT:return "PREV LAT G";}
         return s>=0&&s<CAPTION.length?CAPTION[s]:"—";
     }
     public static String unit(int s){
-        switch(s){case TIRES:return "psi";case CLUTCH:return "°C";case DPF:return "";case CORNER_MIN_SPEED:return "km/h";case CORNER_MAX_LAT:return "G";}
+        switch(s){case TIRES:return "psi";case CLUTCH:return "°C";case DPF:return "";case EXHAUST:return "°C";case CORNER_MIN_SPEED:return "km/h";case CORNER_MAX_LAT:return "G";}
         return Telemetry.UNITS[s];
     }
     /** The reading as text, "—" when there is none; on / off and gear style signals as their words. */
@@ -133,7 +133,7 @@ public final class Tiles {
         float lo,hi;
         if(s==0){lo=0;hi=8000;}else if(s==1||s==2){lo=40;hi=120;}else if(s==Telemetry.INTAKE){lo=0;hi=80;}
         else if(s==Telemetry.AMBIENT){lo=-20;hi=40;}else if(s==Telemetry.CAT_TEMP){lo=0;hi=900;}
-        else if(s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN){lo=0;hi=250;}else if(s==Telemetry.DPF_TEMP){lo=0;hi=700;}
+        else if(s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN){lo=0;hi=250;}else if(s==Telemetry.DPF_TEMP||s==Telemetry.EGT_CAT){lo=0;hi=700;}
         else if(s==Telemetry.DPF_SOOT){lo=0;hi=30;}else if(s==Telemetry.DPF_DP){lo=0;hi=50;}
         else if(s==Telemetry.BOOST){lo=-1;hi=1.5f;}else if(s==10){lo=0;hi=100;}else if(s==Telemetry.BAT_VOLTAGE){lo=10;hi=15;}
         else if(s>=Telemetry.TPMS_FL&&s<=Telemetry.TPMS_RR){lo=0;hi=45;}else if(s==11||s==12||s==CORNER_MAX_LAT){return Float.isNaN(v)?Float.NaN:Math.abs(v)/1.5f;}

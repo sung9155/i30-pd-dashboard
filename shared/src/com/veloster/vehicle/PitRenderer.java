@@ -588,12 +588,13 @@ public final class PitRenderer {
         int sig=Tiles.signal(Tiles.F1,i,profile);String txt;int lv=0;float size=22;
         if(sig==Tiles.TIRES){StringBuilder b=new StringBuilder();for(int k=0;k<4;k++){float x=clutchT(Telemetry.TPMS_FL+k);lv=Math.max(lv,Tiles.level(Telemetry.TPMS_FL+k,x));b.append(k>0?" ":"").append(Tiles.text(Telemetry.TPMS_FL+k,x));}txt=b.toString();size=16;}
         else if(sig==Tiles.CLUTCH){float o=clutchT(Telemetry.CLUTCH_ODD),e=clutchT(Telemetry.CLUTCH_EVEN);lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));txt=Tiles.text(Telemetry.CLUTCH_ODD,o)+" / "+Tiles.text(Telemetry.CLUTCH_EVEN,e);size=18;}
+        else if(sig==Tiles.EXHAUST){txt=Tiles.text(Telemetry.DPF_TEMP,clutchT(Telemetry.DPF_TEMP))+" / "+Tiles.text(Telemetry.EGT_CAT,clutchT(Telemetry.EGT_CAT));size=18;}
         else if(sig==Tiles.DPF){int k=Tiles.dpfLead(clutchT(Telemetry.DPF_SOOT),clutchT(Telemetry.DPF_TRIGGER),clutchT(Telemetry.DPF_DP));
             txt=Tiles.text(k,clutchT(k));lv=clutchT(Telemetry.DPF_REGEN)>0?1:0;
             text(c,Telemetry.UNITS[k],unitX,310,11,MUTED,false);}
         else{float v=Tiles.value(sig,samples,stats);lv=Tiles.level(sig,v);txt=Tiles.text(sig,v);}
         text(c,Tiles.caption(sig),capX,307,11,MUTED,true);
-        boolean several=sig==Tiles.TIRES||sig==Tiles.CLUTCH;   // a longer line starts right after the caption, clear of the unit
+        boolean several=sig==Tiles.TIRES||sig==Tiles.CLUTCH||sig==Tiles.EXHAUST;   // a longer line starts right after the caption, clear of the unit
         text(c,txt,several?capX+85:valX,310,txt.length()>6&&size==22?18:size,lv==2?D():lv==1?AMBER:WHITE,true);
         if(sig!=Tiles.DPF)text(c,Tiles.unit(sig),unitX,310,11,MUTED,false);
     }

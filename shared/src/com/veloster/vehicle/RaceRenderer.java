@@ -130,9 +130,11 @@ public final class RaceRenderer {
         // with both, they take turns every 3 s. Whole km cut down, as a DAG3 shows it (298.86 -> 298).
         float since=v(Telemetry.DPF_SINCE_KM),avg=v(Telemetry.DPF_AVG_KM);
         boolean avgTurn=Float.isNaN(since)||(!Float.isNaN(avg)&&now/3000%2==1);
-        if(!regen&&!(Float.isNaN(since)&&Float.isNaN(avg)))
-            text(c,(avgTurn?"AVG ":"LAST ")+fmt("%.0f",avgTurn?avg:(float)Math.floor(since))+"km",rr-8,t+16,11,MUTED,Paint.Align.RIGHT);
-        text(c,fmt("%.0f",tp)+" °C",l+8,t+52,13,Float.isNaN(tp)?MUTED:ink,Paint.Align.LEFT);
+        boolean split=false;for(int i=0;i<Tiles.RECTS[Tiles.RACE].length;i++)split|=Tiles.signal(Tiles.RACE,i,prof)==Tiles.EXHAUST;
+        if(!regen&&!(Float.isNaN(since)&&Float.isNaN(avg))){String km=(avgTurn?"AVG ":"LAST ")+fmt("%.0f",avgTurn?avg:(float)Math.floor(since))+"km";
+            if(split)text(c,km,rr-8,t+35,11,MUTED,Paint.Align.RIGHT);   // beside ΔP, clear of the caption and the big number
+            else text(c,km,rr-8,t+16,11,MUTED,Paint.Align.RIGHT);}
+        if(!split)text(c,fmt("%.0f",tp)+" °C",l+8,t+52,13,Float.isNaN(tp)?MUTED:ink,Paint.Align.LEFT);   // the EXHAUST tile has it
     }
     private void cell(Canvas c,String caption,String value,String unit,float l,float t,float rr,float b,float size,int color){
         box(c,l,t,rr,b,PANEL);
@@ -263,14 +265,15 @@ public final class RaceRenderer {
     private void raceTile(Canvas c,float[] r,int sig){
         float l=r[0],t=r[1],rr=r[2],b=r[3];
         if(sig==Tiles.DPF){dpf(c,l,t,rr,b);return;}
-        if(sig==Tiles.TIRES||sig==Tiles.CLUTCH){   // several values: two lines under the caption
-            boolean tyres=sig==Tiles.TIRES;float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);
-            boolean hot=!tyres&&(Telemetry.clutchLevel(o)==2||Telemetry.clutchLevel(e)==2);
-            box(c,l,t,rr,b,hot?D():PANEL);text(c,tyres?"TPMS psi":"CLUTCH °C",l+8,t+16,12,hot?BG:MUTED,Paint.Align.LEFT);
+        if(sig==Tiles.TIRES||sig==Tiles.CLUTCH||sig==Tiles.EXHAUST){   // several values: two lines under the caption
+            boolean tyres=sig==Tiles.TIRES,egt=sig==Tiles.EXHAUST;float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);
+            boolean hot=!tyres&&!egt&&(Telemetry.clutchLevel(o)==2||Telemetry.clutchLevel(e)==2);
+            boolean regen=egt&&v(Telemetry.DPF_REGEN)>0;
+            box(c,l,t,rr,b,hot?D():PANEL);text(c,tyres?"TPMS psi":egt?"EXHAUST °C":"CLUTCH °C",l+8,t+16,12,hot?BG:MUTED,Paint.Align.LEFT);
             for(int k=0;k<(tyres?4:2);k++){
-                int sigk=tyres?Telemetry.TPMS_FL+k:k==0?Telemetry.CLUTCH_ODD:Telemetry.CLUTCH_EVEN;float val=v(sigk);int lv=Tiles.level(sigk,val);
+                int sigk=tyres?Telemetry.TPMS_FL+k:egt?(k==0?Telemetry.DPF_TEMP:Telemetry.EGT_CAT):k==0?Telemetry.CLUTCH_ODD:Telemetry.CLUTCH_EVEN;float val=v(sigk);int lv=regen?1:Tiles.level(sigk,val);
                 float x=tyres?(k%2==0?l+(rr-l)*0.45f:rr-10):rr-10,y=t+(tyres?(k<2?36:56):(k==0?36:56));
-                if(!tyres)text(c,k==0?"ODD":"EVEN",l+8,y,11,hot?BG:MUTED,Paint.Align.LEFT);
+                if(!tyres)text(c,egt?(k==0?"DPF":"CAT"):k==0?"ODD":"EVEN",l+8,y,11,hot?BG:MUTED,Paint.Align.LEFT);
                 text(c,fmt("%.0f",val),x,y,17,hot?BG:lv==2?D():lv==1?AMBER:WHITE,Paint.Align.RIGHT);
             }
             return;

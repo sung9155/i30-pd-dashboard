@@ -63,6 +63,8 @@ public final class UiText {
         EN.put("DPF 차압","DPF delta pressure");
         EN.put("DPF 평균 재생 간격","DPF average km between regenerations");
         EN.put("DPF 포집량","DPF soot");
+        EN.put("산화촉매 앞 배기 온도","Exhaust temperature before the catalyst");
+        EN.put("배기 온도 (DPF 앞·산화촉매 앞 묶음)","Exhaust temperatures (before the DPF and the catalyst)");
         EN.put("DiPlay 연결을 먼저 종료하세요. 시험 AP를 끄고 백업한 AP 설정과 Wi-Fi 켜짐 상태를 복원합니다.","Disconnect DiPlay first. The test AP will be turned off and the backed-up AP settings and Wi-Fi state restored.");
         EN.put("DiPlay와 iPhone에 입력","Enter in DiPlay and iPhone");
         EN.put("ECO 초록 · SPORT 주황","ECO green · SPORT orange");

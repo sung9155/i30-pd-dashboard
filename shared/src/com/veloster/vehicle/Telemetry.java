@@ -10,7 +10,8 @@ public final class Telemetry {
     public static final int SPARK=42,BRAKE_SWITCH=43,STEER_TORQUE=44,DOOR_DRIVER=45,WIPER=46,DOOR_PASSENGER=47,TRUNK=48,HOOD=49,TURN_LEFT=50,TURN_RIGHT=51,SHIFT_HINT=52,HEAD_LAMP=53,TAIL_LAMP=54,HIGH_BEAM=55,CLUTCH=56,FUEL_LEVEL=57,CAT_TEMP=58,ABS_LOAD=59;
     public static final int DPF_DP=60,DPF_TEMP=61,DPF_REGEN=62,DPF_TRIGGER=63;   // diesel, standard OBD PIDs 0x7A/0x7C/0x8B
     public static final int DPF_SINCE_KM=64,DPF_AVG_KM=65;   // km since the last regeneration the app saw end; ECU average between regenerations
-    public static final int DPF_SOOT=68;   // diesel soot load, g: 22 ED1D (Kia Ceed CD 2018, the PD's sibling, in OBDb)
+    public static final int DPF_SOOT=68;
+    public static final int EGT_CAT=69;   // diesel exhaust temperature before the oxidation catalyst (ED03 [37]); DPF_TEMP is before the DPF   // diesel soot load, g: 22 ED1D (Kia Ceed CD 2018, the PD's sibling, in OBDb)
     public static final int CLUTCH_ODD=66,CLUTCH_EVEN=67;   // 7DCT clutch temperatures: #1 odd gears (1 3 5 7), #2 even gears (2 4 6 R); TCU 22 01A4
     /** DCT clutch heat for every screen: 0 normal, 1 warm (amber), 2 hot (red, the cell fills).
      *  ponytail: 150 / 180 °C are a guess (our car: 96 °C reversing after 11 min in town; owners report 145 in flat
@@ -26,8 +27,8 @@ public final class Telemetry {
     /** Sink key for 22 ED1D: the soot load (OBDb Kia-Ceed, verified there for 2018 only). */
     public static final int DID_SOOT=0xED1D;
     public static final int DID_DPF2=0xE0F1;   // the DPF block a DAG3 asks (it never asks ED03)
-    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격", "DCT 홀수단 클러치 온도", "DCT 짝수단 클러치 온도", "DPF 포집량"};
-    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%", "km", "km", "°C", "°C", "g"};
+    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격", "DCT 홀수단 클러치 온도", "DCT 짝수단 클러치 온도", "DPF 포집량", "산화촉매 앞 배기 온도"};
+    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%", "km", "km", "°C", "°C", "g", "°C"};
     public static final long STALE_MS = 60000; // UI freshness threshold, not an OEM timeout.
     public static final long HISTORY_MS=300000,HISTORY_STEP_MS=250;
     private final History[] history=new History[LABELS.length];
@@ -303,15 +304,16 @@ public final class Telemetry {
             // "—" on 22 ED03; this is the other form the same engines answer.
             case LID_DPF: if(n>=47){egtDirect=(d[46]&255)*4.709803922f+99;egtDirectAt=now;put(DPF_TEMP,egtDirect,true,now);}
                 if(n>=57)put(DPF_SINCE_KM,(((long)u16(d,53)<<16)|u16(d,55))/1000f,true,now); break;
-            case DID_DPF: if(n>=56){put(DPF_DP,(d[36]&255)*0.431373f,true,now);egtDirect=(d[38]&255)*4.7098f+99;egtDirectAt=now;put(DPF_TEMP,egtDirect,true,now);
+            case DID_DPF: if(n>=56){put(DPF_DP,(d[36]&255)*0.431373f,true,now);egtCat=(d[37]&255)*4.7098f+99;put(EGT_CAT,egtCat,true,now);egtDirect=(d[38]&255)*4.7098f+99;egtDirectAt=now;put(DPF_TEMP,egtDirect,true,now);
                 put(DPF_SINCE_KM,(((long)u16(d,45)<<16)|u16(d,47))/1000f,true,now);} break;
             // 62 E0 F1, the block a DAG3 polls: data bytes 34..37 distance since the last regeneration in metres. A diesel PD
             // with a DAG3 read 293.25 km here at 12:43 where the DAG3 showed 287.32 km at 12:32 and ED03 282.2 km at 10:58.
             // 16..17 an exhaust temperature in K/16 (the unit Hyundai's newer DPF blocks use): 0x1C89 = 183.4 °C where the
-            // DAG3 showed exhaust temperature 2 = 183 °C a minute later (2026-11-09). Which sensor it is (before or after the
-            // DPF) is not settled, so it fills the DPF temperature only while ED03 / 21 03 are silent (a DAG3 plugged in).
+            // DAG3 showed exhaust temperature 2 = 183 °C a minute later (2026-11-09), below its temperature 1 (211 °C), as
+            // ED03's before-the-catalyst [37] sits below its before-the-DPF [38] at idle: read as the catalyst-side sensor.
+            // ponytail: one photo; it fills EGT_CAT only while ED03 is silent (a DAG3 plugged in), the status line logs both.
             case DID_DPF2: if(n>=38)put(DPF_SINCE_KM,(((long)u16(d,34)<<16)|u16(d,36))/1000f,true,now);
-                if(n>=18){egtE0f1=u16(d,16)/16f-273.15f;if(now-egtDirectAt>10000)put(DPF_TEMP,egtE0f1,true,now);} break;
+                if(n>=18){egtE0f1=u16(d,16)/16f-273.15f;if(now-egtDirectAt>10000)put(EGT_CAT,egtE0f1,true,now);} break;
             default: obd(pid,n>0?d[0]&255:0,n>1?d[1]&255:0,now);
         }
     }
@@ -332,11 +334,11 @@ public final class Telemetry {
     }
     private int lastRegen=-1;
     private float regenEndOdo=Float.NaN;
-    private float egtDirect=Float.NaN,egtE0f1=Float.NaN;private long egtDirectAt=Long.MIN_VALUE/2;
+    private float egtDirect=Float.NaN,egtCat=Float.NaN,egtE0f1=Float.NaN;private long egtDirectAt=Long.MIN_VALUE/2;
     /** Both diesel exhaust temperatures for the status line, until the E0F1 sensor's place is settled against a DAG3 photo. */
     public synchronized String egt(){
         if(Float.isNaN(egtDirect)&&Float.isNaN(egtE0f1))return "";
-        return String.format(java.util.Locale.US," | egt ed03 %.0f e0f1 %.1f",egtDirect,egtE0f1);
+        return String.format(java.util.Locale.US," | egt ed03 dpf %.0f cat %.0f, e0f1 %.1f",egtDirect,egtCat,egtE0f1);
     }
     private boolean sootObd;   // 22 ED1D answered: its soot (g) replaces the hscan byte
     /** Regeneration on (1) or off (0), from OBD 01 8B or the diesel's EMS19 slot; counts the km since the last one ended. */

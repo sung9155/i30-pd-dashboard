@@ -315,7 +315,7 @@ public final class HscanPdTelemetryTest {
         t.obd(0x3c,0x0b,0x54,3402);check(Math.abs(t.sample(Telemetry.CAT_TEMP,3402).value-250f)<1f,"catalyst temp ~250 C");
         t.obd(0x43,0x00,0x31,3403);check(Math.abs(t.sample(Telemetry.ABS_LOAD,3403).value-19.2f)<0.5f,"absolute load ~19%");
         t.obd(0x0b,new byte[]{0x67},3404);check(t.boostCheck(3404).startsWith("MAP 103 kPa"),"MAP 01 0B kept for the boost-scale line: "+t.boostCheck(3404));
-        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.DPF_SOOT+1,"label/unit tables cover the added signals");
+        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.EGT_CAT+1,"label/unit tables cover the added signals");
         // diesel DPF PIDs (J1979-DA): a support byte first, only marked fields published; other PIDs fall through
         t.obd(0x7a,new byte[]{0x07,0x05,(byte)0xdc,0,0,0,0},3410);check(Math.abs(t.sample(Telemetry.DPF_DP,3410).value-15f)<0.01f,"DPF delta pressure 1500 x 0.01 = 15 kPa");
         t.obd(0x7a,new byte[]{0x07,(byte)0xff,(byte)0x9c,0,0,0,0},3411);check(Math.abs(t.sample(Telemetry.DPF_DP,3411).value+1f)<0.01f,"delta pressure is signed (-1 kPa)");
@@ -349,8 +349,9 @@ public final class HscanPdTelemetryTest {
         byte[] f=new byte[40];f[35]=0x04;f[36]=0x79;f[37]=(byte)0x82;k.obd(Telemetry.DID_DPF2,f,3442);   // 62 E0 F1 from the DAG3 drive
         check(Math.abs(k.sample(Telemetry.DPF_SINCE_KM,3442).value-293.25f)<0.01f,"E0F1 bytes 34..37: 293.25 km since regeneration");
         check(Math.abs(k.sample(Telemetry.DPF_TEMP,3442).value-(58*4.7098f+99))<0.1f,"ED03 answered just now: its temperature stays");
+        check(Math.abs(k.sample(Telemetry.EGT_CAT,3442).value-99)<0.1f,"ED03 [37] is the catalyst-side temperature (0 -> 99 C)");
         f[16]=0x1C;f[17]=(byte)0x89;k.obd(Telemetry.DID_DPF2,f,3442+20000);   // DAG3 drive 2026-11-09: 183.4 C
-        check(Math.abs(k.sample(Telemetry.DPF_TEMP,3442+20000).value-183.4f)<0.1f,"ED03 silent (DAG3): E0F1 K/16 temperature fills in");
+        check(Math.abs(k.sample(Telemetry.EGT_CAT,3442+20000).value-183.4f)<0.1f&&Math.abs(k.sample(Telemetry.DPF_TEMP,3442+20000).value-(58*4.7098f+99))<0.1f,"ED03 silent (DAG3): E0F1 K/16 fills the catalyst-side temperature, not the DPF one");
         // the same block over KWP 21 03 (OBDb): byte 46 exhaust temperature x4.7098 + 99, 53..56 metres since the regeneration
         byte[] w=new byte[57];w[46]=58;w[54]=(byte)0x01;w[55]=(byte)0xe2;w[56]=0x40;   // 123 456 m
         k.obd(Telemetry.LID_DPF,w,3443);

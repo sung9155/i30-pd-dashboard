@@ -301,13 +301,17 @@ public final class Telemetry {
             // KWP 21 03 (OBDb Hyundai-i30, Kia-Ceed with no year limit, Tucson, Sportage; CC BY-SA 4.0): data byte 46 exhaust
             // gas temperature x4.709803922 + 99 °C, 53..56 distance since the last regeneration in metres. A diesel PD showed
             // "—" on 22 ED03; this is the other form the same engines answer.
-            case LID_DPF: if(n>=47)put(DPF_TEMP,(d[46]&255)*4.709803922f+99,true,now);
+            case LID_DPF: if(n>=47){egtDirect=(d[46]&255)*4.709803922f+99;egtDirectAt=now;put(DPF_TEMP,egtDirect,true,now);}
                 if(n>=57)put(DPF_SINCE_KM,(((long)u16(d,53)<<16)|u16(d,55))/1000f,true,now); break;
-            case DID_DPF: if(n>=56){put(DPF_DP,(d[36]&255)*0.431373f,true,now);put(DPF_TEMP,(d[38]&255)*4.7098f+99,true,now);
+            case DID_DPF: if(n>=56){put(DPF_DP,(d[36]&255)*0.431373f,true,now);egtDirect=(d[38]&255)*4.7098f+99;egtDirectAt=now;put(DPF_TEMP,egtDirect,true,now);
                 put(DPF_SINCE_KM,(((long)u16(d,45)<<16)|u16(d,47))/1000f,true,now);} break;
             // 62 E0 F1, the block a DAG3 polls: data bytes 34..37 distance since the last regeneration in metres. A diesel PD
             // with a DAG3 read 293.25 km here at 12:43 where the DAG3 showed 287.32 km at 12:32 and ED03 282.2 km at 10:58.
-            case DID_DPF2: if(n>=38)put(DPF_SINCE_KM,(((long)u16(d,34)<<16)|u16(d,36))/1000f,true,now); break;
+            // 16..17 an exhaust temperature in K/16 (the unit Hyundai's newer DPF blocks use): 0x1C89 = 183.4 °C where the
+            // DAG3 showed exhaust temperature 2 = 183 °C a minute later (2026-11-09). Which sensor it is (before or after the
+            // DPF) is not settled, so it fills the DPF temperature only while ED03 / 21 03 are silent (a DAG3 plugged in).
+            case DID_DPF2: if(n>=38)put(DPF_SINCE_KM,(((long)u16(d,34)<<16)|u16(d,36))/1000f,true,now);
+                if(n>=18){egtE0f1=u16(d,16)/16f-273.15f;if(now-egtDirectAt>10000)put(DPF_TEMP,egtE0f1,true,now);} break;
             default: obd(pid,n>0?d[0]&255:0,n>1?d[1]&255:0,now);
         }
     }
@@ -328,6 +332,12 @@ public final class Telemetry {
     }
     private int lastRegen=-1;
     private float regenEndOdo=Float.NaN;
+    private float egtDirect=Float.NaN,egtE0f1=Float.NaN;private long egtDirectAt=Long.MIN_VALUE/2;
+    /** Both diesel exhaust temperatures for the status line, until the E0F1 sensor's place is settled against a DAG3 photo. */
+    public synchronized String egt(){
+        if(Float.isNaN(egtDirect)&&Float.isNaN(egtE0f1))return "";
+        return String.format(java.util.Locale.US," | egt ed03 %.0f e0f1 %.1f",egtDirect,egtE0f1);
+    }
     private boolean sootObd;   // 22 ED1D answered: its soot (g) replaces the hscan byte
     /** Regeneration on (1) or off (0), from OBD 01 8B or the diesel's EMS19 slot; counts the km since the last one ended. */
     private void regen(int r,long now){

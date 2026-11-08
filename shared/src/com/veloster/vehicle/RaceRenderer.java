@@ -127,11 +127,11 @@ public final class RaceRenderer {
         cell(c,regen?"DPF REGEN":k==Telemetry.DPF_DP?"DPF ΔP":k==Telemetry.DPF_SOOT?"DPF SOOT":"DPF",Tiles.text(k,v(k)),Telemetry.UNITS[k],l,t,rr,b,24,ink);
         if(k!=Telemetry.DPF_DP)text(c,"ΔP "+fmt("%.1f",dp),l+8,t+35,13,Float.isNaN(dp)?MUTED:ink,Paint.Align.LEFT);   // delta pressure, kPa
         // Top right (not while regenerating): km since the last regeneration, else the ECU's average between them;
-        // with both, they take turns every 3 s.
+        // with both, they take turns every 3 s. Whole km cut down, as a DAG3 shows it (298.86 -> 298).
         float since=v(Telemetry.DPF_SINCE_KM),avg=v(Telemetry.DPF_AVG_KM);
         boolean avgTurn=Float.isNaN(since)||(!Float.isNaN(avg)&&now/3000%2==1);
         if(!regen&&!(Float.isNaN(since)&&Float.isNaN(avg)))
-            text(c,(avgTurn?"AVG ":"LAST ")+fmt("%.0f",avgTurn?avg:since)+"km",rr-8,t+16,11,MUTED,Paint.Align.RIGHT);
+            text(c,(avgTurn?"AVG ":"LAST ")+fmt("%.0f",avgTurn?avg:(float)Math.floor(since))+"km",rr-8,t+16,11,MUTED,Paint.Align.RIGHT);
         text(c,fmt("%.0f",tp)+" °C",l+8,t+52,13,Float.isNaN(tp)?MUTED:ink,Paint.Align.LEFT);
     }
     private void cell(Canvas c,String caption,String value,String unit,float l,float t,float rr,float b,float size,int color){

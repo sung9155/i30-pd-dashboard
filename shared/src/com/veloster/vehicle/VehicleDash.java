@@ -313,7 +313,7 @@ public final class VehicleDash extends View implements Runnable {
             // every 5 s the short line; the per-signal dump (about 3 KB) once a minute: at 5 s it filled the head unit's small
             // log buffer in seconds and pushed the OBD probe rounds out of a diagnostic record (a diesel PD, 2026-11-06)
             if(now-lastDiagnostic>=5000) { lastDiagnostic=now;boolean full=now-lastFullDiagnostic>=60000;if(full)lastFullDiagnostic=now;
-                android.util.Log.i("VehicleDash",(full?DATA.diagnostics(now):"status")+drawStats()+DATA.boostFit()+ObdLive.summary()); }
+                android.util.Log.i("VehicleDash",(full?DATA.diagnostics(now):"status")+drawStats()+DATA.boostFit()+DATA.egt()+ObdLive.summary()); }
         }
         postDelayed(this,delay);
     }

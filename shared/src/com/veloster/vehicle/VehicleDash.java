@@ -161,7 +161,7 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){CarPaint.select("blue");}
         try{Weather.selectSky(a.getSharedPreferences("pit_vehicle_ui",0).getString("sky_8bit","auto"));}
         catch(ClassCastException e){Weather.selectSky("auto");}
-        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);modeColor=p.getBoolean("mode_color",false);speedCalOn=p.getBoolean("speed_cal",false);Telemetry.torqueUnit=Math.max(0,Math.min(Telemetry.TORQUE_UNITS.length-1,p.getInt("unit_torque",0)));Telemetry.powerUnit=Math.max(0,Math.min(Telemetry.POWER_UNITS.length-1,p.getInt("unit_power",0)));speedCal.restore(p.getFloat("speed_cal_ratio",Float.NaN),p.getInt("speed_cal_samples",0));modeScreen=p.getBoolean("mode_screen",false);
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);modeColor=p.getBoolean("mode_color",false);speedCalOn=p.getBoolean("speed_cal",false);speedCal.restore(p.getFloat("speed_cal_ratio",Float.NaN),p.getInt("speed_cal_samples",0));modeScreen=p.getBoolean("mode_screen",false);
             for(int k=0;k<modeTargets.length;k++)modeTargets[k]=ClusterPicker.validTarget(p.getInt("mode_screen_"+ClusterPicker.MODE_NAMES[k].toLowerCase(java.util.Locale.US),ClusterPicker.MODE_DEFAULT[k]));}
         catch(ClassCastException e){/* Both options off for an incompatible saved value. */}
         try{
@@ -441,8 +441,6 @@ public final class VehicleDash extends View implements Runnable {
                     else pickSlot=i-SettingsLayout.MODE_FIRST;
                     e.putBoolean("mode_color",modeColor).putBoolean("mode_screen",modeScreen);break;
                 case SettingsLayout.LANG:
-                    if(i==SettingsLayout.UNIT_TORQUE){Telemetry.torqueUnit=(Telemetry.torqueUnit+1)%Telemetry.TORQUE_UNITS.length;e.putInt("unit_torque",Telemetry.torqueUnit);break;}
-                    if(i==SettingsLayout.UNIT_POWER){Telemetry.powerUnit=(Telemetry.powerUnit+1)%Telemetry.POWER_UNITS.length;e.putInt("unit_power",Telemetry.powerUnit);break;}
                     if(LanguageSettings.save(activity,SettingsLayout.LANGS[i])&&entry!=null)entry.setText(UiText.t("N 계기판"));   // the OEM screen's entry button follows the language too
                     break;
                 case SettingsLayout.RPM:{   // − / + step 100 rpm; the rest of the row puts the default back

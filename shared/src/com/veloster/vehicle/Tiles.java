@@ -98,7 +98,7 @@ public final class Tiles {
     }
     public static String unit(int s){
         switch(s){case TIRES:return "psi";case CLUTCH:return "°C";case DPF:return "";case CORNER_MIN_SPEED:return "km/h";case CORNER_MAX_LAT:return "G";}
-        return Telemetry.unit(s);
+        return Telemetry.UNITS[s];
     }
     /** The reading as text, "—" when there is none; on / off and gear style signals as their words. */
     /** The DPF bundle's main reading: soot g (22 ED1D) when the engine gives it, else the regeneration trigger %
@@ -114,8 +114,8 @@ public final class Tiles {
     private static String fmt(int s){
         if(s==Telemetry.BOOST||s==11||s==12||s==CORNER_MAX_LAT)return "%+.2f";
         if(s==Telemetry.STEERING||s==Telemetry.STEER_TORQUE||s==Telemetry.YAW)return "%+.1f";
-        String u=s>=TIRES?unit(s):Telemetry.unit(s);
-        if(s==10||s==Telemetry.DPF_SOOT||s==Telemetry.TORQUE&&Telemetry.torqueUnit==1||"V".equals(u)||"L/h".equals(u)||"km/L".equals(u)||"kPa".equals(u))return "%.1f";
+        String u=s>=TIRES?unit(s):Telemetry.UNITS[s];
+        if(s==10||s==Telemetry.DPF_SOOT||"V".equals(u)||"L/h".equals(u)||"km/L".equals(u)||"kPa".equals(u))return "%.1f";
         return "%.0f";
     }
     /** 0 normal, 1 warm / low (amber), 2 critical (red). */

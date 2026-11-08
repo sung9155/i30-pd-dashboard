@@ -27,7 +27,7 @@ final class EngineCluster extends ClusterKit {
         if(prof.fuel==VehicleProfile.Fuel.DIESEL){float tr=v(Telemetry.DPF_TRIGGER);   // no ignition timing: the DPF regeneration trigger
             float dp=v(Telemetry.DPF_DP);int ink=v(Telemetry.DPF_REGEN)>0?AM:WH;
             int k=Tiles.dpfLead(v(Telemetry.DPF_SOOT),tr,dp);float x=v(k);   // soot g, else trigger %, else delta pressure
-            row(c,2,"DPF",Tiles.text(k,x),Telemetry.unit(k),Tiles.fraction(k,x),ink,Float.NaN);}
+            row(c,2,"DPF",Tiles.text(k,x),Telemetry.UNITS[k],Tiles.fraction(k,x),ink,Float.NaN);}
         else row(c,2,"SPK",fmt("%+.1f",spark),"°",Float.isNaN(spark)?Float.NaN:(spark+15)/55,WH,Float.NaN);
         row(c,3,"IAT",fmt("%.0f",iat),"°C",Float.isNaN(iat)?Float.NaN:(iat-20)/60,!Float.isNaN(iat)&&iat>60?AM:WH,Float.NaN);
         row(c,4,"SPD",fmt("%.0f",spd),"km/h",Float.isNaN(spd)?Float.NaN:spd/260,WH,Float.NaN);

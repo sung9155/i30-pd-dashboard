@@ -163,6 +163,10 @@ public final class Telemetry {
     private boolean sparkSeen, selectorSeen, leverAlive, emsGearSeen; private float rpmMax;
     /** EMS16 frames with the timing byte at 0 while the engine has run: a diesel's empty slot (a petrol always has timing). */
     private int zeroSpark;
+    /** EMS12's reference torque (N·m, 350 on our petrol, 400 on the diesel) and when it came; the net torque needs one younger than STD_TORQUE_MS
+     *  (its multiplex slot comes round every 1.9 s at most in our logs). ambientHscan: the hscan outside temperature has been seen, so OBD 01 46 is ignored. */
+    private float stdTorque;private long stdAt=-1;private boolean ambientHscan;
+    private static final long STD_TORQUE_MS=3000;
     private boolean diesel(){return !sparkSeen&&zeroSpark>=5;}
     private int leverCheck=-1, leverFrozen;
     // 6MT gear from rpm / speed. Ratios: Hyundai AU i30 PD spec sheet, 1.6 T-GDi 6MT (final drive 4.467, single);
@@ -217,7 +221,7 @@ public final class Telemetry {
         epoch++;ptValid=false;gfValid=false;stdSeen=false;lastComputedPt=-1;lastComputedGf=-1;
         calculation.remove();
         observedPreviousRpm=-1;observedTorqueValid=false;
-        sparkSeen=false;selectorSeen=false;leverAlive=false;emsGearSeen=false;rpmMax=0;zeroSpark=0;
+        sparkSeen=false;selectorSeen=false;leverAlive=false;emsGearSeen=false;rpmMax=0;zeroSpark=0;stdTorque=0;stdAt=-1;ambientHscan=false;
         leverCheck=-1;leverFrozen=0;mtCand=0;mtShown=0;mtCandAt=0;mtRatioMin=mtRatioMax=0;mtReverse=false;idleTarget=Float.NaN;idleKmh=0;clutchLast=-1;clutchToggled=false;
         for(int i=0;i<LABELS.length;i++) { counts[i]=0; valid[i]=false; changed[i]=false; seen[i]=false; history[i]=null; }
     }
@@ -257,7 +261,7 @@ public final class Telemetry {
      */
     public synchronized void obd(int pid,int a,int b,long now){
         switch(pid){
-            case 0x46: put(AMBIENT,a-40,true,now); break;                  // ambient air temperature, A-40 °C
+            case 0x46: if(!ambientHscan)put(AMBIENT,a-40,true,now); break;                  // ambient air temperature, A-40 °C
             case 0x2f: put(FUEL_LEVEL,a*100f/255,true,now); break;        // fuel tank level, A*100/255 %
             case 0x3c: put(CAT_TEMP,((a<<8|b)/10f)-40,true,now); break;   // catalyst temperature, (256A+B)/10-40 °C
             case 0x43: put(ABS_LOAD,(a<<8|b)*100f/255,true,now); break;   // absolute load, (256A+B)*100/255 %
@@ -349,6 +353,8 @@ public final class Telemetry {
         if(signal==TURN_LEFT||signal==TURN_RIGHT||signal==HEAD_LAMP||signal==TAIL_LAMP||signal==HIGH_BEAM)return value>0?"ON":"OFF";
         if(signal==CLUTCH)return value>0?"IN":"OUT";
         if(signal==DPF_REGEN)return value>0?"REGEN":"OFF";
+        if(signal==TCS||signal==ESC)return value>0?"OFF":"ON";
+        if(signal==ABS)return value>0?"WARN":"OK";
         if(signal==WIPER)return value==0?"OFF":value==1?"LOW":value==2?"HIGH":"—";
         return null;
     }
@@ -491,6 +497,13 @@ public final class Telemetry {
             int acor=b[1]&255,fr=b[5]&255;
             put(TORQUE_CORR,acor*0.390625f,acor<255,now);
             put(TORQUE_FRICTION,fr*0.390625f,fr<255,now);
+            // Net engine torque = reference torque x (TQI_ACOR - friction) %, power from it and the rpm (PS); engine braking shows 0.
+            // Petrol: 245 N·m at 2,070 rpm and 232 N·m at 2,940 rpm on a light 10-minute drive (rated 265), no full-throttle log yet.
+            // Diesel: withheld. The same sum gives 189 PS at 3,900 rpm on a 136 PS engine (the % is not a share of one fixed torque there).
+            // Source flags (byte0 & 0xB2) were never set in 4 drives; a set one withholds the value.
+            boolean nmOk=!diesel()&&n!=65535&&acor<255&&fr<255&&stdTorque>0&&stdAt>=0&&now-stdAt<=STD_TORQUE_MS&&(b[0]&0xb2)==0;
+            float nm=nmOk?Math.max(0,(acor-fr)*0.390625f*stdTorque/100):0;
+            put(TORQUE,nm,nmOk,now);put(POWER,(float)(nm*(n*0.25)*2*Math.PI/60/735.49875),nmOk,now);
         }else if(funcLow==0x0b&&b.length==8){
             // Intake air temperature: byte2 * 0.75 - 48 (EMS15 IntAirTemp / EMS_DCT12 IndAirTemp, bit 16).
             // Cross-checked across captures: 45C right after a lunchtime drive (heat soak), 28.5C on an
@@ -509,6 +522,8 @@ public final class Telemetry {
             // 63.8 -> 85.5 C over 15 min, 80-85 C driving (this byte was earlier misread as door lock).
             // PV_AV_CAN @48|8 *0.3906 % accelerator pedal: 0-58 % driving, r=0.90 with EMS11 TQI.
             int coolant=b[1]&255,pedal=b[6]&255;
+            // Byte0: top two bits count 0..3 (a multiplex); slot 3 carries the reference torque, low 6 bits x 10 N·m (0 and 63 = no value).
+            if((b[0]&255)>>6==3){int sr=b[0]&63;if(sr==0||sr==63)stdTorque=0;else{stdTorque=sr*10;stdAt=now;}}
             put(2,coolant*0.75f-48,coolant>0&&coolant<255,now);
             // BRAKE_ACT @32|2: 1 released, 2 pressed. The engine ECU's brake-light switch, on every PD: our car 99.7 % with
             // TCS13 DriverBraking over a 10-min drive; a diesel DCT (three drives 2026-11-05, DriverBraking always 0)
@@ -626,8 +641,24 @@ public final class Telemetry {
         }else if(funcLow==0x20&&b.length==6){
             // TPMS: 00 00 ff ff ff ff until the sensors report after moving, then byte1=1 and bytes 2-5 hold
             // FL/FR/RL/RR in psi (0x21/0x22 observed while the cluster showed 35). Order assumed FL FR RL RR.
-            boolean ok=(b[1]&255)==1;
-            for(int i=0;i<4;i++){int raw=b[2+i]&255;put(TPMS_FL+i,raw,ok&&raw<255&&raw<=100,now);}
+            // byte1 = status (low 3 bits, 1 = valid) + unit (bits 3-4): 0 psi, 1 steps of 5 kPa, 2 steps of 0.1 bar, so a cluster set
+            // to kPa or bar still reads; everything is stored as psi.
+            int status=b[1]&7,unit=(b[1]>>3)&3;float k=unit==1?0.7251887f:unit==2?1.4503774f:1f;
+            for(int i=0;i<4;i++){int raw=b[2+i]&255;float psi=raw*k;put(TPMS_FL+i,psi,status==1&&unit<=2&&raw<255&&psi<=100,now);}
+        }else if(funcLow==0x14&&b.length==8){
+            // Outside air temperature, byte3 x 0.5 - 40 C (7-18 C across our four drives in the evening and the morning); 255 = none.
+            // Free on hscan and the only source on a diesel, whose engine ECU answers no OBD 01 46.
+            int raw=b[3]&255;if(raw<255)ambientHscan=true;
+            put(AMBIENT,raw*0.5f-40,raw<255,now);
+        }else if(funcLow==0x1c&&b.length==4){
+            // Stability switches (all 0xFF = no data). The signals read 1 when the system is OFF (the lamp lights) and ABS 1 = warning lamp.
+            // byte0 bit0 ABS lamp, bits 1-2 TCS (1 = off); byte1 bits 0-1 ESC (2 = off; 1 = TCS off only, ESC stays on). Our logs hold
+            // 00 00 (both on), 02 01 (TCS off) and 02 02 (both off); the ABS bit was never set.
+            boolean allFF=true;for(byte v:b)if(v!=(byte)255)allFF=false;
+            int tcsOff=(b[0]>>1)&3,escOff=b[1]&3;
+            put(TCS,tcsOff==1?1:0,!allFF&&tcsOff<=1,now);
+            put(ESC,escOff==2?1:0,!allFF&&escOff<=2,now);
+            put(ABS,b[0]&1,!allFF,now);
         }else if(funcLow==0x1f&&b.length==8){
             // Current gear in the high nibble of byte2: 1-7 (7DCT) in D and in the manual gate; 0xe = R, 0 = P/N.
             // A 6MT has no TCU: there the slot is meaningless and the gear comes from rpm/speed (EMS11 above).

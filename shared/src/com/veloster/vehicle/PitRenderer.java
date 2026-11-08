@@ -695,7 +695,7 @@ public final class PitRenderer {
             for(int n=0;n<3;n++){
                 float t=y+43+n*22;Telemetry.Sample s=samples[i+n];
                 text(c,UiText.t(Telemetry.LABELS[i+n]),x+10,t,12,MUTED,false);
-                text(c,s.valid?(s.value==1?UiText.t("작동"):UiText.t("비작동")):"—",x+66,t,16,s.valid&&s.value==1?D():Theme.current().calm(BLUE),true);
+                text(c,s.valid?(s.value==1?UiText.t(n==2?"경고":"꺼짐"):UiText.t("정상")):"—",x+66,t,16,s.valid&&s.value==1?D():Theme.current().calm(BLUE),true);   // TCS / ESC 1 = switched off, ABS 1 = warning lamp
             }
         }
     }

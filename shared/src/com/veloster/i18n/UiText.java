@@ -129,6 +129,7 @@ public final class UiText {
         EN.put("게이지 ","Gauge ");
         EN.put("게이지 모양","Gauge style");
         EN.put("게이지를 길게 눌러 항목 · 모양 · 위치 편집","Hold a gauge to edit its signal, style or position");
+        EN.put("경고","Warning");
         EN.put("경과 초","seconds");
         EN.put("경기","Gyeonggi");
         EN.put("경남","Gyeongnam");
@@ -529,6 +530,7 @@ public final class UiText {
         EN.put("점화 시기","Spark timing");
         EN.put("점화·노킹 모니터","Spark & knock monitor");
         EN.put("점화시기","Timing");
+        EN.put("정상","Normal");
         EN.put("정속 주행","Steady cruise");
         EN.put("정지 유지 · 곧 트리 시작","Hold still · tree starting");
         EN.put("정차 · 공회전 ","Stopped · idle ");

@@ -260,7 +260,7 @@ public final class ClusterRenderer {
     private void warnings(Canvas c,float t,float b){
         boolean low=false,tpms=false;for(int i=Telemetry.TPMS_FL;i<=Telemetry.TPMS_RR;i++){float x=v(i);if(!Float.isNaN(x)){tpms=true;if(x<TIRE_LOW)low=true;}}
         int[] sig={Telemetry.PARK_BRAKE,Telemetry.ESC,Telemetry.ABS,Telemetry.TCS};
-        String[] name={"PARK BRAKE","ESC","ABS","TCS","TPMS","DPF"};
+        String[] name={"PARK BRAKE","ESC OFF","ABS","TCS OFF","TPMS","DPF"};   // ESC / TCS light when switched off
         int n=prof.fuel==VehicleProfile.Fuel.DIESEL?6:5;   // a diesel adds the DPF lamp, amber while regenerating
         float l=12,rr=788,gap=4,w=(rr-l-gap*(n-1))/n;
         for(int i=0;i<n;i++){

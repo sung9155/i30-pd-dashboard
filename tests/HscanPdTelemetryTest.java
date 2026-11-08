@@ -355,6 +355,43 @@ public final class HscanPdTelemetryTest {
         // 22 ED1D soot (OBDb Kia-Ceed 2018): u16 at data 4..5 x256/65535 -> 0x1000 = 16.0 g; the soot leads the DPF tile
         k.obd(Telemetry.DID_SOOT,new byte[]{0,0,0,0,0x10,0x00,0,0},3442);check(Math.abs(k.sample(Telemetry.DPF_SOOT,3442).value-16f)<0.01f,"ED1D soot 16.0 g");
         check(com.veloster.vehicle.Tiles.dpfLead(16,Float.NaN,15)==Telemetry.DPF_SOOT&&com.veloster.vehicle.Tiles.dpfLead(Float.NaN,40,15)==Telemetry.DPF_TRIGGER&&com.veloster.vehicle.Tiles.dpfLead(Float.NaN,Float.NaN,15)==Telemetry.DPF_DP,"DPF lead: soot, trigger, pressure");}
+                {   // values read from hscan since 2026-11-08 (bytes and ranges from our petrol and diesel drive logs)
+            Telemetry hv=new Telemetry();
+            hv.hscanPd(0xc7,0x14,b(0,0,0,104,0,0,0,0),1000);check(Math.abs(hv.sample(Telemetry.AMBIENT,1000).value-12f)<0.01f,"outside temperature byte3 x0.5-40 (104 -> 12 C)");
+            hv.obd(0x46,60,0,1500);check(Math.abs(hv.sample(Telemetry.AMBIENT,1500).value-12f)<0.01f,"OBD 01 46 yields once hscan gives the temperature");
+            hv.hscanPd(0xc7,0x14,b(0,0,0,255,0,0,0,0),2000);check(!hv.sample(Telemetry.AMBIENT,2000).valid,"outside temperature 255 = none");
+            Telemetry o=new Telemetry();o.obd(0x46,60,0,1000);check(Math.abs(o.sample(Telemetry.AMBIENT,1000).value-20f)<0.01f,"without hscan the OBD temperature still shows");
+            hv.hscanPd(0xc7,0x1c,b(0,0,0,0x60),3000);
+            check(hv.sample(Telemetry.TCS,3000).value==0&&hv.sample(Telemetry.ESC,3000).value==0&&hv.sample(Telemetry.ABS,3000).value==0&&hv.sample(Telemetry.ESC,3000).valid,"stability switches: both on");
+            hv.hscanPd(0xc7,0x1c,b(2,1,0,0x60),3100);check(hv.sample(Telemetry.TCS,3100).value==1&&hv.sample(Telemetry.ESC,3100).value==0,"02 01: TCS off, ESC still on");
+            hv.hscanPd(0xc7,0x1c,b(2,2,0,0x60),3200);check(hv.sample(Telemetry.TCS,3200).value==1&&hv.sample(Telemetry.ESC,3200).value==1,"02 02: both off");
+            hv.hscanPd(0xc7,0x1c,b(1,0,0,0x01),3300);check(hv.sample(Telemetry.ABS,3300).value==1,"byte0 bit0 is the ABS lamp");
+            hv.hscanPd(0xc7,0x1c,b(255,255,255,255),3400);check(!hv.sample(Telemetry.TCS,3400).valid&&!hv.sample(Telemetry.ABS,3400).valid,"all FF = no data");
+            check("OFF".equals(Telemetry.label(Telemetry.ESC,1))&&"ON".equals(Telemetry.label(Telemetry.TCS,0))&&"WARN".equals(Telemetry.label(Telemetry.ABS,1)),"switch labels");
+            // tyre pressure units: byte1 = status | unit << 3
+            hv.hscanPd(0xc7,0x20,b(0,0x01,33,33,33,34),4000);check(hv.sample(Telemetry.TPMS_FL,4000).value==33&&hv.sample(Telemetry.TPMS_RR,4000).value==34,"TPMS psi");
+            hv.hscanPd(0xc7,0x20,b(0,0x09,44,44,44,46),4100);check(Math.abs(hv.sample(Telemetry.TPMS_FL,4100).value-44*0.7251887f)<0.01f,"TPMS in 5 kPa steps (44 -> 31.9 psi)");
+            hv.hscanPd(0xc7,0x20,b(0,0x11,22,22,22,23),4200);check(Math.abs(hv.sample(Telemetry.TPMS_FL,4200).value-22*1.4503774f)<0.01f,"TPMS in 0.1 bar steps (22 -> 31.9 psi)");
+            hv.hscanPd(0xc7,0x20,b(0,0x00,0,0,255,255),4300);check(!hv.sample(Telemetry.TPMS_FL,4300).valid,"TPMS status 0 = not yet reporting");
+            // net torque and power: EMS12 slot 3 carries the reference torque, EMS11 the indicated torque, friction and rpm
+            Telemetry q=new Telemetry();
+            byte[] ems11=b(0,184,0x60,0x20,0,10,0,0);   // acor 184 (71.9 %), friction 10, 2,072 rpm
+            q.hscanPd(0xc7,0x08,ems11,5000);check(!q.sample(Telemetry.TORQUE,5000).valid,"no torque before the reference torque is known");
+            q.hscanPd(0xc7,0x09,b(0xc0|35,0x7a,0,0,0,0,0,0),5100);
+            q.hscanPd(0xc7,0x08,ems11,5200);
+            float nm=(184-10)*0.390625f*350/100;
+            check(Math.abs(q.sample(Telemetry.TORQUE,5200).value-nm)<0.1f&&q.sample(Telemetry.TORQUE,5200).valid,"net torque 238 N·m on a 350 reference");
+            check(Math.abs(q.sample(Telemetry.POWER,5200).value-nm*2072*2*(float)Math.PI/60/735.49875f)<0.1f,"power in PS from torque and rpm (70 PS)");
+            q.hscanPd(0xc7,0x09,b(0xc0|40,0x7a,0,0,0,0,0,0),5300);q.hscanPd(0xc7,0x08,ems11,5400);
+            check(Math.abs(q.sample(Telemetry.TORQUE,5400).value-(184-10)*0.390625f*4)<0.1f,"a diesel's 400 reference is read, not assumed");
+            q.hscanPd(0xc7,0x08,b(0,5,0x60,0x20,0,20,0,0),5500);check(q.sample(Telemetry.TORQUE,5500).value==0&&q.sample(Telemetry.POWER,5500).value==0,"engine braking shows 0");
+            Telemetry dsx=new Telemetry();dsx.hscanPd(0xc7,0x09,b(0xc0|40,0x7a,0,0,0,0,0,0),100);
+            dsx.hscanPd(0xc7,0x08,ems11,200);for(int k=0;k<5;k++)dsx.hscanPd(0xc7,0x0c,b(0,0,0,0,0,0,0,0),300+k);   // a diesel: spark timing slot zeroed while the engine runs
+            dsx.hscanPd(0xc7,0x08,ems11,400);check(!dsx.sample(Telemetry.TORQUE,400).valid&&!dsx.sample(Telemetry.POWER,400).valid,"diesel: torque and power withheld (the sum overshoots the rated 136 PS)");
+            q.hscanPd(0xc7,0x08,ems11,9000);check(!q.sample(Telemetry.TORQUE,9000).valid,"a reference torque older than 3 s is not used");
+            q.hscanPd(0xc7,0x09,b(0xc0|63,0x7a,0,0,0,0,0,0),9100);q.hscanPd(0xc7,0x08,ems11,9200);check(!q.sample(Telemetry.TORQUE,9200).valid,"reference torque 63 = no value");
+            q.hscanPd(0xc7,0x09,b(0x40|35,0x7a,0,0,0,0,0,0),9300);q.hscanPd(0xc7,0x08,ems11,9400);check(!q.sample(Telemetry.TORQUE,9400).valid,"only multiplex slot 3 is the reference torque");
+        }
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
     private static byte[] hex(String h){String[] p=h.trim().split(" ");byte[] b=new byte[p.length];for(int i=0;i<p.length;i++)b[i]=(byte)Integer.parseInt(p[i],16);return b;}

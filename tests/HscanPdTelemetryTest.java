@@ -373,24 +373,6 @@ public final class HscanPdTelemetryTest {
             hv.hscanPd(0xc7,0x20,b(0,0x09,44,44,44,46),4100);check(Math.abs(hv.sample(Telemetry.TPMS_FL,4100).value-44*0.7251887f)<0.01f,"TPMS in 5 kPa steps (44 -> 31.9 psi)");
             hv.hscanPd(0xc7,0x20,b(0,0x11,22,22,22,23),4200);check(Math.abs(hv.sample(Telemetry.TPMS_FL,4200).value-22*1.4503774f)<0.01f,"TPMS in 0.1 bar steps (22 -> 31.9 psi)");
             hv.hscanPd(0xc7,0x20,b(0,0x00,0,0,255,255),4300);check(!hv.sample(Telemetry.TPMS_FL,4300).valid,"TPMS status 0 = not yet reporting");
-            // net torque and power: EMS12 slot 3 carries the reference torque, EMS11 the indicated torque, friction and rpm
-            Telemetry q=new Telemetry();
-            byte[] ems11=b(0,184,0x60,0x20,0,10,0,0);   // acor 184 (71.9 %), friction 10, 2,072 rpm
-            q.hscanPd(0xc7,0x08,ems11,5000);check(!q.sample(Telemetry.TORQUE,5000).valid,"no torque before the reference torque is known");
-            q.hscanPd(0xc7,0x09,b(0xc0|35,0x7a,0,0,0,0,0,0),5100);
-            q.hscanPd(0xc7,0x08,ems11,5200);
-            float nm=(184-10)*0.390625f*350/100;
-            check(Math.abs(q.sample(Telemetry.TORQUE,5200).value-nm)<0.1f&&q.sample(Telemetry.TORQUE,5200).valid,"net torque 238 N·m on a 350 reference");
-            check(Math.abs(q.sample(Telemetry.POWER,5200).value-nm*2072*2*(float)Math.PI/60/735.49875f)<0.1f,"power in PS from torque and rpm (70 PS)");
-            q.hscanPd(0xc7,0x09,b(0xc0|40,0x7a,0,0,0,0,0,0),5300);q.hscanPd(0xc7,0x08,ems11,5400);
-            check(Math.abs(q.sample(Telemetry.TORQUE,5400).value-(184-10)*0.390625f*4)<0.1f,"a diesel's 400 reference is read, not assumed");
-            q.hscanPd(0xc7,0x08,b(0,5,0x60,0x20,0,20,0,0),5500);check(q.sample(Telemetry.TORQUE,5500).value==0&&q.sample(Telemetry.POWER,5500).value==0,"engine braking shows 0");
-            Telemetry dsx=new Telemetry();dsx.hscanPd(0xc7,0x09,b(0xc0|40,0x7a,0,0,0,0,0,0),100);
-            dsx.hscanPd(0xc7,0x08,ems11,200);for(int k=0;k<5;k++)dsx.hscanPd(0xc7,0x0c,b(0,0,0,0,0,0,0,0),300+k);   // a diesel: spark timing slot zeroed while the engine runs
-            dsx.hscanPd(0xc7,0x08,ems11,400);check(!dsx.sample(Telemetry.TORQUE,400).valid&&!dsx.sample(Telemetry.POWER,400).valid,"diesel: torque and power withheld (the sum overshoots the rated 136 PS)");
-            q.hscanPd(0xc7,0x08,ems11,9000);check(!q.sample(Telemetry.TORQUE,9000).valid,"a reference torque older than 3 s is not used");
-            q.hscanPd(0xc7,0x09,b(0xc0|63,0x7a,0,0,0,0,0,0),9100);q.hscanPd(0xc7,0x08,ems11,9200);check(!q.sample(Telemetry.TORQUE,9200).valid,"reference torque 63 = no value");
-            q.hscanPd(0xc7,0x09,b(0x40|35,0x7a,0,0,0,0,0,0),9300);q.hscanPd(0xc7,0x08,ems11,9400);check(!q.sample(Telemetry.TORQUE,9400).valid,"only multiplex slot 3 is the reference torque");
         }
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }

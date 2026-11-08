@@ -49,11 +49,13 @@ public final class SettingsLayout {
     /** Mode pane rows: the two switches, then one row per ClusterPicker.MODES. */
     public static final int MODE_COLOR=0,MODE_SCREEN=1,MODE_FIRST=2;
     public static final float TITLE_H=30;
-    public static final String[] CATS={"화면","테마","차량 색","주행 모드","RPM","사운드","언어","진단","완료"};
+    public static final String[] CATS={"화면","테마","차량 색","주행 모드","RPM","사운드","언어·단위","진단","완료"};
     /** Display names for Theme.IDS, in that order. */
     public static final String[] THEME_NAMES={"N","람보","BMW","아이스","모노","앰버","틸","나이트","로즈","코퍼","레드","그린"};
     /** Language choices (LanguageSettings ids) and their names. */
     public static final String[] LANGS={"auto","ko","en"},LANG_NAMES={"시스템","한국어","English"};
+    /** The two unit rows under the languages (언어·단위 pane): torque N·m / kgf·m / lb-ft, power PS / kW / hp; each tap cycles. */
+    public static final int UNIT_TORQUE=LANGS.length,UNIT_POWER=LANGS.length+1;
     public static final float TOP=60,BOTTOM=472,CAT_L=12,CAT_W=152,CAT_H=40,GAP=6,PANE_L=178,PANE_R=788,MAX_ITEM_H=72;
     private SettingsLayout(){}
 
@@ -68,7 +70,7 @@ public final class SettingsLayout {
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
         switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
-            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_LEAD+1:1;case LANG:return LANGS.length;case DIAG:return 3;
+            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_LEAD+1:1;case LANG:return LANGS.length+2;case DIAG:return 3;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
     public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME||cat==PAINT?2:1;}

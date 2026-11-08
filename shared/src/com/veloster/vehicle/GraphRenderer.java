@@ -35,11 +35,11 @@ public final class GraphRenderer {
         text(c,UiText.t(Telemetry.LABELS[signal]),30,top+20,15,BLUE);
         Telemetry.Sample current=model.sample(signal,now);
         String value=current.valid?number(signal,Telemetry.displayValue(signal,current.value)):"—";
-        text(c,value+" "+Telemetry.UNITS[signal],622,top+20,16,WHITE);
+        text(c,value+" "+Telemetry.unit(signal),622,top+20,16,WHITE);
         Telemetry.Series series=model.history(signal,now,layout.window());
         float lo=Float.POSITIVE_INFINITY,hi=Float.NEGATIVE_INFINITY;
         for(int i=0;i<series.size();i++)if(series.valid[i]){float v=Telemetry.displayValue(signal,series.values[i]);lo=Math.min(lo,v);hi=Math.max(hi,v);}
-        if(lo==Float.POSITIVE_INFINITY){lo=GaugeRenderer.min(signal,Telemetry.UNITS[signal]);hi=GaugeRenderer.max(signal,Telemetry.UNITS[signal]);}
+        if(lo==Float.POSITIVE_INFINITY){lo=GaugeRenderer.min(signal,Telemetry.unit(signal));hi=GaugeRenderer.max(signal,Telemetry.unit(signal));}
         else{if(signal==Telemetry.STEERING||signal==11||signal==12){lo=Math.min(lo,0);hi=Math.max(hi,0);}float pad=Math.max(span(signal)/2,(hi-lo)*0.12f);lo-=pad;hi+=pad;}
         final float left=82,right=766,plotTop=top+30,bottom=top+103;
         for(int row=0;row<=2;row++){float y=plotTop+(bottom-plotTop)*row/2;line(c,left,y,right,y,LINE);text(c,number(signal,hi-(hi-lo)*row/2),27,y+4,10,MUTED);}

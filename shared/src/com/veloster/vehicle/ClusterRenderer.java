@@ -120,7 +120,7 @@ public final class ClusterRenderer {
         }
         if(sig==Tiles.DPF){   // the regeneration trigger, or the delta pressure when the ECU gives only that
             int k=Tiles.dpfLead(v(Telemetry.DPF_SOOT),v(Telemetry.DPF_TRIGGER),v(Telemetry.DPF_DP));boolean regen=v(Telemetry.DPF_REGEN)>0;float x=v(k);
-            meter(c,l,t,rr,b,regen?"DPF REGEN":"DPF",Telemetry.UNITS[k],Tiles.text(k,x),regen?AMBER:WHITE,Tiles.fraction(k,x),regen?AMBER:hero,false);
+            meter(c,l,t,rr,b,regen?"DPF REGEN":"DPF",Telemetry.unit(k),Tiles.text(k,x),regen?AMBER:WHITE,Tiles.fraction(k,x),regen?AMBER:hero,false);
             return;
         }
         float val=Tiles.value(sig,s,st);int lv=Tiles.level(sig,val);

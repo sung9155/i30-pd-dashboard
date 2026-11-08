@@ -29,6 +29,8 @@ public final class GaugeRenderer {
     static float min(int i,String u){return "G".equals(u)?-2:"°C".equals(u)?-40:i==Telemetry.STEERING?-540:i==Telemetry.SPARK?-20:i==Telemetry.STEER_TORQUE?-5:i==Telemetry.YAW?-50:i==Telemetry.SHIFT_HINT?-7:0;}
     static float max(int i,String u){
         if(i>=Telemetry.TCS&&i<=Telemetry.ABS)return 1;
+        if(i==Telemetry.TORQUE)return Telemetry.TORQUE_MAX[Telemetry.torqueUnit];
+        if(i==Telemetry.POWER)return Telemetry.POWER_MAX[Telemetry.powerUnit];
         if(i==Telemetry.ELSD)return 6553.5f;
         if(i==Telemetry.BAT_VOLTAGE)return 18;if(i==Telemetry.STEERING_SPEED)return 1020;
         if("psi".equals(u))return 60;
@@ -49,7 +51,7 @@ public final class GaugeRenderer {
         Telemetry.Sample[] samples=data.snapshot(now);
         for(int slot=0;slot<layout.count();slot++){
             int i=layout.signal(slot),style=layout.style(slot);Telemetry.Sample s=samples[i];
-            String u=Telemetry.UNITS[i];float l=layout.left(slot),t=layout.top(slot),cx=l+layout.width()/2;
+            String u=Telemetry.unit(i);float l=layout.left(slot),t=layout.top(slot),cx=l+layout.width()/2;
             // Scale the same card design uniformly; dense cards remain centered in their wider cell.
             int cardSave=c.save();float scale=layout.dense()?124f/190:1;
             c.translate(cx-126*scale,t);c.scale(scale,scale);l=0;t=0;cx=126;

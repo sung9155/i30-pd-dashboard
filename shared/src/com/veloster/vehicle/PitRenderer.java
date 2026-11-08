@@ -295,7 +295,9 @@ public final class PitRenderer {
                         boolean noTurbo=(i==SettingsLayout.SOUND_TURBO||i==SettingsLayout.SOUND_BOV)&&!SettingsLayout.SOUND_HAS_TURBO[soundEngine];
                         dim=!soundOn||noTurbo;}   // one line per row: nine rows fill the pane
                     break;
-                case SettingsLayout.LANG:sel=SettingsLayout.LANGS[i].equals(langSel);name=SettingsLayout.LANG_NAMES[i];break;
+                case SettingsLayout.LANG:
+                    if(i>=SettingsLayout.LANGS.length){boolean tq=i==SettingsLayout.UNIT_TORQUE;name=tq?"토크 단위":"출력 단위";sub="누를 때마다 바뀜";value=Telemetry.unit(tq?Telemetry.TORQUE:Telemetry.POWER);break;}
+                    sel=SettingsLayout.LANGS[i].equals(langSel);name=SettingsLayout.LANG_NAMES[i];break;
                 default:if(i==1){sel=speedCalOn;name="실제 속도로 표시";value=speedCalOn?"켬":"끔";
                         // plain words: how far the speedometer is off, not the ratio (speedometer = GPS / ratio)
                         if(Float.isNaN(speedCalRatio))sub=String.format(Locale.US,UiText.t("GPS로 속도계 오차 재는 중 · %d %%"),Math.min(99,speedCalSamples*100/SpeedCal.MIN_SAMPLES));
@@ -590,7 +592,7 @@ public final class PitRenderer {
         else if(sig==Tiles.CLUTCH){float o=clutchT(Telemetry.CLUTCH_ODD),e=clutchT(Telemetry.CLUTCH_EVEN);lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));txt=Tiles.text(Telemetry.CLUTCH_ODD,o)+" / "+Tiles.text(Telemetry.CLUTCH_EVEN,e);size=18;}
         else if(sig==Tiles.DPF){int k=Tiles.dpfLead(clutchT(Telemetry.DPF_SOOT),clutchT(Telemetry.DPF_TRIGGER),clutchT(Telemetry.DPF_DP));
             txt=Tiles.text(k,clutchT(k));lv=clutchT(Telemetry.DPF_REGEN)>0?1:0;
-            text(c,Telemetry.UNITS[k],unitX,310,11,MUTED,false);}
+            text(c,Telemetry.unit(k),unitX,310,11,MUTED,false);}
         else{float v=Tiles.value(sig,samples,stats);lv=Tiles.level(sig,v);txt=Tiles.text(sig,v);}
         text(c,Tiles.caption(sig),capX,307,11,MUTED,true);
         boolean several=sig==Tiles.TIRES||sig==Tiles.CLUTCH;   // a longer line starts right after the caption, clear of the unit
@@ -706,7 +708,7 @@ public final class PitRenderer {
         panel(c,x,y,w,h,PANEL,LINE);box(c,x+10,y,x+53,y+2,head&&i==0?RED:BLUE);
         fitted(c,title,x+10,y+(head?18:22),head?11:13,w-20,MUTED);
         String number=ok?value(PREFIX[i]):"—";
-        float lo=GaugeRenderer.min(i,Telemetry.UNITS[i]),hi=GaugeRenderer.max(i,Telemetry.UNITS[i]);
+        float lo=GaugeRenderer.min(i,Telemetry.unit(i)),hi=GaugeRenderer.max(i,Telemetry.unit(i));
         // Unsupported gears keep the existing dash and have no gauge position.
         boolean position=ok&&(i!=8||(samples[i].value>=1&&samples[i].value<=7));
         float f=position?Math.max(0,Math.min(1,(Telemetry.displayValue(i,samples[i].value)-lo)/(hi-lo))):0;
@@ -726,6 +728,6 @@ public final class PitRenderer {
             if(position){double angle=Math.toRadians(150+240*f);stroke(c,cx,cy,cx+(float)Math.cos(angle)*(radius-6),cy+(float)Math.sin(angle)*(radius-6),WHITE,1.5f);paint.setColor(T(BLUE));c.drawCircle(cx,cy,2,paint);}
             fittedNumber(c,number,x+58,y+(head?54:66),head?26:28,w-68,color);
         }
-        if(!head)text(c,Telemetry.UNITS[i],x+10,y+85,11,MUTED,false);
+        if(!head)text(c,Telemetry.unit(i),x+10,y+85,11,MUTED,false);
     }
 }

@@ -199,6 +199,7 @@ public final class UiText {
         EN.put("노킹 센서 값은 버스에 없어","No knock-sensor value on the bus:");
         EN.put("누르면 음악으로","Tap for music");
         EN.put("누를 때마다 바뀌고 한 번 들려줌","Tap to change · plays it once");
+        EN.put("누를 때마다 바뀜","Tap to change");
         EN.put("눌러서 N 계기판과 앱 목록 열기","Tap to open N Dashboard and your app list");
         EN.put("눌러서 사용·미사용","Tap to turn on/off");
         EN.put("눌러서 화면 고르기","Tap to choose a screen");
@@ -411,6 +412,7 @@ public final class UiText {
         EN.put("야간 미니멀","Night minimal");
         EN.put("언어","Language");
         EN.put("언어 설정을 저장하지 못했습니다.","Could not save the language setting.");
+        EN.put("언어·단위","Language · Units");
         EN.put("없음","none");
         EN.put("에어백 (ACU)","Airbag (ACU)");
         EN.put("에코","Eco");
@@ -610,6 +612,7 @@ public final class UiText {
         EN.put("최대 횡G","Max lat G");
         EN.put("출력 (계산)","Power (calc.)");
         EN.put("출력 경로","Output route");
+        EN.put("출력 단위","Power unit");
         EN.put("출발선 위치는 추정","Start / finish line estimated");
         EN.put("출발선을 지나면 1랩이 시작됩니다","Lap 1 starts at the start / finish line");
         EN.put("출발하세요 · %d초","Go · %ds");
@@ -654,6 +657,7 @@ public final class UiText {
         EN.put("터보·연료","Turbo · fuel");
         EN.put("테마","Theme");
         EN.put("토크 (계산)","Torque (calc.)");
+        EN.put("토크 단위","Torque unit");
         EN.put("통과 속도","Trap speed");
         EN.put("트랙·서킷 전용 · 속도 곡선 0~12초","Track use only · speed 0-12 s");
         EN.put("트렁크","Trunk");

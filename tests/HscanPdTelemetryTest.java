@@ -392,6 +392,20 @@ public final class HscanPdTelemetryTest {
             q.hscanPd(0xc7,0x09,b(0xc0|63,0x7a,0,0,0,0,0,0),9100);q.hscanPd(0xc7,0x08,ems11,9200);check(!q.sample(Telemetry.TORQUE,9200).valid,"reference torque 63 = no value");
             q.hscanPd(0xc7,0x09,b(0x40|35,0x7a,0,0,0,0,0,0),9300);q.hscanPd(0xc7,0x08,ems11,9400);check(!q.sample(Telemetry.TORQUE,9400).valid,"only multiplex slot 3 is the reference torque");
         }
+        {   // torque and power units (settings 언어·단위): the model keeps N·m and PS, only the display converts
+            check("N·m".equals(Telemetry.unit(Telemetry.TORQUE))&&"PS".equals(Telemetry.unit(Telemetry.POWER))&&Telemetry.displayValue(Telemetry.TORQUE,200)==200,"default units are N·m and PS");
+            Telemetry.torqueUnit=1;Telemetry.powerUnit=1;
+            check("kgf·m".equals(Telemetry.unit(Telemetry.TORQUE))&&Math.abs(Telemetry.displayValue(Telemetry.TORQUE,98.0665f)-10f)<1e-3f,"98.0665 N·m = 10 kgf·m");
+            check("kW".equals(Telemetry.unit(Telemetry.POWER))&&Math.abs(Telemetry.displayValue(Telemetry.POWER,100)-73.549875f)<1e-3f,"100 PS = 73.55 kW");
+            Telemetry.torqueUnit=2;Telemetry.powerUnit=2;
+            check("lb-ft".equals(Telemetry.unit(Telemetry.TORQUE))&&Math.abs(Telemetry.displayValue(Telemetry.TORQUE,265)-195.46f)<0.05f,"265 N·m = 195.5 lb-ft");
+            check("hp".equals(Telemetry.unit(Telemetry.POWER))&&Math.abs(Telemetry.displayValue(Telemetry.POWER,204)-201.2f)<0.05f,"204 PS = 201.2 hp");
+            check(Telemetry.displayValue(7,100)==100&&Telemetry.displayValue(Telemetry.STEER_TORQUE,3)==3&&Telemetry.unit(Telemetry.STEER_TORQUE).equals(Telemetry.UNITS[Telemetry.STEER_TORQUE]),"other signals, steering torque included, stay as they were");
+            for(int k=0;k<3;k++){Telemetry.torqueUnit=k;Telemetry.powerUnit=k;
+                check(Telemetry.TORQUE_MAX[k]>0&&Telemetry.POWER_MAX[k]>0&&Math.abs(Telemetry.displayValue(Telemetry.TORQUE,500)/Telemetry.TORQUE_MAX[k]-1)<0.2f,"the gauge scale follows the unit ("+Telemetry.TORQUE_UNITS[k]+")");}
+            Telemetry.torqueUnit=0;Telemetry.powerUnit=0;
+            check(com.veloster.vehicle.SettingsLayout.count(com.veloster.vehicle.SettingsLayout.LANG)==com.veloster.vehicle.SettingsLayout.LANGS.length+2&&com.veloster.vehicle.SettingsLayout.UNIT_POWER==com.veloster.vehicle.SettingsLayout.UNIT_TORQUE+1,"the language pane has the two unit rows");
+        }
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
     private static byte[] hex(String h){String[] p=h.trim().split(" ");byte[] b=new byte[p.length];for(int i=0;i<p.length;i++)b[i]=(byte)Integer.parseInt(p[i],16);return b;}

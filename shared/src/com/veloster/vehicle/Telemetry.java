@@ -38,7 +38,15 @@ public final class Telemetry {
      *  is a poor test: another PD reads 1-2 bar with the foot off, and a held brake (auto hold) keeps pressure up. */
     public static final float BRAKING_BAR=3;
     public static boolean braking(float sw,float bar){return !Float.isNaN(sw)?sw>0:bar>BRAKING_BAR;}
-    public static float displayValue(int signal,float raw){return signal==STEERING?(raw==0?0:-raw):signal==7?raw*speedScale:raw;}
+    /** Torque and power units the 언어·단위 settings choose (index into these); values are kept in N·m and PS and converted on display only. */
+    public static final String[] TORQUE_UNITS={"N·m","kgf·m","lb-ft"},POWER_UNITS={"PS","kW","hp"};
+    private static final float[] TORQUE_K={1f,1/9.80665f,1/1.3558179f},POWER_K={1f,0.73549875f,0.98632f};
+    /** A gauge's full scale per unit (500 N·m, 350 PS). */
+    public static final float[] TORQUE_MAX={500,50,400},POWER_MAX={350,260,350};
+    public static volatile int torqueUnit,powerUnit;
+    /** The unit text of a signal: UNITS, except torque and power follow the chosen unit. */
+    public static String unit(int signal){return signal==TORQUE?TORQUE_UNITS[torqueUnit]:signal==POWER?POWER_UNITS[powerUnit]:UNITS[signal];}
+    public static float displayValue(int signal,float raw){return signal==STEERING?(raw==0?0:-raw):signal==7?raw*speedScale:signal==TORQUE?raw*TORQUE_K[torqueUnit]:signal==POWER?raw*POWER_K[powerUnit]:raw;}
     /** String.format(Locale.US,f,x), but a value that rounds to zero loses its minus: idle boost -0.004 reads 0.00
      * (+0.00 under a '+' flag), not -0.00. */
     public static String format(String f,float x){

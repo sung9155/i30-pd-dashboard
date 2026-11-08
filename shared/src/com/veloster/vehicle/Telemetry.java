@@ -260,7 +260,10 @@ public final class Telemetry {
             case 0x2f: put(FUEL_LEVEL,a*100f/255,true,now); break;        // fuel tank level, A*100/255 %
             case 0x3c: put(CAT_TEMP,((a<<8|b)/10f)-40,true,now); break;   // catalyst temperature, (256A+B)/10-40 °C
             case 0x43: put(ABS_LOAD,(a<<8|b)*100f/255,true,now); break;   // absolute load, (256A+B)*100/255 %
-            case 0x0b: mapKpa=a; break;                                     // intake manifold absolute pressure, A kPa (logged, not shown)
+            case 0x0b: mapKpa=a;                                            // intake manifold absolute pressure, A kPa (logged, not shown)
+                if(diesel()&&boostByte>0&&boostByte<255){fitN++;fitX+=boostByte;fitY+=a;fitXX+=(double)boostByte*boostByte;fitXY+=(double)boostByte*a;
+                    fitLo=Math.min(fitLo,boostByte);fitHi=Math.max(fitHi,boostByte);}
+                break;
         }
     }
     /**
@@ -304,6 +307,14 @@ public final class Telemetry {
     }
     private static int u16(byte[] d,int i){return (d[i]&255)<<8|(d[i+1]&255);}
     /** One line for the diagnostic record: OBD MAP beside the hscan boost byte, baro and the boost shown (diesel scale check). */
+    /** Least squares of OBD MAP (kPa) on the hscan boost byte over the drive, every MAP reply paired with the byte then:
+     *  settles the diesel boost scale (now 2.00 kPa a count, offset 0). Empty before two pairs or off a diesel. */
+    private int fitN,fitLo=255,fitHi=0;private double fitX,fitY,fitXX,fitXY;
+    public synchronized String boostFit(){
+        double d=fitN*fitXX-fitX*fitX;if(fitN<2||d<=0)return "";
+        double m=(fitN*fitXY-fitX*fitY)/d,c=(fitY-m*fitX)/fitN;
+        return String.format(java.util.Locale.US," | boostfit n %d b1 %d-%d: MAP kPa = %.3f x b1 %+.1f (app 2.000 x b1 +0)",fitN,fitLo,fitHi,m,c);
+    }
     public synchronized String boostCheck(long now){
         Sample s=sample(BOOST,now),r=sample(0,now),p=sample(9,now);
         return String.format(java.util.Locale.US,"MAP %d kPa | baro %.0f hPa, 0x0e b1 %d, shown %s bar, rpm %.0f, pedal %.0f %%, %s",

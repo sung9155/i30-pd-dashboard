@@ -238,6 +238,11 @@ public final class HscanPdTelemetryTest {
         Telemetry pdp=new Telemetry();   // a petrol never shows DPF from this slot
         pdp.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x39,0x2e,0x15,0x01,0x80,0),900);
         check(!pdp.sample(Telemetry.DPF_REGEN,900).valid&&!pdp.sample(Telemetry.DPF_SOOT,900).valid,"no DPF before a diesel is known");
+        // diesel boost scale check: OBD MAP paired with byte1 then, fitted over the drive (11-08: idle 52 <-> 109-114 kPa)
+        check(dzb.boostFit().isEmpty(),"no fit before two MAP replies");
+        dzb.hscanPd(0xc7,0x0e,b(0,52,0x33,0xdb,0x14,0,0x0c,0x79),920);dzb.obd(0x0b,new byte[]{(byte)110},921);
+        dzb.hscanPd(0xc7,0x0e,b(0,102,0x33,0xdb,0x14,0,0x0c,0x79),922);dzb.obd(0x0b,new byte[]{(byte)210},923);
+        check(dzb.boostFit().contains("n 2 b1 52-102: MAP kPa = 2.000 x b1 +6.0"),"two pairs: 2 kPa a count, +6 kPa: "+dzb.boostFit());
         Telemetry ptb=new Telemetry();   // a petrol never takes the diesel path, even with a few zero timing frames first
         ptb.hscanPd(0xc7,0x0a,b(0xd8,0x80,0,0x8e,0,0,0,0),900);
         for(int k=0;k<3;k++){ptb.hscanPd(0xc7,0x08,b(0,0,0x60,0x0d,0,0,0,0),901+k);ptb.hscanPd(0xc7,0x0c,b(0,0,0,0,0,0,0,0),901+k);}

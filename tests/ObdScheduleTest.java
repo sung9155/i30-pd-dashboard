@@ -35,6 +35,12 @@ public final class ObdScheduleTest {
         v.done(r,0,false);v.done(r,2000,false);v.done(r,4000,true);check(r.active()&&r.misses()==0,"an answer resets the miss count");
         r.bad="7F 22 31";v.done(r,6000,false);v.done(r,8000,false);v.done(r,10000,false);
         check(v.summary().equals("01A4 1/6 7F 22 31 off"),"summary: answered/sent, last bad reply, dropped ("+v.summary()+")");
+        // timeouts alone (a DAG3 holding the engine) drop it to a retry a minute on; an answer brings it back
+        ObdSchedule.Poll w=new ObdSchedule.Poll(0x27,new byte[]{0x22,(byte)0xED,0x03},2,2000,3);ObdSchedule x=new ObdSchedule(w);
+        w.bad="none";x.done(w,0,false);x.done(w,2000,false);x.done(w,4000,false);
+        check(!w.active()&&w.retrying()&&x.next(5000)==null&&x.next(64000)==w&&x.summary().endsWith("none retry"),"timeouts: tried again a minute later ("+x.summary()+")");
+        x.done(w,64000,true);check(w.active()&&x.untilNext(64000)==2000,"an answer brings it back");
+        x.skip(w,70000);check(w.misses()==0&&x.untilNext(70000)==2000,"skipped while another tester asks: no miss");
         // replies another tester asked for (an OBD dongle on a diesel PD, 2026-11-06): used when they answer one of our requests
         ObdSchedule m=ObdSchedule.standard();
         ObdSchedule.Poll cl=m.match(0x26,new byte[]{0x62,0x01,(byte)0xA4,1,2,3});

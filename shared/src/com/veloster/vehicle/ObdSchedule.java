@@ -25,6 +25,9 @@ public final class ObdSchedule {
         /** key is what the sink gets (a mode 01 PID, or Telemetry.DID_*); dropAfter = misses in a row that stop it, 0 = never. */
         public Poll(int ecu,byte[] req,int key,long every,int dropAfter){this.ecu=ecu;this.req=req;this.key=key;this.every=every;this.dropAfter=dropAfter;}
         public boolean active(){return dropAfter==0||misses<dropAfter;}
+        /** Dropped on timeouts alone (no reply, "none"): another tester (a DAG3) may hold the ECU, so it is tried again
+         *  once a RETRY_MS; a refusal (7F) means the ECU lacks it and it stays dropped. */
+        public boolean retrying(){return !active()&&"none".equals(bad);}
         public int dropAfter(){return dropAfter;}
         public int misses(){return misses;}
     }
@@ -45,21 +48,24 @@ public final class ObdSchedule {
     }
     private static Poll pid(int pid,long every,int dropAfter){return new Poll(EMS,new byte[]{0x01,(byte)pid},pid,every,dropAfter);}
     private final Poll[] polls;
+    public static final long RETRY_MS=60000;
     public ObdSchedule(Poll... polls){this.polls=polls;}
     public Poll[] polls(){return polls;}
     /** The active request that has waited longest past its due time, or null when nothing is due yet. */
     public Poll next(long now){
         Poll best=null;
-        for(Poll p:polls)if(p.active()&&p.due<=now&&(best==null||p.due<best.due))best=p;
+        for(Poll p:polls)if((p.active()||p.retrying())&&p.due<=now&&(best==null||p.due<best.due))best=p;
         return best;
     }
     /** Milliseconds until the next active request is due (0 when one is due, -1 when none is left). */
     public long untilNext(long now){
-        long w=-1;for(Poll p:polls)if(p.active()){long d=Math.max(0,p.due-now);w=w<0?d:Math.min(w,d);}
+        long w=-1;for(Poll p:polls)if(p.active()||p.retrying()){long d=Math.max(0,p.due-now);w=w<0?d:Math.min(w,d);}
         return w;
     }
     /** After an answer (ok) or a miss: next due one period from now, so a late request does not burst. */
-    public void done(Poll p,long now,boolean ok){p.due=now+p.every;p.misses=ok?0:p.misses+1;p.sent++;if(ok)p.answered++;}
+    public void done(Poll p,long now,boolean ok){p.misses=ok?0:p.misses+1;p.sent++;if(ok)p.answered++;p.due=now+(p.active()?p.every:RETRY_MS);}
+    /** Not sent this time (another tester holds the ECU): due again a period on, no miss counted. */
+    public void skip(Poll p,long now){p.due=now+p.every;}
     /** Every request's tally on one short line ("ED1D 0/3 7F 22 31 off, 43 40/40, ..."): the 5 s diagnostics line
      *  carries it, so a record whose log tail lost the early drop lines still shows how each request went. */
     /** The request a positive reply answers (its service + 0x40, then the same PID / identifier from ecu), or null. ObdLive
@@ -81,7 +87,7 @@ public final class ObdSchedule {
             for(int i=1;i<p.req.length;i++)b.append(String.format("%02X",p.req[i]&255));
             b.append(' ').append(p.answered).append('/').append(p.sent);
             if(p.answered<p.sent&&p.bad.length()>0)b.append(' ').append(p.bad);
-            if(!p.active())b.append(" off");}
+            if(!p.active())b.append(p.retrying()?" retry":" off");}
         return b.toString();
     }
     /** Requests a second if every entry stays active. */

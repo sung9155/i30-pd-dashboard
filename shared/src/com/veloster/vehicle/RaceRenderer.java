@@ -269,12 +269,13 @@ public final class RaceRenderer {
             boolean tyres=sig==Tiles.TIRES,egt=sig==Tiles.EXHAUST;float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);
             boolean hot=!tyres&&!egt&&(Telemetry.clutchLevel(o)==2||Telemetry.clutchLevel(e)==2);
             boolean regen=egt&&v(Telemetry.DPF_REGEN)>0;
-            box(c,l,t,rr,b,hot?D():PANEL);text(c,tyres?"TPMS psi":egt?"EXHAUST °C":"CLUTCH °C",l+8,t+16,12,hot?BG:MUTED,Paint.Align.LEFT);
+            box(c,l,t,rr,b,hot?D():PANEL);text(c,tyres?"TPMS psi":egt?"EXHAUST":"CLUTCH",l+8,t+16,12,hot?BG:MUTED,Paint.Align.LEFT);
             for(int k=0;k<(tyres?4:2);k++){
                 int sigk=tyres?Telemetry.TPMS_FL+k:egt?(k==0?Telemetry.DPF_TEMP:Telemetry.EGT_CAT):k==0?Telemetry.CLUTCH_ODD:Telemetry.CLUTCH_EVEN;float val=v(sigk);int lv=regen?1:Tiles.level(sigk,val);
-                float x=tyres?(k%2==0?l+(rr-l)*0.45f:rr-10):rr-10,y=t+(tyres?(k<2?36:56):(k==0?36:56));
+                float x=tyres?(k%2==0?l+(rr-l)*0.45f:rr-10):rr-28,y=t+(tyres?(k<2?36:56):(k==0?36:56));   // temperatures: °C after the number
                 if(!tyres)text(c,egt?(k==0?"DPF":"CAT"):k==0?"ODD":"EVEN",l+8,y,11,hot?BG:MUTED,Paint.Align.LEFT);
                 text(c,fmt("%.0f",val),x,y,17,hot?BG:lv==2?D():lv==1?AMBER:WHITE,Paint.Align.RIGHT);
+                if(!tyres)text(c,"°C",rr-8,y,11,hot?BG:MUTED,Paint.Align.RIGHT);
             }
             return;
         }

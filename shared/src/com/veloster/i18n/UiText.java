@@ -63,8 +63,6 @@ public final class UiText {
         EN.put("DPF 차압","DPF delta pressure");
         EN.put("DPF 평균 재생 간격","DPF average km between regenerations");
         EN.put("DPF 포집량","DPF soot");
-        EN.put("산화촉매 앞 배기 온도","Exhaust temperature before the catalyst");
-        EN.put("배기 온도 (DPF 앞·산화촉매 앞 묶음)","Exhaust temperatures (before the DPF and the catalyst)");
         EN.put("DiPlay 연결을 먼저 종료하세요. 시험 AP를 끄고 백업한 AP 설정과 Wi-Fi 켜짐 상태를 복원합니다.","Disconnect DiPlay first. The test AP will be turned off and the backed-up AP settings and Wi-Fi state restored.");
         EN.put("DiPlay와 iPhone에 입력","Enter in DiPlay and iPhone");
         EN.put("ECO 초록 · SPORT 주황","ECO green · SPORT orange");
@@ -274,6 +272,7 @@ public final class UiText {
         EN.put("바로가기: ","Shortcut: ");
         EN.put("반응 시간","Reaction");
         EN.put("배기","Exhaust");
+        EN.put("배기 온도 (DPF 앞·산화촉매 앞 묶음)","Exhaust temperatures (before the DPF and the catalyst)");
         EN.put("배터리 SOC","Battery SOC");
         EN.put("배터리 전압","Battery voltage");
         EN.put("백업 저장 실패. 무선 설정을 변경하지 않았습니다.","Backup could not be saved. Wireless settings were not changed.");
@@ -331,6 +330,7 @@ public final class UiText {
         EN.put("사용 안 함 / Off","Off");
         EN.put("사용 연료","Fuel used");
         EN.put("사운드","Sound");
+        EN.put("산화촉매 앞 배기 온도","Exhaust temperature before the catalyst");
         EN.put("상승 2음","Rising 2 tones");
         EN.put("상승 3음","Rising tones");
         EN.put("상태 새로 확인","Refresh status");

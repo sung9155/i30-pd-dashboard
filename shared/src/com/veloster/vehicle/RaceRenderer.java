@@ -124,16 +124,15 @@ public final class RaceRenderer {
         float tr=v(Telemetry.DPF_TRIGGER),dp=v(Telemetry.DPF_DP),tp=v(Telemetry.DPF_TEMP);boolean regen=v(Telemetry.DPF_REGEN)>0;int ink=regen?AMBER:WHITE;
         // the big number: soot g, else the trigger %, else the delta pressure (Tiles.dpfLead); ΔP small unless it is the big one
         int k=Tiles.dpfLead(v(Telemetry.DPF_SOOT),tr,dp);
-        cell(c,regen?"DPF REGEN":k==Telemetry.DPF_DP?"DPF ΔP":k==Telemetry.DPF_SOOT?"DPF SOOT":"DPF",Tiles.text(k,v(k)),Telemetry.UNITS[k],l,t,rr,b,24,ink);
+        cell(c,regen?"DPF REGEN":k==Telemetry.DPF_DP?"DPF ΔP":k==Telemetry.DPF_SOOT&&Float.isNaN(v(Telemetry.DPF_SINCE_KM))&&Float.isNaN(v(Telemetry.DPF_AVG_KM))?"DPF SOOT":"DPF",Tiles.text(k,v(k)),Telemetry.UNITS[k],l,t,rr,b,24,ink);
         if(k!=Telemetry.DPF_DP)text(c,"ΔP "+fmt("%.1f",dp),l+8,t+35,13,Float.isNaN(dp)?MUTED:ink,Paint.Align.LEFT);   // delta pressure, kPa
-        // Top right (not while regenerating): km since the last regeneration, else the ECU's average between them;
+        // Top right (not while regenerating, the caption then just "DPF" so they never meet): km since the last regeneration, else the ECU's average between them;
         // with both, they take turns every 3 s. Whole km cut down, as a DAG3 shows it (298.86 -> 298).
         float since=v(Telemetry.DPF_SINCE_KM),avg=v(Telemetry.DPF_AVG_KM);
         boolean avgTurn=Float.isNaN(since)||(!Float.isNaN(avg)&&now/3000%2==1);
         boolean split=false;for(int i=0;i<Tiles.RECTS[Tiles.RACE].length;i++)split|=Tiles.signal(Tiles.RACE,i,prof)==Tiles.EXHAUST;
         if(!regen&&!(Float.isNaN(since)&&Float.isNaN(avg))){String km=(avgTurn?"AVG ":"LAST ")+fmt("%.0f",avgTurn?avg:(float)Math.floor(since))+"km";
-            if(split)text(c,km,rr-8,t+35,11,MUTED,Paint.Align.RIGHT);   // beside ΔP, clear of the caption and the big number
-            else text(c,km,rr-8,t+16,11,MUTED,Paint.Align.RIGHT);}
+            text(c,km,rr-8,t+16,11,MUTED,Paint.Align.RIGHT);}   // top right; the caption shortens to "DPF" (the g says soot)
         if(!split)text(c,fmt("%.0f",tp)+" °C",l+8,t+52,13,Float.isNaN(tp)?MUTED:ink,Paint.Align.LEFT);   // the EXHAUST tile has it
     }
     private void cell(Canvas c,String caption,String value,String unit,float l,float t,float rr,float b,float size,int color){

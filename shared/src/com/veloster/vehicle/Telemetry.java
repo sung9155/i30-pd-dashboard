@@ -25,6 +25,7 @@ public final class Telemetry {
     public static final int LID_DPF=0x2103;
     /** Sink key for 22 ED1D: the soot load (OBDb Kia-Ceed, verified there for 2018 only). */
     public static final int DID_SOOT=0xED1D;
+    public static final int DID_DPF2=0xE0F1;   // the DPF block a DAG3 asks (it never asks ED03)
     public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격", "DCT 홀수단 클러치 온도", "DCT 짝수단 클러치 온도", "DPF 포집량"};
     public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%", "km", "km", "°C", "°C", "g"};
     public static final long STALE_MS = 60000; // UI freshness threshold, not an OEM timeout.
@@ -302,18 +303,21 @@ public final class Telemetry {
                 if(n>=57)put(DPF_SINCE_KM,(((long)u16(d,53)<<16)|u16(d,55))/1000f,true,now); break;
             case DID_DPF: if(n>=56){put(DPF_DP,(d[36]&255)*0.431373f,true,now);put(DPF_TEMP,(d[38]&255)*4.7098f+99,true,now);
                 put(DPF_SINCE_KM,(((long)u16(d,45)<<16)|u16(d,47))/1000f,true,now);} break;
+            // 62 E0 F1, the block a DAG3 polls: data bytes 34..37 distance since the last regeneration in metres. A diesel PD
+            // with a DAG3 read 293.25 km here at 12:43 where the DAG3 showed 287.32 km at 12:32 and ED03 282.2 km at 10:58.
+            case DID_DPF2: if(n>=38)put(DPF_SINCE_KM,(((long)u16(d,34)<<16)|u16(d,36))/1000f,true,now); break;
             default: obd(pid,n>0?d[0]&255:0,n>1?d[1]&255:0,now);
         }
     }
     private static int u16(byte[] d,int i){return (d[i]&255)<<8|(d[i+1]&255);}
     /** One line for the diagnostic record: OBD MAP beside the hscan boost byte, baro and the boost shown (diesel scale check). */
     /** Least squares of OBD MAP (kPa) on the hscan boost byte over the drive, every MAP reply paired with the byte then:
-     *  settles the diesel boost scale (now 2.00 kPa a count, offset 0). Empty before two pairs or off a diesel. */
+     *  settles the diesel boost scale (now 1.678 kPa a count +25.6, from 461 pairs at b1 52-133). Empty before two pairs or off a diesel. */
     private int fitN,fitLo=255,fitHi=0;private double fitX,fitY,fitXX,fitXY;
     public synchronized String boostFit(){
         double d=fitN*fitXX-fitX*fitX;if(fitN<2||d<=0)return "";
         double m=(fitN*fitXY-fitX*fitY)/d,c=(fitY-m*fitX)/fitN;
-        return String.format(java.util.Locale.US," | boostfit n %d b1 %d-%d: MAP kPa = %.3f x b1 %+.1f (app 2.000 x b1 +0)",fitN,fitLo,fitHi,m,c);
+        return String.format(java.util.Locale.US," | boostfit n %d b1 %d-%d: MAP kPa = %.3f x b1 %+.1f (app 1.678 x b1 +25.6)",fitN,fitLo,fitHi,m,c);
     }
     public synchronized String boostCheck(long now){
         Sample s=sample(BOOST,now),r=sample(0,now),p=sample(9,now);
@@ -526,12 +530,12 @@ public final class Telemetry {
             // A diesel lays this slot out differently: 20|12 runs backwards (highest at idle, r=-0.85 with rpm, read as
             // a pegged 2.4 bar) and byte1 (the DBC's DecelReq) follows load (r=0.89). Diesel drive 2026-11-05: byte1 52 at
             // idle = baro at 20 hPa a count, 129-132 flat out = +1.6 bar, the usual range of a 1.6 diesel VGT.
-            // ponytail: 20 hPa a count is fitted on idle and the typical peak, not on an OBD MAP reading; check it
-            // against 01 0B from a diesel's diagnostic log. On a petrol byte1 is no pressure (it rises on overrun).
+            // 2026-11-08 with a DAG3 asking 01 0B: 461 OBD MAP replies over byte1 52-133 fit MAP kPa = 1.678 x b1 + 25.6,
+            // so idle reads +0.10 bar and flat out ~1.46 bar. On a petrol byte1 is no pressure (it rises on overrun).
             // Until the engine type is known (petrol timing seen, or a diesel's zeroed timing slot) nothing is shown.
             boolean ok;float v;
             boostByte=b[1]&255;
-            if(diesel()){int r=b[1]&255;ok=r>0&&r<255&&!Float.isNaN(baroHpa);v=(r*20f-baroHpa)/1000f;}
+            if(diesel()){int r=b[1]&255;ok=r>0&&r<255&&!Float.isNaN(baroHpa);v=(r*16.78f+256f-baroHpa)/1000f;}
             else{int raw=((b[2]&255)>>4)|((b[3]&255)<<4);ok=sparkSeen&&raw!=0xfff&&!Float.isNaN(baroHpa);v=(raw*1.322f-baroHpa)/1000f;}
             boost(ok?v:0,ok,now);
             if(diesel()){

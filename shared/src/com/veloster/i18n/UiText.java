@@ -136,9 +136,11 @@ public final class UiText {
         EN.put("경기","Gyeonggi");
         EN.put("경남","Gyeongnam");
         EN.put("경북","Gyeongbuk");
+        EN.put("경유","Diesel");
         EN.put("계기판","Dashboard");
         EN.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","Open dashboard; long-press for My Apps; drag to move");
         EN.put("계단 회전 곡선","Stepped rev curve");
+        EN.put("고급유","Premium");
         EN.put("고른 값 게이지","Your chosen gauges");
         EN.put("고장코드","Trouble codes");
         EN.put("고장코드 읽기","Read trouble codes");
@@ -473,6 +475,7 @@ public final class UiText {
         EN.put("워프","Warp");
         EN.put("원","won");
         EN.put("원 / 분"," won/min");
+        EN.put("원/L"," won/L");
         EN.put("원래 화면","Previous screen");
         EN.put("원형","Dial");
         EN.put("위치를 바꿀 칸","Choose a slot to swap");
@@ -507,6 +510,7 @@ public final class UiText {
         EN.put("인텐스 카퍼","Intense Copper");
         EN.put("일반 블루투스(Classic)를 사용합니다. BLE 검색과 GPS 데이터 수신 기능은 포함하지 않습니다.","Uses Classic Bluetooth. BLE discovery and GPS data reception are not included.");
         EN.put("일반 설치 앱은 자동 표시됩니다. 목록에서 숨겨도 앱은 삭제되지 않습니다.","Ordinary installed apps appear automatically. Hiding an app does not uninstall it.");
+        EN.put("일반유","Regular");
         EN.put("일시정지","Paused");
         EN.put("읽기 거부","refused");
         EN.put("읽기만 합니다. 고장코드 삭제는 정비소 진단기로 하세요.","Read only. Clear codes with a workshop scan tool.");

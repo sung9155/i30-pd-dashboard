@@ -116,7 +116,7 @@ public final class VehicleDash extends View implements Runnable {
         if(touching&&!blocked&&getVisibility()==VISIBLE&&renderer.ecoShown()&&EcoCluster.onFare(downX,downY)){touching=false;EcoCluster.reset(SystemClock.elapsedRealtime());invalidate();}
     }};
     private void saveEco(){activity.getSharedPreferences("pit_vehicle_ui",0).edit().putBoolean("eco_coins",EcoCluster.coins).putBoolean("eco_l100",EcoCluster.l100)
-        .putInt("eco_price",EcoCluster.price).putBoolean("eco_hint_done",EcoCluster.hintDone).putBoolean("eco_coin_sound",EcoCluster.coinSound).apply();}
+        .putInt("eco_grade",EcoCluster.grade).putInt("eco_price_0",EcoCluster.prices[0]).putInt("eco_price_1",EcoCluster.prices[1]).putInt("eco_price_2",EcoCluster.prices[2]).putBoolean("eco_hint_done",EcoCluster.hintDone).putBoolean("eco_coin_sound",EcoCluster.coinSound).apply();}
     /** A 에코 picture from res/raw (PNG), or null. */
     private static android.graphics.Bitmap rawBitmap(android.content.Context c,String name){
         try{int id=c.getResources().getIdentifier(name,"raw",c.getPackageName());if(id==0)return null;
@@ -169,7 +169,8 @@ public final class VehicleDash extends View implements Runnable {
         if(LambdaCluster.FACE==null){LambdaCluster.FACE=rawFont(a,"chakra_petch_medium");LambdaCluster.FACE_BOLD=rawFont(a,"chakra_petch_bold");}
         if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);EcoCluster.coins=p.getBoolean("eco_coins",false);EcoCluster.l100=p.getBoolean("eco_l100",false);
-            EcoCluster.price=Math.max(0,Math.min(EcoCluster.PRICE_MAX,p.getInt("eco_price",0)));EcoCluster.hintDone=p.getBoolean("eco_hint_done",false);EcoCluster.coinSound=p.getBoolean("eco_coin_sound",false);}
+            EcoCluster.grade=p.getInt("eco_grade",0)==1?1:0;
+            for(int g=0;g<3;g++)EcoCluster.prices[g]=Math.max(0,Math.min(EcoCluster.PRICE_MAX,p.getInt("eco_price_"+g,0)));EcoCluster.hintDone=p.getBoolean("eco_hint_done",false);EcoCluster.coinSound=p.getBoolean("eco_coin_sound",false);}
         catch(ClassCastException e){/* defaults */}
         try{regenEnd=a.getSharedPreferences("pit_vehicle_ui",0).getFloat("dpf_regen_end_odo",Float.NaN);DATA.dpfRegenEnd(regenEnd);}
         catch(ClassCastException e){/* Incompatible saved value: count from the next regeneration. */}

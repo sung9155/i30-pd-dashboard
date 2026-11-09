@@ -179,19 +179,19 @@ public final class TabsPreview {
          long t0=1000000;
          for(int i=0;i<3600*4;i++){float ts=(i*0.25f)%50;float[] r=ecoAt(K,ts);long t=t0+i*250L;   // an hour: a few bottles on the shelf
              k.background(ecoQ(model,now,r,ts>=11&&ts<=24),t);}
-         String[] names={"9q_eco_cruise","9q_eco_idle","9q_eco_cut","9q_eco_coins","9q_eco_coins_hard","9q_eco_l100","9q_eco_price","9q_eco_diesel_regen"};
-         float[] ecoT={14,2,25,25,37,14,14,14};
+         String[] names={"9q_eco_cruise","9q_eco_idle","9q_eco_cut","9q_eco_coins","9q_eco_coins_hard","9q_eco_l100","9q_eco_price","9q_eco_diesel_regen","9q_eco_price_diesel"};
+         float[] ecoT={14,2,25,25,37,14,14,14,14};
          for(int n=0;n<names.length;n++){
              EcoCluster.coins=n==3||n==4;EcoCluster.l100=n==5;
-             VehicleProfile pf=n==7?VehicleProfile.DIESEL_DCT:VehicleProfile.PETROL_DCT;
+             VehicleProfile pf=n>=7?VehicleProfile.DIESEL_DCT:VehicleProfile.PETROL_DCT;
              long t=t0+3600*4*250L+n*100000L;BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
-             for(int f=0;f<60;f++){float ts=ecoT[n]-3+f*0.05f;Telemetry.Sample[] q=ecoQ(model,now,ecoAt(K,ts),n==7);
+             for(int f=0;f<60;f++){float ts=ecoT[n]-3+f*0.05f;Telemetry.Sample[] q=ecoQ(model,now,ecoAt(K,ts),n==7);if(n==6&&f==0)EcoCluster.grade=1;
                  k.background(q,t+f*50L);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
                  if(f==59)new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
-                 if(n==6&&f==58)k.tap(665,120);
+                 if((n==6||n==8)&&f==58)k.tap(665,120);
                  k.frame(c,q,model,new DriveStats(),pf,t+f*50L,null);}
              ImageIO.write(img,"png",new File(out,names[n]+".png"));}
-         EcoCluster.coins=false;EcoCluster.l100=false;
+         EcoCluster.coins=false;EcoCluster.l100=false;EcoCluster.grade=0;
         }
         // 수동 screen (the Λ layout, 6MT): {gear, km/h, rpm, clutch, brake bar}; the race and performance pages turn the rpm green on a match
         float[][] ds={{4,80,1500,1,22},{5,100,2800,0,0},{3,60,2800,0,25},{6,96,2200,0,0},{4,80,3720,1,22},{3,122,5750,0,0}};String[] dsn={"a_4th80_clutch","b_5th100_cruise","c_3rd60_brake","d_6th96","e_4th80_match","f_3rd122_upshift"};

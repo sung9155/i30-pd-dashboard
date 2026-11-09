@@ -28,6 +28,10 @@ CAN 메시지·신호의 배치와 배율은 [commaai/opendbc](https://github.co
 
 람다 화면(Λ 계기)의 글자는 Chakra Petch(Medium·Bold)로 그립니다. Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch), SIL Open Font License 1.1. 글꼴 파일은 `apps/dashboard/res/raw/`에, 라이선스 전문은 `i30pd_port/licenses/ChakraPetch-OFL.txt`에 있습니다. 글꼴은 고치지 않고 그대로 앱에 넣었습니다.
 
+## 에코 화면의 차 그림
+
+에코 화면 배기구 보기의 차(뒷범퍼 왼쪽 아래)는 3D 모델 "hyundai i30 n"(amogusstrikesback2, https://sketchfab.com/3d-models/hyundai-i30-n-90c3bd24390b46299cf01c16d5e8091f)을 렌더한 그림이며 CC BY 4.0(https://creativecommons.org/licenses/by/4.0/)을 따릅니다. 바꾼 점: 번호판을 숨기고 차체를 회색으로 칠해 낮은 뒤쪽 시점에서 렌더했고, 차체 부분만 따로 떼어 앱이 차량 색을 곱해 입힙니다(`apps/dashboard/res/raw/eco_car_rear.png`, `eco_car_paint.png`). 아케이드 화면과 같은 모델이라 같은 사정(게임에서 가져온 모델일 수 있음)이 있고, 권리자가 요청하면 이 그림을 빼겠습니다.
+
 ## 이 레포에 넣지 않은 것
 
 - 현대자동차 순정 펌웨어, 순정 앱, 그 디컴파일 결과. 문서의 "PD 펌웨어 대조"는 공개된 펌웨어를 받아 확인한 사실(클래스·액티비티 이름 등)만 적은 것입니다.

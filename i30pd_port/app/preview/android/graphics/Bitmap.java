@@ -12,4 +12,8 @@ public class Bitmap {
     public void eraseColor(int c){if(img==null)return;for(int y=0;y<img.getHeight();y++)for(int x=0;x<img.getWidth();x++)img.setRGB(x,y,c);}
     public int getWidth(){return img==null?0:img.getWidth();}
     public int getHeight(){return img==null?0:img.getHeight();}
+    public void getPixels(int[] px,int off,int stride,int x,int y,int w,int h){img.getRGB(x,y,w,h,px,off,stride);}
+    public void setPixels(int[] px,int off,int stride,int x,int y,int w,int h){img.setRGB(x,y,w,h,px,off,stride);}
+    /** Preview only: a PNG the renderer reads as an app resource. */
+    public static Bitmap of(BufferedImage i){BufferedImage a=new BufferedImage(i.getWidth(),i.getHeight(),BufferedImage.TYPE_INT_ARGB);a.getGraphics().drawImage(i,0,0,null);return new Bitmap(a);}
 }

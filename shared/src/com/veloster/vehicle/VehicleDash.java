@@ -110,6 +110,20 @@ public final class VehicleDash extends View implements Runnable {
     private final Runnable lapHold=new Runnable(){public void run(){
         if(touching&&!blocked&&getVisibility()==VISIBLE&&onLap(downX,downY)&&lap.hold(SystemClock.elapsedRealtime())){lapHeld=true;invalidate();}
     }};
+    /** Hold the 에코 fare 1 s: a new trip. */
+    private final Runnable ecoHold=new Runnable(){public void run(){
+        EcoCluster.holding=false;
+        if(touching&&!blocked&&getVisibility()==VISIBLE&&renderer.ecoShown()&&EcoCluster.onFare(downX,downY)){touching=false;EcoCluster.reset(SystemClock.elapsedRealtime());invalidate();}
+    }};
+    private void saveEco(){activity.getSharedPreferences("pit_vehicle_ui",0).edit().putBoolean("eco_coins",EcoCluster.coins).putBoolean("eco_l100",EcoCluster.l100)
+        .putInt("eco_price",EcoCluster.price).putBoolean("eco_hint_done",EcoCluster.hintDone).putBoolean("eco_coin_sound",EcoCluster.coinSound).apply();}
+    /** A 에코 picture from res/raw (PNG), or null. */
+    private static android.graphics.Bitmap rawBitmap(android.content.Context c,String name){
+        try{int id=c.getResources().getIdentifier(name,"raw",c.getPackageName());if(id==0)return null;
+            android.graphics.BitmapFactory.Options o=new android.graphics.BitmapFactory.Options();o.inScaled=false;o.inPreferredConfig=android.graphics.Bitmap.Config.ARGB_8888;
+            java.io.InputStream in=c.getResources().openRawResource(id);try{return android.graphics.BitmapFactory.decodeStream(in,null,o);}finally{in.close();}
+        }catch(Throwable e){android.util.Log.w("VehicleDash","bitmap "+name+": "+e);return null;}
+    }
     private final Runnable clusterHold=new Runnable(){public void run(){
         if(touching&&!blocked&&getVisibility()==VISIBLE&&header.onStrip(downX,downY)){
             touching=false;picker=true;editing=false;showCluster();invalidate();
@@ -153,6 +167,10 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){/* Sound off for an incompatible saved value. */}
         applySound();
         if(LambdaCluster.FACE==null){LambdaCluster.FACE=rawFont(a,"chakra_petch_medium");LambdaCluster.FACE_BOLD=rawFont(a,"chakra_petch_bold");}
+        if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);EcoCluster.coins=p.getBoolean("eco_coins",false);EcoCluster.l100=p.getBoolean("eco_l100",false);
+            EcoCluster.price=Math.max(0,Math.min(EcoCluster.PRICE_MAX,p.getInt("eco_price",0)));EcoCluster.hintDone=p.getBoolean("eco_hint_done",false);EcoCluster.coinSound=p.getBoolean("eco_coin_sound",false);}
+        catch(ClassCastException e){/* defaults */}
         try{regenEnd=a.getSharedPreferences("pit_vehicle_ui",0).getFloat("dpf_regen_end_odo",Float.NaN);DATA.dpfRegenEnd(regenEnd);}
         catch(ClassCastException e){/* Incompatible saved value: count from the next regeneration. */}
         try{Theme.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("theme","n"));}
@@ -293,17 +311,20 @@ public final class VehicleDash extends View implements Runnable {
         }catch(Throwable e){android.util.Log.w("VehicleDash","font "+name+": "+e);return null;}
     }
     protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity);Gps.start(activity); post(this); }
-    protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();mediaReceiver.stop();artwork.close();Gps.stop();super.onDetachedFromWindow(); }
+    protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();mediaReceiver.stop();artwork.close();Gps.stop();super.onDetachedFromWindow(); }
     public void run() {
         long delay=100;
         long tick=SystemClock.elapsedRealtime();
         if(resumed&&!standalone&&tick-lastPolicyCheck>=1000){lastPolicyCheck=tick;int status=RegulationState.read(activity);if(status>=0)policy(status==1,"service");}
         tryRequestedEntry();
         sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);
+        {int ck=EcoCluster.clink;if(ck>0){EcoCluster.clink=0;   // a coin hit the road on the 에코 screen
+            if(EcoCluster.coinSound&&resumed&&getVisibility()==VISIBLE&&renderer.ecoShown())beep.playCoin(soundOn&&soundRoute==0?sound:null,ck,beepVol/100f);}}
         if(getVisibility()==VISIBLE) {
             invalidate();long now=SystemClock.elapsedRealtime();
             if(graphs)delay=250;
             else if(symmetric&&page==PitRenderer.PAGE_PERFORMANCE&&lap.state()==LapTimer.RUNNING)delay=33;
+            else if(symmetric&&page==PitRenderer.PAGE_ECO)delay=EcoCluster.animating||EcoCluster.holding?50:250;   // still and nothing falling: 4 frames a second
             else if(symmetric&&page>=PitRenderer.PAGE_RACE)delay=50;  // shift blink, upshift pop, live run timers
             else if(!(cluster&&media&&!gauges) && mediaState.snapshot(now).notice)delay=16;
             if(introStart>0&&now-introStart<1500)delay=Math.min(delay,33);   // smooth the welcome sweep
@@ -382,12 +403,13 @@ public final class VehicleDash extends View implements Runnable {
     public boolean onTouchEvent(MotionEvent event) {
         float x=event.getX()*800/getWidth(), y=event.getY()*480/getHeight();
         if(event.getAction()==MotionEvent.ACTION_DOWN) {
-            removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);touching=true;downX=x;downY=y;lastMoveY=y;header.down(x,y);
+            removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;touching=true;downX=x;downY=y;lastMoveY=y;header.down(x,y);
             if(!blocked&&!picker&&header.onStrip(x,y))postDelayed(clusterHold,600);
-            removeCallbacks(lapHold);lapHeld=false;if(!blocked&&!picker&&onLap(x,y))postDelayed(lapHold,700);
+            removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;lapHeld=false;if(!blocked&&!picker&&onLap(x,y))postDelayed(lapHold,700);
             overviewDown=!cluster&&!gauges&&!graphs&&!symmetric&&!blocked&&!overviewCovered(y)?overviewLayout.hit(x,y):-1;
             if(!blocked&&!picker&&((gauges&&gaugeEditor.hit(x,y)>=0)||(graphs&&graphLayout.hit(x,y)>=0)))postDelayed(editHold,600);   // not under the screen list
             if(!blocked&&!picker&&tileLayout()>=0&&Tiles.hit(tileLayout(),x,y)>=0)postDelayed(tileHold,600);
+            if(!blocked&&!picker&&renderer.ecoShown()&&EcoCluster.onFare(x,y)){EcoCluster.holding=true;postDelayed(ecoHold,1000);}
             return true;
         }
         if(event.getAction()==MotionEvent.ACTION_MOVE&&picker&&editing&&settingsCat==SettingsLayout.SCREENS&&pickSlot<0&&downX>=SettingsLayout.PANE_L-6&&downY>=SettingsLayout.TOP&&downY<=SettingsLayout.BOTTOM){
@@ -395,11 +417,11 @@ public final class VehicleDash extends View implements Runnable {
             if(Math.abs(y-downY)>=10)touching=false;   // a drag that scrolls is not a tap
             invalidate();return true;
         }
-        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y,event.getEventTime())){touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);invalidate();return true;}
-        if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);}return true;}
-        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);header.up();return true; }
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y,event.getEventTime())){touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;invalidate();return true;}
+        if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;}return true;}
+        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;header.up();return true; }
         if(event.getAction()!=MotionEvent.ACTION_UP)return true;
-        removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);
+        removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;
         if(header.up(event.getEventTime())){touching=false;return true;}   // a strip scroll is never a tap
         boolean tap=touching && Math.abs(x-downX)<16 && Math.abs(y-downY)<16;
         touching=false;
@@ -497,7 +519,7 @@ public final class VehicleDash extends View implements Runnable {
             if(!lapHeld)lap.tap(SystemClock.elapsedRealtime());
             invalidate();return true;
         }
-        if(tap&&!blocked&&symmetric&&PitRenderer.isCluster(page)&&y>52&&downY>52&&renderer.clusterTap(x,y)){invalidate();return true;}
+        if(tap&&!blocked&&symmetric&&(PitRenderer.isCluster(page)||page==PitRenderer.PAGE_ECO)&&y>52&&downY>52&&renderer.clusterTap(x,y)){if(EcoCluster.consumeChanged())saveEco();invalidate();return true;}
         if(tap&&!blocked&&gauges&&x>=650&&x<=788&&downX>=650&&downX<=788&&y>=54&&y<=78&&downY>=54&&downY<=78){gaugeEditor.toggleGrid();return true;}
         if(tap&&!blocked&&graphs&&y>=54&&y<=79&&downY>=54&&downY<=79){
             if(x>=628&&x<=702&&downX>=628&&downX<=702)graphEditor.window(60000);

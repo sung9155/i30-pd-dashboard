@@ -117,7 +117,9 @@ public final class UiText {
         EN.put("가장자리 버튼을 표시할 수 없어 알림 바로가기를 유지합니다. 시스템의 다른 앱 위 표시 권한을 확인하세요.","The floating button could not be shown. The notification remains. Check permission to display over other apps.");
         EN.put("강원","Gangwon");
         EN.put("강제 재시작","Restart head unit");
+        EN.put("개"," full");
         EN.put("개발자 설정","Developer options");
+        EN.put("거리","Distance");
         EN.put("거리  ","Dist  ");
         EN.put("거리 %d m × ","Distance %d m × ");
         EN.put("검색 요청 실패: ","Discovery request failed: ");
@@ -197,7 +199,9 @@ public final class UiText {
         EN.put("냉각수 온도","Coolant temperature");
         EN.put("노킹","Knock");
         EN.put("노킹 센서 값은 버스에 없어","No knock-sensor value on the bus:");
+        EN.put("누르면 배기구 보기","Tap: tailpipe view");
         EN.put("누르면 음악으로","Tap for music");
+        EN.put("누르면 페트병 보기","Tap: bottle view");
         EN.put("누를 때마다 바뀌고 한 번 들려줌","Tap to change · plays it once");
         EN.put("눌러서 N 계기판과 앱 목록 열기","Tap to open N Dashboard and your app list");
         EN.put("눌러서 사용·미사용","Tap to turn on/off");
@@ -209,6 +213,7 @@ public final class UiText {
         EN.put("다음","Next");
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
         EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
+        EN.put("단","gear");
         EN.put("단 = 워프 단계","gear = warp stage");
         EN.put("닫기","Close");
         EN.put("대구","Daegu");
@@ -216,6 +221,7 @@ public final class UiText {
         EN.put("대칭","Sym");
         EN.put("데미타스 브라운","Demitasse Brown");
         EN.put("돌아가기","Back");
+        EN.put("동전 소리","Coin sound");
         EN.put("두 번 · 길고 짧게","Long then short");
         EN.put("두 음 차임","Two-tone chime");
         EN.put("뒤 오른쪽 공기압","Rear-right pressure");
@@ -245,6 +251,7 @@ public final class UiText {
         EN.put("마찰 토크","Friction torque");
         EN.put("마찰원","Friction circle");
         EN.put("막대","Bar");
+        EN.put("많음","More");
         EN.put("맑은 차임","Clear chime");
         EN.put("맑음","Clear");
         EN.put("맞춤 소리 화면","Match-sound screens");
@@ -429,10 +436,12 @@ public final class UiText {
         EN.put("엔진·변속기·제동·조향·에어백·바디 (읽기만)","Engine, transmission, brakes, steering, airbag, body (read only)");
         EN.put("연결 점검","Connections");
         EN.put("연료 L/h","Fuel L/h");
+        EN.put("연료 단가 (원/L)","Fuel price (won/L)");
         EN.put("연료 잔량","Fuel level");
         EN.put("연료 차단","Fuel cut");
         EN.put("연료 차단 · ","Fuel cut · ");
         EN.put("연료 차단 중","Fuel cut");
+        EN.put("연비·연료비","Economy · fuel cost");
         EN.put("연타 · 5번","Rapid · 5 taps");
         EN.put("영 수 증","RECEIPT");
         EN.put("예상","PREDICTED");
@@ -465,6 +474,7 @@ public final class UiText {
         EN.put("움직이면 자동 시작 · 버튼으로 바로 시작","Starts when you move · or tap Start");
         EN.put("워프","Warp");
         EN.put("원","won");
+        EN.put("원 / 분"," won/min");
         EN.put("원래 화면","Previous screen");
         EN.put("원형","Dial");
         EN.put("위치를 바꿀 칸","Choose a slot to swap");
@@ -488,6 +498,8 @@ public final class UiText {
         EN.put("이미 페어링된 기기입니다. 프로필 연결은 해당 앱에서 진행하세요.","Already paired. Connect the required profile from the relevant app.");
         EN.put("이번","This run");
         EN.put("이번 랩 / 지난 랩","this lap / last lap");
+        EN.put("이번 주행 연료비","Trip fuel cost");
+        EN.put("이번 주행 초기화","Trip reset");
         EN.put("이전","Previous");
         EN.put("이전 시험 백업이 남아 있습니다. 먼저 원상복구하세요.","A previous test backup remains. Restore the original settings first.");
         EN.put("이제 ☆ 버튼을 짧게 누르면 계기판이 열립니다.","A short press of ☆ now opens the dashboard.");
@@ -518,6 +530,7 @@ public final class UiText {
         EN.put("저장 / Save","Save");
         EN.put("저장공간","Storage");
         EN.put("저장된 고장코드가 없습니다.","No stored trouble codes.");
+        EN.put("적음","Less");
         EN.put("전기·차체","Electrics · body");
         EN.put("전남","Jeonnam");
         EN.put("전북","Jeonbuk");
@@ -526,6 +539,7 @@ public final class UiText {
         EN.put("전체 조망","Overview");
         EN.put("전투기 HUD","Fighter HUD");
         EN.put("절대 부하","Absolute load");
+        EN.put("절약된 연료","Fuel saved");
         EN.put("점화","Spark");
         EN.put("점화 °","Spark °");
         EN.put("점화 맵 · 최근 60초","Spark map · last 60 s");
@@ -607,6 +621,7 @@ public final class UiText {
         EN.put("최고 부스트 순간","At peak boost");
         EN.put("최고 속도","Top speed");
         EN.put("최고 횡G","Peak lat G");
+        EN.put("최근 2분","Last 2 min");
         EN.put("최근 30초","Last 30 s");
         EN.put("최근 60초","Last 60 s");
         EN.put("최대 횡G","Max lat G");
@@ -669,6 +684,7 @@ public final class UiText {
         EN.put("팬텀 블랙","Phantom Black");
         EN.put("퍼포먼스","Perf");
         EN.put("퍼포먼스 블루","Performance Blue");
+        EN.put("페달","Pedal");
         EN.put("페달 50% 이하로 충분합니다","Under 50 % pedal is enough");
         EN.put("페어링","Pair");
         EN.put("페어링 요청 실패: ","Pairing request failed: ");
@@ -678,6 +694,8 @@ public final class UiText {
         EN.put("페어링된 기기가 없습니다.","No paired devices.");
         EN.put("페어링됨","Paired");
         EN.put("페어링을 요청했습니다. PIN 확인 창이 나타나면 차량 화면에서 확인하세요.","Pairing requested. Confirm the PIN on the head-unit screen if prompted.");
+        EN.put("페트병 2 L","2 L bottles");
+        EN.put("평균","Avg");
         EN.put("평균 연비","Avg economy");
         EN.put("포천 레이스웨이","Pocheon Raceway");
         EN.put("폴라 화이트","Polar White");
@@ -686,6 +704,7 @@ public final class UiText {
         EN.put("풀 배기 · 팝앤뱅","Straight pipe · pops");
         EN.put("풀부하 기준","Full-load line");
         EN.put("풀부하에서 점화가 기준선보다","Spark later than the full-load line");
+        EN.put("퓨얼 컷","Fuel cut");
         EN.put("플래티넘 실버","Platinum Silver");
         EN.put("하강 2음","Falling 2 tones");
         EN.put("하강 3음","Falling 3 tones");

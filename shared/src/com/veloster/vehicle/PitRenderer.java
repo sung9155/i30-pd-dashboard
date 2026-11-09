@@ -39,6 +39,7 @@ public final class PitRenderer {
     private final PerformanceRenderer performanceRenderer=new PerformanceRenderer();
     private final RaceRenderer raceRenderer=new RaceRenderer();
     private final LambdaCluster mtSport=new LambdaCluster();
+    private final EcoCluster eco=new EcoCluster();
     private final ShowRenderer showRenderer=new ShowRenderer();
     private final ClusterRenderer clusterRenderer=new ClusterRenderer();
     public static final int PAGE_PERFORMANCE=1,PAGE_RACE=2,PAGE_RECORDS=3,PAGE_SHOW=4,PAGE_CLASSIC=5,PAGE_RETRO=6,PAGE_RALLY=7;
@@ -46,6 +47,8 @@ public final class PitRenderer {
     /** The 수동 screen (LambdaCluster): drawn here, not through the cluster layout list. */
     public static final int PAGE_MANUAL=ClusterPicker.MANUAL-ClusterPicker.F1;
     public static boolean isCluster(int page){return page>=PAGE_CLASSIC&&page<PAGE_MANUAL;}
+    /** The 에코 screen (EcoCluster): drawn here like 람다; its taps and the fare hold come through VehicleDash. */
+    public static final int PAGE_ECO=ClusterPicker.ECO-ClusterPicker.F1;
     private boolean picker,editing;
     private int hidden;
     /** Screen list over the body while open, its edit mode and the hidden screens (VehicleDash owns the gesture). */
@@ -84,7 +87,9 @@ public final class PitRenderer {
     }
     private static String screenName(int s){return s>=0&&s<ClusterPicker.COUNT?ClusterPicker.NAMES[s]:"원래 화면";}
     /** Body tap on a Cluster layout (taxi meter button and the like); true when it was used. */
-    public boolean clusterTap(float x,float y){return symmetric&&isCluster(page)&&clusterRenderer.tap(page-PAGE_CLASSIC,x,y);}
+    public boolean clusterTap(float x,float y){return symmetric&&(isCluster(page)&&clusterRenderer.tap(page-PAGE_CLASSIC,x,y)||page==PAGE_ECO&&eco.tap(x,y));}
+    /** The 에코 screen shows (VehicleDash: the fare hold, the coin sound, the frame rate). */
+    public boolean ecoShown(){return symmetric&&page==PAGE_ECO;}
     private final HeaderTabs header=new HeaderTabs();
     /** The tab strip VehicleDash hit-tests and scrolls; the same instance draws it. */
     public HeaderTabs header(){return header;}
@@ -142,6 +147,7 @@ public final class PitRenderer {
         mediaPage=cluster && media;raceMedia=media;music=track;
         frameTime=now;samples=model.snapshot(now);profile=model.profile();thModel=model;
         clusterRenderer.tick(samples,now);   // trip totals of the layouts count on every page
+        eco.prof=profile;eco.background(samples,now);   // the 에코 trip too
         // The profile's range, so the "목표" label shows the target the cue really uses (a diesel's is 2100-4700).
         shiftTarget=ShiftGuide.target(target,profile);
         cue=ShiftGuide.evaluate(samples,shiftTarget,profile);stats.update(samples,now);
@@ -156,6 +162,7 @@ public final class PitRenderer {
         else if(symmetric&&page==PAGE_RACE)raceRenderer.draw(c,samples,cue,frameTime,stats,profile,media,music,artwork);
         else if(symmetric&&page==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
         else if(symmetric&&page==PAGE_MANUAL){mtSport.shiftTarget=shiftTarget;mtSport.frame(c,samples,model,stats,profile,frameTime,null);}
+        else if(symmetric&&page==PAGE_ECO)eco.frame(c,samples,model,stats,profile,frameTime,null);
         else if(symmetric&&isCluster(page))clusterRenderer.draw(c,page-PAGE_CLASSIC,samples,frameTime,stats,profile,model,music);
         else if(mediaPage)drawCombined(c);else if(cluster)drawCluster(c);else drawDashboard(c);
         // Pages without their own shift light (performance, show, every cluster layout) get the race tab's cue from the same
@@ -393,6 +400,7 @@ public final class PitRenderer {
             else if(pg==PAGE_RACE)raceRenderer.draw(c,samples,cue,frameTime,stats,profile,false,null,null);
             else if(pg==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
             else if(pg==PAGE_MANUAL)mtSport.frame(c,samples,thModel,stats,profile,frameTime,null);
+            else if(pg==PAGE_ECO)eco.frame(c,samples,thModel,stats,profile,frameTime,null);
             else if(isCluster(pg))clusterRenderer.draw(c,pg-PAGE_CLASSIC,samples,frameTime,stats,profile,thModel,null);
         }
     }

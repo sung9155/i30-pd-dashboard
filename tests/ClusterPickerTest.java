@@ -5,15 +5,16 @@ public final class ClusterPickerTest {
     private static int checks;
     private static void check(boolean b,String s){checks++;if(!b)throw new AssertionError(s);}
     public static void main(String[] args){
-        check(ClusterPicker.COUNT==24&&ClusterPicker.NAMES.length==24&&ClusterPicker.DESC.length==24,"24 screens, one name and line each");
-        check(ClusterPicker.NAMES[ClusterPicker.MANUAL].equals("람다"),"the 람다 (twin Λ) screen last");
+        check(ClusterPicker.COUNT==25&&ClusterPicker.NAMES.length==25&&ClusterPicker.DESC.length==25,"25 screens, one name and line each");
+        check(ClusterPicker.NAMES[ClusterPicker.ECO].equals("에코")&&ClusterPicker.ECO==ClusterPicker.COUNT-1,"the 에코 screen last");
+        check(ClusterPicker.NAMES[ClusterPicker.MANUAL].equals("람다"),"the 람다 (twin Λ) screen before it");
         {int[] old=new int[23];for(int i=0;i<23;i++)old[i]=22-i;int[] o=ClusterPicker.validOrder(old);
-         check(o.length==24&&o[0]==22&&o[22]==0&&o[23]==23,"an order saved with 23 screens keeps its arrangement, 수동 last");}
+         check(o.length==25&&o[0]==22&&o[22]==0&&o[23]==23&&o[24]==24,"an order saved with 23 screens keeps its arrangement, 수동 and 에코 last");}
         {int[] old=new int[22];for(int i=0;i<22;i++)old[i]=21-i;int[] o=ClusterPicker.validOrder(old);
-         check(o.length==24&&o[0]==21&&o[21]==0&&o[22]==22&&o[23]==23,"an order saved with 22 screens keeps its arrangement, the new screens last");}
+         check(o.length==25&&o[0]==21&&o[21]==0&&o[22]==22&&o[23]==23&&o[24]==24,"an order saved with 22 screens keeps its arrangement, the new screens last");}
         check(ClusterPicker.NAMES[ClusterPicker.OVERVIEW].equals("전체 조망")&&ClusterPicker.NAMES[ClusterPicker.GAUGES].equals("게이지")&&ClusterPicker.NAMES[ClusterPicker.GRAPHS].equals("그래프"),"overview, gauges, graphs first");
         check(ClusterPicker.NAMES[ClusterPicker.F1].equals("F1")&&ClusterPicker.NAMES[ClusterPicker.CLASSIC].equals("클래식"),"then F1, the symmetric pages, the drawn layouts");
-        check(ClusterPicker.page(ClusterPicker.F1+1)==1&&ClusterPicker.page(ClusterPicker.CLASSIC)==5&&ClusterPicker.page(ClusterPicker.COUNT-2)==19&&ClusterPicker.page(ClusterPicker.MANUAL)==20,"screen after F1 maps to its PitRenderer page (서킷 19, 수동 20)");
+        check(ClusterPicker.page(ClusterPicker.F1+1)==1&&ClusterPicker.page(ClusterPicker.CLASSIC)==5&&ClusterPicker.page(ClusterPicker.MANUAL-1)==19&&ClusterPicker.page(ClusterPicker.MANUAL)==20&&ClusterPicker.page(ClusterPicker.ECO)==21,"screen after F1 maps to its PitRenderer page (서킷 19, 수동 20)");
         for(int i=0;i<ClusterPicker.SLOTS;i++){
             float x=ClusterPicker.left(i)+10,y=ClusterPicker.top(i)+10;
             check(ClusterPicker.hit(x,y)==i,"tile "+i+" hits itself");

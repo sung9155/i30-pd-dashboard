@@ -29,9 +29,11 @@ final class EcoCluster extends ClusterKit {
     static volatile int price;
     /** eco_car_rear / eco_car_paint (res/raw, 428 x 480), loaded by VehicleDash; null draws the coin view without the car. */
     static volatile Bitmap CAR,PAINT;
-    /** A coin is about to hit the road: 10, 100 or 500 (first contact, the largest since the last read) or -10.. (its softer
-     *  bounce); VehicleDash plays it when coinSound is on. */
+    /** A coin is about to hit the road: 10, 100 or 500 (first contact) or -10.. (its bounce), the loudest since the last
+     *  read; VehicleDash plays it at clinkGain when coinSound is on. */
     static volatile int clink;
+    /** Volume of that clink, 0..1: farther up the road or farther outside the panel is quieter. */
+    static volatile float clinkGain;
     /** Something moves (driving, coins in the air): VehicleDash keeps the fast frame rate. */
     static volatile boolean animating;
     private static volatile boolean changed;
@@ -184,7 +186,7 @@ final class EcoCluster extends ClusterKit {
     // ---- taps (VehicleDash routes them while this screen shows) ----
     @Override boolean tap(float x,float y){
         if(now<editUntil&&x>=564&&x<=766&&y>=208&&y<=252){int d=x<=665?-10:10;price=Math.max(PRICE_MIN,Math.min(PRICE_MAX,price(prof)+d));editUntil=now+6000;changed=true;return true;}
-        if(now<editUntil&&x>=564&&x<=766&&y>=254&&y<=296){coinSound=!coinSound;if(coinSound&&coins)clink=500;editUntil=now+6000;changed=true;return true;}   // a sample clink
+        if(now<editUntil&&x>=564&&x<=766&&y>=254&&y<=296){coinSound=!coinSound;if(coinSound&&coins){clink=500;clinkGain=1;}editUntil=now+6000;changed=true;return true;}   // a sample clink
         if(x>=564&&x<=766&&y>=94&&y<=146){editUntil=now<editUntil?0:now+6000;return true;}
         if(x>=L_L&&x<=L_R&&y>=TOP&&y<=BOT){coins=!coins;hintDone=true;resync=true;changed=true;return true;}
         if(x>=C_L&&x<=C_R&&y>=124&&y<=266){l100=!l100;changed=true;return true;}
@@ -205,7 +207,8 @@ final class EcoCluster extends ClusterKit {
             for(int i=cn-1;i>=0;i--){cvy[i]+=520*dt;cy[i]+=cvy[i]*dt;cx[i]+=cvx[i]*dt;csp[i]+=dt*6;cgy[i]+=groundDy(cgy[i],ws)*dt;
                 // one clink per contact (the bounce softer: -den), asked just before the coin gets there
                 if(cvy[i]>0&&cs[i]<=cb[i]&&cgy[i]-cy[i]<cvy[i]*CLINK_LEAD_S){cs[i]++;
-                    if(cx[i]>L_L&&cx[i]<L_R){if(cb[i]==0)clink=Math.max(clink,cden[i]);else if(clink==0)clink=-cden[i];}}   // out of the panel: unseen, unheard
+                    float gn=coinGain(cx[i],cgy[i])*(cb[i]==0?1:.45f);   // out of the panel or far up the road: quieter
+                    if(gn>=clinkGain||clink==0){clink=cb[i]==0?cden[i]:-cden[i];clinkGain=gn;}}
                 if(cy[i]>cgy[i]){if(cb[i]<1){cy[i]=cgy[i];cvy[i]=-Math.abs(cvy[i])*.3f;cvx[i]*=.5f;cb[i]++;}
                     else{if(gn==MAXG)shift(0);gx[gn]=cx[i];gy[gn]=cgy[i];gden[gn]=cden[i];gn++;removeCoin(i);}}}
             for(int i=gn-1;i>=0;i--){gy[i]+=groundDy(gy[i],ws)*dt;if(gy[i]>316)shift(i);}
@@ -264,6 +267,7 @@ final class EcoCluster extends ClusterKit {
     private static final float PIPE_X=124,PIPE_Y=176,HY=108,NEAR=192,KD=60;
     private static final int TW=512,TH=64,PH=24,AW=214,AY=132,AH=168;
     private static Bitmap[] asphalt;private static Bitmap car;private static int carFor;private static Bitmap[] flat,spin;
+    private static float coinGain(float x,float gy){float dep=NEAR/Math.max(8,gy-HY),out=Math.max(0,Math.max(L_L-x,x-L_R));return Math.max(.05f,Math.min(1,1/dep)/(1+out/50));}
     private static float groundDy(float y,float ws){float d=Math.max(4,y-HY);return ws*d*d/(NEAR*KD);}
     private void tailpipe(Canvas c,boolean cut,float lph){
         if(asphalt==null)asphalt=buildAsphalt();

@@ -319,7 +319,7 @@ public final class VehicleDash extends View implements Runnable {
         tryRequestedEntry();
         sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);
         {int ck=EcoCluster.clink;if(ck!=0){EcoCluster.clink=0;   // a coin reaches the road on the 에코 screen (negative: its bounce)
-            if(EcoCluster.coinSound&&EcoCluster.coins&&resumed&&getVisibility()==VISIBLE&&renderer.ecoShown()&&!picker)beep.playCoin(soundOn&&soundRoute==0?sound:null,Math.abs(ck),beepVol/100f*(ck<0?.45f:1));}}
+            if(EcoCluster.coinSound&&EcoCluster.coins&&resumed&&getVisibility()==VISIBLE&&renderer.ecoShown()&&!picker)beep.playCoin(soundOn&&soundRoute==0?sound:null,Math.abs(ck),beepVol/100f*EcoCluster.clinkGain);}}
         if(getVisibility()==VISIBLE) {
             invalidate();long now=SystemClock.elapsedRealtime();
             if(graphs)delay=250;

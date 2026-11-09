@@ -724,5 +724,9 @@
   "페트병 2 L": "2 L bottles",
   "평균": "Avg",
   "퓨얼 컷": "Fuel cut",
-  "동전 소리": "Coin sound"
+  "동전 소리": "Coin sound",
+  "일반유": "Regular",
+  "고급유": "Premium",
+  "경유": "Diesel",
+  "원/L": " won/L"
 }

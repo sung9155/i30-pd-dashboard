@@ -15,7 +15,7 @@ import android.graphics.Typeface;
  * Left (tap to switch): the fuel used dripping into 2 L PET bottles that shelve themselves when full, or the money spent
  * dropping out of the tailpipe (a render of an i30 3D model, the body in the 차량 색) onto moving asphalt. Centre: speed,
  * gear, rpm; the 3 s economy (tap: km/L or L/100km), or ∞ / 퓨얼 컷 on overrun fuel cut, or L/h on idle; the pedal.
- * Right: the trip's fuel cost as a taxi meter (tap it: fuel price − / +; hold it 1 s: a new trip), won per minute,
+ * Right: the trip's fuel cost as a taxi meter (tap it: the grade and its price; hold it 1 s: a new trip), won per minute,
  * average, litres, km, and the money the fuel cuts saved. Graph: one bar a second, height = L/100km over that second
  * (frugal leaves it empty), one green-yellow-red gradient; grey = idle, teal dot = fuel cut, orange strip = DPF burn.
  *
@@ -25,8 +25,9 @@ import android.graphics.Typeface;
 final class EcoCluster extends ClusterKit {
     // Settings (VehicleDash loads and saves them) and the trip. Static: a recreated view keeps them; a new app start is a new trip.
     static volatile boolean coins,l100,coinSound,hintDone,holding;
-    /** Won per litre; 0 = the default for the fuel. */
-    static volatile int price;
+    /** Won per litre per grade (일반유, 고급유, 경유); 0 = the default. A diesel is always 경유; a petrol car picks 일반유 (grade 0,
+     *  the default) or 고급유 (1), whichever it is filled with. */
+    static final int[] prices=new int[3];static volatile int grade=-1;
     /** eco_car_rear / eco_car_paint (res/raw, 428 x 480), loaded by VehicleDash; null draws the coin view without the car. */
     static volatile Bitmap CAR,PAINT;
     /** A coin is about to hit the road: 10, 100 or 500 (first contact) or -10.. (its bounce), the loudest since the last
@@ -38,8 +39,10 @@ final class EcoCluster extends ClusterKit {
     static volatile boolean animating;
     private static volatile boolean changed;
     // ponytail: rough 2026 pump prices (won/L); the driver sets theirs by tapping the fare
-    static final int PRICE_PETROL=1650,PRICE_DIESEL=1550,PRICE_MIN=500,PRICE_MAX=3000;
-    static int price(VehicleProfile p){return price>0?price:p.fuel==VehicleProfile.Fuel.DIESEL?PRICE_DIESEL:PRICE_PETROL;}
+    static final int[] PRICE_DEFAULT={1650,1900,1550};static final String[] GRADES={"일반유","고급유","경유"};
+    static final int PRICE_MIN=500,PRICE_MAX=3000;
+    static int grade(VehicleProfile p){return p.fuel==VehicleProfile.Fuel.DIESEL?2:grade==1?1:0;}
+    static int price(VehicleProfile p){int g=grade(p);return prices[g]>0?prices[g]:PRICE_DEFAULT[g];}
     /** Idle burn until one is measured standing still (EMS20: 0.4-0.8 L/h on the PD). */
     static final float IDLE_LPH=0.65f,BOTTLE_L=2,LMAX=40;
 
@@ -154,6 +157,7 @@ final class EcoCluster extends ClusterKit {
         round(c,R_L,TOP,R_R,BOT,10,PANEL);outline(c,R_L,TOP,R_R,BOT,10,holding?2:1,holding?AMB:LINE);
         boolean rg=regen();
         bold(c,rg?t("DPF 재생 중"):t("이번 주행 연료비"),564,86,15,rg?AMB:MUT,Paint.Align.LEFT);
+        bold(c,t(GRADES[grade(prof)])+" "+won(price(prof)),766,86,13,MUT,Paint.Align.RIGHT);   // the price in use
         round(c,564,94,766,146,8,LED);outline(c,564,94,766,146,8,flash>0?2:1,flash>0?AMB:acc);
         bold(c,"₩",578,132,26,AMB,Paint.Align.LEFT);
         text(c,won(money(prof)),752,134,44,flash>0?0xfffff3d2:AMB,Paint.Align.RIGHT,numFace());
@@ -169,12 +173,18 @@ final class EcoCluster extends ClusterKit {
         text(c,won(Math.round(savedL*price(prof)/10)*10)+t("원"),766,291,20,GRN,Paint.Align.RIGHT,numFace());
         if(now<toastUntil){round(c,574,184,756,224,10,0xeb070a0b);outline(c,574,184,756,224,10,1,AMB);bold(c,t("이번 주행 초기화"),665,210,16,AMB,Paint.Align.CENTER);}
     }
-    /** Opened by a tap on the fare: the fuel price − / + (10 won) and the coin sound switch; closes 6 s after the last tap. */
+    /** Opened by a tap on the fare: the grade (petrol: 일반유 or 고급유, each keeps its own price; diesel: 경유), the price in 100 and 10 won
+     *  steps, and the coin sound switch; closes 6 s after the last tap. */
+    private static final int[] STEPS={-100,-10,10,100};
     private void priceEditor(Canvas c,int acc){
-        bold(c,t("연료 단가 (원/L)"),665,170,15,MUT,Paint.Align.CENTER);
-        text(c,won(price(prof)),665,202,30,FG,Paint.Align.CENTER,numFace());
-        key(c,564,208,660,252,"−",28,KEY_SLATE,acc);key(c,670,208,766,252,"+",28,KEY_SLATE,acc);
-        key(c,564,254,766,296,t("동전 소리")+"  "+t(coinSound?"켬":"끔"),16,coinSound?KEY_GREEN:KEY_SLATE,0);
+        int g=grade(prof);
+        if(g==2)bold(c,t("경유"),665,174,16,FG,Paint.Align.CENTER);   // a diesel only takes 경유
+        else for(int k=0;k<2;k++){float l=564+k*103,r=l+99;boolean on=k==g;round(c,l,152,r,184,8,on?mix(acc,PANEL,0.35f):0xff161d21);outline(c,l,152,r,184,8,1,on?acc:LINE);
+            bold(c,t(GRADES[k]),(l+r)/2,174,15,on?FG:MUT,Paint.Align.CENTER);}
+        text(c,won(price(prof)),700,218,30,FG,Paint.Align.RIGHT,numFace());bold(c,t("원/L"),706,218,14,MUT,Paint.Align.LEFT);
+        for(int k=0;k<4;k++){float l=564+k*51.5f,r=l+47.5f;round(c,l,226,r,260,8,0xff1c2328);outline(c,l,226,r,260,8,1,mix(acc,LINE,0.45f));
+            bold(c,(STEPS[k]>0?"+":"−")+Math.abs(STEPS[k]),(l+r)/2,249,15,FG,Paint.Align.CENTER);}
+        key(c,564,262,766,298,t("동전 소리")+"  "+t(coinSound?"켬":"끔"),15,coinSound?KEY_GREEN:KEY_SLATE,0);
     }
     private void row(Canvas c,String k,String v,float y){bold(c,k,564,y,16,MUT,Paint.Align.LEFT);text(c,v,766,y,19,FG,Paint.Align.RIGHT,numFace());}
     private static String won(int w){return String.format(java.util.Locale.US,"%,d",w);}
@@ -185,8 +195,10 @@ final class EcoCluster extends ClusterKit {
 
     // ---- taps (VehicleDash routes them while this screen shows) ----
     @Override boolean tap(float x,float y){
-        if(now<editUntil&&x>=564&&x<=766&&y>=208&&y<=252){int d=x<=665?-10:10;price=Math.max(PRICE_MIN,Math.min(PRICE_MAX,price(prof)+d));editUntil=now+6000;changed=true;return true;}
-        if(now<editUntil&&x>=564&&x<=766&&y>=254&&y<=296){coinSound=!coinSound;if(coinSound&&coins){clink=500;clinkGain=1;}editUntil=now+6000;changed=true;return true;}   // a sample clink
+        if(now<editUntil&&prof.fuel!=VehicleProfile.Fuel.DIESEL&&x>=564&&x<=766&&y>=150&&y<=186){grade=x<665?0:1;editUntil=now+6000;changed=true;return true;}
+        if(now<editUntil&&x>=564&&x<=766&&y>=224&&y<=261){int g=grade(prof),k=Math.min(3,(int)((x-564)/51.5f));
+            prices[g]=Math.max(PRICE_MIN,Math.min(PRICE_MAX,price(prof)+STEPS[k]));editUntil=now+6000;changed=true;return true;}
+        if(now<editUntil&&x>=564&&x<=766&&y>=262&&y<=298){coinSound=!coinSound;if(coinSound&&coins){clink=500;clinkGain=1;}editUntil=now+6000;changed=true;return true;}   // a sample clink
         if(x>=564&&x<=766&&y>=94&&y<=146){editUntil=now<editUntil?0:now+6000;return true;}
         if(x>=L_L&&x<=L_R&&y>=TOP&&y<=BOT){coins=!coins;hintDone=true;resync=true;changed=true;return true;}
         if(x>=C_L&&x<=C_R&&y>=124&&y<=266){l100=!l100;changed=true;return true;}

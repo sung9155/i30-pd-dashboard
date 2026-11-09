@@ -25,7 +25,9 @@ public class Canvas {
         g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,RenderingHints.VALUE_FRACTIONALMETRICS_ON);}
     private void apply(Paint p){
         if(p.shader instanceof LinearGradient){LinearGradient s=(LinearGradient)p.shader;
-            g.setPaint(new java.awt.GradientPaint(s.x0,s.y0,new Color(s.c0,true),s.x1,s.y1,new Color(s.c1,true)));}
+            if(s.colors!=null){Color[] cs=new Color[s.colors.length];for(int i=0;i<cs.length;i++)cs[i]=new Color(s.colors[i],true);
+                g.setPaint(new java.awt.LinearGradientPaint(s.x0,s.y0,s.x1,s.y1,s.pos,cs));}
+            else g.setPaint(new java.awt.GradientPaint(s.x0,s.y0,new Color(s.c0,true),s.x1,s.y1,new Color(s.c1,true)));}
         else g.setColor(new Color(p.color,true));
         g.setStroke(new BasicStroke(Math.max(p.width,1),p.cap==Paint.Cap.ROUND?BasicStroke.CAP_ROUND:BasicStroke.CAP_BUTT,BasicStroke.JOIN_ROUND));
     }
@@ -35,6 +37,7 @@ public class Canvas {
     public void restoreToCount(int n){while(stack.size()>=n)restore();}
     public void scale(float x,float y){g.scale(x,y);}
     public void translate(float x,float y){g.translate(x,y);}
+    public void rotate(float deg){g.rotate(Math.toRadians(deg));}
     public boolean clipRect(float l,float t,float r,float b){g.clip(new Rectangle2D.Float(l,t,r-l,b-t));return true;}
     public void drawColor(int color){AffineTransform t=g.getTransform();g.setTransform(new AffineTransform());g.setColor(new Color(color,true));
         g.fillRect(0,0,10000,10000);g.setTransform(t);}

@@ -45,7 +45,7 @@ final class ShiftBeep implements Runnable {
     private static final short[][] PCM=new short[SOUNDS.length][];
     private static final short[][] PCM_MIX=new short[SOUNDS.length][];
     private final Context context;
-    private volatile boolean busy;private volatile int sound;private volatile float vol=1;
+    private volatile boolean busy;private volatile int sound;private volatile float vol=1;private volatile short[] own;
     ShiftBeep(Context context){this.context=context.getApplicationContext();}
 
     /** Plays a beep at volume vol (0..1). onPath = the engine sound that holds the alarm path: the beep is then mixed
@@ -55,7 +55,36 @@ final class ShiftBeep implements Runnable {
         int s=Math.max(0,Math.min(SOUNDS.length-1,sound));
         if(onPath!=null){onPath.mixBeep(pcmMix(s),vol);return;}
         if(busy)return;
-        busy=true;this.sound=s;this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"shift-beep").start();
+        busy=true;this.sound=s;this.own=pcm(s);this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"shift-beep").start();
+    }
+    /** A coin hitting the road on the 에코 screen: 10, 100 or 500 won, light to heavy. Same paths as play(); a clink
+     *  while the last own-track one still sounds is dropped (at most about three a second). */
+    void playCoin(EngineSound onPath,int den,float vol){
+        int k=den>=500?2:den>=100?1:0;
+        if(onPath!=null){onPath.mixBeep(coinPcm(k,true),vol);return;}
+        if(busy)return;
+        busy=true;this.own=coinPcm(k,false);this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"coin-clink").start();
+    }
+    /** Inharmonic partials (Hz, amplitude, decay ms) per coin, then a softer second clink where it bounces: the small
+     *  10 won rings high and short, the 500 won lower, longer and with a thud. */
+    private static final double[][][] COIN={
+        {{5200,.35,28},{7400,.25,18},{3600,.22,40}},
+        {{3900,.38,45},{6100,.25,30},{2700,.27,60}},
+        {{2600,.4,70},{4300,.3,50},{1500,.3,90},{6800,.15,30},{180,.3,25}}};
+    private static final int[] COIN_MS={130,200,280};
+    private static final short[][] COIN_PCM=new short[6][];
+    static synchronized short[] coinPcm(int k,boolean mix){
+        int slot=k*2+(mix?1:0);if(COIN_PCM[slot]!=null)return COIN_PCM[slot];
+        int rate=mix?EngineSynth.RATE:RATE,lead=mix?0:Math.round(rate*0.06f),n=lead+rate*COIN_MS[k]/1000;double[] w=new double[n];
+        double[][] parts=COIN[k];java.util.Random r=new java.util.Random(k);
+        for(int hit=0;hit<2;hit++){int start=lead+(hit==0?0:rate*75/1000);double g=hit==0?1:.45;
+            for(int i=start;i<n;i++){double tm=(i-start)/(double)rate,ms=tm*1000,v=0;
+                for(double[] p:parts)if(p[0]<rate*.45)v+=p[1]*Math.exp(-ms/p[2])*Math.sin(2*Math.PI*p[0]*tm);
+                if(ms<2)v+=(r.nextDouble()*2-1)*.3*(1-ms/2);   // the strike
+                w[i]+=g*v;}}
+        double peak=1e-9;for(double x:w)peak=Math.max(peak,Math.abs(x));
+        short[] out=new short[n];for(int i=0;i<n;i++)out[i]=(short)Math.round(w[i]/peak*.8*32767);
+        return COIN_PCM[slot]=out;
     }
     /** 60 ms of silence (the amplifier path opens), then the sound's notes, each with 5 ms fades; built once per sound. */
     static synchronized short[] pcm(int sound){return PCM[sound]!=null?PCM[sound]:(PCM[sound]=build(sound,RATE,60));}
@@ -77,7 +106,7 @@ final class ShiftBeep implements Runnable {
     private static double square(double ph){double s=0;for(int k=1;k<=9;k+=2)s+=Math.sin(k*ph)/k;return s*4/Math.PI*.9;}
     /** Own-track path (the engine sound is not on the alarm channel): open the alarm path, play the static PCM at vol, close it. */
     public void run(){
-        AudioTrack track=null;Object router=null;short[] pcm=pcm(sound);float v=vol;
+        AudioTrack track=null;Object router=null;short[] pcm=own;float v=vol;
         try{
             track=new AudioTrack(STREAM_NAVI,RATE,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT,pcm.length*2,AudioTrack.MODE_STATIC);
             if(track.write(pcm,0,pcm.length)!=pcm.length||track.getState()!=AudioTrack.STATE_INITIALIZED){

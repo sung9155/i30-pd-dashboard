@@ -350,8 +350,8 @@ public final class HscanPdTelemetryTest {
         check(Math.abs(k.sample(Telemetry.DPF_SINCE_KM,3442).value-293.25f)<0.01f,"E0F1 bytes 34..37: 293.25 km since regeneration");
         check(Math.abs(k.sample(Telemetry.DPF_TEMP,3442).value-(58*4.7098f+99))<0.1f,"ED03 answered just now: its temperature stays");
         check(Math.abs(k.sample(Telemetry.EGT_CAT,3442).value-99)<0.1f,"ED03 [37] is the catalyst-side temperature (0 -> 99 C)");
-        f[16]=0x1C;f[17]=(byte)0x89;k.obd(Telemetry.DID_DPF2,f,3442+20000);   // DAG3 drive 2026-11-09: 183.4 C
-        check(Math.abs(k.sample(Telemetry.EGT_CAT,3442+20000).value-183.4f)<0.1f&&Math.abs(k.sample(Telemetry.DPF_TEMP,3442+20000).value-(58*4.7098f+99))<0.1f,"ED03 silent (DAG3): E0F1 K/16 fills the catalyst-side temperature, not the DPF one");
+        f[16]=0x4C;f[17]=(byte)0x82;k.obd(Telemetry.DID_DPF2,f,3442);   // 2026-11-09 17:21: 19,586 at 2,186 rpm; read as K/16 it was 951 C while the DAG3 showed 131 C
+        check(Math.abs(k.sample(Telemetry.EGT_CAT,3442).value-99)<0.1f,"E0F1 16..17 (about 8 x rpm) is not read as a temperature");
         // the same block over KWP 21 03 (OBDb): byte 46 exhaust temperature x4.7098 + 99, 53..56 metres since the regeneration
         byte[] w=new byte[57];w[46]=58;w[54]=(byte)0x01;w[55]=(byte)0xe2;w[56]=0x40;   // 123 456 m
         k.obd(Telemetry.LID_DPF,w,3443);

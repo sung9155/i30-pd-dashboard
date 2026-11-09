@@ -308,12 +308,11 @@ public final class Telemetry {
                 put(DPF_SINCE_KM,(((long)u16(d,45)<<16)|u16(d,47))/1000f,true,now);} break;
             // 62 E0 F1, the block a DAG3 polls: data bytes 34..37 distance since the last regeneration in metres. A diesel PD
             // with a DAG3 read 293.25 km here at 12:43 where the DAG3 showed 287.32 km at 12:32 and ED03 282.2 km at 10:58.
-            // 16..17 an exhaust temperature in K/16 (the unit Hyundai's newer DPF blocks use): 0x1C89 = 183.4 °C where the
-            // DAG3 showed exhaust temperature 2 = 183 °C a minute later (2026-11-09), below its temperature 1 (211 °C), as
-            // ED03's before-the-catalyst [37] sits below its before-the-DPF [38] at idle: read as the catalyst-side sensor.
-            // ponytail: one photo; it fills EGT_CAT only while ED03 is silent (a DAG3 plugged in), the status line logs both.
+            // 16..17 is NOT a temperature: it follows the engine speed, about 8 x rpm (2026-11-09 17:21 video beside a DAG3 whose
+            // temperatures stayed at 131 / 127 C: 7,314 at 899 rpm, 18,850 at 2,327, 28,554 at 3,649). The early 0x1C89 that matched a
+            // DAG3 183 C was an idle value, a coincidence. Kept only in the status line; no exhaust temperature is read while ED03 is silent.
             case DID_DPF2: if(n>=38)put(DPF_SINCE_KM,(((long)u16(d,34)<<16)|u16(d,36))/1000f,true,now);
-                if(n>=18){egtE0f1=u16(d,16)/16f-273.15f;if(now-egtDirectAt>10000)put(EGT_CAT,egtE0f1,true,now);} break;
+                if(n>=18)egtE0f1=u16(d,16);break;
             default: obd(pid,n>0?d[0]&255:0,n>1?d[1]&255:0,now);
         }
     }
@@ -334,11 +333,12 @@ public final class Telemetry {
     }
     private int lastRegen=-1;
     private float regenEndOdo=Float.NaN;
-    private float egtDirect=Float.NaN,egtCat=Float.NaN,egtE0f1=Float.NaN;private long egtDirectAt=Long.MIN_VALUE/2;
+    private float egtDirect=Float.NaN,egtCat=Float.NaN,egtE0f1=Float.NaN;   // egtE0f1: the raw u16 at E0F1 16..17 (about 8 x rpm), logged only
+    private long egtDirectAt=Long.MIN_VALUE/2;
     /** Both diesel exhaust temperatures for the status line, until the E0F1 sensor's place is settled against a DAG3 photo. */
     public synchronized String egt(){
         if(Float.isNaN(egtDirect)&&Float.isNaN(egtE0f1))return "";
-        return String.format(java.util.Locale.US," | egt ed03 dpf %.0f cat %.0f, e0f1 %.1f",egtDirect,egtCat,egtE0f1);
+        return String.format(java.util.Locale.US," | egt ed03 dpf %.0f cat %.0f, e0f1 raw16 %.0f",egtDirect,egtCat,egtE0f1);
     }
     private boolean sootObd;   // 22 ED1D answered: its soot (g) replaces the hscan byte
     /** Regeneration on (1) or off (0), from OBD 01 8B or the diesel's EMS19 slot; counts the km since the last one ended. */

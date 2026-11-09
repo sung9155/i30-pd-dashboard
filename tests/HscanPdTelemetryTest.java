@@ -221,13 +221,13 @@ public final class HscanPdTelemetryTest {
         dzb.hscanPd(0xc7,0x0e,b(0,0x81,0x3a,0xb5,0x14,0,0x13,0x77),911);dzb.hscanPd(0xc7,0x0e,b(0,0x81,0x3a,0xb5,0x14,0,0x13,0x77),912);
         check(Math.abs(dzb.sample(Telemetry.BOOST,912).value-(129*16.78f+256f-baro)/1000f)<0.001f,"diesel flat out: byte1 129 is about +1.4 bar");
         // DPF from the same slot (evening drive 2026-11-05, the owner felt the regeneration): byte5 1 = regenerating, byte4 soot.
-        check(dzb.sample(Telemetry.DPF_SOOT,912).value==20&&dzb.sample(Telemetry.DPF_REGEN,912).value==0,"diesel morning: soot 20, no regeneration");
+        check(dzb.sample(Telemetry.DPF_SOOT,912).value==12.5f&&dzb.sample(Telemetry.DPF_REGEN,912).value==0,"diesel morning: soot 20 x 0.625 = 12.5 g, no regeneration");
         dzb.hscanPd(0xc7,0x03,new byte[]{(byte)0xfe,(byte)0xe3,0x1f,0},913);   // CLU12 odometer 208998.2 km
         float odo0=dzb.sample(Telemetry.ODOMETER,913).value;
         dzb.hscanPd(0xc7,0x0e,b(0,0x3a,0x39,0x55,0x15,0x01,0x0f,0x7f),914);
-        check(dzb.sample(Telemetry.DPF_REGEN,914).value==1&&dzb.sample(Telemetry.DPF_SOOT,914).value==21,"byte5 1: regenerating, soot 21");
+        check(dzb.sample(Telemetry.DPF_REGEN,914).value==1&&dzb.sample(Telemetry.DPF_SOOT,914).value==13.125f,"byte5 1: regenerating, soot 21 x 0.625");
         dzb.hscanPd(0xc7,0x0e,b(0x16,0x36,0x39,0xd9,0x0b,0x00,0x0c,0x75),915);
-        check(dzb.sample(Telemetry.DPF_REGEN,915).value==0&&dzb.sample(Telemetry.DPF_SOOT,915).value==11,"regeneration over at soot 11");
+        check(dzb.sample(Telemetry.DPF_REGEN,915).value==0&&dzb.sample(Telemetry.DPF_SOOT,915).value==6.875f,"regeneration over at soot 11 x 0.625");
         check(Math.abs(odo0-208998.2f)<0.05f&&dzb.dpfRegenEnd()==odo0,"the end of a regeneration marks the odometer");
         dzb.obd(Telemetry.DID_SOOT,new byte[]{0,0,0,0,0x10,0},916);   // 22 ED1D answers: its grams win from then on
         dzb.hscanPd(0xc7,0x0e,b(0x16,0x36,0x39,0xd9,0x0b,0x00,0x0c,0x75),917);

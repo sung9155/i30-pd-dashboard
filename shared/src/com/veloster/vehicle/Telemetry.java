@@ -558,10 +558,11 @@ public final class Telemetry {
                 // DPF from the same frame (diesel drives 2026-11-05): byte5 bits 0-1 (the DBC's DPF_LAMP_STAT) went 0 -> 1 a
                 // minute into a drive where the owner felt a regeneration; warm idle fuel doubled meanwhile (0.59 -> 1.18 L/h)
                 // and byte4 fell 21 -> 11, about one a minute (20 all morning, no regeneration). 3 = no value.
-                // ponytail: byte4 read as 1 g a count, fitted on nothing but the range; 22 ED1D (g) wins once it answers.
+                // byte4 x 0.625 g = the DAG3's soot: 15 -> 9.3, 16 -> 9.7, 0 -> 0.3 (just after a regeneration), so it is proportional.
+                // ponytail: 0.6 fits as well (truncated); three points cannot tell them apart. 22 ED1D (g) wins once it answers.
                 int lamp=b[5]&3,soot=b[4]&255;
                 if(lamp!=3)regen(lamp!=0?1:0,now);
-                if(!sootObd)put(DPF_SOOT,soot,soot<255,now);
+                if(!sootObd)put(DPF_SOOT,soot*0.625f,soot<255,now);
             }
         }else if(funcLow==0x04&&b.length==8){
             // CLU13 CF_Clu_DrivingModeSwi @16|2: 0 normal, 1 sport, 3 eco (10/30 tagged captures; 2 never seen).

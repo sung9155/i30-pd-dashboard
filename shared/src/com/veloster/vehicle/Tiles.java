@@ -134,7 +134,7 @@ public final class Tiles {
         if(s==0){lo=0;hi=8000;}else if(s==1||s==2){lo=40;hi=120;}else if(s==Telemetry.INTAKE){lo=0;hi=80;}
         else if(s==Telemetry.AMBIENT){lo=-20;hi=40;}else if(s==Telemetry.CAT_TEMP){lo=0;hi=900;}
         else if(s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN){lo=0;hi=250;}else if(s==Telemetry.DPF_TEMP||s==Telemetry.EGT_CAT){lo=0;hi=700;}
-        else if(s==Telemetry.DPF_SOOT){lo=0;hi=30;}else if(s==Telemetry.DPF_DP){lo=0;hi=50;}
+        else if(s==Telemetry.DPF_SOOT){lo=0;hi=20;}else if(s==Telemetry.DPF_DP){lo=0;hi=50;}
         else if(s==Telemetry.BOOST){lo=-1;hi=1.5f;}else if(s==10){lo=0;hi=100;}else if(s==Telemetry.BAT_VOLTAGE){lo=10;hi=15;}
         else if(s>=Telemetry.TPMS_FL&&s<=Telemetry.TPMS_RR){lo=0;hi=45;}else if(s==11||s==12||s==CORNER_MAX_LAT){return Float.isNaN(v)?Float.NaN:Math.abs(v)/1.5f;}
         else if(s==7||s>=3&&s<=6||s==CORNER_MIN_SPEED){lo=0;hi=240;}else if("%".equals(unit(s))){lo=0;hi=100;}

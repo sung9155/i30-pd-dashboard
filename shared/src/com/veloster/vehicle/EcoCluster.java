@@ -29,7 +29,8 @@ final class EcoCluster extends ClusterKit {
     static volatile int price;
     /** eco_car_rear / eco_car_paint (res/raw, 428 x 480), loaded by VehicleDash; null draws the coin view without the car. */
     static volatile Bitmap CAR,PAINT;
-    /** A coin just hit the road (10, 100 or 500, the largest since the last read): VehicleDash plays it when coinSound is on. */
+    /** A coin is about to hit the road: 10, 100 or 500 (first contact, the largest since the last read) or -10.. (its softer
+     *  bounce); VehicleDash plays it when coinSound is on. */
     static volatile int clink;
     /** Something moves (driving, coins in the air): VehicleDash keeps the fast frame rate. */
     static volatile boolean animating;
@@ -84,7 +85,9 @@ final class EcoCluster extends ClusterKit {
     private long lastDraw;private int prevMoney,pend;private float emit,roadOff;
     private static final int MAXC=12,MAXG=40;
     private final float[] cx=new float[MAXC],cy=new float[MAXC],cvx=new float[MAXC],cvy=new float[MAXC],csp=new float[MAXC],cgy=new float[MAXC];
-    private final int[] cden=new int[MAXC],cb=new int[MAXC];private int cn;
+    private final int[] cden=new int[MAXC],cb=new int[MAXC],cs=new int[MAXC];private int cn;
+    /** Clinks are asked this long before a coin reaches the road, for the audio path's start-up delay. ponytail: a guess, tune in the car. */
+    private static final float CLINK_LEAD_S=0.12f;
     private final float[] gx=new float[MAXG],gy=new float[MAXG];private final int[] gden=new int[MAXG];private int gn;
     private final float[] dy=new float[8],dv=new float[8];private int dn;
     private final float[] slideT=new float[4];private final int[] slideN=new int[4];private int sn,prevDone=-1;
@@ -197,10 +200,12 @@ final class EcoCluster extends ClusterKit {
         if(coins){
             // the tailpipe spits what was spent, at most one coin per 1/4 s, so a heavy foot backs money up into 100s and 500s
             emit-=dt;if(emit<=0&&pend>=10&&cn<MAXC){int den=pend>=500?500:pend>=100?100:10;pend-=den;emit=0.25f;
-                cx[cn]=PIPE_X;cy[cn]=PIPE_Y+2;cvx[cn]=-60+rnd.nextFloat()*120;cvy[cn]=-30-rnd.nextFloat()*50;csp[cn]=rnd.nextFloat()*6;cb[cn]=0;cgy[cn]=228+rnd.nextFloat()*44;cden[cn]=den;cn++;
+                cx[cn]=PIPE_X;cy[cn]=PIPE_Y+2;cvx[cn]=-60+rnd.nextFloat()*120;cvy[cn]=-30-rnd.nextFloat()*50;csp[cn]=rnd.nextFloat()*6;cb[cn]=0;cgy[cn]=228+rnd.nextFloat()*44;cden[cn]=den;cs[cn]=0;cn++;
                 if(pn<puffT.length){puffT[pn]=0;puffX[pn]=PIPE_X;puffY[pn]=PIPE_Y;pn++;}}
             for(int i=cn-1;i>=0;i--){cvy[i]+=520*dt;cy[i]+=cvy[i]*dt;cx[i]+=cvx[i]*dt;csp[i]+=dt*6;cgy[i]+=groundDy(cgy[i],ws)*dt;
-                if(cy[i]>cgy[i]){if(cb[i]<1){cy[i]=cgy[i];cvy[i]=-Math.abs(cvy[i])*.3f;cvx[i]*=.5f;cb[i]++;clink=Math.max(clink,cden[i]);}
+                // one clink per contact (the bounce softer: -den), asked just before the coin gets there
+                if(cvy[i]>0&&cs[i]<=cb[i]&&cgy[i]-cy[i]<cvy[i]*CLINK_LEAD_S){cs[i]++;if(cb[i]==0)clink=Math.max(clink,cden[i]);else if(clink==0)clink=-cden[i];}
+                if(cy[i]>cgy[i]){if(cb[i]<1){cy[i]=cgy[i];cvy[i]=-Math.abs(cvy[i])*.3f;cvx[i]*=.5f;cb[i]++;}
                     else{if(gn==MAXG)shift(0);gx[gn]=cx[i];gy[gn]=cgy[i];gden[gn]=cden[i];gn++;removeCoin(i);}}}
             for(int i=gn-1;i>=0;i--){gy[i]+=groundDy(gy[i],ws)*dt;if(gy[i]>316)shift(i);}
             for(int i=pn-1;i>=0;i--){puffT[i]+=dt;if(puffT[i]>0.8f){pn--;puffT[i]=puffT[pn];puffX[i]=puffX[pn];puffY[i]=puffY[pn];}}
@@ -213,7 +218,7 @@ final class EcoCluster extends ClusterKit {
             for(int i=sn-1;i>=0;i--){slideT[i]+=dt/0.7f;if(slideT[i]>=1){sn--;slideT[i]=slideT[sn];slideN[i]=slideN[sn];}}
         }
     }
-    private void removeCoin(int i){cn--;cx[i]=cx[cn];cy[i]=cy[cn];cvx[i]=cvx[cn];cvy[i]=cvy[cn];csp[i]=csp[cn];cgy[i]=cgy[cn];cden[i]=cden[cn];cb[i]=cb[cn];}
+    private void removeCoin(int i){cn--;cx[i]=cx[cn];cy[i]=cy[cn];cvx[i]=cvx[cn];cvy[i]=cvy[cn];csp[i]=csp[cn];cgy[i]=cgy[cn];cden[i]=cden[cn];cb[i]=cb[cn];cs[i]=cs[cn];}
     private void shift(int i){for(int k=i;k<gn-1;k++){gx[k]=gx[k+1];gy[k]=gy[k+1];gden[k]=gden[k+1];}gn--;}
     private static float frac(){return (litres%BOTTLE_L)/BOTTLE_L;}
 

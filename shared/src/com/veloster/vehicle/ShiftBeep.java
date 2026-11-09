@@ -65,7 +65,7 @@ final class ShiftBeep implements Runnable {
         if(busy)return;
         busy=true;this.own=coinPcm(k,false);this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"coin-clink").start();
     }
-    /** Inharmonic partials (Hz, amplitude, decay ms) per coin, then a softer second clink where it bounces: the small
+    /** Inharmonic partials (Hz, amplitude, decay ms) per coin, one strike per contact: the small
      *  10 won rings high and short, the 500 won lower, longer and with a thud. */
     private static final double[][][] COIN={
         {{5200,.35,28},{7400,.25,18},{3600,.22,40}},
@@ -77,7 +77,7 @@ final class ShiftBeep implements Runnable {
         int slot=k*2+(mix?1:0);if(COIN_PCM[slot]!=null)return COIN_PCM[slot];
         int rate=mix?EngineSynth.RATE:RATE,lead=mix?0:Math.round(rate*0.06f),n=lead+rate*COIN_MS[k]/1000;double[] w=new double[n];
         double[][] parts=COIN[k];java.util.Random r=new java.util.Random(k);
-        for(int hit=0;hit<2;hit++){int start=lead+(hit==0?0:rate*75/1000);double g=hit==0?1:.45;
+        for(int hit=0;hit<1;hit++){int start=lead;double g=1;   // one strike; the screen's bounce asks for a second, softer one
             for(int i=start;i<n;i++){double tm=(i-start)/(double)rate,ms=tm*1000,v=0;
                 for(double[] p:parts)if(p[0]<rate*.45)v+=p[1]*Math.exp(-ms/p[2])*Math.sin(2*Math.PI*p[0]*tm);
                 if(ms<2)v+=(r.nextDouble()*2-1)*.3*(1-ms/2);   // the strike

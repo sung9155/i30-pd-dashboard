@@ -184,7 +184,7 @@ final class EcoCluster extends ClusterKit {
     // ---- taps (VehicleDash routes them while this screen shows) ----
     @Override boolean tap(float x,float y){
         if(now<editUntil&&x>=564&&x<=766&&y>=208&&y<=252){int d=x<=665?-10:10;price=Math.max(PRICE_MIN,Math.min(PRICE_MAX,price(prof)+d));editUntil=now+6000;changed=true;return true;}
-        if(now<editUntil&&x>=564&&x<=766&&y>=254&&y<=296){coinSound=!coinSound;if(coinSound)clink=500;editUntil=now+6000;changed=true;return true;}   // a sample clink
+        if(now<editUntil&&x>=564&&x<=766&&y>=254&&y<=296){coinSound=!coinSound;if(coinSound&&coins)clink=500;editUntil=now+6000;changed=true;return true;}   // a sample clink
         if(x>=564&&x<=766&&y>=94&&y<=146){editUntil=now<editUntil?0:now+6000;return true;}
         if(x>=L_L&&x<=L_R&&y>=TOP&&y<=BOT){coins=!coins;hintDone=true;resync=true;changed=true;return true;}
         if(x>=C_L&&x<=C_R&&y>=124&&y<=266){l100=!l100;changed=true;return true;}
@@ -204,7 +204,8 @@ final class EcoCluster extends ClusterKit {
                 if(pn<puffT.length){puffT[pn]=0;puffX[pn]=PIPE_X;puffY[pn]=PIPE_Y;pn++;}}
             for(int i=cn-1;i>=0;i--){cvy[i]+=520*dt;cy[i]+=cvy[i]*dt;cx[i]+=cvx[i]*dt;csp[i]+=dt*6;cgy[i]+=groundDy(cgy[i],ws)*dt;
                 // one clink per contact (the bounce softer: -den), asked just before the coin gets there
-                if(cvy[i]>0&&cs[i]<=cb[i]&&cgy[i]-cy[i]<cvy[i]*CLINK_LEAD_S){cs[i]++;if(cb[i]==0)clink=Math.max(clink,cden[i]);else if(clink==0)clink=-cden[i];}
+                if(cvy[i]>0&&cs[i]<=cb[i]&&cgy[i]-cy[i]<cvy[i]*CLINK_LEAD_S){cs[i]++;
+                    if(cx[i]>L_L&&cx[i]<L_R){if(cb[i]==0)clink=Math.max(clink,cden[i]);else if(clink==0)clink=-cden[i];}}   // out of the panel: unseen, unheard
                 if(cy[i]>cgy[i]){if(cb[i]<1){cy[i]=cgy[i];cvy[i]=-Math.abs(cvy[i])*.3f;cvx[i]*=.5f;cb[i]++;}
                     else{if(gn==MAXG)shift(0);gx[gn]=cx[i];gy[gn]=cgy[i];gden[gn]=cden[i];gn++;removeCoin(i);}}}
             for(int i=gn-1;i>=0;i--){gy[i]+=groundDy(gy[i],ws)*dt;if(gy[i]>316)shift(i);}

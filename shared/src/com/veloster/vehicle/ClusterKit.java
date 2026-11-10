@@ -27,6 +27,8 @@ abstract class ClusterKit {
     protected long now;
     /** The track the head unit is playing, or null. */
     protected MediaState.Snapshot music;
+    /** The current track's album art (PitRenderer.setArtwork), or null. Shared: one cluster draws at a time. */
+    protected static android.graphics.Bitmap artwork;
     /** Remap colours through the selected theme (else the layout's own palette). */
     protected boolean themed;
 

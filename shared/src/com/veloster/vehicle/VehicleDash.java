@@ -388,7 +388,12 @@ public final class VehicleDash extends View implements Runnable {
         final int displayedMode=MediaState.modeForSource(displayed.source);
         new Thread(new Runnable(){public void run(){
             String error=null;
-            try{if(!(command==0?MediaControl.toggle(activity,displayedMode,displayed.playState):MediaControl.step(activity,command>0,displayedMode)))error=UiText.t("현재 재생 소스에서 음악을 제어할 수 없습니다");}
+            try{boolean ok=command==1||command==-1?MediaControl.step(activity,command>0,displayedMode)   // next / previous
+                    :command==2?MediaControl.key(activity,displayedMode,126)   // KEYCODE_MEDIA_PLAY
+                    :command==3?MediaControl.key(activity,displayedMode,127)   // KEYCODE_MEDIA_PAUSE
+                    :command==4?MediaControl.key(activity,displayedMode,86)    // KEYCODE_MEDIA_STOP
+                    :MediaControl.toggle(activity,displayedMode,displayed.playState);   // 0: play/pause toggle (race panel)
+                if(!ok)error=UiText.t("현재 재생 소스에서 음악을 제어할 수 없습니다");}
             catch(Exception e){android.util.Log.e("VehicleDash","Media control unavailable",e);error=UiText.t("음악 제어 요청을 보낼 수 없습니다");}
             final String message=error;
             activity.runOnUiThread(new Runnable(){public void run(){
@@ -533,7 +538,7 @@ public final class VehicleDash extends View implements Runnable {
             if(!lapHeld)lap.tap(SystemClock.elapsedRealtime());
             invalidate();return true;
         }
-        if(tap&&!blocked&&symmetric&&(PitRenderer.isCluster(page)||page==PitRenderer.PAGE_ECO)&&y>52&&downY>52&&renderer.clusterTap(x,y)){if(EcoCluster.consumeChanged())saveEco();invalidate();return true;}
+        if(tap&&!blocked&&symmetric&&(PitRenderer.isCluster(page)||page==PitRenderer.PAGE_ECO)&&y>52&&downY>52&&renderer.clusterTap(x,y)){int kc=CassetteCluster.consumeKeyCmd();if(kc!=0)requestMedia(kc);if(EcoCluster.consumeChanged())saveEco();invalidate();return true;}
         if(tap&&!blocked&&gauges&&x>=650&&x<=788&&downX>=650&&downX<=788&&y>=54&&y<=78&&downY>=54&&downY<=78){gaugeEditor.toggleGrid();return true;}
         if(tap&&!blocked&&graphs&&y>=54&&y<=79&&downY>=54&&downY<=79){
             if(x>=628&&x<=702&&downX>=628&&downX<=702)graphEditor.window(60000);

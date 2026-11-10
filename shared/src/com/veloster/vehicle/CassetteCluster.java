@@ -14,16 +14,18 @@ final class CassetteCluster extends ClusterKit {
     private static final int VF=0xff5effc0,VF_OFF=0xff0b2a20,INK=0xff1f3a8a,FACE=0xffefe3c2;
     private float rot,needleL,needleR;
     private long last;
-    /** 카세트 찰칵 소리 switch (설정 → 사운드), and the cue VehicleDash plays and clears: ShiftBeep.LATCH (PLAY or PAUSE goes down and
-     *  stays), UP (the held key pops up, nothing playing), TAP (▶▶ goes down and springs straight back: the track changed). */
+    /** 카세트 찰칵 소리 switch (설정 → 사운드). The click fires only when a key is pressed on screen — never on play/track
+     *  changes coming from the phone (those arrive as 재생 중인 곡 없음 then the new track, which clicked twice and grated). */
     static volatile boolean clickSound=true;
-    static volatile int cue;
-    private int prevKey=-2;private String prevTitle;private long tapUntil;
+    static volatile int cue;      // ShiftBeep.LATCH/UP/TAP, set by a key press; VehicleDash plays and clears it
+    static volatile int keyCmd;   // the media command a pressed key asks VehicleDash to send: -1 prev, 1 next, 2 play, 3 pause
+    static int consumeKeyCmd(){int k=keyCmd;keyCmd=0;return k;}
+    private long tapUntil;private int tapKey=-1;
+    private int tapeColor=0xffd9542b;private android.graphics.Bitmap tapeArt;   // the label strip takes the album art's main colour
 
     @Override protected void draw(Canvas c){
         float rpm=v(0),pedal=v(9),boost=v(Telemetry.BOOST),spd=v(7),top=boostTop();
         float dt=last==0||now-last>2000?0:(now-last)/1000f;last=now;
-        if(dt==0){prevKey=-2;prevTitle=null;}   // just shown (or a long gap): a key that changed while away does not click
         rot+=dt*(0.4f+(Float.isNaN(rpm)?0:rpm)/1500);
         float tl=Float.isNaN(pedal)?0:pedal/100,tr=Float.isNaN(boost)?0:clamp((boost+0.7f)/(top+0.7f),0,1);
         needleL+=(tl-needleL)*Math.min(1,dt*(tl>needleL?10:4));needleR+=(tr-needleR)*Math.min(1,dt*(tr>needleR?10:4));
@@ -36,13 +38,24 @@ final class CassetteCluster extends ClusterKit {
         round(c,20,60,528,356,10,0xff060607);outline(c,20,60,528,356,10,2,0xff3a3b3e);
         round(c,40,76,508,340,12,0xff2a2c30);outline(c,40,76,508,340,12,1.5f,0xff4a4c52);
         for(float[] s:new float[][]{{52,88},{496,88},{52,328},{496,328},{274,328}}){dot(c,s[0],s[1],5,0xff55585e);line(c,s[0]-3,s[1],s[0]+3,s[1],1.5f,0xff2a2c30);}
-        // label
-        round(c,58,94,490,250,6,0xffefe6cf);fill(c,58,94,490,116,0xffd9542b);fill(c,58,116,490,122,0xfff0a050);
+        // label: the header strip takes the album art's main colour; the art, when there is one, sits as a cover
+        android.graphics.Bitmap art=has?artwork:null;
+        if(art!=null){if(art!=tapeArt){tapeArt=art;tapeColor=dominant(art);}}else{tapeColor=0xffd9542b;tapeArt=null;}
+        round(c,58,94,490,250,6,0xffefe6cf);fill(c,58,94,490,116,tapeColor);fill(c,58,116,490,122,mix(tapeColor,0xffffffff,0.4f));
         bold(c,"A",74,111,18,0xffffffff,Paint.Align.LEFT);bold(c,"C-60 · TYPE II",480,111,12,0xffffffff,Paint.Align.RIGHT);
+        boolean cover=art!=null;float tx=cover?128:76,avail=cover?354:404;
+        if(cover){round(c,64,128,116,180,4,0xff20160e);blit(c,art,0,0,art.getWidth(),art.getHeight(),66,130,114,178);outline(c,64,128,116,180,4,1,mix(tapeColor,0xff000000,0.3f));}
         String title=has?music.title:t("재생 중인 곡 없음"),artist=has&&music.artist!=null?music.artist:"";
-        text(c,ellipsize(title,30,404),76,154,30,INK,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
-        String sub=has?(artist.isEmpty()?"":ellipsize(artist,18,250)+(known?"  ·  ":""))+(known?mmss(pos)+" / "+mmss(music.durationMs):""):"";   // blank when nothing is playing
-        text(c,sub,76,180,17,0xff3a4f9a,Paint.Align.LEFT,Typeface.DEFAULT);
+        float tw=width(title,30,Typeface.DEFAULT_BOLD);   // the title slides when it is wider than the label
+        if(tw<=avail)text(c,title,tx,154,30,INK,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
+        else{float gap=48,period=tw+gap,off=(now/1000f*45f)%period;
+            c.save();c.clipRect(tx,128,482,166);
+            text(c,title,tx-off,154,30,INK,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
+            text(c,title,tx-off+period,154,30,INK,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
+            c.restore();}
+        // artist on the left, the time right-aligned so it never runs into the artist
+        if(has&&!artist.isEmpty())text(c,ellipsize(artist,22,cover?200:250),tx,180,17,0xff3a4f9a,Paint.Align.LEFT,Typeface.DEFAULT);
+        if(known)text(c,mmss(pos)+" / "+mmss(music.durationMs),462,180,16,0xff3a4f9a,Paint.Align.RIGHT,Typeface.DEFAULT);
         fill(c,76,188,480,189,0x401f3a8a);
         // reel window
         round(c,146,194,402,246,26,0xff0b0b0c);
@@ -53,16 +66,13 @@ final class CassetteCluster extends ClusterKit {
         path.reset();path.moveTo(110,270);path.lineTo(438,270);path.lineTo(460,336);path.lineTo(88,336);path.close();poly(c,0xff232528);
         fill(c,100,324,448,327,0xff3a2516);
         for(float x:new float[]{140,226,300,386})round(c,x,312,x+22,330,3,0xff0b0b0c);
-        // piano keys, PLAY down when music plays; ▶▶ dips for 180 ms on a new track
-        String[] keys={"●","◀◀","▶","▶▶","■","❚❚"};
+        // piano keys: ▶ down while playing, ❚❚ while paused; a pressed key also dips for 180 ms (its own feedback)
+        String[] keys={"◀◀","▶","▶▶","■","❚❚"};   // no record: a media player cannot record
         boolean playing=has&&music.playState==1;
-        int pressed=!has||music.playState<0?-1:playing?2:5;   // unknown play state: no key down
-        if(prevKey!=-2&&pressed!=prevKey)cue=pressed>=0?ShiftBeep.LATCH:ShiftBeep.UP;   // PLAY or PAUSE latched down, or the held key released
-        else if(has&&prevTitle!=null&&!prevTitle.equals(music.title)){tapUntil=now+180;if(cue==0)cue=ShiftBeep.TAP;}   // a new track: ▶▶ taps
-        prevKey=pressed;prevTitle=has?music.title:null;
-        for(int i=0;i<6;i++){boolean down=i==pressed||i==3&&now<tapUntil;float x=24+i*84,y=372+(down?5:0);
+        int pressed=!has||music.playState<0?-1:playing?1:4;
+        for(int i=0;i<5;i++){boolean down=i==pressed||i==tapKey&&now<tapUntil;float x=44+i*93,y=372+(down?5:0);
             round(c,x,y,x+78,y+72,6,down?0xff2c2e32:0xff3a3c41);outline(c,x,y,x+78,y+72,6,1,0xff55585e);fill(c,x+4,y+4,x+74,y+10,down?0xff202225:0xff4a4d52);
-            bold(c,keys[i],x+39,y+46,20,i==0?0xffe0312f:i==2?0xff3ddc84:0xffdddddd,Paint.Align.CENTER);
+            bold(c,keys[i],x+39,y+46,20,i==1?0xff3ddc84:0xffdddddd,Paint.Align.CENTER);
             dot(c,x+39,364,3.5f,down?0xff3ddc84:0xff1d2a22);}
         // VU meters
         vu(c,540,62,needleL,t("L · 가속 페달"),fmt("%.0f",pedal)+" %");
@@ -79,6 +89,28 @@ final class CassetteCluster extends ClusterKit {
         bold(c,"km/h",672,428,13,VF,Paint.Align.LEFT);
         bold(c,gear(),774,402,22,VF,Paint.Align.RIGHT);bold(c,fmt("%,.0f",rpm)+" rpm",774,428,14,VF,Paint.Align.RIGHT);
         bold(c,playing?"AUTO REVERSE · PLAY":"AUTO REVERSE · STOP",552,462,11,0xff3a9a78,Paint.Align.LEFT);
+    }
+    /** A key press drives the media (VehicleDash reads keyCmd) and makes the only click. */
+    @Override boolean tap(float x,float y){
+        if(y<372||y>444)return false;
+        for(int i=0;i<5;i++){float kx=44+i*93;if(x>=kx&&x<=kx+78){
+            tapKey=i;tapUntil=now+180;
+            cue=(i==0||i==2)?ShiftBeep.TAP:ShiftBeep.LATCH;   // ◀◀/▶▶ spring back, ▶/■/❚❚ latch
+            keyCmd=i==0?-1:i==2?1:i==1?2:i==3?4:3;   // ◀◀ prev / ▶▶ next / ▶ play / ■ stop / ❚❚ pause
+            return true;}}
+        return false;
+    }
+    /** The album art's most vivid colour (saturation x brightness), for the tape label. */
+    private int dominant(android.graphics.Bitmap b){
+        try{
+            android.graphics.Bitmap s=android.graphics.Bitmap.createScaledBitmap(b,8,8,true);
+            int[] px=new int[64];s.getPixels(px,0,8,0,0,8,8);if(s!=b)s.recycle();
+            double best=-1;int col=0xffd9542b;
+            for(int p:px){int r=(p>>16)&255,g=(p>>8)&255,bl=p&255,mx=Math.max(r,Math.max(g,bl)),mn=Math.min(r,Math.min(g,bl));
+                double sat=mx==0?0:(mx-mn)/(double)mx,score=sat*mx;
+                if(mx>40&&mx<252&&score>best){best=score;col=0xff000000|(r<<16)|(g<<8)|bl;}}
+            return col;
+        }catch(RuntimeException e){return 0xffd9542b;}
     }
     private void reel(Canvas c,float x,float rad,float a){
         dot(c,x,220,rad,0xff3a2516);ring(c,x,220,rad-1.5f,1,0xff4a3220);

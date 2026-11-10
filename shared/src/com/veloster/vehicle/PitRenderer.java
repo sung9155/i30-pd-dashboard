@@ -113,7 +113,7 @@ public final class PitRenderer {
         if(minute!=clockMinute){clockMinute=minute;clockFormat.setTimeZone(java.util.TimeZone.getDefault());clockText=clockFormat.format(new java.util.Date(now));}
         return clockText;
     }
-    public void setArtwork(Bitmap value){artwork=value;}
+    public void setArtwork(Bitmap value){artwork=value;ClusterKit.artwork=value;}
     public void setGaugeLayout(GaugeLayout value){gaugeLayout=value;}
     public void setGraphLayout(GraphLayout value){graphLayout=value;}
     public void setSymmetric(boolean value){symmetric=value;}

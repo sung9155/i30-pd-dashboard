@@ -335,11 +335,12 @@ public final class HscanPdTelemetryTest {
         {Telemetry dpf0=new Telemetry();dpf0.obd(0x8b,new byte[]{0x00,0x01,(byte)0x80,0,0,0,0},3415);
         check(!dpf0.sample(Telemetry.DPF_REGEN,3415).valid&&!dpf0.sample(Telemetry.DPF_TRIGGER,3415).valid,"unsupported fields stay unpublished");
         dpf0.obd(0x2f,new byte[]{0x7f},3416);check(Math.abs(dpf0.sample(Telemetry.FUEL_LEVEL,3416).value-49.8f)<0.5f,"single-byte PIDs still decode through the byte[] path");}
-        // 7DCT clutch temperatures from TCU 22 01A4 (our car, 11 min, reversing): u16 0x0031 / 0x0044, x2-40 -> odd 58 / even 96 C
+        // 7DCT clutch temperatures from TCU 22 01A4 (our car, 11 min, reversing): u16 0x0031 / 0x0044 is °C as is -> odd 49 / even 68 C
+        // (the earlier x2-40 read 116 / 126 against a DAG3's 80 / 87 on the same car)
         {Telemetry k=new Telemetry();byte[] r=hex("62 01 A4 FF FF E0 00 14 02 00 26 00 FE 94 1B 9E BD C3 14 94 08 F6 C4 10 02 03 0E 0E F0 FC C0 FF 00 31 00 44 00");
         k.obd(Telemetry.DID_CLUTCH,java.util.Arrays.copyOfRange(r,3,r.length),3430);
-        check(k.sample(Telemetry.CLUTCH_ODD,3430).value==58&&k.sample(Telemetry.CLUTCH_EVEN,3430).value==96,"DCT clutch temperatures odd 58 / even 96 C");
-        k.obd(Telemetry.DID_CLUTCH,new byte[10],3431);check(k.sample(Telemetry.CLUTCH_ODD,3431).value==58,"a short reply leaves them alone");}
+        check(k.sample(Telemetry.CLUTCH_ODD,3430).value==49&&k.sample(Telemetry.CLUTCH_EVEN,3430).value==68,"DCT clutch temperatures odd 49 / even 68 C");
+        k.obd(Telemetry.DID_CLUTCH,new byte[10],3431);check(k.sample(Telemetry.CLUTCH_ODD,3431).value==49,"a short reply leaves them alone");}
         // Hyundai diesel DPF block 22 ED03 (OBDb layout): 35 -> 15.1 kPa, 58 -> 372 C upstream, 123 400 m since the regeneration
         {Telemetry k=new Telemetry();byte[] e=new byte[56];e[36]=35;e[38]=58;e[45]=0;e[46]=1;e[47]=(byte)0xE2;e[48]=0x08;
         k.obd(Telemetry.DID_DPF,e,3440);

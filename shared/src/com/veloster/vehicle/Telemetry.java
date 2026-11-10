@@ -292,7 +292,8 @@ public final class Telemetry {
             // 7DCT clutch temperatures (OBDb Hyundai-i30, CC BY-SA 4.0): u16 at data bytes 29 and 31 after 62 01 A4, x2 - 40 °C.
             // Our car: 28/30 cold, 32/34 at 5 min, 58/96 at 11 min. #2 ran hot while the same reply's gear byte read R,
             // and R rides on the even clutch, so #1 = odd gears, #2 = even gears (i30pd_port/OBD_PROBE.md).
-            case DID_CLUTCH: if(n>=33){put(CLUTCH_ODD,u16(d,29)*2-40,true,now);put(CLUTCH_EVEN,u16(d,31)*2-40,true,now);} break;
+            // raw u16 is already °C: our x2-40 read 116 / 126 where a DAG3 on the same car showed 80 / 87 (raw 78 / 83)
+            case DID_CLUTCH: if(n>=33){put(CLUTCH_ODD,u16(d,29),true,now);put(CLUTCH_EVEN,u16(d,31),true,now);} break;
             // Hyundai diesel DPF block 62 ED 03 (OBDb Hyundai-i30, CC BY-SA 4.0, not yet seen on our side): data byte 36
             // differential pressure x4.31373 (hPa, so x0.431373 kPa), 38 exhaust temperature upstream of the DPF x4.7098 + 99 °C,
             // 45..48 distance since the last regeneration in metres. The ECU keeps that distance, so it beats our odometer count.

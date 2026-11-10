@@ -237,8 +237,8 @@ public final class UiText {
         EN.put("디지털 3틱","Digital 3 ticks");
         EN.put("라바 오렌지","Lava Orange");
         EN.put("람다","Lambda");
-        EN.put("람다 · 레이스 · F1 · 퍼포먼스","람다 · Race · F1 · Performance");
-        EN.put("람다만","람다 only");
+        EN.put("람다 · 레이스 · F1 · 퍼포먼스","Lambda · Race · F1 · Performance");
+        EN.put("람다만","Lambda only");
         EN.put("람보","Lambo");
         EN.put("랠리","Rally");
         EN.put("랩 타이머","Lap timer");

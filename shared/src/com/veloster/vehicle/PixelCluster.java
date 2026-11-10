@@ -241,9 +241,10 @@ final class PixelCluster extends ClusterKit {
     private boolean playing(){return music!=null&&music.playState==1&&music.title!=null&&music.title.length()>0;}
     // ---- now playing: a dialog box on the right, the cover shrunk to 14 x 14 pixels in a small palette ----------------
     private static final float NP_L=516,NP_T=232,NP_R=780,NP_B=304;
-    private Bitmap npArt,npArtFrom;
+    private Bitmap npArt,npArtFrom;private String npTrack="";private long npSince;
     private void nowPlaying(Canvas c){
         if(!playing())return;
+        String trk=music.title+"|"+music.artist;if(!trk.equals(npTrack)){npTrack=trk;npSince=now;}   // a new track starts at its first letter, 1.5 s still
         fill(c,NP_L,NP_T,NP_R,NP_B,0xff000000);outline(c,NP_L+3,NP_T+3,NP_R-3,NP_B-3,0,3,W);
         float tx=NP_L+16;
         if(artwork!=null){
@@ -252,17 +253,21 @@ final class PixelCluster extends ClusterKit {
         }
         float avail=NP_R-14-tx;
         // the title marquees when it does not fit, the artist sits still under it
-        Bitmap tb=label(music.title,W);float tw=tb.getWidth()*2;
+        Bitmap tb=label(music.title,W);
         c.save();c.clipRect(tx,NP_T+10,tx+avail,NP_T+34);
-        if(tw<=avail)blit(c,tb,0,0,tb.getWidth(),tb.getHeight(),tx,NP_T+12,tx+tw,NP_T+12+tb.getHeight()*2);
-        else{float gap=40,off=((now/30)*2)%(tw+gap);for(float x=tx-off;x<tx+avail;x+=tw+gap)blit(c,tb,0,0,tb.getWidth(),tb.getHeight(),x,NP_T+12,x+tw,NP_T+12+tb.getHeight()*2);}
+        marquee(c,tb,tx,NP_T+12,avail);
         c.restore();
         String ar=music.artist==null?"":music.artist;
-        if(ar.length()>0){Bitmap ab=label(ar,0xffb0b0c0);float aw=Math.min(avail,ab.getWidth()*2);c.save();c.clipRect(tx,NP_T+34,tx+avail,NP_T+54);
-            blit(c,ab,0,0,ab.getWidth(),ab.getHeight(),tx,NP_T+36,tx+ab.getWidth()*2,NP_T+36+ab.getHeight()*2);c.restore();}
+        if(ar.length()>0){Bitmap ab=label(ar,0xffb0b0c0);c.save();c.clipRect(tx,NP_T+34,tx+avail,NP_T+54);marquee(c,ab,tx,NP_T+36,avail);c.restore();}
         // progress as blocks, like the EXP bar
         if(music.durationMs>0&&music.positionMs>=0){int n=12,lit=Math.round(clamp(music.positionMs/(float)music.durationMs,0,1)*n);float bw=(avail)/n;
             for(int i=0;i<n;i++){fill(c,tx+i*bw,NP_T+56,tx+(i+1)*bw-2,NP_T+64,0xff000000);fill(c,tx+i*bw+1,NP_T+57,tx+(i+1)*bw-3,NP_T+63,i<lit?0xff3ad8ff:0xff2a2a3a);}}
+    }
+    /** A label at 2 x, still when it fits, else (after 1.5 s at its start) scrolling left in whole pixels, a gap before it comes round. */
+    private void marquee(Canvas c,Bitmap b,float x,float y,float avail){
+        float w=b.getWidth()*2,h=b.getHeight()*2;
+        if(w<=avail){blit(c,b,0,0,b.getWidth(),b.getHeight(),x,y,x+w,y+h);return;}
+        float gap=40,off=((Math.max(0,now-npSince-1500)/30)*2)%(w+gap);for(float xx=x-off;xx<x+avail;xx+=w+gap)blit(c,b,0,0,b.getWidth(),b.getHeight(),xx,y,xx+w,y+h);
     }
     /** The cover at 14 x 14 with 3 bits a channel: drawn back at 4 x 4 per pixel it reads as game art. */
     private static Bitmap pixelArt(Bitmap src){

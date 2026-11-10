@@ -220,15 +220,15 @@ PD에서 새로 고를 수 있는 항목(순간 연료소모 · 평균 연비 ·
 
 ![](screens/9_cluster_list.png)
 
-8비트(옆 화면)는 노래가 재생 중이면 오른쪽에 곡 상자가 뜬다(2026-11-10, beta): 앨범 아트를 14×14 도트·적은 색으로 줄여 4배로, 제목(길면 옆으로 흐름)·가수, 재생 위치 블록 12칸. 영문은 화면의 도트 글꼴, 한글 등은 시스템 글꼴을 작게(부드럽게 하지 않고) 그려 2배로 키운다. 곡 상자가 있는 동안 위쪽 곡 바뀜 알림 막대는 안 뜬다. 아케이드(뒤 화면)는 그대로.
+8비트(옆 화면)는 노래가 재생 중이면 오른쪽에 곡 상자가 뜬다(2026-11-10, beta): 앨범 아트를 14×14 도트·적은 색으로 줄여 4배로, 제목·가수(길면 곡이 바뀐 뒤 1.5초 멈췄다가 옆으로 흐름), 재생 위치 블록 12칸. 영문은 화면의 도트 글꼴, 한글 등은 시스템 글꼴을 작게(부드럽게 하지 않고) 그려 2배로 키운다. 곡 상자가 있는 동안 위쪽 곡 바뀜 알림 막대는 안 뜬다. 아케이드(뒤 화면)는 그대로.
 
 | 택시 미터기 | 80년대 디지털 | 전투기 HUD |
 |---|---|---|
 | ![](screens/9d_cluster_taxi.png) | ![](screens/9e_cluster_80s.png) | ![](screens/9f_cluster_hud.png) |
 | **8비트 게임** | **8비트 아케이드** | |
 | ![](screens/9g_cluster_8bit.png) | ![](screens/9g_cluster_8bit_chase.png) | |
-| **8비트 · 재생 중** | **8비트 · 재생 중(영문)** | |
-| ![](screens/9g_cluster_8bit_music.png) | ![](screens/9g_cluster_8bit_music_en.png) | |
+| **8비트 · 재생 중** | **8비트 · 흐른 뒤** | **8비트 · 영문** |
+| ![](screens/9g_cluster_8bit_music.png) | ![](screens/9g_cluster_8bit_music_scroll.png) | ![](screens/9g_cluster_8bit_music_en.png) |
 | **8비트 · 밤** | **아케이드 · 밤** | **마찰원** |
 | ![](screens/9g_cluster_8bit_night.png) | ![](screens/9g_cluster_8bit_chase_night.png) | ![](screens/9i_cluster_gcircle.png) |
 | **야간 미니멀** | **드래그 출발 트리** | **비행기 엔진 계기판** |

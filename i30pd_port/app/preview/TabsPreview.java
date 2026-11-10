@@ -193,6 +193,20 @@ public final class TabsPreview {
              ImageIO.write(img,"png",new File(out,names[n]+".png"));}
          EcoCluster.coins=false;EcoCluster.l100=false;EcoCluster.grade=0;
         }
+        {   // 타코: {gear, km/h, rpm, clutch, brake bar, pedal %}; neutral after a frame in 5th, so the last gear is known
+         float[][] tk={{5,75,2030,0,0,22},{3,68,2300,1,22,35},{0,73,900,1,0,0},{2,52,5950,0,0,100},{4,90,2970,0,0,30}};
+         String[] tcn={"9r_tacho_cruise","9r_tacho_blip","9r_tacho_neutral","9r_tacho_shift","9r_tacho_dct"};
+         TachoCluster k=new TachoCluster();k.shiftTarget=6000;
+         for(int i=0;i<tk.length;i++){float[] r=tk[i];Telemetry.Sample[] q=model.snapshot(now);
+             q[8]=new Telemetry.Sample(r[0],true,false,true,false,0);q[7]=new Telemetry.Sample(r[1],true,false,true,false,0);q[0]=new Telemetry.Sample(r[2],true,false,true,false,0);
+             q[Telemetry.CLUTCH]=new Telemetry.Sample(r[3],true,false,true,false,0);q[10]=new Telemetry.Sample(r[4],true,false,true,false,0);q[9]=new Telemetry.Sample(r[5],true,false,true,false,0);
+             VehicleProfile pf=i==4?VehicleProfile.PETROL_DCT:VehicleProfile.PETROL_MT;
+             if(i==2){Telemetry.Sample[] w=model.snapshot(now);w[8]=new Telemetry.Sample(5,true,false,true,false,0);w[7]=new Telemetry.Sample(80,true,false,true,false,0);
+                 BufferedImage tmp=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);k.frame(new android.graphics.Canvas(tmp.createGraphics()),w,model,new DriveStats(),pf,now,null);}
+             BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+             new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),pf,now+i*1000,null);
+             ImageIO.write(img,"png",new File(out,tcn[i]+".png"));}
+        }
         // 수동 screen (the Λ layout, 6MT): {gear, km/h, rpm, clutch, brake bar}; the race and performance pages turn the rpm green on a match
         float[][] ds={{4,80,1500,1,22},{5,100,2800,0,0},{3,60,2800,0,25},{6,96,2200,0,0},{4,80,3720,1,22},{3,122,5750,0,0}};String[] dsn={"a_4th80_clutch","b_5th100_cruise","c_3rd60_brake","d_6th96","e_4th80_match","f_3rd122_upshift"};
         for(int k=0;k<ds.length;k++){Telemetry.Sample[] q=model.snapshot(now);float[] d=ds[k];

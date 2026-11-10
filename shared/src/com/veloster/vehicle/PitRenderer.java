@@ -40,6 +40,7 @@ public final class PitRenderer {
     private final RaceRenderer raceRenderer=new RaceRenderer();
     private final LambdaCluster mtSport=new LambdaCluster();
     private final EcoCluster eco=new EcoCluster();
+    private final TachoCluster tacho=new TachoCluster();
     private final ShowRenderer showRenderer=new ShowRenderer();
     private final ClusterRenderer clusterRenderer=new ClusterRenderer();
     public static final int PAGE_PERFORMANCE=1,PAGE_RACE=2,PAGE_RECORDS=3,PAGE_SHOW=4,PAGE_CLASSIC=5,PAGE_RETRO=6,PAGE_RALLY=7;
@@ -49,6 +50,8 @@ public final class PitRenderer {
     public static boolean isCluster(int page){return page>=PAGE_CLASSIC&&page<PAGE_MANUAL;}
     /** The 에코 screen (EcoCluster): drawn here like 람다; its taps and the fare hold come through VehicleDash. */
     public static final int PAGE_ECO=ClusterPicker.ECO-ClusterPicker.F1;
+    /** The 타코 screen (TachoCluster): drawn here too. */
+    public static final int PAGE_TACHO=ClusterPicker.TACHO-ClusterPicker.F1;
     private boolean picker,editing;
     private int hidden;
     /** Screen list over the body while open, its edit mode and the hidden screens (VehicleDash owns the gesture). */
@@ -163,6 +166,7 @@ public final class PitRenderer {
         else if(symmetric&&page==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
         else if(symmetric&&page==PAGE_MANUAL){mtSport.shiftTarget=shiftTarget;mtSport.frame(c,samples,model,stats,profile,frameTime,null);}
         else if(symmetric&&page==PAGE_ECO)eco.frame(c,samples,model,stats,profile,frameTime,null);
+        else if(symmetric&&page==PAGE_TACHO){tacho.shiftTarget=shiftTarget;tacho.frame(c,samples,model,stats,profile,frameTime,null);}
         else if(symmetric&&isCluster(page))clusterRenderer.draw(c,page-PAGE_CLASSIC,samples,frameTime,stats,profile,model,music);
         else if(mediaPage)drawCombined(c);else if(cluster)drawCluster(c);else drawDashboard(c);
         // Pages without their own shift light (performance, show, every cluster layout) get the race tab's cue from the same
@@ -411,6 +415,7 @@ public final class PitRenderer {
             else if(pg==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
             else if(pg==PAGE_MANUAL)mtSport.frame(c,samples,thModel,stats,profile,frameTime,null);
             else if(pg==PAGE_ECO)eco.frame(c,samples,thModel,stats,profile,frameTime,null);
+            else if(pg==PAGE_TACHO){tacho.shiftTarget=shiftTarget;tacho.frame(c,samples,thModel,stats,profile,frameTime,null);}
             else if(isCluster(pg))clusterRenderer.draw(c,pg-PAGE_CLASSIC,samples,frameTime,stats,profile,thModel,null);
         }
     }

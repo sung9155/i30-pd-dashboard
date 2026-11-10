@@ -740,5 +740,12 @@
   "'내 앱'이 설치돼 있지 않습니다.": "'My Apps' is not installed.",
   "'내 앱'을 열지 못했습니다.": "Could not open 'My Apps'.",
   "카세트 찰칵 소리": "Cassette click sound",
-  "카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개": "Cassette screen keys: play and pause latch with a clunk, a track skip clicks · separate from the engine sound"
+  "카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개": "Cassette screen keys: play and pause latch with a clunk, a track skip clicks · separate from the engine sound",
+  "다운": "Down",
+  "외기온": "Outside",
+  "연료": "Fuel",
+  "배터리": "Battery",
+  "주행 가능": "Range",
+  "타코": "Tacho",
+  "원형 RPM·다운시프트": "Round rpm · downshift"
 }

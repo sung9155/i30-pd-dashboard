@@ -38,6 +38,8 @@ public class Canvas {
     public void scale(float x,float y){g.scale(x,y);}
     public void translate(float x,float y){g.translate(x,y);}
     public void rotate(float deg){g.rotate(Math.toRadians(deg));}
+    public void rotate(float deg,float px,float py){g.rotate(Math.toRadians(deg),px,py);}
+    public void drawBitmap(Bitmap b,float x,float y,Paint p){if(b==null||b.img==null)return;g.drawImage(b.img,Math.round(x),Math.round(y),null);}
     public boolean clipRect(float l,float t,float r,float b){g.clip(new Rectangle2D.Float(l,t,r-l,b-t));return true;}
     public void drawColor(int color){AffineTransform t=g.getTransform();g.setTransform(new AffineTransform());g.setColor(new Color(color,true));
         g.fillRect(0,0,10000,10000);g.setTransform(t);}

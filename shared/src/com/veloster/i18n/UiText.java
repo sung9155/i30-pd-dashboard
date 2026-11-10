@@ -215,6 +215,7 @@ public final class UiText {
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
         EN.put("다른 칸과 위치 바꾸기","Swap with another slot");
         EN.put("다시 조회","Read again");
+        EN.put("다운","Down");
         EN.put("다운시프트 맞춤 소리가 나는 화면 · 누르면 바뀜","Where the downshift match sounds play · tap to change");
         EN.put("다음","Next");
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
@@ -286,6 +287,7 @@ public final class UiText {
         EN.put("반응 시간","Reaction");
         EN.put("배기","Exhaust");
         EN.put("배기 온도 (DPF 앞·산화촉매 앞 묶음)","Exhaust temperatures (before the DPF and the catalyst)");
+        EN.put("배터리","Battery");
         EN.put("배터리 SOC","Battery SOC");
         EN.put("배터리 전압","Battery voltage");
         EN.put("백업 저장 실패. 무선 설정을 변경하지 않았습니다.","Backup could not be saved. Wireless settings were not changed.");
@@ -447,6 +449,7 @@ public final class UiText {
         EN.put("엔진 회전수","Engine speed");
         EN.put("엔진·변속기·제동·조향·에어백·바디 (읽기만)","Engine, transmission, brakes, steering, airbag, body (read only)");
         EN.put("연결 점검","Connections");
+        EN.put("연료","Fuel");
         EN.put("연료 L/h","Fuel L/h");
         EN.put("연료 단가 (원/L)","Fuel price (won/L)");
         EN.put("연료 잔량","Fuel level");
@@ -468,6 +471,7 @@ public final class UiText {
         EN.put("와이퍼","Wiper");
         EN.put("완료","Done");
         EN.put("외기 온도","Ambient temperature");
+        EN.put("외기온","Outside");
         EN.put("왼쪽","Left");
         EN.put("왼쪽 ","Left ");
         EN.put("요금 · 정차","Fare · stopped");
@@ -490,6 +494,7 @@ public final class UiText {
         EN.put("원/L"," won/L");
         EN.put("원래 화면","Previous screen");
         EN.put("원형","Dial");
+        EN.put("원형 RPM·다운시프트","Round rpm · downshift");
         EN.put("위치를 바꿀 칸","Choose a slot to swap");
         EN.put("유리 톡","Glass tap");
         EN.put("유온","Oil");
@@ -590,6 +595,7 @@ public final class UiText {
         EN.put("주차 브레이크","Parking brake");
         EN.put("주행","Hired");
         EN.put("주행 0.1 km","distance 0.1 km");
+        EN.put("주행 가능","Range");
         EN.put("주행 거리 km","Distance km");
         EN.put("주행 기록","Drive records");
         EN.put("주행 모드","Drive mode");
@@ -677,6 +683,7 @@ public final class UiText {
         EN.put("타이어 공기압","Tire pressure");
         EN.put("타이어 공기압 (4바퀴 묶음)","Tyre pressures (all four)");
         EN.put("타이어 공기압 낮음","Low tire pressure");
+        EN.put("타코","Tacho");
         EN.put("태백 스피드웨이","Taebaek Speedway");
         EN.put("택시","Taxi");
         EN.put("택시 미터기","Taxi meter");

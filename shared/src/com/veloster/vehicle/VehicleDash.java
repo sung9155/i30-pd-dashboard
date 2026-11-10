@@ -327,7 +327,7 @@ public final class VehicleDash extends View implements Runnable {
             invalidate();long now=SystemClock.elapsedRealtime();
             if(graphs)delay=250;
             else if(symmetric&&page==PitRenderer.PAGE_PERFORMANCE&&lap.state()==LapTimer.RUNNING)delay=33;
-            else if(symmetric&&page==PitRenderer.PAGE_ECO)delay=EcoCluster.animating||EcoCluster.holding?50:250;   // still and nothing falling: 4 frames a second
+            else if(symmetric&&page==PitRenderer.PAGE_ECO)delay=EcoCluster.animating||EcoCluster.holding?40:250;   // 25 frames a second while anything moves; still: 4
             else if(symmetric&&page>=PitRenderer.PAGE_RACE)delay=50;  // shift blink, upshift pop, live run timers
             else if(!(cluster&&media&&!gauges) && mediaState.snapshot(now).notice)delay=16;
             if(introStart>0&&now-introStart<1500)delay=Math.min(delay,33);   // smooth the welcome sweep

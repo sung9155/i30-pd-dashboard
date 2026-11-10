@@ -234,6 +234,52 @@ final class PixelCluster extends ClusterKit {
         else{scroll+=vk*dt*1.4f;sideScene(c,vk,brake,left,boost,rpm);}
         hud(c,g,rpm,boost,v);
         musicNotes(c,vk);
+        if(!chase)nowPlaying(c);
+    }
+    /** The 8-bit side view shows the track itself (the box below), so the generic track-change bar stays off. */
+    @Override boolean showsMusic(){return !chase&&playing();}
+    private boolean playing(){return music!=null&&music.playState==1&&music.title!=null&&music.title.length()>0;}
+    // ---- now playing: a dialog box on the right, the cover shrunk to 14 x 14 pixels in a small palette ----------------
+    private static final float NP_L=516,NP_T=232,NP_R=780,NP_B=304;
+    private Bitmap npArt,npArtFrom;
+    private void nowPlaying(Canvas c){
+        if(!playing())return;
+        fill(c,NP_L,NP_T,NP_R,NP_B,0xff000000);outline(c,NP_L+3,NP_T+3,NP_R-3,NP_B-3,0,3,W);
+        float tx=NP_L+16;
+        if(artwork!=null){
+            if(npArtFrom!=artwork){npArtFrom=artwork;npArt=pixelArt(artwork);}
+            blit(c,npArt,0,0,14,14,NP_L+12,NP_T+12,NP_L+12+48,NP_T+12+48);outline(c,NP_L+10,NP_T+10,NP_L+62,NP_T+62,0,2,0xff3a3a4a);tx=NP_L+72;
+        }
+        float avail=NP_R-14-tx;
+        // the title marquees when it does not fit, the artist sits still under it
+        Bitmap tb=label(music.title,W);float tw=tb.getWidth()*2;
+        c.save();c.clipRect(tx,NP_T+10,tx+avail,NP_T+34);
+        if(tw<=avail)blit(c,tb,0,0,tb.getWidth(),tb.getHeight(),tx,NP_T+12,tx+tw,NP_T+12+tb.getHeight()*2);
+        else{float gap=40,off=((now/30)*2)%(tw+gap);for(float x=tx-off;x<tx+avail;x+=tw+gap)blit(c,tb,0,0,tb.getWidth(),tb.getHeight(),x,NP_T+12,x+tw,NP_T+12+tb.getHeight()*2);}
+        c.restore();
+        String ar=music.artist==null?"":music.artist;
+        if(ar.length()>0){Bitmap ab=label(ar,0xffb0b0c0);float aw=Math.min(avail,ab.getWidth()*2);c.save();c.clipRect(tx,NP_T+34,tx+avail,NP_T+54);
+            blit(c,ab,0,0,ab.getWidth(),ab.getHeight(),tx,NP_T+36,tx+ab.getWidth()*2,NP_T+36+ab.getHeight()*2);c.restore();}
+        // progress as blocks, like the EXP bar
+        if(music.durationMs>0&&music.positionMs>=0){int n=12,lit=Math.round(clamp(music.positionMs/(float)music.durationMs,0,1)*n);float bw=(avail)/n;
+            for(int i=0;i<n;i++){fill(c,tx+i*bw,NP_T+56,tx+(i+1)*bw-2,NP_T+64,0xff000000);fill(c,tx+i*bw+1,NP_T+57,tx+(i+1)*bw-3,NP_T+63,i<lit?0xff3ad8ff:0xff2a2a3a);}}
+    }
+    /** The cover at 14 x 14 with 3 bits a channel: drawn back at 4 x 4 per pixel it reads as game art. */
+    private static Bitmap pixelArt(Bitmap src){
+        Bitmap b=bitmap(14,14);android.graphics.Rect sr=new android.graphics.Rect();sr.set(0,0,src.getWidth(),src.getHeight());android.graphics.RectF dr=new android.graphics.RectF();dr.set(0,0,14,14);new Canvas(b).drawBitmap(src,sr,dr,new Paint(Paint.FILTER_BITMAP_FLAG));
+        int[] px=new int[196];b.getPixels(px,0,14,0,0,14,14);for(int i=0;i<px.length;i++)px[i]=0xff000000|(px[i]&0xe0e0e0);b.setPixels(px,0,14,0,0,14,14);return b;
+    }
+    /** A label at half scale with a one-pixel shadow: the pixel font when it has every letter, otherwise the system face
+     *  drawn small without smoothing (Hangul and the like), so both come out as chunky pixels at 2 x. */
+    private final java.util.LinkedHashMap<String,Bitmap> labelCache=new java.util.LinkedHashMap<String,Bitmap>(16,0.75f,true){
+        @Override protected boolean removeEldestEntry(java.util.Map.Entry<String,Bitmap> e){return size()>8;}};
+    private Bitmap label(String s,int color){
+        String key=color+"|"+s;Bitmap b=labelCache.get(key);if(b!=null)return b;
+        boolean ascii=true;for(int i=0;i<s.length();i++){char ch=s.charAt(i);if(FONT_CHARS.indexOf(Character.toUpperCase(ch))<0&&ch!=' '){ascii=false;break;}}
+        if(ascii)b=textBitmap(s.toUpperCase(Locale.US),color);
+        else{Paint tp=new Paint(0);tp.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);tp.setTextSize(9);int w=Math.max(1,(int)Math.ceil(tp.measureText(s))+2);
+            b=bitmap(w,11);Canvas k=new Canvas(b);tp.setColor(0xff000000);k.drawText(s,1,9,tp);tp.setColor(color);k.drawText(s,0,8,tp);}
+        labelCache.put(key,b);return b;
     }
     /** Pixel music notes drifting up while a track plays, like sound out of the car. */
     /** Notes stream out of the car: born as a dot, growing as they drift, and swept backwards faster the quicker it goes. */

@@ -425,8 +425,10 @@ public final class UiText {
         EN.put("없음","none");
         EN.put("에어백 (ACU)","Airbag (ACU)");
         EN.put("에코","Eco");
+        EN.put("에코 동전 소리","Eco coin sound");
         EN.put("에코 점수","Eco score");
         EN.put("에코 코치","Eco coach");
+        EN.put("에코 화면에서 동전이 떨어질 때 · 엔진 사운드와 별개","When coins drop on the Eco screen · separate from the engine sound");
         EN.put("엔지니어링 모드","Engineering mode");
         EN.put("엔진","Engine");
         EN.put("엔진 (EMS)","Engine (EMS)");

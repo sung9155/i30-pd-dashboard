@@ -233,6 +233,33 @@ final class PixelCluster extends ClusterKit {
         }
         else{scroll+=vk*dt*1.4f;sideScene(c,vk,brake,left,boost,rpm);}
         hud(c,g,rpm,boost,v);
+        musicNotes(c,vk);
+    }
+    /** Pixel music notes drifting up while a track plays, like sound out of the car. */
+    /** Notes stream out of the car: born as a dot, growing as they drift, and swept backwards faster the quicker it goes. */
+    private void musicNotes(Canvas c,float vk){
+        if(music==null||music.playState!=1)return;
+        float back=5+Math.min(11,Math.abs(vk)*0.16f);   // backward drift (px/s), rises with speed but capped so notes stay readable
+        final int N=3;   // few notes, well spaced in time
+        for(int i=0;i<N;i++){
+            float life=2.4f,ph=now/1000f/life+i*(1f/N);int cyc=(int)ph;float t=ph-cyc;   // one note per loop per voice, staggered
+            if(t>0.95f)continue;
+            int h=(cyc*131+i*977)&0xffff;float age=t*life,jx=(h&7)-3,jy=((h>>3)&3)-1;
+            float s=1+t*7;   // a dot that grows into a full note
+            float nx,ny;
+            if(chase){boolean rw=((cyc+i)&1)==1;float wx=rw?112:88;   // out of the left and right side windows
+                nx=wx+jx+(rw?1:-1)*age*(4+back*0.12f);ny=70+jy-age*(11+back*0.1f);}   // up and out, a diagonal to the side where they show
+            else{nx=42+jx-back*age;ny=58+jy-age*18;}                                   // side: rises out of the cabin window, drifting back
+            int col=t<0.82f?W:((int)(255*(1-(t-0.82f)/0.14f))<<24)|0xffffff;   // fade as it goes
+            note(c,nx,ny,s,col,((h>>8)&1)==0);
+        }
+    }
+    private void note(Canvas c,float x,float y,float s,int col,boolean beamed){
+        if(s<2){px(c,x,y,1,1,col);return;}   // a small dot at first
+        float th=Math.max(1,s*0.14f);
+        px(c,x,y+s*0.6f,s*0.5f,s*0.35f,col);px(c,x+s*0.5f-th,y,th,s*0.8f,col);   // head + stem
+        if(beamed){px(c,x+s*0.6f,y+s*0.6f,s*0.5f,s*0.35f,col);px(c,x+s*1.1f-th,y,th,s*0.8f,col);px(c,x+s*0.5f-th,y,s*0.6f+th,th,col);}
+        else px(c,x+s*0.5f-th,y,s*0.35f,th,col);   // flag
     }
 
     // ---- side view ------------------------------------------------------------------------------------------

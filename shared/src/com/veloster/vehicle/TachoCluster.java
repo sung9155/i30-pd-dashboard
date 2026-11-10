@@ -27,7 +27,7 @@ final class TachoCluster extends ClusterKit {
     /** One colour per gear, the 람다 screen's. */
     private static final int[] INK={0,0xffff5fa8,0xff9b5cff,0xffff6a4d,0xffffe04a,0xff2fe0c4,0xff5ab4ff,0xffc0c8ff};
     private static final float[][] TL={{14,14},{170,14},{112,118},{14,118}},MID={{14,126},{104,126},{104,286},{14,286}},BL={{14,294},{112,294},{170,414},{14,414}};
-    private Bitmap face;private String faceKey="";
+    private Bitmap face;private String faceKey="";private final RectF arc=new RectF();
     private int lastGear;private float peak;private long peakAt;
     private final int[] tg=new int[4];private final float[] tr=new float[4];private final boolean[] tok=new boolean[4];
 
@@ -149,9 +149,12 @@ final class TachoCluster extends ClusterKit {
         path.reset();
         for(int i=0;i<pts.length;i++){float x=mirror?W-pts[i][0]:pts[i][0],y=pts[i][1];
             if(i==0)path.moveTo(x,y);
-            else if(i==2){   // the inner edge bows to one circle concentric with the dial (R), so every cell's curve matches
-                float x1=mirror?W-pts[1][0]:pts[1][0],y1=pts[1][1],mx=(x1+x)/2,my=(y1+y)/2,dx=mx-CX,dy=my-CY,dM=(float)Math.hypot(dx,dy),k=(2*290f-dM)/dM;
-                path.quadTo(CX+dx*k,CY+dy*k,x,y);   // control set so the curve's midpoint sits on radius 290 from the dial centre
+            else if(i==2){   // the inner edge is a true arc centred on the dial through its two corners, so every cell's edge is concentric and hugs the dial
+                float x1=mirror?W-pts[1][0]:pts[1][0],y1=pts[1][1];
+                float r1=(float)Math.hypot(x1-CX,y1-CY),r2=(float)Math.hypot(x-CX,y-CY),R=(r1+r2)/2;
+                float a1=(float)Math.toDegrees(Math.atan2(y1-CY,x1-CX)),a2=(float)Math.toDegrees(Math.atan2(y-CY,x-CX)),sweep=a2-a1;
+                while(sweep>180)sweep-=360;while(sweep<-180)sweep+=360;
+                arc.set(CX-R,CY-R,CX+R,CY+R);path.arcTo(arc,a1,sweep);
             }
             else path.lineTo(x,y);
         }

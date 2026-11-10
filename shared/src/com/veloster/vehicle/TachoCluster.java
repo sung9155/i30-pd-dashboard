@@ -81,7 +81,7 @@ final class TachoCluster extends ClusterKit {
         if(mt)bold(c,"C",CX,CY-50,16,clutch?YEL:0xff26313a,Paint.Align.CENTER);
         String gs=neutral||g==0&&mt?"N":gear();if(manualGate(gs))gs=gs.substring(1);
         text(c,gs,CX,CY+22,84,match?GRN:flash&&on?BLUE:FG,Paint.Align.CENTER,num());
-        text(c,Float.isNaN(rpm)?"—":String.format(java.util.Locale.US,"%,d",Math.round(rpm/100)*100),CX,CY+58,26,!Float.isNaN(rpm)&&rpm>=prof.redline?RED:FG,Paint.Align.CENTER,num());
+        text(c,Float.isNaN(rpm)?"—":String.format(java.util.Locale.US,"%,d",Math.round(rpm/10)*10),CX,CY+58,26,!Float.isNaN(rpm)&&rpm>=prof.redline?RED:FG,Paint.Align.CENTER,num());
         text(c,fmt("%.0f",kmh),CX,CY+166,54,FG,Paint.Align.CENTER,num());
         // sector cells: the arc graph on the inner edge, the number on the outer
         float boost=v(Telemetry.BOOST),cool=v(2),iat=v(Telemetry.INTAKE),load=v(Telemetry.ENGINE_LOAD);
@@ -149,9 +149,9 @@ final class TachoCluster extends ClusterKit {
         path.reset();
         for(int i=0;i<pts.length;i++){float x=mirror?W-pts[i][0]:pts[i][0],y=pts[i][1];
             if(i==0)path.moveTo(x,y);
-            else if(i==2){   // the inner edge (pts[1]->pts[2], toward the dial) curves concentric with the dial, not a straight trapezoid edge
-                float x1=mirror?W-pts[1][0]:pts[1][0],y1=pts[1][1],mx=(x1+x)/2,my=(y1+y)/2,dx=CX-mx,dy=CY-my,d=(float)Math.hypot(dx,dy);
-                path.quadTo(mx-dx/d*14,my-dy/d*14,x,y);   // bow away from the dial centre: the edge hugs the round dial
+            else if(i==2){   // the inner edge bows to one circle concentric with the dial (R), so every cell's curve matches
+                float x1=mirror?W-pts[1][0]:pts[1][0],y1=pts[1][1],mx=(x1+x)/2,my=(y1+y)/2,dx=mx-CX,dy=my-CY,dM=(float)Math.hypot(dx,dy),k=(2*290f-dM)/dM;
+                path.quadTo(CX+dx*k,CY+dy*k,x,y);   // control set so the curve's midpoint sits on radius 290 from the dial centre
             }
             else path.lineTo(x,y);
         }

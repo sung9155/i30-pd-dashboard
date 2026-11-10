@@ -108,7 +108,7 @@ final class TachoCluster extends ClusterKit {
         c.restore();
     }
     private void sector(Canvas c,float d0,float d1,String val,String unit,float frac,boolean fromEnd,int acc){
-        float r=AR0+8,p0=d0+3.5f,p1=d1-3.5f,f=Float.isNaN(frac)?0:clamp(frac,0,1);
+        float r=AR1-8,p0=d0+3.5f,p1=d1-3.5f,f=Float.isNaN(frac)?0:clamp(frac,0,1);
         if(f>.01f){float s0=fromEnd?p1-(p1-p0)*f:p0,s1=fromEnd?p1:p0+(p1-p0)*f;
             p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(8);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(acc);this.r.set(CX-r,CY-r,CX+r,CY+r);
             c.drawArc(this.r,s0,s1-s0,false,p);p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
@@ -129,7 +129,7 @@ final class TachoCluster extends ClusterKit {
         Bitmap b=bitmap((int)W,(int)H);Canvas c=new Canvas(b);
         fill(c,0,0,W,H,BG);
         boolean mt=prof.trans==VehicleProfile.Trans.MT;
-        cell(c,TL,false);cell(c,TL,true);cell(c,MID,false);cell(c,MID,true);cell(c,BL,false);cell(c,BL,true);
+        cell(c,TL,false,true);cell(c,TL,true,true);cell(c,MID,false,false);cell(c,MID,true,false);cell(c,BL,false,true);cell(c,BL,true,true);
         label(c,false,40,t("외기온"),acc);label(c,true,40,t("연료"),acc);label(c,false,322,t("배터리"),acc);label(c,true,322,t("주행 가능"),acc);
         bold(c,t("다운"),26,148,13,acc,Paint.Align.LEFT);bold(c,t("페달"),W-90,148,13,acc,Paint.Align.LEFT);
         int bars=mt?3:2;float bw=mt?20:30,x0=W-104+6,gap=(78-bars*bw)/(bars-1);String[] names=mt?new String[]{"C","B","A"}:new String[]{"B","A"};
@@ -145,11 +145,11 @@ final class TachoCluster extends ClusterKit {
         text(c,"x1000 rpm",CX,CY-94,12,MUT,Paint.Align.CENTER,Typeface.DEFAULT);text(c,"km/h",CX,CY+190,13,MUT,Paint.Align.CENTER,Typeface.DEFAULT);
         return b;
     }
-    private void cell(Canvas c,float[][] pts,boolean mirror){
+    private void cell(Canvas c,float[][] pts,boolean mirror,boolean curve){
         path.reset();
         for(int i=0;i<pts.length;i++){float x=mirror?W-pts[i][0]:pts[i][0],y=pts[i][1];
             if(i==0)path.moveTo(x,y);
-            else if(i==2){   // the inner edge is a true arc centred on the dial through its two corners, so every cell's edge is concentric and hugs the dial
+            else if(i==2&&curve){   // corner cells: the inner edge is a true arc centred on the dial through its two corners (the middle cells stay straight, their content sits at the edge)
                 float x1=mirror?W-pts[1][0]:pts[1][0],y1=pts[1][1];
                 float r1=(float)Math.hypot(x1-CX,y1-CY),r2=(float)Math.hypot(x-CX,y-CY),R=(r1+r2)/2;
                 float a1=(float)Math.toDegrees(Math.atan2(y1-CY,x1-CX)),a2=(float)Math.toDegrees(Math.atan2(y-CY,x-CX)),sweep=a2-a1;
@@ -166,7 +166,7 @@ final class TachoCluster extends ClusterKit {
         path.reset();RectF o=new RectF(CX-AR1,CY-AR1,CX+AR1,CY+AR1),in=new RectF(CX-AR0,CY-AR0,CX+AR0,CY+AR0);
         path.arcTo(o,d0,d1-d0);path.arcTo(in,d1,d0-d1);path.close();poly(c,CELL);
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawPath(path,p);
-        p.setStrokeWidth(8);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(TRACK);float r=AR0+8;r(r);c.drawArc(this.r,d0+3.5f,d1-d0-7,false,p);p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
+        p.setStrokeWidth(8);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(TRACK);float r=AR1-8;r(r);c.drawArc(this.r,d0+3.5f,d1-d0-7,false,p);p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
         float am=(d0+d1)/2,lx=px(am,AR0+42),ly=py(am,AR0+42);
         c.save();c.rotate(tilt(am),lx,ly);bold(c,label,lx,ly-8,12,acc,Paint.Align.CENTER);c.restore();
     }

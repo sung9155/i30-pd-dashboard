@@ -74,9 +74,9 @@ final class LambdaCluster extends ClusterKit {
         seg(c,legX(cx,true,f)+3+BAND,ly,cx-half,y,w,col,dashed);seg(c,legX(cx,false,f)-3-BAND,ly,cx+half,y,w,col,dashed);
     }
     private void seg(Canvas c,float x1,float y1,float x2,float y2,float w,int col,boolean dashed){
-        if(!dashed){line(c,x1,y1,x2,y2,w,col);return;}
+        if(!dashed){rline(c,x1,y1,x2,y2,w,col);return;}
         float len=(float)Math.hypot(x2-x1,y2-y1),on=10,off=6;
-        for(float d=0;d<len;d+=on+off){float a=d/len,b=Math.min(len,d+on)/len;line(c,x1+(x2-x1)*a,y1+(y2-y1)*a,x1+(x2-x1)*b,y1+(y2-y1)*b,w,col);}
+        for(float d=0;d<len;d+=on+off){float a=d/len,b=Math.min(len,d+on)/len;rline(c,x1+(x2-x1)*a,y1+(y2-y1)*a,x1+(x2-x1)*b,y1+(y2-y1)*b,w,col);}
     }
     /** A tick and numeral outside both legs at fraction f. */
     private void scale(Canvas c,float cx,float f,String label,int col){
@@ -94,6 +94,10 @@ final class LambdaCluster extends ClusterKit {
         int n=RevMatch.targets(s,prof,learned(),tg,tr),alpha=RevMatch.active(s)?0xff:0x80;
         int g=Float.isNaN(gear)?0:(int)gear;   // the gear up and where it would land
         float up=g>=1&&g<prof.topGear&&!Float.isNaN(kmh)&&kmh>=10?RevMatch.rpmIn(prof,learned(),kmh,g+1):Float.NaN;
+        // a bar across each leg at each predicted rpm, in the gear's colour: shows the level against the scale and the redline
+        for(int j=0;j<n;j++){boolean ok=tg[j]==matched;int col=((ok?GREEN:GEAR_INK[tg[j]])&0xffffff)|((g-tg[j]>=2?0x99:0xcc)*alpha/0xff<<24);
+            level(c,tr[j]/prof.maxRpm,col,!ok&&g-tg[j]>=2);}
+        if(!Float.isNaN(up))level(c,up/prof.maxRpm,(acc&0xffffff)|0x80000000,false);
         for(int i=0;i<gs.length;i++){float y=COL_Y0+i*dy;boolean on=i==top?still:gs[i].equals(cur);
             int t=-1;for(int j=0;j<n;j++)if(String.valueOf(tg[j]).equals(gs[i]))t=j;
             boolean isUp=!Float.isNaN(up)&&gs[i].equals(String.valueOf(g+1))&&!gs[i].equals(cur);
@@ -107,6 +111,20 @@ final class LambdaCluster extends ClusterKit {
                 dot(c,LCX,y,rad,INK);ring(c,LCX,y,rad,2.5f,acc);mono(c,gs[i],LCX,y+fs*0.36f,fs,acc,Paint.Align.CENTER);}
             else{ring(c,LCX,y,rad,on?3:1.2f,on?(gs[i].equals("R")?RED:acc):LINE_);mono(c,gs[i],LCX,y+fs*0.36f,fs,on?WH:GREY,Paint.Align.CENTER);}
             if(on&&!Float.isNaN(rpm))join(c,LCX,rpm/prof.maxRpm,y,rad,2,WH);}   // the current gear points at the rpm level
+    }
+    /** A short bar across each leg of the rpm Λ at fraction f (the band and a little beyond on both sides), not across the middle:
+     *  marks the predicted rpm on the gauge itself, where the gear's join lines land (owner's sketch, 2026-11-10). */
+    private void level(Canvas c,float f,int col,boolean dashed){
+        f=clamp(f,0,1);float y=legY(f),xl=legX(LCX,true,f),xr=legX(LCX,false,f);
+        // the inner end stops exactly at the band's inner edge, where the gear line starts: the round cap (half the width) is
+        // taken off so nothing pokes into the middle; a black edge keeps the bar apart from a lit band of the same colour
+        float il=xl+3+BAND,ir=xr-3-BAND;
+        rline(c,xl-9,y,il-2.5f,y,5,INK);rline(c,ir+2.5f,y,xr+9,y,5,INK);
+        rline(c,xl-9,y,il-1.25f,y,2.5f,col);rline(c,ir+1.25f,y,xr+9,y,2.5f,col);
+    }
+    /** A line with round ends: the gear lines and the rpm bars (owner, 2026-11-10). */
+    private void rline(Canvas c,float x1,float y1,float x2,float y2,float w,int col){
+        p.setStrokeCap(Paint.Cap.ROUND);line(c,x1,y1,x2,y2,w,col);p.setStrokeCap(Paint.Cap.BUTT);
     }
     /** Mirroring the gear column: the speed ring and the lamps. */
     private void lamps(Canvas c,float kmh,String shown,boolean mt){

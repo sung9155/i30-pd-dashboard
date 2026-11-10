@@ -266,8 +266,11 @@ public final class PitRenderer {
         if(settingsCat==SettingsLayout.SCREENS&&pickSlot<0){drawScreenList(c);return;}
         int cat=pickSlot>=0?SettingsLayout.PICK:settingsCat;float w=SettingsLayout.itemW(cat),h=SettingsLayout.itemH(cat);
         if(pickSlot>=0)text(c,ClusterPicker.MODE_NAMES[pickSlot]+" "+UiText.t("모드 화면"),SettingsLayout.PANE_L,SettingsLayout.TOP+20,16,BLUE,true);
+        boolean paneScroll=cat==SettingsLayout.SOUND;float paneSc=paneScroll?settingsScroll:0;   // the 사운드 pane scrolls: its rows overflow the pane
+        if(paneScroll){c.save();c.clipRect(SettingsLayout.PANE_L-6,SettingsLayout.TOP,800,SettingsLayout.BOTTOM);}
         for(int i=0;i<SettingsLayout.count(cat);i++){
-            float l=SettingsLayout.left(cat,i),t=SettingsLayout.top(cat,i);
+            float l=SettingsLayout.left(cat,i),t=SettingsLayout.top(cat,i)-paneSc;
+            if(paneScroll&&(t+h<SettingsLayout.TOP||t>SettingsLayout.BOTTOM))continue;   // scrolled out of view
             String name,sub=null,value=null;boolean sel=false,dim=false;int swatch=0,swatchBg=0xff000000;
             switch(cat){
                 case SettingsLayout.SCREENS:dim=(hidden&(1<<i))!=0;name=ClusterPicker.NAMES[i];sub=dim?"미사용":"사용";break;
@@ -298,9 +301,10 @@ public final class PitRenderer {
                     else if(i==SettingsLayout.SOUND_ROUTE){name="출력 경로";dim=!soundOn;value=SettingsLayout.SOUND_ROUTES[soundRoute];}
                     else if(i==SettingsLayout.SOUND_ENGINE){name="엔진";dim=!soundOn;value=SettingsLayout.SOUND_ENGINES[soundEngine];}
                     else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}
+                    else if(i==SettingsLayout.SOUND_COIN){sel=EcoCluster.coinSound;name="에코 동전 소리";sub="에코 화면에서 동전이 떨어질 때 · 엔진 사운드와 별개";value=EcoCluster.coinSound?"켬":"끔";}
                     else{name=SOUND_ROW_NAMES[i-SettingsLayout.SOUND_VOLUME];
                         boolean noTurbo=(i==SettingsLayout.SOUND_TURBO||i==SettingsLayout.SOUND_BOV)&&!SettingsLayout.SOUND_HAS_TURBO[soundEngine];
-                        dim=!soundOn||noTurbo;}   // one line per row: nine rows fill the pane
+                        dim=!soundOn||noTurbo;}   // one line per row: the engine-sound rows, then the eco coin switch
                     break;
                 case SettingsLayout.LANG:sel=SettingsLayout.LANGS[i].equals(langSel);name=SettingsLayout.LANG_NAMES[i];break;
                 default:if(i==1){sel=speedCalOn;name="실제 속도로 표시";value=speedCalOn?"켬":"끔";
@@ -321,7 +325,7 @@ public final class PitRenderer {
             int ink=dim?MUTED:sel?BLUE:WHITE;
             if(sub==null)text(c,UiText.t(name),tx,t+h/2+7,18,ink,true);
             else{text(c,UiText.t(name),tx,t+h/2-3,18,ink,true);text(c,UiText.t(sub),tx,t+h/2+17,12,cat==SettingsLayout.SCREENS&&!dim?BLUE:MUTED,cat==SettingsLayout.SCREENS);}
-            if(cat==SettingsLayout.RPM&&(i<SettingsLayout.RPM_BEEP||i==SettingsLayout.RPM_BEEP_VOL)||cat==SettingsLayout.SOUND&&i>=SettingsLayout.SOUND_VOLUME){   // value, then − and +
+            if(cat==SettingsLayout.RPM&&(i<SettingsLayout.RPM_BEEP||i==SettingsLayout.RPM_BEEP_VOL)||cat==SettingsLayout.SOUND&&i>=SettingsLayout.SOUND_VOLUME&&i<=SettingsLayout.SOUND_LEAD){   // value, then − and +
                 float by=t+(h-SettingsLayout.SBTN_W)/2;String v=cat==SettingsLayout.SOUND?soundValue(i):i==SettingsLayout.RPM_BEEP_VOL?beepVol+"%":(i==SettingsLayout.RPM_SHIFT?shiftTarget:(int)profile.redline)+" rpm";
                 paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);text(c,v,SettingsLayout.upBtnL()-14-paint.measureText(v),t+h/2+7,18,dim?MUTED:BLUE,true);   // a dimmed row (sound off, no turbo) greys its value and buttons too
                 button(c,"−",SettingsLayout.upBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);
@@ -329,6 +333,9 @@ public final class PitRenderer {
             }
             if(value!=null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);String v=UiText.t(value);text(c,v,l+w-20-paint.measureText(v),t+h/2+7,18,sel||(cat==SettingsLayout.MODE&&i>=SettingsLayout.MODE_FIRST||cat==SettingsLayout.SOUND||cat==SettingsLayout.RPM)&&!dim?BLUE:MUTED,true);}
         }
+        if(paneScroll){c.restore();float max=SettingsLayout.maxPaneScroll(cat);
+            if(max>0){float top=SettingsLayout.TOP,bot=SettingsLayout.BOTTOM,hh=bot-top,vis=Math.max(24,hh*hh/(max+hh)),y=top+(hh-vis)*(settingsScroll/max);
+                box(c,798,top,800,bot,0xff0c1012);box(c,798,y,800,y+vis,0xff2a3b44);}}
     }
     /** The 화면 category as a reorderable, scrollable list: a mini preview, the name, 사용/미사용, and ▲▼ to move it. */
     private void drawScreenList(Canvas c){

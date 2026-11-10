@@ -29,9 +29,9 @@ public final class SettingsLayout {
     /** Virtual engine sound (off 2026-11-04, back 2026-11-05 at the user's word). false: the 사운드 pane shows one dimmed
      *  line and the sound never starts, whatever was saved. ponytail: a flag, not a removal. */
     public static final boolean ENGINE_SOUND=true;
-    public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_POP=5,SOUND_TURBO=6,SOUND_BOV=7,SOUND_LEAD=8;
+    public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_POP=5,SOUND_TURBO=6,SOUND_BOV=7,SOUND_LEAD=8,SOUND_COIN=9;
     /** Rows from SOUND_VOLUME on have − and + (screenZone 1 and 2); the rest of the row puts the default back. */
-    public static final int[] SOUND_MIN={10,0,0,0,0},SOUND_MAX={100,200,200,200,150},SOUND_STEP={10,10,10,10,10},SOUND_DEFAULT={70,100,100,100,80};
+    public static final int[] SOUND_MIN={10,0,0,0,0},SOUND_MAX={200,200,200,200,150},SOUND_STEP={10,10,10,10,10},SOUND_DEFAULT={70,100,100,100,80};
     /** EngineSynth.ENGINES and EXHAUSTS names, in their order. */
     public static final String[] SOUND_ENGINES={"1.6 터보 4기통","직렬 6기통 터보","V6 트윈터보","V8 크로스플레인","V8 플랫플레인"};
     /** Engines with a turbo (whistle and blow-off rows apply), per SOUND_ENGINES. */
@@ -68,16 +68,24 @@ public final class SettingsLayout {
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
         switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
-            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_LEAD+1:1;case LANG:return LANGS.length;case DIAG:return 3;
+            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_COIN+1:1;case LANG:return LANGS.length;case DIAG:return 3;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
     public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME||cat==PAINT?2:1;}
     private static float paneTop(int cat){return cat==PICK?TOP+TITLE_H:TOP;}
     private static int rows(int cat){return (count(cat)+cols(cat)-1)/cols(cat);}
     public static float itemW(int cat){int n=cols(cat);return (PANE_R-PANE_L-GAP*(n-1))/n;}
-    public static float itemH(int cat){int r=Math.max(1,rows(cat));return Math.min(MAX_ITEM_H,(BOTTOM-paneTop(cat)-GAP*(r-1))/r);}
+    /** The 사운드 pane keeps a fixed, comfortably tappable row and scrolls when the rows overflow; every other pane fits its rows to the height. */
+    public static final float SOUND_ROW_H=46;
+    public static float itemH(int cat){if(cat==SOUND)return SOUND_ROW_H;int r=Math.max(1,rows(cat));return Math.min(MAX_ITEM_H,(BOTTOM-paneTop(cat)-GAP*(r-1))/r);}
     public static float left(int cat,int i){return PANE_L+(i%cols(cat))*(itemW(cat)+GAP);}
     public static float top(int cat,int i){return paneTop(cat)+(i/cols(cat))*(itemH(cat)+GAP);}
+    /** How far a pane can scroll (0 = it fits). The 화면 list and the 사운드 pane overflow; the rest fit. */
+    public static float maxPaneScroll(int cat){
+        if(cat==SCREENS)return maxScreenScroll();
+        int n=count(cat);if(n==0)return 0;
+        return Math.max(0,top(cat,n-1)+itemH(cat)-BOTTOM);
+    }
 
     // --- SCREENS as a reorderable, scrollable list (one row per screen, in display order) ---
     public static final float SCREEN_ROW_H=62,THUMB_W=104,SBTN_W=46;
@@ -97,8 +105,11 @@ public final class SettingsLayout {
         return 0;
     }
     /** Choice under the point in cat's pane, or -1. */
-    public static int item(int cat,float x,float y){
-        for(int i=0;i<count(cat);i++){float l=left(cat,i),t=top(cat,i);if(x>=l&&x<=l+itemW(cat)&&y>=t&&y<=t+itemH(cat))return i;}
+    public static int item(int cat,float x,float y){return item(cat,x,y,0);}
+    /** Choice under the point given the pane's scroll, or -1 (nothing outside the TOP..BOTTOM viewport). */
+    public static int item(int cat,float x,float y,float scroll){
+        if(y<TOP||y>BOTTOM)return -1;
+        for(int i=0;i<count(cat);i++){float l=left(cat,i),t=top(cat,i)-scroll;if(x>=l&&x<=l+itemW(cat)&&y>=t&&y<=t+itemH(cat))return i;}
         return -1;
     }
 }

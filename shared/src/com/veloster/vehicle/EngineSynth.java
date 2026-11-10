@@ -169,7 +169,9 @@ public final class EngineSynth {
         lastPedal=pd;targetPedal=pd;targetBoost=b;
     }
 
-    /** Fills out[off..off+n) with -1..1 samples at the given master volume (0..1). */
+    /** Fills out[off..off+n) with -1..1 samples at the given master volume (0 = silent, 1 = as designed, up to 2 louder:
+     *  at or below 1 the finished sound is scaled, above 1 it is driven harder into the soft clip so it gets louder and
+     *  more saturated without ever leaving -1..1 — no hard clipping). */
     public void render(float[] out,int off,int n,double volume){
         Voice P=p;int nc=P.cyl.length,nf=bq.length;double popC=1-(1-P.popChance)*popRate,tv=turboVol,bv=bovVol;double[] pl=P.pulse;
         double k=1-Math.exp(-1/(.08*rate)),kr=lead>0?1-Math.exp(-1/(.03*rate)):k,leadN=lead*rate,ke=1-Math.exp(-1/(.15*rate)),
@@ -242,7 +244,7 @@ public final class EngineSynth {
             double punch=punchBq[0]*x+punchBq[1]*punchSt[0]+punchBq[2]*punchSt[1]-punchBq[3]*punchSt[2]-punchBq[4]*punchSt[3];
             punchSt[1]=punchSt[0];punchSt[0]=x;punchSt[3]=punchSt[2];punchSt[2]=punch;
             s+=(softclip((body*1.7+punch*PUNCH)*1.3)*.85+cr)*P.popGain*master;
-            out[off+i]=(float)(softclip(s*P.drive)*volume);
+            out[off+i]=(float)(softclip(s*P.drive*(volume>1?volume:1))*(volume<1?volume:1));
         }
     }
     public boolean running(){return running;}

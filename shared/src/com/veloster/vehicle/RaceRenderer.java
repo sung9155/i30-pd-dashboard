@@ -124,15 +124,16 @@ public final class RaceRenderer {
         float tr=v(Telemetry.DPF_TRIGGER),dp=v(Telemetry.DPF_DP),tp=v(Telemetry.DPF_TEMP);boolean regen=v(Telemetry.DPF_REGEN)>0;int ink=regen?AMBER:WHITE;
         // the big number: soot g, else the trigger %, else the delta pressure (Tiles.dpfLead); ΔP small unless it is the big one
         int k=Tiles.dpfLead(v(Telemetry.DPF_SOOT),tr,dp);
-        cell(c,regen?"DPF REGEN":k==Telemetry.DPF_DP?"DPF ΔP":k==Telemetry.DPF_SOOT?"DPF SOOT":"DPF",Tiles.text(k,v(k)),Telemetry.UNITS[k],l,t,rr,b,24,ink);
+        cell(c,regen?"DPF REGEN":k==Telemetry.DPF_DP?"DPF ΔP":k==Telemetry.DPF_SOOT&&Float.isNaN(v(Telemetry.DPF_SINCE_KM))&&Float.isNaN(v(Telemetry.DPF_AVG_KM))?"DPF SOOT":"DPF",Tiles.text(k,v(k)),Telemetry.UNITS[k],l,t,rr,b,24,ink);
         if(k!=Telemetry.DPF_DP)text(c,"ΔP "+fmt("%.1f",dp),l+8,t+35,13,Float.isNaN(dp)?MUTED:ink,Paint.Align.LEFT);   // delta pressure, kPa
-        // Top right (not while regenerating): km since the last regeneration, else the ECU's average between them;
-        // with both, they take turns every 3 s.
+        // Top right (not while regenerating, the caption then just "DPF" so they never meet): km since the last regeneration, else the ECU's average between them;
+        // with both, they take turns every 3 s. Whole km cut down, as a DAG3 shows it (298.86 -> 298).
         float since=v(Telemetry.DPF_SINCE_KM),avg=v(Telemetry.DPF_AVG_KM);
         boolean avgTurn=Float.isNaN(since)||(!Float.isNaN(avg)&&now/3000%2==1);
-        if(!regen&&!(Float.isNaN(since)&&Float.isNaN(avg)))
-            text(c,(avgTurn?"AVG ":"LAST ")+fmt("%.0f",avgTurn?avg:since)+"km",rr-8,t+16,11,MUTED,Paint.Align.RIGHT);
-        text(c,fmt("%.0f",tp)+" °C",l+8,t+52,13,Float.isNaN(tp)?MUTED:ink,Paint.Align.LEFT);
+        boolean split=false;for(int i=0;i<Tiles.RECTS[Tiles.RACE].length;i++)split|=Tiles.signal(Tiles.RACE,i,prof)==Tiles.EXHAUST;
+        if(!regen&&!(Float.isNaN(since)&&Float.isNaN(avg))){String km=(avgTurn?"AVG ":"LAST ")+fmt("%.0f",avgTurn?avg:(float)Math.floor(since))+"km";
+            text(c,km,rr-8,t+16,11,MUTED,Paint.Align.RIGHT);}   // top right; the caption shortens to "DPF" (the g says soot)
+        if(!split)text(c,fmt("%.0f",tp)+" °C",l+8,t+52,13,Float.isNaN(tp)?MUTED:ink,Paint.Align.LEFT);   // the EXHAUST tile has it
     }
     private void cell(Canvas c,String caption,String value,String unit,float l,float t,float rr,float b,float size,int color){
         box(c,l,t,rr,b,PANEL);
@@ -263,15 +264,17 @@ public final class RaceRenderer {
     private void raceTile(Canvas c,float[] r,int sig){
         float l=r[0],t=r[1],rr=r[2],b=r[3];
         if(sig==Tiles.DPF){dpf(c,l,t,rr,b);return;}
-        if(sig==Tiles.TIRES||sig==Tiles.CLUTCH){   // several values: two lines under the caption
-            boolean tyres=sig==Tiles.TIRES;float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);
-            boolean hot=!tyres&&(Telemetry.clutchLevel(o)==2||Telemetry.clutchLevel(e)==2);
-            box(c,l,t,rr,b,hot?D():PANEL);text(c,tyres?"TPMS psi":"CLUTCH °C",l+8,t+16,12,hot?BG:MUTED,Paint.Align.LEFT);
+        if(sig==Tiles.TIRES||sig==Tiles.CLUTCH||sig==Tiles.EXHAUST){   // several values: two lines under the caption
+            boolean tyres=sig==Tiles.TIRES,egt=sig==Tiles.EXHAUST;float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);
+            boolean hot=!tyres&&!egt&&(Telemetry.clutchLevel(o)==2||Telemetry.clutchLevel(e)==2);
+            boolean regen=egt&&v(Telemetry.DPF_REGEN)>0;
+            box(c,l,t,rr,b,hot?D():PANEL);text(c,tyres?"TPMS psi":egt?"EXHAUST":"CLUTCH",l+8,t+16,12,hot?BG:MUTED,Paint.Align.LEFT);
             for(int k=0;k<(tyres?4:2);k++){
-                int sigk=tyres?Telemetry.TPMS_FL+k:k==0?Telemetry.CLUTCH_ODD:Telemetry.CLUTCH_EVEN;float val=v(sigk);int lv=Tiles.level(sigk,val);
-                float x=tyres?(k%2==0?l+(rr-l)*0.45f:rr-10):rr-10,y=t+(tyres?(k<2?36:56):(k==0?36:56));
-                if(!tyres)text(c,k==0?"ODD":"EVEN",l+8,y,11,hot?BG:MUTED,Paint.Align.LEFT);
+                int sigk=tyres?Telemetry.TPMS_FL+k:egt?(k==0?Telemetry.DPF_TEMP:Telemetry.EGT_CAT):k==0?Telemetry.CLUTCH_ODD:Telemetry.CLUTCH_EVEN;float val=v(sigk);int lv=regen?1:Tiles.level(sigk,val);
+                float x=tyres?(k%2==0?l+(rr-l)*0.45f:rr-10):rr-28,y=t+(tyres?(k<2?36:56):(k==0?36:56));   // temperatures: °C after the number
+                if(!tyres)text(c,egt?(k==0?"DPF":"CAT"):k==0?"ODD":"EVEN",l+8,y,11,hot?BG:MUTED,Paint.Align.LEFT);
                 text(c,fmt("%.0f",val),x,y,17,hot?BG:lv==2?D():lv==1?AMBER:WHITE,Paint.Align.RIGHT);
+                if(!tyres)text(c,"°C",rr-8,y,11,hot?BG:MUTED,Paint.Align.RIGHT);
             }
             return;
         }

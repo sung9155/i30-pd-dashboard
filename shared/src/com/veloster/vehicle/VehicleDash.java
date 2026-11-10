@@ -58,7 +58,7 @@ public final class VehicleDash extends View implements Runnable {
     private boolean lapHeld;   // the hold already acted; the finger's release is not a tap
     private long introStart;
     private float downX,downY;
-    private long lastDiagnostic;
+    private long lastDiagnostic,lastFullDiagnostic;
     /** Frame cost since the last diagnostics line (logcat VehicleDash every 5 s), to judge the heavier layouts on the car. */
     private long drawNs,drawMaxNs;
     private int drawFrames;
@@ -162,12 +162,12 @@ public final class VehicleDash extends View implements Runnable {
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);soundOn=SettingsLayout.ENGINE_SOUND&&p.getBoolean("engine_sound",false);
             soundRoute=Math.max(0,Math.min(SettingsLayout.SOUND_ROUTES.length-1,p.getInt("engine_sound_route",0)));
             soundEngine=Math.max(0,Math.min(EngineSynth.engines()-1,p.getInt("engine_sound_engine",0)));
-            soundExhaust=Math.max(0,Math.min(EngineSynth.exhausts()-1,p.getInt("engine_sound_exhaust",0)));
+            soundExhaust=Math.max(0,Math.min(EngineSynth.exhausts()-1,p.getInt("engine_sound_exhaust",0)));EngineSound.fast=p.getBoolean("engine_sound_fast",false);CassetteCluster.clickSound=p.getBoolean("cassette_click",true);
             for(int k=0;k<soundVals.length;k++)soundVals[k]=Math.max(SettingsLayout.SOUND_MIN[k],Math.min(SettingsLayout.SOUND_MAX[k],p.getInt(SOUND_KEYS[k],SettingsLayout.SOUND_DEFAULT[k])));}
         catch(ClassCastException e){/* Sound off for an incompatible saved value. */}
         applySound();
         if(LambdaCluster.FACE==null){LambdaCluster.FACE=rawFont(a,"chakra_petch_medium");LambdaCluster.FACE_BOLD=rawFont(a,"chakra_petch_bold");}
-        if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}
+        if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}ShiftBeep.loadCassette(a);
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);EcoCluster.coins=p.getBoolean("eco_coins",false);EcoCluster.l100=p.getBoolean("eco_l100",false);
             EcoCluster.grade=p.getInt("eco_grade",0)==1?1:0;
             for(int g=0;g<3;g++)EcoCluster.prices[g]=Math.max(0,Math.min(EcoCluster.PRICE_MAX,p.getInt("eco_price_"+g,0)));EcoCluster.hintDone=p.getBoolean("eco_hint_done",false);EcoCluster.coinSound=p.getBoolean("eco_coin_sound",false);}
@@ -294,7 +294,12 @@ public final class VehicleDash extends View implements Runnable {
     public static void hscanJsn(int cid,int funcLow,byte[] data){DATA.hscanJsn(cid,funcLow,data,SystemClock.elapsedRealtime());}
     public static void hscanJsn(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanJsn(cid,funcLow,data,receivedAt);}
     public static void hscanPd(int cid,int funcLow,byte[] data,long receivedAt){DATA.hscanPd(cid,funcLow,data,receivedAt);}
-    public static void obd(int pid,byte[] d){DATA.obd(pid,d,SystemClock.elapsedRealtime());}
+    public static void obd(int pid,byte[] d){
+        long now=SystemClock.elapsedRealtime();DATA.obd(pid,d,now);
+        // Diesel boost scale check (EMS19 byte1 x 20 hPa is fitted, not measured): MAP beside it every 4 s on a diesel.
+        if(pid==0x0b&&now-mapLogAt>=4000&&DATA.profile().fuel==VehicleProfile.Fuel.DIESEL){mapLogAt=now;android.util.Log.i("VehicleDash","OBD "+DATA.boostCheck(now));}
+    }
+    private static long mapLogAt;
     /** The latest valid value of a signal, NaN when there is none (the OBD poller's sports-drive burst reads rpm and pedal). */
     public static float now(int i){Telemetry.Sample x=DATA.sample(i,SystemClock.elapsedRealtime());return x.valid?x.value:Float.NaN;}
     /** A TTF from res/raw (API 17 has no font resources): copied once into the cache, then Typeface.createFromFile; null on any failure. */
@@ -316,6 +321,8 @@ public final class VehicleDash extends View implements Runnable {
         sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);
         {int ck=EcoCluster.clink;if(ck!=0){EcoCluster.clink=0;   // a coin reaches the road on the 에코 screen (negative: its bounce)
             if(EcoCluster.coinSound&&EcoCluster.coins&&resumed&&getVisibility()==VISIBLE&&renderer.ecoShown()&&!picker)beep.playCoin(soundOn&&soundRoute==0?sound:null,Math.abs(ck),beepVol/100f*EcoCluster.clinkGain);}}
+        {int ck=CassetteCluster.cue;if(ck!=0){CassetteCluster.cue=0;   // a key of the 카세트 screen: latched, released or tapped
+            if(CassetteCluster.clickSound&&resumed&&getVisibility()==VISIBLE&&!picker)beep.playCassette(soundOn&&soundRoute==0?sound:null,ck,beepVol/100f);}}
         if(getVisibility()==VISIBLE) {
             invalidate();long now=SystemClock.elapsedRealtime();
             if(graphs)delay=250;
@@ -327,7 +334,10 @@ public final class VehicleDash extends View implements Runnable {
             if(header.flinging())delay=16;   // a flicked tab strip coasts
             float re=DATA.dpfRegenEnd();
             if(Float.compare(re,regenEnd)!=0){regenEnd=re;activity.getSharedPreferences("pit_vehicle_ui",0).edit().putFloat("dpf_regen_end_odo",re).apply();}
-            if(now-lastDiagnostic>=5000) { lastDiagnostic=now;android.util.Log.i("VehicleDash",DATA.diagnostics(now)+drawStats()); }
+            // every 5 s the short line; the per-signal dump (about 3 KB) once a minute: at 5 s it filled the head unit's small
+            // log buffer in seconds and pushed the OBD probe rounds out of a diagnostic record (a diesel PD, 2026-11-06)
+            if(now-lastDiagnostic>=5000) { lastDiagnostic=now;boolean full=now-lastFullDiagnostic>=60000;if(full)lastFullDiagnostic=now;
+                android.util.Log.i("VehicleDash",(full?DATA.diagnostics(now):"status")+drawStats()+DATA.boostFit()+DATA.egt()+ObdLive.summary()); }
         }
         postDelayed(this,delay);
     }
@@ -341,7 +351,7 @@ public final class VehicleDash extends View implements Runnable {
         renderer.setSymmetric(symmetric);
         renderer.setPage(page);
         {Telemetry.Sample sp=DATA.sample(7,now),yw=DATA.sample(Telemetry.YAW,now),bs=DATA.sample(Telemetry.BRAKE_SWITCH,now),bp=DATA.sample(10,now);
-         boolean braking=bs.valid&&bs.value>0||bp.valid&&bp.value>1;
+         boolean braking=Telemetry.braking(bs.valid?bs.value:Float.NaN,bp.valid?bp.value:Float.NaN);
          speedCal.update(now,sp.valid&&sp.ageMs<=500?sp.value:Float.NaN,yw.valid?yw.value:Float.NaN,braking,GpsFix.seq,GpsFix.fresh()?GpsFix.speedKmh:Float.NaN,GpsFix.accuracy);
          float r=speedCal.ratio();Telemetry.speedScale=speedCalOn&&!Float.isNaN(r)?r:1;
          if(!Float.isNaN(r)&&speedCal.samples()!=speedCalSavedN&&now-speedCalSavedAt>60000){speedCalSavedAt=now;speedCalSavedN=speedCal.samples();
@@ -378,7 +388,13 @@ public final class VehicleDash extends View implements Runnable {
         final int displayedMode=MediaState.modeForSource(displayed.source);
         new Thread(new Runnable(){public void run(){
             String error=null;
-            try{if(!(command==0?MediaControl.toggle(activity,displayedMode,displayed.playState):MediaControl.step(activity,command>0,displayedMode)))error=UiText.t("현재 재생 소스에서 음악을 제어할 수 없습니다");}
+            try{boolean ok=command==1||command==-1?MediaControl.step(activity,command>0,displayedMode)   // next / previous
+                    :command==2?MediaControl.key(activity,displayedMode,126)   // KEYCODE_MEDIA_PLAY
+                    :command==3?MediaControl.key(activity,displayedMode,127)   // KEYCODE_MEDIA_PAUSE
+                    :command==4?MediaControl.key(activity,displayedMode,86)    // KEYCODE_MEDIA_STOP
+                    :command==5?MediaControl.key(activity,displayedMode,91)    // KEYCODE_MUTE (the car's mute: BT has no pause)
+                    :MediaControl.toggle(activity,displayedMode,displayed.playState);   // 0: play/pause toggle (race panel)
+                if(!ok)error=UiText.t("현재 재생 소스에서 음악을 제어할 수 없습니다");}
             catch(Exception e){android.util.Log.e("VehicleDash","Media control unavailable",e);error=UiText.t("음악 제어 요청을 보낼 수 없습니다");}
             final String message=error;
             activity.runOnUiThread(new Runnable(){public void run(){
@@ -477,7 +493,10 @@ public final class VehicleDash extends View implements Runnable {
                     if(!SettingsLayout.ENGINE_SOUND)break;
                     if(i==SettingsLayout.SOUND_COIN){EcoCluster.coinSound=!EcoCluster.coinSound;saveEco();   // eco coin sound: independent of the engine sound, plays through the beep channel
                         if(EcoCluster.coinSound&&EcoCluster.coins)beep.playCoin(soundOn&&soundRoute==0?sound:null,500,beepVol/100f);break;}   // a sample clink
-                    if(i==SettingsLayout.SOUND_ON)soundOn=!soundOn;
+                    if(i==SettingsLayout.SOUND_CLICK){CassetteCluster.clickSound=!CassetteCluster.clickSound;e.putBoolean("cassette_click",CassetteCluster.clickSound);
+                        if(CassetteCluster.clickSound)beep.playCassette(soundOn&&soundRoute==0?sound:null,ShiftBeep.LATCH,beepVol/100f);break;}   // a sample click
+                    if(i==SettingsLayout.SOUND_FAST){EngineSound.fast=!EngineSound.fast;e.putBoolean("engine_sound_fast",EngineSound.fast);sound.play(-1);}   // the block size is read when the thread starts: stop it here, the play() below starts it again
+                    else if(i==SettingsLayout.SOUND_ON)soundOn=!soundOn;
                     else if(i==SettingsLayout.SOUND_ROUTE)soundRoute=(soundRoute+1)%SettingsLayout.SOUND_ROUTES.length;
                     else if(i==SettingsLayout.SOUND_ENGINE)soundEngine=(soundEngine+1)%EngineSynth.engines();
                     else if(i==SettingsLayout.SOUND_EXHAUST)soundExhaust=(soundExhaust+1)%EngineSynth.exhausts();
@@ -489,6 +508,11 @@ public final class VehicleDash extends View implements Runnable {
                 case SettingsLayout.DIAG:
                     if(i==1){speedCalOn=!speedCalOn;e.putBoolean("speed_cal",speedCalOn);break;}
                     if(i==2){speedCal.reset();e.remove("speed_cal_ratio").remove("speed_cal_samples");break;}
+                    if(i==3){   // the hub app ('내 앱'); a plain launch, nothing is changed
+                        android.content.Intent hub=activity.getPackageManager().getLaunchIntentForPackage("com.veloster.carplayhub");
+                        if(hub==null)Toast.makeText(activity,UiText.t("'내 앱'이 설치돼 있지 않습니다."),Toast.LENGTH_SHORT).show();
+                        else try{activity.startActivity(hub);}catch(RuntimeException ex){Toast.makeText(activity,UiText.t("'내 앱'을 열지 못했습니다."),Toast.LENGTH_SHORT).show();}
+                        break;}
                     DtcDialog.show(activity);break;   // read-only trouble codes
             }
             e.apply();invalidate();return true;
@@ -515,7 +539,7 @@ public final class VehicleDash extends View implements Runnable {
             if(!lapHeld)lap.tap(SystemClock.elapsedRealtime());
             invalidate();return true;
         }
-        if(tap&&!blocked&&symmetric&&(PitRenderer.isCluster(page)||page==PitRenderer.PAGE_ECO)&&y>52&&downY>52&&renderer.clusterTap(x,y)){if(EcoCluster.consumeChanged())saveEco();invalidate();return true;}
+        if(tap&&!blocked&&symmetric&&(PitRenderer.isCluster(page)||page==PitRenderer.PAGE_ECO)&&y>52&&downY>52&&renderer.clusterTap(x,y)){int kc=CassetteCluster.consumeKeyCmd();if(kc!=0)requestMedia(kc);if(EcoCluster.consumeChanged())saveEco();invalidate();return true;}
         if(tap&&!blocked&&gauges&&x>=650&&x<=788&&downX>=650&&downX<=788&&y>=54&&y<=78&&downY>=54&&downY<=78){gaugeEditor.toggleGrid();return true;}
         if(tap&&!blocked&&graphs&&y>=54&&y<=79&&downY>=54&&downY<=79){
             if(x>=628&&x<=702&&downX>=628&&downX<=702)graphEditor.window(60000);

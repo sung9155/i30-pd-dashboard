@@ -29,6 +29,9 @@ public final class UiText {
         EN.put("%,d원","%,d won");
         EN.put("%s · 서울 요금","%s · Seoul fare");
         EN.put("%s 요금","%s fare");
+        EN.put("'내 앱' 열기","Open 'My Apps'");
+        EN.put("'내 앱'을 열지 못했습니다.","Could not open 'My Apps'.");
+        EN.put("'내 앱'이 설치돼 있지 않습니다.","'My Apps' is not installed.");
         EN.put(". 백업이 남아 있으면 원상복구하세요.",". Restore the original settings if a backup remains.");
         EN.put("1.6 터보 4기통","1.6 turbo I4");
         EN.put("1단 아래 맞춤 소리","Sound: matched 1 gear down");
@@ -88,6 +91,7 @@ public final class UiText {
         EN.put("USB 디버깅 ","USB debugging ");
         EN.put("USB 디버깅 OFF 명령을 보냈습니다(엔지니어 모드 Factory Test 0A 01 → 65 00 → 0A 02와 같은 명령). PC 연결이 끊기지 않으면 시동을 다시 거세요.","USB debugging OFF sent (the same command as Engineer Mode Factory Test 0A 01 → 65 00 → 0A 02). If the PC stays connected, restart the engine.");
         EN.put("USB 디버깅 ON 명령을 보냈습니다(엔지니어 모드 Factory Test와 같은 명령). 몇 초 뒤 PC를 연결하세요. 내비게이션을 재시작하면 일반 USB(CarPlay)로 돌아갑니다.","USB debugging ON sent (the same command as Engineer Mode Factory Test). Connect the PC in a few seconds. Restarting the head unit returns to normal USB (CarPlay).");
+        EN.put("USB 디버깅 · 시동 안내 건너뛰기 · 블루투스 등","USB debugging · skip the start-up notice · Bluetooth and more");
         EN.put("USB 모드 전환 실패: ","USB mode request failed: ");
         EN.put("USB 모드 전환 요청이 거부되었습니다.","The USB mode request was denied.");
         EN.put("V6 트윈터보","V6 twin-turbo");
@@ -211,6 +215,7 @@ public final class UiText {
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
         EN.put("다른 칸과 위치 바꾸기","Swap with another slot");
         EN.put("다시 조회","Read again");
+        EN.put("다운","Down");
         EN.put("다운시프트 맞춤 소리가 나는 화면 · 누르면 바뀜","Where the downshift match sounds play · tap to change");
         EN.put("다음","Next");
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
@@ -281,6 +286,8 @@ public final class UiText {
         EN.put("바로가기: ","Shortcut: ");
         EN.put("반응 시간","Reaction");
         EN.put("배기","Exhaust");
+        EN.put("배기 온도 (DPF 앞·산화촉매 앞 묶음)","Exhaust temperatures (before the DPF and the catalyst)");
+        EN.put("배터리","Battery");
         EN.put("배터리 SOC","Battery SOC");
         EN.put("배터리 전압","Battery voltage");
         EN.put("백업 저장 실패. 무선 설정을 변경하지 않았습니다.","Backup could not be saved. Wireless settings were not changed.");
@@ -297,6 +304,7 @@ public final class UiText {
         EN.put("변속·구동","Transmission");
         EN.put("변속기 (TCU)","Transmission (TCU)");
         EN.put("보정 토크","Corrected torque");
+        EN.put("보통","Normal");
         EN.put("복구","Restore");
         EN.put("복구 후 AP 꺼짐 상태 재확인 실패. 백업 보존.","Could not reconfirm AP off after restoration. Backup retained.");
         EN.put("복구할 시험 백업이 없습니다. 변경하지 않았습니다.","No test backup to restore. No changes were made.");
@@ -327,6 +335,8 @@ public final class UiText {
         EN.put("비행기 엔진 계기판","Airliner engine display");
         EN.put("빈차","Vacant");
         EN.put("빠른 상승 4음","Quick rising 4 tones");
+        EN.put("빠름","Fast");
+        EN.put("빠름: 소리가 덜 늦음 · 화면이 느려질 때 소리가 끊기면 보통으로","Fast: less sound delay · if the sound breaks up when the screen slows down, go back to Normal");
         EN.put("삐빅","Double beep");
         EN.put("삐빅 · 3번","Beep · 3 times");
         EN.put("삐빅 · 4번 빠르게","Beep · 4 quick");
@@ -338,6 +348,7 @@ public final class UiText {
         EN.put("사용 안 함 / Off","Off");
         EN.put("사용 연료","Fuel used");
         EN.put("사운드","Sound");
+        EN.put("산화촉매 앞 배기 온도","Exhaust temperature before the catalyst");
         EN.put("상승 2음","Rising 2 tones");
         EN.put("상승 3음","Rising tones");
         EN.put("상태 새로 확인","Refresh status");
@@ -358,6 +369,7 @@ public final class UiText {
         EN.put("설치된 기본 앱 중 외부 실행이 허용된 앱만 표시합니다.","Only installed system apps that allow external launch are shown.");
         EN.put("세션 최대","Session peaks");
         EN.put("세종","Sejong");
+        EN.put("소리 반응 속도","Sound response");
         EN.put("속도 GPS 보정 값 초기화","Reset the GPS speed correction");
         EN.put("속도 km/h","Speed km/h");
         EN.put("속도계가 실제보다 %.1f %% 낮게 나옴","The speedometer reads %.1f %% low");
@@ -437,6 +449,7 @@ public final class UiText {
         EN.put("엔진 회전수","Engine speed");
         EN.put("엔진·변속기·제동·조향·에어백·바디 (읽기만)","Engine, transmission, brakes, steering, airbag, body (read only)");
         EN.put("연결 점검","Connections");
+        EN.put("연료","Fuel");
         EN.put("연료 L/h","Fuel L/h");
         EN.put("연료 단가 (원/L)","Fuel price (won/L)");
         EN.put("연료 잔량","Fuel level");
@@ -458,6 +471,7 @@ public final class UiText {
         EN.put("와이퍼","Wiper");
         EN.put("완료","Done");
         EN.put("외기 온도","Ambient temperature");
+        EN.put("외기온","Outside");
         EN.put("왼쪽","Left");
         EN.put("왼쪽 ","Left ");
         EN.put("요금 · 정차","Fare · stopped");
@@ -480,6 +494,7 @@ public final class UiText {
         EN.put("원/L"," won/L");
         EN.put("원래 화면","Previous screen");
         EN.put("원형","Dial");
+        EN.put("원형 RPM·다운시프트","Round rpm · downshift");
         EN.put("위치를 바꿀 칸","Choose a slot to swap");
         EN.put("유리 톡","Glass tap");
         EN.put("유온","Oil");
@@ -580,6 +595,7 @@ public final class UiText {
         EN.put("주차 브레이크","Parking brake");
         EN.put("주행","Hired");
         EN.put("주행 0.1 km","distance 0.1 km");
+        EN.put("주행 가능","Range");
         EN.put("주행 거리 km","Distance km");
         EN.put("주행 기록","Drive records");
         EN.put("주행 모드","Drive mode");
@@ -645,6 +661,8 @@ public final class UiText {
         EN.put("측정 중 · 버튼","Timing");
         EN.put("카세트","Cassette");
         EN.put("카세트 데크","Cassette deck");
+        EN.put("카세트 찰칵 소리","Cassette click sound");
+        EN.put("카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개","Cassette screen keys: play and pause latch with a clunk, a track skip clicks · separate from the engine sound");
         EN.put("카키","Khaki");
         EN.put("켜기","Enable");
         EN.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","When enabled, reboot restores only the shortcut, not the full app screen. Drag the edge button to move it.\n\nIf overlays are denied, the notification remains. If the factory UI also hides notifications, use another entry point. Force-stop may prevent restoration until My Apps is opened again.");
@@ -665,6 +683,7 @@ public final class UiText {
         EN.put("타이어 공기압","Tire pressure");
         EN.put("타이어 공기압 (4바퀴 묶음)","Tyre pressures (all four)");
         EN.put("타이어 공기압 낮음","Low tire pressure");
+        EN.put("타코","Tacho");
         EN.put("태백 스피드웨이","Taebaek Speedway");
         EN.put("택시","Taxi");
         EN.put("택시 미터기","Taxi meter");

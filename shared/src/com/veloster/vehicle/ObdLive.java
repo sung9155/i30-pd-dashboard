@@ -40,7 +40,11 @@ public final class ObdLive {
         // diesel (OBDb Hyundai-i30): differential pressure E0F1, successful regenerations E0F2, KWP 21 06 regeneration state, 21 03 block
         {EMS,0x22,0xE0,0xF1},{EMS,0x22,0xE0,0xF2},{EMS,0x21,0x06},{EMS,0x21,0x03},
         // the live ED03 poll logs its drop only once, early, and the record keeps only the log tail: ask it here too
-        {EMS,0x22,0xED,0x03},{EMS,0x22,0xED,0x06}};   // ED06: regeneration completed state (Kia Ceed 2018 in OBDb)
+        {EMS,0x22,0xED,0x03},{EMS,0x22,0xED,0x06},   // ED06: regeneration completed state (Kia Ceed 2018 in OBDb)
+        // ED1D, the soot load the DPF tile leads with: on a v1.8.6 diesel it showed "—" and its one drop line can fall off the tail
+        {EMS,0x22,0xED,0x1D},
+        // exhaust gas temperature bank 1, the standard PID (01 7C, DPF temperature, got no answer on a diesel PD)
+        {EMS,0x01,0x78}};
     private static final long PROBE_FIRST=20000,PROBE_EVERY=300000;private static final int PROBE_ROUNDS=24;
     private final List<String> coldProbe=new ArrayList<String>();
     private static final long REPLY_MS=300,SLOW_REPLY_MS=1200;   // a mode 01 PID is one frame; a mode 22 block (ED03 ~59 B, 01A4) is multi-frame and slower
@@ -57,7 +61,60 @@ public final class ObdLive {
     private final List<byte[]> replies=new ArrayList<byte[]>();
     private int expectEcu=-1;
     private volatile boolean running;
+    private static volatile ObdSchedule current;
+    /** The live requests' tally for the diagnostics line; empty before the poller starts (or off the PD). */
+    public static String summary(){ObdSchedule s=current;if(s==null)return "";StringBuilder b=new StringBuilder(" | obd ").append(s.summary());
+        if(passive>0)b.append(" | passive ").append(passive);
+        if(listening(System.currentTimeMillis()))b.append(" | listen");
+        synchronized(RAW){if(!RAW.isEmpty()){java.util.List<String> keys=new java.util.ArrayList<String>(RAW.keySet());   // two raw blocks a line, in turn
+            for(int i=0;i<Math.min(2,keys.size());i++){String k=keys.get((rawTurn+i)%keys.size());b.append(" | raw ").append(k).append(": ").append(RAW.get(k));}
+            rawTurn+=2;}}
+        // repeated every 5 s: the head unit's log keeps only the last seconds, so a one-off line never reaches a record
+        synchronized(PROBED){if(!PROBED.isEmpty()){b.append(" | probe");for(java.util.Map.Entry<String,String> e:PROBED.entrySet())b.append(' ').append(e.getKey()).append('=').append(e.getValue());}}
+        synchronized(OTHER){if(!OTHER.isEmpty()){b.append(" | other");for(String o:OTHER)b.append(" [").append(o).append(']');}}
+        synchronized(STRAY){for(int i=0;i<128;i++)if(STRAY[i]>0)b.append(" | stray ").append(String.format("%02X",i)).append(' ').append(STRAY[i]).append(' ').append(strayHead[i]);}
+        return b.toString();}
+    /** Replies that came back from another device than the one asked (per TP_DEVICE code), with the last one's first bytes:
+     *  shows an ECU answering under another code (a diesel engine, say), which the matching would otherwise drop unseen. */
+    private static final int[] STRAY=new int[128];private static final String[] strayHead=new String[128];
     private Thread thread;
+    private volatile Sink sink;
+    /** Replies another tester asked for that we could use (the same request as one of ours), and the kinds we could not. */
+    private static volatile int passive;
+    private static final java.util.Set<String> OTHER=new java.util.LinkedHashSet<String>();
+    /** The latest reply of each engine block we do not decode ("27 62 E0 F1" -> hex): two ride on each status line in turn,
+     *  so a record shows a DAG3's E0F1 / ED07 / ED01 (or our probe's) in full. */
+    private static final java.util.Map<String,String> RAW=new java.util.LinkedHashMap<String,String>();private static int rawTurn;
+    private static void keepRaw(int ecu,byte[] r){
+        if(ecu!=EMS||r==null||r.length<4||(r[0]&255)!=0x62)return;
+        int did=(r[1]&255)<<8|(r[2]&255);if(did==Telemetry.DID_DPF||did==Telemetry.DID_SOOT)return;   // decoded, and logged by dpfLog
+        String k=String.format("%02X %02X %02X %02X",ecu,r[0]&255,r[1]&255,r[2]&255);StringBuilder b=new StringBuilder();
+        for(int i=3;i<r.length;i++)b.append(String.format("%02X",r[i]&255));
+        synchronized(RAW){if(RAW.containsKey(k)||RAW.size()<8)RAW.put(k,b.toString());}
+    }
+    /** Another tester on the engine (a DAG3 polls it nonstop and the engine then answers none of ours, 2026-11-07/08): three of
+     *  its replies within 10 s start a 30 s listen-only spell, renewed while they keep coming. */
+    private static volatile long foreignLast,foreignAt=Long.MIN_VALUE/2;private static int foreignN;
+    private static void noteForeign(int ecu){
+        if(ecu!=EMS)return;long now=System.currentTimeMillis();
+        if(now-foreignLast>10000)foreignN=0;foreignLast=now;if(++foreignN>=3)foreignAt=now;
+    }
+    static boolean listening(long now){return now-foreignAt<30000;}
+    /** The latest probe answer per request ("27 22ED03" -> "none" / "7F 22 31" / "62 ED 03 59B"), for the status line. */
+    private static final java.util.Map<String,String> PROBED=new java.util.LinkedHashMap<String,String>();
+    /** A positive reply that is not the answer to our request in flight: if it answers one of our requests, use it; else
+     *  log the first reply of each kind (ECU + first three bytes) once, up to 40 kinds, so a record shows who else asks. */
+    private void passive(int ecu,byte[] r){
+        ObdSchedule s=current;Sink k=sink;
+        if(r==null||r.length<2||(r[0]&255)==0x7f)return;
+        noteForeign(ecu);keepRaw(ecu,r);
+        ObdSchedule.Poll p=s==null?null:s.match(ecu,r);
+        if(p!=null&&k!=null){byte[] d=new byte[r.length-p.req.length];System.arraycopy(r,p.req.length,d,0,d.length);k.value(p.key,d);passive++;return;}
+        StringBuilder head=new StringBuilder(String.format("%02X",ecu));for(int i=0;i<Math.min(3,r.length);i++)head.append(String.format(" %02X",r[i]&255));
+        synchronized(OTHER){if(OTHER.size()>=40||!OTHER.add(head.toString()+" "+r.length+"B"))return;}
+        StringBuilder b=new StringBuilder();for(byte x:r)b.append(String.format("%02X ",x&255));
+        android.util.Log.i("VehicleDash","OBD other ecu "+String.format("%02X",ecu)+": "+b.toString().trim()+" ("+r.length+" B)");
+    }
 
     public void start(final Sink sink,final Gate gate){
         if(running||!"pd_kr".equals(android.os.Build.PRODUCT))return;
@@ -74,7 +131,7 @@ public final class ObdLive {
         if(svc==null)return;
         Binder listener=new Listener(),token=new Binder();
         try{call(svc,1,listener,token);}catch(Throwable e){return;}
-        long nextProbe=-1;int rounds=0;ObdSchedule sched=ObdSchedule.standard();
+        long nextProbe=-1;int rounds=0;ObdSchedule sched=ObdSchedule.standard();current=sched;this.sink=sink;
         try{
             while(running){
                 if(diagBusy||gate==null||!gate.open()){nap(500);continue;}
@@ -83,12 +140,14 @@ public final class ObdLive {
                 else if(now>=nextProbe&&rounds<PROBE_ROUNDS){probe(svc,++rounds);nextProbe=now+PROBE_EVERY;continue;}
                 float rpm=VehicleDash.now(0),ped=VehicleDash.now(9);
                 if(ped>=BURST_PEDAL||rpm>=BURST_RPM)burstUntil=now+BURST_HOLD;
-                if(now<burstUntil&&now>=nextBurst&&burstLines<BURST_MAX){burst(svc);nextBurst=now+BURST_EVERY;continue;}
+                if(now<burstUntil&&now>=nextBurst&&burstLines<BURST_MAX&&!listening(now)){burst(svc);nextBurst=now+BURST_EVERY;continue;}
                 ObdSchedule.Poll p=sched.next(now);
                 if(p==null){long w=sched.untilNext(now);nap(w<0?1000:Math.min(w,500));continue;}
+                if(p.ecu==EMS&&listening(now)){sched.skip(p,now);continue;}   // another tester holds the engine: listen, ask the rest
                 byte[] r=askRaw(svc,p.ecu,p.req,p.req[0]==0x01?REPLY_MS:SLOW_REPLY_MS);
                 boolean ok=positive(r,p.req);
                 if(p.dropAfter()>0&&p.ecu==EMS)dpfLog(p,r,ok);   // the diesel-only PIDs
+                if(!ok){StringBuilder x=new StringBuilder();if(r!=null)for(int i=0;i<Math.min(3,r.length);i++)x.append(i==0?"":" ").append(String.format("%02X",r[i]&255));p.bad=r==null?"none":x.toString();}
                 sched.done(p,System.currentTimeMillis(),ok);
                 if(ok){byte[] d=new byte[r.length-p.req.length];System.arraycopy(r,p.req.length,d,0,d.length);sink.value(p.key,d);}
                 nap(ObdSchedule.gapAfter(r==null?0:r.length));
@@ -104,24 +163,23 @@ public final class ObdLive {
         if(r!=null)for(byte x:r)b.append(String.format("%02X ",x&255));
         android.util.Log.i("VehicleDash","OBD "+String.format("%02X",p.key)+(ok?": "+b.toString().trim():": "+(r==null?"no reply":b.toString().trim())+" "+p.dropAfter()+"x, dropped"));
     }
-    /** A positive reply to req: its service + 0x40, then the same PID / data identifier. */
-    static boolean positive(byte[] r,byte[] req){
-        if(r==null||r.length<=req.length||(r[0]&255)!=(req[0]&255)+0x40)return false;
-        for(int i=1;i<req.length;i++)if(r[i]!=req[i])return false;
-        return true;
-    }
+    static boolean positive(byte[] r,byte[] req){return ObdSchedule.positive(r,req);}
     /** One round of the mode 22 probe into the log: the whole reply in hex, a negative response code, or no reply. */
     private void probe(IBinder svc,int round){
         for(int[] p:PROBE){
             if(!running||diagBusy)return;
+            if(p[0]==EMS&&listening(System.currentTimeMillis()))continue;   // the engine is another tester's for now: keep the last answer
             byte[] req=new byte[p.length-1];for(int i=1;i<p.length;i++)req[i-1]=(byte)p[i];
-            byte[] r=askRaw(svc,p[0],req,1200);
+            byte[] r=askRaw(svc,p[0],req,1200);keepRaw(p[0],r);
             StringBuilder b=new StringBuilder();
             if(r!=null)for(byte x:r)b.append(String.format("%02X ",x&255));
             StringBuilder q=new StringBuilder();for(int i=1;i<p.length;i++)q.append(String.format(i==2?" %02X":"%02X",p[i]));
             String what=String.format("ecu %02X ",p[0])+q+": "+(r==null?"no reply":b.toString().trim()+" ("+r.length+" B)");
             android.util.Log.i("VehicleDash","OBD probe round "+round+" "+what);
             if(round==1)coldProbe.add(what);
+            StringBuilder k=new StringBuilder(String.format("%02X ",p[0]));for(int i=1;i<p.length;i++)k.append(String.format("%02X",p[i]));
+            StringBuilder v=new StringBuilder();if(r==null)v.append("none");else{for(int i=0;i<Math.min(3,r.length);i++)v.append(i==0?"":" ").append(String.format("%02X",r[i]&255));if(r[0]!=0x7f)v.append(' ').append(r.length).append('B');}
+            synchronized(PROBED){PROBED.put(k.toString(),v.toString());}
             nap(ObdSchedule.gapAfter(r==null?0:r.length));   // the probe keeps to the same budget (its replies run to 104 B)
         }
         if(round>1)for(String s:coldProbe)android.util.Log.i("VehicleDash","OBD probe round 1 again "+s);
@@ -158,7 +216,8 @@ public final class ObdLive {
                 while(true){
                     while(!replies.isEmpty()){
                         byte[] a=replies.remove(0);
-                        if(a.length>=1&&(a[0]&255)==sid+0x40)return a;
+                        // a positive reply to another request (a dongle's, on the same ECU): use it, keep waiting for ours
+                        if(a.length>=1&&(a[0]&255)==sid+0x40){if(positive(a,req))return a;passive(ecu,a);continue;}
                         if(a.length>=3&&(a[0]&255)==0x7f&&(a[1]&255)==sid){if((a[2]&255)==0x78)continue;return a;}   // 78: still working, keep waiting
                     }
                     long left=end-System.currentTimeMillis();
@@ -178,7 +237,11 @@ public final class ObdLive {
             if(code==3){
                 int rcv=data.readByte()&255;data.readByte();int fl=data.readByte()&255;
                 byte[] d=data.createByteArray();
-                if(rcv==0xc7&&(fl&0x80)!=0&&d!=null)synchronized(lock){if((fl&0x7f)==expectEcu){replies.add(d);lock.notifyAll();}}
+                if(rcv==0xc7&&(fl&0x80)!=0&&d!=null){int k=fl&0x7f;boolean mine,asking;
+                    synchronized(lock){mine=k==expectEcu;asking=expectEcu>=0;if(mine){replies.add(d);lock.notifyAll();}}
+                    if(!mine){if(asking)synchronized(STRAY){STRAY[k]++;StringBuilder x=new StringBuilder();
+                            for(int i=0;i<Math.min(3,d.length);i++)x.append(i==0?"":" ").append(String.format("%02X",d[i]&255));strayHead[k]=x.toString();}
+                        passive(k,d);}}   // another ECU's reply, or one while we ask nothing: another tester's
             }
             if(reply!=null)reply.writeNoException();
             return true;

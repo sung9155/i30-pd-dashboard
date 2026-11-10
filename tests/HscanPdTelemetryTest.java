@@ -209,7 +209,7 @@ public final class HscanPdTelemetryTest {
         u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x50,0x59,0,0,0x80,0),1004);check(u.sample(Telemetry.BOOST,1004).value>0.8f,"1885 hPa drive peak is about +0.89 bar once two samples agree");
         u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x50,0xda,0,0,0x80,0),1005);u.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x50,0xda,0,0,0x80,0),1006);
         check(Math.abs(u.sample(Telemetry.BOOST,1006).value-0.89f)<0.01f,"3.62 bar (in-car lift-off MAX) is never shown, even twice");
-        // Diesel (drive 2026-11-05): the timing slot stays 0 with the engine running; boost comes from 0x0e byte1 x 20 hPa.
+        // Diesel (drive 2026-11-05): the timing slot stays 0 with the engine running; boost comes from 0x0e byte1 x 16.78 hPa + 256 (OBD MAP fit 2026-11-08).
         // The bytes are the log's: idle 00 34 33 db 14 00 0c 79 (petrol layout would read about +3.6 bar), flat out byte1 129.
         Telemetry dzb=new Telemetry();
         dzb.hscanPd(0xc7,0x0a,b(0xd8,0x80,0,0x8e,0,0,0,0),900);
@@ -217,17 +217,17 @@ public final class HscanPdTelemetryTest {
         for(int k=0;k<5;k++){dzb.hscanPd(0xc7,0x08,b(0,0,0x60,0x0d,0,0,0,0),902+k);dzb.hscanPd(0xc7,0x0c,b(0x1b,0x20,0,0x30,0,0x61,0,0x35),902+k);}
         check(dzb.profile().fuel==com.veloster.vehicle.VehicleProfile.Fuel.DIESEL,"a zeroed timing slot with the engine running is a diesel at once, before 2000 rpm");
         dzb.hscanPd(0xc7,0x0e,b(0,0x34,0x33,0xdb,0x14,0,0x0c,0x79),910);
-        check(Math.abs(dzb.sample(Telemetry.BOOST,910).value-(52*20f-baro)/1000f)<0.001f&&Math.abs(dzb.sample(Telemetry.BOOST,910).value)<0.1f,"diesel idle: byte1 52 is about baro, near 0 bar: "+dzb.sample(Telemetry.BOOST,910).value);
+        check(Math.abs(dzb.sample(Telemetry.BOOST,910).value-(52*16.78f+256f-baro)/1000f)<0.001f&&Math.abs(dzb.sample(Telemetry.BOOST,910).value-0.13f)<0.05f,"diesel idle: byte1 52 is a little over baro: "+dzb.sample(Telemetry.BOOST,910).value);
         dzb.hscanPd(0xc7,0x0e,b(0,0x81,0x3a,0xb5,0x14,0,0x13,0x77),911);dzb.hscanPd(0xc7,0x0e,b(0,0x81,0x3a,0xb5,0x14,0,0x13,0x77),912);
-        check(Math.abs(dzb.sample(Telemetry.BOOST,912).value-(129*20f-baro)/1000f)<0.001f,"diesel flat out: byte1 129 is about +1.6 bar");
+        check(Math.abs(dzb.sample(Telemetry.BOOST,912).value-(129*16.78f+256f-baro)/1000f)<0.001f,"diesel flat out: byte1 129 is about +1.4 bar");
         // DPF from the same slot (evening drive 2026-11-05, the owner felt the regeneration): byte5 1 = regenerating, byte4 soot.
-        check(dzb.sample(Telemetry.DPF_SOOT,912).value==20&&dzb.sample(Telemetry.DPF_REGEN,912).value==0,"diesel morning: soot 20, no regeneration");
+        check(dzb.sample(Telemetry.DPF_SOOT,912).value==12.5f&&dzb.sample(Telemetry.DPF_REGEN,912).value==0,"diesel morning: soot 20 x 0.625 = 12.5 g, no regeneration");
         dzb.hscanPd(0xc7,0x03,new byte[]{(byte)0xfe,(byte)0xe3,0x1f,0},913);   // CLU12 odometer 208998.2 km
         float odo0=dzb.sample(Telemetry.ODOMETER,913).value;
         dzb.hscanPd(0xc7,0x0e,b(0,0x3a,0x39,0x55,0x15,0x01,0x0f,0x7f),914);
-        check(dzb.sample(Telemetry.DPF_REGEN,914).value==1&&dzb.sample(Telemetry.DPF_SOOT,914).value==21,"byte5 1: regenerating, soot 21");
+        check(dzb.sample(Telemetry.DPF_REGEN,914).value==1&&dzb.sample(Telemetry.DPF_SOOT,914).value==13.125f,"byte5 1: regenerating, soot 21 x 0.625");
         dzb.hscanPd(0xc7,0x0e,b(0x16,0x36,0x39,0xd9,0x0b,0x00,0x0c,0x75),915);
-        check(dzb.sample(Telemetry.DPF_REGEN,915).value==0&&dzb.sample(Telemetry.DPF_SOOT,915).value==11,"regeneration over at soot 11");
+        check(dzb.sample(Telemetry.DPF_REGEN,915).value==0&&dzb.sample(Telemetry.DPF_SOOT,915).value==6.875f,"regeneration over at soot 11 x 0.625");
         check(Math.abs(odo0-208998.2f)<0.05f&&dzb.dpfRegenEnd()==odo0,"the end of a regeneration marks the odometer");
         dzb.obd(Telemetry.DID_SOOT,new byte[]{0,0,0,0,0x10,0},916);   // 22 ED1D answers: its grams win from then on
         dzb.hscanPd(0xc7,0x0e,b(0x16,0x36,0x39,0xd9,0x0b,0x00,0x0c,0x75),917);
@@ -238,6 +238,11 @@ public final class HscanPdTelemetryTest {
         Telemetry pdp=new Telemetry();   // a petrol never shows DPF from this slot
         pdp.hscanPd(0xc7,0x0e,b(0x1d,0x1d,0x39,0x2e,0x15,0x01,0x80,0),900);
         check(!pdp.sample(Telemetry.DPF_REGEN,900).valid&&!pdp.sample(Telemetry.DPF_SOOT,900).valid,"no DPF before a diesel is known");
+        // diesel boost scale check: OBD MAP paired with byte1 then, fitted over the drive (11-08: idle 52 <-> 109-114 kPa)
+        check(dzb.boostFit().isEmpty(),"no fit before two MAP replies");
+        dzb.hscanPd(0xc7,0x0e,b(0,52,0x33,0xdb,0x14,0,0x0c,0x79),920);dzb.obd(0x0b,new byte[]{(byte)110},921);
+        dzb.hscanPd(0xc7,0x0e,b(0,102,0x33,0xdb,0x14,0,0x0c,0x79),922);dzb.obd(0x0b,new byte[]{(byte)210},923);
+        check(dzb.boostFit().contains("n 2 b1 52-102: MAP kPa = 2.000 x b1 +6.0"),"two pairs: 2 kPa a count, +6 kPa: "+dzb.boostFit());
         Telemetry ptb=new Telemetry();   // a petrol never takes the diesel path, even with a few zero timing frames first
         ptb.hscanPd(0xc7,0x0a,b(0xd8,0x80,0,0x8e,0,0,0,0),900);
         for(int k=0;k<3;k++){ptb.hscanPd(0xc7,0x08,b(0,0,0x60,0x0d,0,0,0,0),901+k);ptb.hscanPd(0xc7,0x0c,b(0,0,0,0,0,0,0,0),901+k);}
@@ -309,7 +314,8 @@ public final class HscanPdTelemetryTest {
         t.obd(0x2f,0x7f,0,3401);check(Math.abs(t.sample(Telemetry.FUEL_LEVEL,3401).value-49.8f)<0.5f,"fuel level ~50%");
         t.obd(0x3c,0x0b,0x54,3402);check(Math.abs(t.sample(Telemetry.CAT_TEMP,3402).value-250f)<1f,"catalyst temp ~250 C");
         t.obd(0x43,0x00,0x31,3403);check(Math.abs(t.sample(Telemetry.ABS_LOAD,3403).value-19.2f)<0.5f,"absolute load ~19%");
-        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.DPF_SOOT+1,"label/unit tables cover the added signals");
+        t.obd(0x0b,new byte[]{0x67},3404);check(t.boostCheck(3404).startsWith("MAP 103 kPa"),"MAP 01 0B kept for the boost-scale line: "+t.boostCheck(3404));
+        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.EGT_CAT+1,"label/unit tables cover the added signals");
         // diesel DPF PIDs (J1979-DA): a support byte first, only marked fields published; other PIDs fall through
         t.obd(0x7a,new byte[]{0x07,0x05,(byte)0xdc,0,0,0,0},3410);check(Math.abs(t.sample(Telemetry.DPF_DP,3410).value-15f)<0.01f,"DPF delta pressure 1500 x 0.01 = 15 kPa");
         t.obd(0x7a,new byte[]{0x07,(byte)0xff,(byte)0x9c,0,0,0,0},3411);check(Math.abs(t.sample(Telemetry.DPF_DP,3411).value+1f)<0.01f,"delta pressure is signed (-1 kPa)");
@@ -329,20 +335,50 @@ public final class HscanPdTelemetryTest {
         {Telemetry dpf0=new Telemetry();dpf0.obd(0x8b,new byte[]{0x00,0x01,(byte)0x80,0,0,0,0},3415);
         check(!dpf0.sample(Telemetry.DPF_REGEN,3415).valid&&!dpf0.sample(Telemetry.DPF_TRIGGER,3415).valid,"unsupported fields stay unpublished");
         dpf0.obd(0x2f,new byte[]{0x7f},3416);check(Math.abs(dpf0.sample(Telemetry.FUEL_LEVEL,3416).value-49.8f)<0.5f,"single-byte PIDs still decode through the byte[] path");}
-        // 7DCT clutch temperatures from TCU 22 01A4 (our car, 11 min, reversing): u16 0x0031 / 0x0044, x2-40 -> odd 58 / even 96 C
+        // 7DCT clutch temperatures from TCU 22 01A4 (our car, 11 min, reversing): u16 0x0031 / 0x0044 is °C as is -> odd 49 / even 68 C
+        // (the earlier x2-40 read 116 / 126 against a DAG3's 80 / 87 on the same car)
         {Telemetry k=new Telemetry();byte[] r=hex("62 01 A4 FF FF E0 00 14 02 00 26 00 FE 94 1B 9E BD C3 14 94 08 F6 C4 10 02 03 0E 0E F0 FC C0 FF 00 31 00 44 00");
         k.obd(Telemetry.DID_CLUTCH,java.util.Arrays.copyOfRange(r,3,r.length),3430);
-        check(k.sample(Telemetry.CLUTCH_ODD,3430).value==58&&k.sample(Telemetry.CLUTCH_EVEN,3430).value==96,"DCT clutch temperatures odd 58 / even 96 C");
-        k.obd(Telemetry.DID_CLUTCH,new byte[10],3431);check(k.sample(Telemetry.CLUTCH_ODD,3431).value==58,"a short reply leaves them alone");}
+        check(k.sample(Telemetry.CLUTCH_ODD,3430).value==49&&k.sample(Telemetry.CLUTCH_EVEN,3430).value==68,"DCT clutch temperatures odd 49 / even 68 C");
+        k.obd(Telemetry.DID_CLUTCH,new byte[10],3431);check(k.sample(Telemetry.CLUTCH_ODD,3431).value==49,"a short reply leaves them alone");}
         // Hyundai diesel DPF block 22 ED03 (OBDb layout): 35 -> 15.1 kPa, 58 -> 372 C upstream, 123 400 m since the regeneration
         {Telemetry k=new Telemetry();byte[] e=new byte[56];e[36]=35;e[38]=58;e[45]=0;e[46]=1;e[47]=(byte)0xE2;e[48]=0x08;
         k.obd(Telemetry.DID_DPF,e,3440);
         check(Math.abs(k.sample(Telemetry.DPF_DP,3440).value-15.1f)<0.05f&&Math.abs(k.sample(Telemetry.DPF_TEMP,3440).value-372.2f)<0.1f
             &&Math.abs(k.sample(Telemetry.DPF_SINCE_KM,3440).value-123.4f)<0.01f,"ED03 delta pressure, temperature, distance since regeneration");
         k.obd(Telemetry.DID_DPF,new byte[40],3441);check(k.sample(Telemetry.DPF_DP,3441).value>15,"a short ED03 reply leaves them alone");
+        byte[] f=new byte[40];f[35]=0x04;f[36]=0x79;f[37]=(byte)0x82;k.obd(Telemetry.DID_DPF2,f,3442);   // 62 E0 F1 from the DAG3 drive
+        check(Math.abs(k.sample(Telemetry.DPF_SINCE_KM,3442).value-293.25f)<0.01f,"E0F1 bytes 34..37: 293.25 km since regeneration");
+        check(Math.abs(k.sample(Telemetry.DPF_TEMP,3442).value-(58*4.7098f+99))<0.1f,"ED03 answered just now: its temperature stays");
+        check(Math.abs(k.sample(Telemetry.EGT_CAT,3442).value-99)<0.1f,"ED03 [37] is the catalyst-side temperature (0 -> 99 C)");
+        f[16]=0x4C;f[17]=(byte)0x82;k.obd(Telemetry.DID_DPF2,f,3442);   // 2026-11-09 17:21: 19,586 at 2,186 rpm; read as K/16 it was 951 C while the DAG3 showed 131 C
+        check(Math.abs(k.sample(Telemetry.EGT_CAT,3442).value-99)<0.1f,"E0F1 16..17 (about 8 x rpm) is not read as a temperature");
+        // the same block over KWP 21 03 (OBDb): byte 46 exhaust temperature x4.7098 + 99, 53..56 metres since the regeneration
+        byte[] w=new byte[57];w[46]=58;w[54]=(byte)0x01;w[55]=(byte)0xe2;w[56]=0x40;   // 123 456 m
+        k.obd(Telemetry.LID_DPF,w,3443);
+        check(Math.abs(k.sample(Telemetry.DPF_TEMP,3443).value-(58*4.709803922f+99))<0.01f&&Math.abs(k.sample(Telemetry.DPF_SINCE_KM,3443).value-123.456f)<0.01f,"21 03 exhaust temperature and distance since regeneration");
         // 22 ED1D soot (OBDb Kia-Ceed 2018): u16 at data 4..5 x256/65535 -> 0x1000 = 16.0 g; the soot leads the DPF tile
         k.obd(Telemetry.DID_SOOT,new byte[]{0,0,0,0,0x10,0x00,0,0},3442);check(Math.abs(k.sample(Telemetry.DPF_SOOT,3442).value-16f)<0.01f,"ED1D soot 16.0 g");
         check(com.veloster.vehicle.Tiles.dpfLead(16,Float.NaN,15)==Telemetry.DPF_SOOT&&com.veloster.vehicle.Tiles.dpfLead(Float.NaN,40,15)==Telemetry.DPF_TRIGGER&&com.veloster.vehicle.Tiles.dpfLead(Float.NaN,Float.NaN,15)==Telemetry.DPF_DP,"DPF lead: soot, trigger, pressure");}
+                {   // values read from hscan since 2026-11-08 (bytes and ranges from our petrol and diesel drive logs)
+            Telemetry hv=new Telemetry();
+            hv.hscanPd(0xc7,0x14,b(0,0,0,104,0,0,0,0),1000);check(Math.abs(hv.sample(Telemetry.AMBIENT,1000).value-12f)<0.01f,"outside temperature byte3 x0.5-40 (104 -> 12 C)");
+            hv.obd(0x46,60,0,1500);check(Math.abs(hv.sample(Telemetry.AMBIENT,1500).value-12f)<0.01f,"OBD 01 46 yields once hscan gives the temperature");
+            hv.hscanPd(0xc7,0x14,b(0,0,0,255,0,0,0,0),2000);check(!hv.sample(Telemetry.AMBIENT,2000).valid,"outside temperature 255 = none");
+            Telemetry o=new Telemetry();o.obd(0x46,60,0,1000);check(Math.abs(o.sample(Telemetry.AMBIENT,1000).value-20f)<0.01f,"without hscan the OBD temperature still shows");
+            hv.hscanPd(0xc7,0x1c,b(0,0,0,0x60),3000);
+            check(hv.sample(Telemetry.TCS,3000).value==0&&hv.sample(Telemetry.ESC,3000).value==0&&hv.sample(Telemetry.ABS,3000).value==0&&hv.sample(Telemetry.ESC,3000).valid,"stability switches: both on");
+            hv.hscanPd(0xc7,0x1c,b(2,1,0,0x60),3100);check(hv.sample(Telemetry.TCS,3100).value==1&&hv.sample(Telemetry.ESC,3100).value==0,"02 01: TCS off, ESC still on");
+            hv.hscanPd(0xc7,0x1c,b(2,2,0,0x60),3200);check(hv.sample(Telemetry.TCS,3200).value==1&&hv.sample(Telemetry.ESC,3200).value==1,"02 02: both off");
+            hv.hscanPd(0xc7,0x1c,b(1,0,0,0x01),3300);check(hv.sample(Telemetry.ABS,3300).value==1,"byte0 bit0 is the ABS lamp");
+            hv.hscanPd(0xc7,0x1c,b(255,255,255,255),3400);check(!hv.sample(Telemetry.TCS,3400).valid&&!hv.sample(Telemetry.ABS,3400).valid,"all FF = no data");
+            check("OFF".equals(Telemetry.label(Telemetry.ESC,1))&&"ON".equals(Telemetry.label(Telemetry.TCS,0))&&"WARN".equals(Telemetry.label(Telemetry.ABS,1)),"switch labels");
+            // tyre pressure units: byte1 = status | unit << 3
+            hv.hscanPd(0xc7,0x20,b(0,0x01,33,33,33,34),4000);check(hv.sample(Telemetry.TPMS_FL,4000).value==33&&hv.sample(Telemetry.TPMS_RR,4000).value==34,"TPMS psi");
+            hv.hscanPd(0xc7,0x20,b(0,0x09,44,44,44,46),4100);check(Math.abs(hv.sample(Telemetry.TPMS_FL,4100).value-44*0.7251887f)<0.01f,"TPMS in 5 kPa steps (44 -> 31.9 psi)");
+            hv.hscanPd(0xc7,0x20,b(0,0x11,22,22,22,23),4200);check(Math.abs(hv.sample(Telemetry.TPMS_FL,4200).value-22*1.4503774f)<0.01f,"TPMS in 0.1 bar steps (22 -> 31.9 psi)");
+            hv.hscanPd(0xc7,0x20,b(0,0x00,0,0,255,255),4300);check(!hv.sample(Telemetry.TPMS_FL,4300).valid,"TPMS status 0 = not yet reporting");
+        }
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
     private static byte[] hex(String h){String[] p=h.trim().split(" ");byte[] b=new byte[p.length];for(int i=0;i<p.length;i++)b[i]=(byte)Integer.parseInt(p[i],16);return b;}

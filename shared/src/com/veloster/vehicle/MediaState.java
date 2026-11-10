@@ -17,6 +17,7 @@ public final class MediaState {
     private static final class Track {
         String title="",artist="";
         int playState=-1;
+        boolean advancing;   // the position is climbing with real time: playing, even when the OEM flag says otherwise (BT reports playing_state false while it plays)
         long position=-1,duration=-1,timeAt=-1;
         String artworkUri="";byte[] artworkBytes;long artworkRevision;
     }
@@ -32,7 +33,7 @@ public final class MediaState {
             source=s;title=t;artist=a;positionMs=p;durationMs=d;timeAgeMs=age;notice=n;
             noticeAgeMs=noticeAge;artworkRevision=track==null?0:track.artworkRevision;
             artworkUri=track==null?"":track.artworkUri;artworkBytes=track==null?null:track.artworkBytes;
-            playState=track==null?-1:track.playState;
+            playState=track==null?-1:(track.advancing&&age>=0&&age<3000?1:track.playState);   // a climbing position overrides a stuck OEM flag
         }
         public boolean hasProgress(){return positionMs>=0 && durationMs>0;}
         public float progress(){return hasProgress()?Math.min(1f,positionMs/(float)durationMs):0;}
@@ -78,14 +79,17 @@ public final class MediaState {
             String next=clean(title);
             if(!t.title.equals(next)){
                 // A new track must not inherit the previous track's elapsed time or artist.
-                t.position=-1;t.duration=-1;t.timeAt=-1;
+                t.position=-1;t.duration=-1;t.timeAt=-1;t.advancing=false;
                 t.artworkUri="";t.artworkBytes=null;t.artworkRevision=++artSerial;
                 if(!hasArtist)t.artist="";
             }
             t.title=next;
         }
         if(hasArtist)t.artist=clean(artist);
-        if(hasPosition){t.position=position>=0?position:-1;t.timeAt=now;}
+        if(hasPosition){
+            if(t.position>=0&&t.timeAt>=0&&position>=0&&now-t.timeAt>400){long dp=position-t.position,dt=now-t.timeAt;t.advancing=dp>dt/2&&dp<dt*4;}   // climbing with real time = playing
+            t.position=position>=0?position:-1;t.timeAt=now;
+        }
         if(hasDuration)t.duration=duration>0?duration:-1;
         boolean switched=!modeKnown && hasTitle && t.title.length()>0 && active!=source;
         if(switched)active=source;
@@ -97,7 +101,7 @@ public final class MediaState {
     public synchronized void artwork(int source,boolean hasUri,String uri,byte[] bytes,boolean clear){
         if(source<0||source>=tracks.length)return;
         Track t=tracks[source];if(t==null)tracks[source]=t=new Track();
-        if(clear){t.artworkUri="";t.artworkBytes=null;t.artworkRevision=++artSerial;return;}
+        if(clear)return;   // keep the track's art: a mid-track 'default' flag (sent on BT position updates) must not wipe it; art resets on a track change
         if(bytes!=null && bytes.length>0 && bytes.length<=2*1024*1024){
             if(!java.util.Arrays.equals(t.artworkBytes,bytes)){
                 t.artworkBytes=bytes.clone();t.artworkUri="";t.artworkRevision=++artSerial;

@@ -118,6 +118,13 @@ public final class ClusterRenderer {
             if(hot)text(c,"CLUTCH",l+10,t+20,12,0xff000000,Paint.Align.LEFT,Typeface.DEFAULT_BOLD,1,0);
             return;
         }
+        if(sig==Tiles.EXHAUST){   // diesel exhaust: before the DPF, before the catalyst
+            meter(c,l,t,rr,b,"EXHAUST","°C","",WHITE,Float.NaN,hero,false);
+            String[] n={"DPF","CAT"};float[] x={v(Telemetry.DPF_TEMP),v(Telemetry.EGT_CAT)};
+            for(int k=0;k<2;k++){text(c,n[k],l+10,t+(k==0?60:102),11,MUTED,Paint.Align.LEFT,Typeface.DEFAULT_BOLD,1,0);
+                bigItalic(c,fmt("%.0f",x[k]),rr-10,t+(k==0?64:106),30,WHITE,Paint.Align.RIGHT);}
+            return;
+        }
         if(sig==Tiles.DPF){   // the regeneration trigger, or the delta pressure when the ECU gives only that
             int k=Tiles.dpfLead(v(Telemetry.DPF_SOOT),v(Telemetry.DPF_TRIGGER),v(Telemetry.DPF_DP));boolean regen=v(Telemetry.DPF_REGEN)>0;float x=v(k);
             meter(c,l,t,rr,b,regen?"DPF REGEN":"DPF",Telemetry.UNITS[k],Tiles.text(k,x),regen?AMBER:WHITE,Tiles.fraction(k,x),regen?AMBER:hero,false);
@@ -138,6 +145,7 @@ public final class ClusterRenderer {
             mono(c,b.toString(),x+10,r[3]-18,24,lv==2?LCD_RED:lv==1?R_YELLOW:R_AMBER,Paint.Align.LEFT);return;}
         if(sig==Tiles.CLUTCH){float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);int lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));
             txt=fmt("%.0f",o)+"/"+fmt("%.0f",e);col=lv==2?LCD_RED:lv==1?R_YELLOW:R_AMBER;}
+        else if(sig==Tiles.EXHAUST)txt=fmt("%.0f",v(Telemetry.DPF_TEMP))+"/"+fmt("%.0f",v(Telemetry.EGT_CAT));
         else if(sig==Tiles.DPF){int k=Tiles.dpfLead(v(Telemetry.DPF_SOOT),v(Telemetry.DPF_TRIGGER),v(Telemetry.DPF_DP));txt=Tiles.text(k,v(k));if(v(Telemetry.DPF_REGEN)>0)col=R_YELLOW;}
         else{float val=Tiles.value(sig,s,st);int lv=Tiles.level(sig,val);txt=Tiles.text(sig,val);col=lv==2?LCD_RED:lv==1?R_YELLOW:R_AMBER;}
         mono(c,txt,x+10,r[3]-16,txt.length()>7?26:36,col,Paint.Align.LEFT);
@@ -260,7 +268,7 @@ public final class ClusterRenderer {
     private void warnings(Canvas c,float t,float b){
         boolean low=false,tpms=false;for(int i=Telemetry.TPMS_FL;i<=Telemetry.TPMS_RR;i++){float x=v(i);if(!Float.isNaN(x)){tpms=true;if(x<TIRE_LOW)low=true;}}
         int[] sig={Telemetry.PARK_BRAKE,Telemetry.ESC,Telemetry.ABS,Telemetry.TCS};
-        String[] name={"PARK BRAKE","ESC","ABS","TCS","TPMS","DPF"};
+        String[] name={"PARK BRAKE","ESC OFF","ABS","TCS OFF","TPMS","DPF"};   // ESC / TCS light when switched off
         int n=prof.fuel==VehicleProfile.Fuel.DIESEL?6:5;   // a diesel adds the DPF lamp, amber while regenerating
         float l=12,rr=788,gap=4,w=(rr-l-gap*(n-1))/n;
         for(int i=0;i<n;i++){

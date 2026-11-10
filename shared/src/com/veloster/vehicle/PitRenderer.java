@@ -40,6 +40,7 @@ public final class PitRenderer {
     private final RaceRenderer raceRenderer=new RaceRenderer();
     private final LambdaCluster mtSport=new LambdaCluster();
     private final EcoCluster eco=new EcoCluster();
+    private final TachoCluster tacho=new TachoCluster();
     private final ShowRenderer showRenderer=new ShowRenderer();
     private final ClusterRenderer clusterRenderer=new ClusterRenderer();
     public static final int PAGE_PERFORMANCE=1,PAGE_RACE=2,PAGE_RECORDS=3,PAGE_SHOW=4,PAGE_CLASSIC=5,PAGE_RETRO=6,PAGE_RALLY=7;
@@ -49,6 +50,8 @@ public final class PitRenderer {
     public static boolean isCluster(int page){return page>=PAGE_CLASSIC&&page<PAGE_MANUAL;}
     /** The 에코 screen (EcoCluster): drawn here like 람다; its taps and the fare hold come through VehicleDash. */
     public static final int PAGE_ECO=ClusterPicker.ECO-ClusterPicker.F1;
+    /** The 타코 screen (TachoCluster): drawn here too. */
+    public static final int PAGE_TACHO=ClusterPicker.TACHO-ClusterPicker.F1;
     private boolean picker,editing;
     private int hidden;
     /** Screen list over the body while open, its edit mode and the hidden screens (VehicleDash owns the gesture). */
@@ -110,7 +113,7 @@ public final class PitRenderer {
         if(minute!=clockMinute){clockMinute=minute;clockFormat.setTimeZone(java.util.TimeZone.getDefault());clockText=clockFormat.format(new java.util.Date(now));}
         return clockText;
     }
-    public void setArtwork(Bitmap value){artwork=value;}
+    public void setArtwork(Bitmap value){artwork=value;ClusterKit.artwork=value;}
     public void setGaugeLayout(GaugeLayout value){gaugeLayout=value;}
     public void setGraphLayout(GraphLayout value){graphLayout=value;}
     public void setSymmetric(boolean value){symmetric=value;}
@@ -163,6 +166,7 @@ public final class PitRenderer {
         else if(symmetric&&page==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
         else if(symmetric&&page==PAGE_MANUAL){mtSport.shiftTarget=shiftTarget;mtSport.frame(c,samples,model,stats,profile,frameTime,null);}
         else if(symmetric&&page==PAGE_ECO)eco.frame(c,samples,model,stats,profile,frameTime,null);
+        else if(symmetric&&page==PAGE_TACHO){tacho.shiftTarget=shiftTarget;tacho.frame(c,samples,model,stats,profile,frameTime,null);}
         else if(symmetric&&isCluster(page))clusterRenderer.draw(c,page-PAGE_CLASSIC,samples,frameTime,stats,profile,model,music);
         else if(mediaPage)drawCombined(c);else if(cluster)drawCluster(c);else drawDashboard(c);
         // Pages without their own shift light (performance, show, every cluster layout) get the race tab's cue from the same
@@ -301,6 +305,8 @@ public final class PitRenderer {
                     else if(i==SettingsLayout.SOUND_ROUTE){name="출력 경로";dim=!soundOn;value=SettingsLayout.SOUND_ROUTES[soundRoute];}
                     else if(i==SettingsLayout.SOUND_ENGINE){name="엔진";dim=!soundOn;value=SettingsLayout.SOUND_ENGINES[soundEngine];}
                     else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}
+                    else if(i==SettingsLayout.SOUND_FAST){sel=EngineSound.fast;name="소리 반응 속도";dim=!soundOn;sub="빠름: 소리가 덜 늦음 · 화면이 느려질 때 소리가 끊기면 보통으로";value=EngineSound.fast?"빠름":"보통";}
+                    else if(i==SettingsLayout.SOUND_CLICK){sel=CassetteCluster.clickSound;name="카세트 찰칵 소리";sub="카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개";value=CassetteCluster.clickSound?"켬":"끔";}
                     else if(i==SettingsLayout.SOUND_COIN){sel=EcoCluster.coinSound;name="에코 동전 소리";sub="에코 화면에서 동전이 떨어질 때 · 엔진 사운드와 별개";value=EcoCluster.coinSound?"켬":"끔";}
                     else{name=SOUND_ROW_NAMES[i-SettingsLayout.SOUND_VOLUME];
                         boolean noTurbo=(i==SettingsLayout.SOUND_TURBO||i==SettingsLayout.SOUND_BOV)&&!SettingsLayout.SOUND_HAS_TURBO[soundEngine];
@@ -314,6 +320,7 @@ public final class PitRenderer {
                             sub=String.format(Locale.US,UiText.t(Math.abs(off)<0.05f?"속도계가 실제와 같음":off>0?"속도계가 실제보다 %.1f %% 높게 나옴":"속도계가 실제보다 %.1f %% 낮게 나옴"),Math.abs(off))
                                 +UiText.t(speedCalOn?" · 실제 속도로 표시 중":" · 켜면 실제 속도로 표시");}}
                     else if(i==2){name="속도 GPS 보정 값 초기화";sub="잰 값을 지우고 처음부터";dim=speedCalSamples==0;}
+                    else if(i==3){name="'내 앱' 열기";sub="USB 디버깅 · 시동 안내 건너뛰기 · 블루투스 등";}
                     else{name="고장코드 읽기";sub="엔진·변속기·제동·조향·에어백·바디 (읽기만)";}
             }
             box(c,l,t,l+w,t+h,sel?0xff1c303b:dim?0xff08090a:0xff101315);
@@ -408,6 +415,7 @@ public final class PitRenderer {
             else if(pg==PAGE_RECORDS)raceRenderer.drawRecords(c,stats,frameTime);
             else if(pg==PAGE_MANUAL)mtSport.frame(c,samples,thModel,stats,profile,frameTime,null);
             else if(pg==PAGE_ECO)eco.frame(c,samples,thModel,stats,profile,frameTime,null);
+            else if(pg==PAGE_TACHO){tacho.shiftTarget=shiftTarget;tacho.frame(c,samples,thModel,stats,profile,frameTime,null);}
             else if(isCluster(pg))clusterRenderer.draw(c,pg-PAGE_CLASSIC,samples,frameTime,stats,profile,thModel,null);
         }
     }
@@ -603,12 +611,13 @@ public final class PitRenderer {
         int sig=Tiles.signal(Tiles.F1,i,profile);String txt;int lv=0;float size=22;
         if(sig==Tiles.TIRES){StringBuilder b=new StringBuilder();for(int k=0;k<4;k++){float x=clutchT(Telemetry.TPMS_FL+k);lv=Math.max(lv,Tiles.level(Telemetry.TPMS_FL+k,x));b.append(k>0?" ":"").append(Tiles.text(Telemetry.TPMS_FL+k,x));}txt=b.toString();size=16;}
         else if(sig==Tiles.CLUTCH){float o=clutchT(Telemetry.CLUTCH_ODD),e=clutchT(Telemetry.CLUTCH_EVEN);lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));txt=Tiles.text(Telemetry.CLUTCH_ODD,o)+" / "+Tiles.text(Telemetry.CLUTCH_EVEN,e);size=18;}
+        else if(sig==Tiles.EXHAUST){txt=Tiles.text(Telemetry.DPF_TEMP,clutchT(Telemetry.DPF_TEMP))+" / "+Tiles.text(Telemetry.EGT_CAT,clutchT(Telemetry.EGT_CAT));size=18;}
         else if(sig==Tiles.DPF){int k=Tiles.dpfLead(clutchT(Telemetry.DPF_SOOT),clutchT(Telemetry.DPF_TRIGGER),clutchT(Telemetry.DPF_DP));
             txt=Tiles.text(k,clutchT(k));lv=clutchT(Telemetry.DPF_REGEN)>0?1:0;
             text(c,Telemetry.UNITS[k],unitX,310,11,MUTED,false);}
         else{float v=Tiles.value(sig,samples,stats);lv=Tiles.level(sig,v);txt=Tiles.text(sig,v);}
         text(c,Tiles.caption(sig),capX,307,11,MUTED,true);
-        boolean several=sig==Tiles.TIRES||sig==Tiles.CLUTCH;   // a longer line starts right after the caption, clear of the unit
+        boolean several=sig==Tiles.TIRES||sig==Tiles.CLUTCH||sig==Tiles.EXHAUST;   // a longer line starts right after the caption, clear of the unit
         text(c,txt,several?capX+85:valX,310,txt.length()>6&&size==22?18:size,lv==2?D():lv==1?AMBER:WHITE,true);
         if(sig!=Tiles.DPF)text(c,Tiles.unit(sig),unitX,310,11,MUTED,false);
     }
@@ -710,7 +719,7 @@ public final class PitRenderer {
             for(int n=0;n<3;n++){
                 float t=y+43+n*22;Telemetry.Sample s=samples[i+n];
                 text(c,UiText.t(Telemetry.LABELS[i+n]),x+10,t,12,MUTED,false);
-                text(c,s.valid?(s.value==1?UiText.t("작동"):UiText.t("비작동")):"—",x+66,t,16,s.valid&&s.value==1?D():Theme.current().calm(BLUE),true);
+                text(c,s.valid?(s.value==1?UiText.t(n==2?"경고":"꺼짐"):UiText.t("정상")):"—",x+66,t,16,s.valid&&s.value==1?D():Theme.current().calm(BLUE),true);   // TCS / ESC 1 = switched off, ABS 1 = warning lamp
             }
         }
     }

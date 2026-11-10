@@ -10,7 +10,8 @@ public final class Telemetry {
     public static final int SPARK=42,BRAKE_SWITCH=43,STEER_TORQUE=44,DOOR_DRIVER=45,WIPER=46,DOOR_PASSENGER=47,TRUNK=48,HOOD=49,TURN_LEFT=50,TURN_RIGHT=51,SHIFT_HINT=52,HEAD_LAMP=53,TAIL_LAMP=54,HIGH_BEAM=55,CLUTCH=56,FUEL_LEVEL=57,CAT_TEMP=58,ABS_LOAD=59;
     public static final int DPF_DP=60,DPF_TEMP=61,DPF_REGEN=62,DPF_TRIGGER=63;   // diesel, standard OBD PIDs 0x7A/0x7C/0x8B
     public static final int DPF_SINCE_KM=64,DPF_AVG_KM=65;   // km since the last regeneration the app saw end; ECU average between regenerations
-    public static final int DPF_SOOT=68;   // diesel soot load, g: 22 ED1D (Kia Ceed CD 2018, the PD's sibling, in OBDb)
+    public static final int DPF_SOOT=68;
+    public static final int EGT_CAT=69;   // diesel exhaust temperature before the oxidation catalyst (ED03 [37]); DPF_TEMP is before the DPF   // diesel soot load, g: 22 ED1D (Kia Ceed CD 2018, the PD's sibling, in OBDb)
     public static final int CLUTCH_ODD=66,CLUTCH_EVEN=67;   // 7DCT clutch temperatures: #1 odd gears (1 3 5 7), #2 even gears (2 4 6 R); TCU 22 01A4
     /** DCT clutch heat for every screen: 0 normal, 1 warm (amber), 2 hot (red, the cell fills).
      *  ponytail: 150 / 180 °C are a guess (our car: 96 °C reversing after 11 min in town; owners report 145 in flat
@@ -21,20 +22,23 @@ public final class Telemetry {
     public static final int DID_CLUTCH=0x1A4;
     /** Sink key for the diesel engine's mode 22 DID ED03 reply (Hyundai DPF block; the standard DPF PIDs get no answer on a PD diesel). */
     public static final int DID_DPF=0xED03;
+    /** Sink key for the diesel's KWP 21 03 reply (local identifier 03, the older form of the same DPF block). */
+    public static final int LID_DPF=0x2103;
     /** Sink key for 22 ED1D: the soot load (OBDb Kia-Ceed, verified there for 2018 only). */
     public static final int DID_SOOT=0xED1D;
-    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격", "DCT 홀수단 클러치 온도", "DCT 짝수단 클러치 온도", "DPF 포집량"};
-    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%", "km", "km", "°C", "°C", "g"};
+    public static final int DID_DPF2=0xE0F1;   // the DPF block a DAG3 asks (it never asks ED03)
+    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격", "DCT 홀수단 클러치 온도", "DCT 짝수단 클러치 온도", "DPF 포집량", "산화촉매 앞 배기 온도"};
+    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%", "km", "km", "°C", "°C", "g", "°C"};
     public static final long STALE_MS = 60000; // UI freshness threshold, not an OEM timeout.
     public static final long HISTORY_MS=300000,HISTORY_STEP_MS=250;
     private final History[] history=new History[LABELS.length];
+    /** Display orientation follows the driver's reported left/right convention. Raw SAS stays unchanged. */
+    /** GPS speed calibration (SpeedCal) applied to the shown vehicle speed; 1 when off or not learned yet. */
+    public static volatile float speedScale=1;
     /** Foot on the brake: the brake switch (EMS12 BRAKE_ACT) when it is known, else pressure over 3 bar. Pressure alone
      *  is a poor test: another PD reads 1-2 bar with the foot off, and a held brake (auto hold) keeps pressure up. */
     public static final float BRAKING_BAR=3;
     public static boolean braking(float sw,float bar){return !Float.isNaN(sw)?sw>0:bar>BRAKING_BAR;}
-    /** Display orientation follows the driver's reported left/right convention. Raw SAS stays unchanged. */
-    /** GPS speed calibration (SpeedCal) applied to the shown vehicle speed; 1 when off or not learned yet. */
-    public static volatile float speedScale=1;
     public static float displayValue(int signal,float raw){return signal==STEERING?(raw==0?0:-raw):signal==7?raw*speedScale:raw;}
     /** String.format(Locale.US,f,x), but a value that rounds to zero loses its minus: idle boost -0.004 reads 0.00
      * (+0.00 under a '+' flag), not -0.00. */
@@ -104,6 +108,8 @@ public final class Telemetry {
     private boolean hscanSpeed;
     /** Latest EMS14 barometric pressure (hPa) from slot 0x0a; NaN until received. Boost is relative to it. */
     private float baroHpa=Float.NaN;
+    /** For the diesel boost-scale check: the last EMS19 byte1 (-1 before one) and OBD MAP (01 0B, kPa, -1 before one). */
+    private int boostByte=-1,mapKpa=-1;
     private final long[] counts=new long[LABELS.length];
     private final float[] values = new float[LABELS.length];
     private final long[] times = new long[LABELS.length];
@@ -158,6 +164,8 @@ public final class Telemetry {
     private boolean sparkSeen, selectorSeen, leverAlive, emsGearSeen; private float rpmMax;
     /** EMS16 frames with the timing byte at 0 while the engine has run: a diesel's empty slot (a petrol always has timing). */
     private int zeroSpark;
+    /** ambientHscan: the hscan outside temperature has been seen, so OBD 01 46 is ignored. */
+    private boolean ambientHscan;
     private boolean diesel(){return !sparkSeen&&zeroSpark>=5;}
     private int leverCheck=-1, leverFrozen;
     // 6MT gear from rpm / speed. Ratios: Hyundai AU i30 PD spec sheet, 1.6 T-GDi 6MT (final drive 4.467, single);
@@ -212,7 +220,7 @@ public final class Telemetry {
         epoch++;ptValid=false;gfValid=false;stdSeen=false;lastComputedPt=-1;lastComputedGf=-1;
         calculation.remove();
         observedPreviousRpm=-1;observedTorqueValid=false;
-        sparkSeen=false;selectorSeen=false;leverAlive=false;emsGearSeen=false;rpmMax=0;zeroSpark=0;
+        sparkSeen=false;selectorSeen=false;leverAlive=false;emsGearSeen=false;rpmMax=0;zeroSpark=0;ambientHscan=false;
         leverCheck=-1;leverFrozen=0;mtCand=0;mtShown=0;mtCandAt=0;mtRatioMin=mtRatioMax=0;mtReverse=false;idleTarget=Float.NaN;idleKmh=0;clutchLast=-1;clutchToggled=false;
         for(int i=0;i<LABELS.length;i++) { counts[i]=0; valid[i]=false; changed[i]=false; seen[i]=false; history[i]=null; }
     }
@@ -252,10 +260,14 @@ public final class Telemetry {
      */
     public synchronized void obd(int pid,int a,int b,long now){
         switch(pid){
-            case 0x46: put(AMBIENT,a-40,true,now); break;                  // ambient air temperature, A-40 °C
+            case 0x46: if(!ambientHscan)put(AMBIENT,a-40,true,now); break;                  // ambient air temperature, A-40 °C
             case 0x2f: put(FUEL_LEVEL,a*100f/255,true,now); break;        // fuel tank level, A*100/255 %
             case 0x3c: put(CAT_TEMP,((a<<8|b)/10f)-40,true,now); break;   // catalyst temperature, (256A+B)/10-40 °C
             case 0x43: put(ABS_LOAD,(a<<8|b)*100f/255,true,now); break;   // absolute load, (256A+B)*100/255 %
+            case 0x0b: mapKpa=a;                                            // intake manifold absolute pressure, A kPa (logged, not shown)
+                if(diesel()&&boostByte>0&&boostByte<255){fitN++;fitX+=boostByte;fitY+=a;fitXX+=(double)boostByte*boostByte;fitXY+=(double)boostByte*a;
+                    fitLo=Math.min(fitLo,boostByte);fitHi=Math.max(fitHi,boostByte);}
+                break;
         }
     }
     /**
@@ -280,21 +292,55 @@ public final class Telemetry {
             // 7DCT clutch temperatures (OBDb Hyundai-i30, CC BY-SA 4.0): u16 at data bytes 29 and 31 after 62 01 A4, x2 - 40 °C.
             // Our car: 28/30 cold, 32/34 at 5 min, 58/96 at 11 min. #2 ran hot while the same reply's gear byte read R,
             // and R rides on the even clutch, so #1 = odd gears, #2 = even gears (i30pd_port/OBD_PROBE.md).
-            case DID_CLUTCH: if(n>=33){put(CLUTCH_ODD,u16(d,29)*2-40,true,now);put(CLUTCH_EVEN,u16(d,31)*2-40,true,now);} break;
+            // raw u16 is already °C: our x2-40 read 116 / 126 where a DAG3 on the same car showed 80 / 87 (raw 78 / 83)
+            case DID_CLUTCH: if(n>=33){put(CLUTCH_ODD,u16(d,29),true,now);put(CLUTCH_EVEN,u16(d,31),true,now);} break;
             // Hyundai diesel DPF block 62 ED 03 (OBDb Hyundai-i30, CC BY-SA 4.0, not yet seen on our side): data byte 36
             // differential pressure x4.31373 (hPa, so x0.431373 kPa), 38 exhaust temperature upstream of the DPF x4.7098 + 99 °C,
             // 45..48 distance since the last regeneration in metres. The ECU keeps that distance, so it beats our odometer count.
             // 62 ED 1D (OBDb Kia-Ceed 2018): u16 at data bytes 4..5, x256/65535, read as grams (Hyundai's GDS shows soot in g;
             // a newer Tucson NX4 tool reads the same bytes little-endian, so the raw reply in the log settles the order on a PD)
             case DID_SOOT: if(n>=6){sootObd=true;put(DPF_SOOT,u16(d,4)*256f/65535,true,now);} break;
-            case DID_DPF: if(n>=56){put(DPF_DP,(d[36]&255)*0.431373f,true,now);put(DPF_TEMP,(d[38]&255)*4.7098f+99,true,now);
+            // KWP 21 03 (OBDb Hyundai-i30, Kia-Ceed with no year limit, Tucson, Sportage; CC BY-SA 4.0): data byte 46 exhaust
+            // gas temperature x4.709803922 + 99 °C, 53..56 distance since the last regeneration in metres. A diesel PD showed
+            // "—" on 22 ED03; this is the other form the same engines answer.
+            case LID_DPF: if(n>=47){egtDirect=(d[46]&255)*4.709803922f+99;egtDirectAt=now;put(DPF_TEMP,egtDirect,true,now);}
+                if(n>=57)put(DPF_SINCE_KM,(((long)u16(d,53)<<16)|u16(d,55))/1000f,true,now); break;
+            case DID_DPF: if(n>=56){put(DPF_DP,(d[36]&255)*0.431373f,true,now);egtCat=(d[37]&255)*4.7098f+99;put(EGT_CAT,egtCat,true,now);egtDirect=(d[38]&255)*4.7098f+99;egtDirectAt=now;put(DPF_TEMP,egtDirect,true,now);
                 put(DPF_SINCE_KM,(((long)u16(d,45)<<16)|u16(d,47))/1000f,true,now);} break;
+            // 62 E0 F1, the block a DAG3 polls: data bytes 34..37 distance since the last regeneration in metres. A diesel PD
+            // with a DAG3 read 293.25 km here at 12:43 where the DAG3 showed 287.32 km at 12:32 and ED03 282.2 km at 10:58.
+            // 16..17 is NOT a temperature: it follows the engine speed, about 8 x rpm (2026-11-09 17:21 video beside a DAG3 whose
+            // temperatures stayed at 131 / 127 C: 7,314 at 899 rpm, 18,850 at 2,327, 28,554 at 3,649). The early 0x1C89 that matched a
+            // DAG3 183 C was an idle value, a coincidence. Kept only in the status line; no exhaust temperature is read while ED03 is silent.
+            case DID_DPF2: if(n>=38)put(DPF_SINCE_KM,(((long)u16(d,34)<<16)|u16(d,36))/1000f,true,now);
+                if(n>=18)egtE0f1=u16(d,16);break;
             default: obd(pid,n>0?d[0]&255:0,n>1?d[1]&255:0,now);
         }
     }
     private static int u16(byte[] d,int i){return (d[i]&255)<<8|(d[i+1]&255);}
+    /** One line for the diagnostic record: OBD MAP beside the hscan boost byte, baro and the boost shown (diesel scale check). */
+    /** Least squares of OBD MAP (kPa) on the hscan boost byte over the drive, every MAP reply paired with the byte then:
+     *  settles the diesel boost scale (now 1.678 kPa a count +25.6, from 461 pairs at b1 52-133). Empty before two pairs or off a diesel. */
+    private int fitN,fitLo=255,fitHi=0;private double fitX,fitY,fitXX,fitXY;
+    public synchronized String boostFit(){
+        double d=fitN*fitXX-fitX*fitX;if(fitN<2||d<=0)return "";
+        double m=(fitN*fitXY-fitX*fitY)/d,c=(fitY-m*fitX)/fitN;
+        return String.format(java.util.Locale.US," | boostfit n %d b1 %d-%d: MAP kPa = %.3f x b1 %+.1f (app 1.678 x b1 +25.6)",fitN,fitLo,fitHi,m,c);
+    }
+    public synchronized String boostCheck(long now){
+        Sample s=sample(BOOST,now),r=sample(0,now),p=sample(9,now);
+        return String.format(java.util.Locale.US,"MAP %d kPa | baro %.0f hPa, 0x0e b1 %d, shown %s bar, rpm %.0f, pedal %.0f %%, %s",
+            mapKpa,baroHpa,boostByte,s.valid?String.format(java.util.Locale.US,"%+.2f",s.value):"-",r.valid?r.value:-1f,p.valid?displayValue(9,p.value):-1f,diesel()?"diesel":sparkSeen?"petrol":"unknown");
+    }
     private int lastRegen=-1;
     private float regenEndOdo=Float.NaN;
+    private float egtDirect=Float.NaN,egtCat=Float.NaN,egtE0f1=Float.NaN;   // egtE0f1: the raw u16 at E0F1 16..17 (about 8 x rpm), logged only
+    private long egtDirectAt=Long.MIN_VALUE/2;
+    /** Both diesel exhaust temperatures for the status line, until the E0F1 sensor's place is settled against a DAG3 photo. */
+    public synchronized String egt(){
+        if(Float.isNaN(egtDirect)&&Float.isNaN(egtE0f1))return "";
+        return String.format(java.util.Locale.US," | egt ed03 dpf %.0f cat %.0f, e0f1 raw16 %.0f",egtDirect,egtCat,egtE0f1);
+    }
     private boolean sootObd;   // 22 ED1D answered: its soot (g) replaces the hscan byte
     /** Regeneration on (1) or off (0), from OBD 01 8B or the diesel's EMS19 slot; counts the km since the last one ended. */
     private void regen(int r,long now){
@@ -318,6 +364,8 @@ public final class Telemetry {
         if(signal==TURN_LEFT||signal==TURN_RIGHT||signal==HEAD_LAMP||signal==TAIL_LAMP||signal==HIGH_BEAM)return value>0?"ON":"OFF";
         if(signal==CLUTCH)return value>0?"IN":"OUT";
         if(signal==DPF_REGEN)return value>0?"REGEN":"OFF";
+        if(signal==TCS||signal==ESC)return value>0?"OFF":"ON";
+        if(signal==ABS)return value>0?"WARN":"OK";
         if(signal==WIPER)return value==0?"OFF":value==1?"LOW":value==2?"HIGH":"—";
         return null;
     }
@@ -499,21 +547,23 @@ public final class Telemetry {
             // A diesel lays this slot out differently: 20|12 runs backwards (highest at idle, r=-0.85 with rpm, read as
             // a pegged 2.4 bar) and byte1 (the DBC's DecelReq) follows load (r=0.89). Diesel drive 2026-11-05: byte1 52 at
             // idle = baro at 20 hPa a count, 129-132 flat out = +1.6 bar, the usual range of a 1.6 diesel VGT.
-            // ponytail: 20 hPa a count is fitted on idle and the typical peak, not on an OBD MAP reading; check it
-            // against 01 0B from a diesel's diagnostic log. On a petrol byte1 is no pressure (it rises on overrun).
+            // 2026-11-08 with a DAG3 asking 01 0B: 461 OBD MAP replies over byte1 52-133 fit MAP kPa = 1.678 x b1 + 25.6,
+            // so idle reads +0.10 bar and flat out ~1.46 bar. On a petrol byte1 is no pressure (it rises on overrun).
             // Until the engine type is known (petrol timing seen, or a diesel's zeroed timing slot) nothing is shown.
             boolean ok;float v;
-            if(diesel()){int r=b[1]&255;ok=r>0&&r<255&&!Float.isNaN(baroHpa);v=(r*20f-baroHpa)/1000f;}
+            boostByte=b[1]&255;
+            if(diesel()){int r=b[1]&255;ok=r>0&&r<255&&!Float.isNaN(baroHpa);v=(r*16.78f+256f-baroHpa)/1000f;}
             else{int raw=((b[2]&255)>>4)|((b[3]&255)<<4);ok=sparkSeen&&raw!=0xfff&&!Float.isNaN(baroHpa);v=(raw*1.322f-baroHpa)/1000f;}
             boost(ok?v:0,ok,now);
             if(diesel()){
                 // DPF from the same frame (diesel drives 2026-11-05): byte5 bits 0-1 (the DBC's DPF_LAMP_STAT) went 0 -> 1 a
                 // minute into a drive where the owner felt a regeneration; warm idle fuel doubled meanwhile (0.59 -> 1.18 L/h)
                 // and byte4 fell 21 -> 11, about one a minute (20 all morning, no regeneration). 3 = no value.
-                // ponytail: byte4 read as 1 g a count, fitted on nothing but the range; 22 ED1D (g) wins once it answers.
+                // byte4 x 0.625 g = the DAG3's soot: 15 -> 9.3, 16 -> 9.7, 0 -> 0.3 (just after a regeneration), so it is proportional.
+                // ponytail: 0.6 fits as well (truncated); three points cannot tell them apart. 22 ED1D (g) wins once it answers.
                 int lamp=b[5]&3,soot=b[4]&255;
                 if(lamp!=3)regen(lamp!=0?1:0,now);
-                if(!sootObd)put(DPF_SOOT,soot,soot<255,now);
+                if(!sootObd)put(DPF_SOOT,soot*0.625f,soot<255,now);
             }
         }else if(funcLow==0x04&&b.length==8){
             // CLU13 CF_Clu_DrivingModeSwi @16|2: 0 normal, 1 sport, 3 eco (10/30 tagged captures; 2 never seen).
@@ -594,8 +644,24 @@ public final class Telemetry {
         }else if(funcLow==0x20&&b.length==6){
             // TPMS: 00 00 ff ff ff ff until the sensors report after moving, then byte1=1 and bytes 2-5 hold
             // FL/FR/RL/RR in psi (0x21/0x22 observed while the cluster showed 35). Order assumed FL FR RL RR.
-            boolean ok=(b[1]&255)==1;
-            for(int i=0;i<4;i++){int raw=b[2+i]&255;put(TPMS_FL+i,raw,ok&&raw<255&&raw<=100,now);}
+            // byte1 = status (low 3 bits, 1 = valid) + unit (bits 3-4): 0 psi, 1 steps of 5 kPa, 2 steps of 0.1 bar, so a cluster set
+            // to kPa or bar still reads; everything is stored as psi.
+            int status=b[1]&7,unit=(b[1]>>3)&3;float k=unit==1?0.7251887f:unit==2?1.4503774f:1f;
+            for(int i=0;i<4;i++){int raw=b[2+i]&255;float psi=raw*k;put(TPMS_FL+i,psi,status==1&&unit<=2&&raw<255&&psi<=100,now);}
+        }else if(funcLow==0x14&&b.length==8){
+            // Outside air temperature, byte3 x 0.5 - 40 C (7-18 C across our four drives in the evening and the morning); 255 = none.
+            // Free on hscan and the only source on a diesel, whose engine ECU answers no OBD 01 46.
+            int raw=b[3]&255;if(raw<255)ambientHscan=true;
+            put(AMBIENT,raw*0.5f-40,raw<255,now);
+        }else if(funcLow==0x1c&&b.length==4){
+            // Stability switches (all 0xFF = no data). The signals read 1 when the system is OFF (the lamp lights) and ABS 1 = warning lamp.
+            // byte0 bit0 ABS lamp, bits 1-2 TCS (1 = off); byte1 bits 0-1 ESC (2 = off; 1 = TCS off only, ESC stays on). Our logs hold
+            // 00 00 (both on), 02 01 (TCS off) and 02 02 (both off); the ABS bit was never set.
+            boolean allFF=true;for(byte v:b)if(v!=(byte)255)allFF=false;
+            int tcsOff=(b[0]>>1)&3,escOff=b[1]&3;
+            put(TCS,tcsOff==1?1:0,!allFF&&tcsOff<=1,now);
+            put(ESC,escOff==2?1:0,!allFF&&escOff<=2,now);
+            put(ABS,b[0]&1,!allFF,now);
         }else if(funcLow==0x1f&&b.length==8){
             // Current gear in the high nibble of byte2: 1-7 (7DCT) in D and in the manual gate; 0xe = R, 0 = P/N.
             // A 6MT has no TCU: there the slot is meaningless and the gear comes from rpm/speed (EMS11 above).

@@ -57,6 +57,19 @@ public final class MediaControl {
             }finally{reply.recycle();request.recycle();}
         }finally{context.unbindService(connection);}
     }
+    /** A single Android media keycode (play 126 / pause 127 / stop 86) through ModeManager, like step() — the BT AVRCP
+     *  bind in toggle() targets the wrong (broadcom) service on this Mobis unit, so play/pause went nowhere. */
+    public static boolean key(Context context,int displayedMode,int keyCode)throws Exception{
+        Class<?> type=Class.forName("com.hkmc.mode.ModeManager");
+        Object manager=type.getConstructor(Context.class).newInstance(context);
+        int mode=((Integer)type.getMethod("getCurrentMode").invoke(manager)).intValue();
+        if(mode!=displayedMode)return false;
+        Method send=type.getMethod("handleKeyForService",Integer.TYPE,Integer.TYPE,Integer.TYPE,Integer.TYPE,Integer.TYPE,Boolean.TYPE);
+        try{send.invoke(manager,Integer.valueOf(0),Integer.valueOf(keyCode),Integer.valueOf(0),Integer.valueOf(0),Integer.valueOf(0),Boolean.FALSE);}
+        finally{send.invoke(manager,Integer.valueOf(1),Integer.valueOf(keyCode),Integer.valueOf(0),Integer.valueOf(0),Integer.valueOf(0),Boolean.FALSE);}
+        android.util.Log.i("VehicleDash","Media key "+keyCode+" requested for mode="+mode);
+        return true;
+    }
     public static boolean step(Context context,boolean next,int displayedMode)throws Exception{
         Class<?> type=Class.forName("com.hkmc.mode.ModeManager");
         Object manager=type.getConstructor(Context.class).newInstance(context);

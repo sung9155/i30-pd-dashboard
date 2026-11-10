@@ -478,20 +478,23 @@ public final class Telemetry {
                 // Half clutch: the EMS switch closes early in the pedal travel, so slipping at the bite point reads as clutch
                 // in (gear held). If it ever reads released while slipping, the moving ratio keeps any new gear out, and
                 // rolling N needs >= 15 km/h, above where a half-clutch crawl at idle would look like neutral.
-                if(g==0&&clutchToggled&&clutchLast==0&&rpm>=400&&(kmh<1||kmh>=15&&rpm<1300&&valid[9]&&values[9]<1
+                // The last gear still in (clutch out since it matched): rolling off the pedal is not N, the gear cannot have
+                // come out without the clutch. Pressing the clutch makes it stale (below) and the N rules apply again.
+                if(clutchLast==1)mtStale=true;else if(g>0)mtStale=false;
+                boolean held=clutchToggled&&clutchLast==0&&!mtStale&&mtShown>0;
+                if(g==0&&clutchToggled&&clutchLast==0&&rpm>=400&&(kmh<1||!held&&kmh>=15&&rpm<1300&&valid[9]&&values[9]<1
                     &&!(valid[FUEL_RATE]&&values[FUEL_RATE]==0)))g=MT_N;
                 // Free-running at the ECU idle target while the speed drifts is neutral too, even where idle rpm happens to
                 // fit a gear (6th at ~30-36 km/h). On our 7DCT logs a free-running engine sits within +-8 rpm of
                 // R_NEngIdlTgC (p5-p95), and in gear off the pedal >= 15 km/h only 1.8 % of frames come within 40 rpm of
                 // it; in gear the rpm follows the speed, so a 5 % speed change takes it 35+ rpm off. A steady in-gear idle
                 // crawl (3rd at 16 km/h) keeps its speed and so its gear.
-                boolean atIdle=clutchToggled&&clutchLast==0&&kmh>=15&&!Float.isNaN(idleTarget)&&Math.abs(rpm-idleTarget)<=15
+                boolean atIdle=!held&&clutchToggled&&clutchLast==0&&kmh>=15&&!Float.isNaN(idleTarget)&&Math.abs(rpm-idleTarget)<=15
                     &&valid[9]&&values[9]<1;
                 if(!atIdle)idleKmh=0;else if(idleKmh==0)idleKmh=kmh;else if(Math.abs(kmh-idleKmh)>=idleKmh*0.05f)g=MT_N;
                 // Slow or lugging (under 8 km/h, or the ratio off every gear) the last gear stays until the clutch is pressed:
                 // without the clutch the gear cannot change. Once pressed, the old gear is stale until a ratio matches again.
-                if(clutchLast==1)mtStale=true;else if(g>0)mtStale=false;
-                if(g==0&&clutchToggled&&clutchLast==0&&!mtStale&&mtShown>0)g=mtShown;
+                if(g==0&&held)g=mtShown;
                 float ratio=kmh>0?rpm/kmh:0;
                 if(mtReverse||rearView==1||rearView==3){
                     // Reverse (EMS_H12 R code or the rear camera view): a switch, not a ratio, so shown at once. Also keeps a

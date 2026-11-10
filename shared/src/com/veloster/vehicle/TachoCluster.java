@@ -26,7 +26,7 @@ final class TachoCluster extends ClusterKit {
         RED=0xffff3b30,BLUE=0xff4aa8ff,GRN=0xff3ddc84,YEL=0xffffd23f,CYAN=0xff5fe3e0,TICK=0xffc9d3d8,DIM=0xff141c21;
     /** One colour per gear, the 람다 screen's. */
     private static final int[] INK={0,0xffff5fa8,0xff9b5cff,0xffff6a4d,0xffffe04a,0xff2fe0c4,0xff5ab4ff,0xffc0c8ff};
-    private static final float[][] TL={{14,14},{170,14},{112,118},{14,118}},MID={{14,126},{104,126},{104,286},{14,286}},BL={{14,294},{112,294},{170,414},{14,414}};
+    private static final float[][] TL={{14,14},{170,14},{112,118},{14,118}},MID={{14,126},{112,126},{112,286},{14,286}},BL={{14,294},{112,294},{170,414},{14,414}};
     private Bitmap face;private String faceKey="";private final RectF arc=new RectF();
     private int lastGear;private float peak;private long peakAt;
     private final int[] tg=new int[4];private final float[] tr=new float[4];private final boolean[] tok=new boolean[4];
@@ -94,16 +94,21 @@ final class TachoCluster extends ClusterKit {
         value(c,true,true,fmt("%.0f",v(Telemetry.FUEL_LEVEL)),"%");
         value(c,false,false,fmt("%.1f",v(Telemetry.BAT_VOLTAGE)),"V");
         value(c,true,false,fmt("%.0f",v(Telemetry.RANGE)),"km");
-        // downshift list (left middle)
-        if(n==0)text(c,"—",59,214,26,MUT,Paint.Align.CENTER,num());
-        for(int i=0;i<n;i++){float y=178+i*30;int col=tok[i]?GRN:INK[tg[i]];dot(c,32,y-7,9,col);bold(c,String.valueOf(tg[i]),32,y-1,14,BG,Paint.Align.CENTER);
-            text(c,String.format(java.util.Locale.US,"%,d",Math.round(tr[i]/50)*50),98,y,19,tok[i]?GRN:FG,Paint.Align.RIGHT,num());}
+        // left middle: the downshift list on a 6MT; a DCT (paddles step one gear) shows its two clutch temperatures instead
+        if(mt){
+            if(n==0)text(c,"—",63,214,26,MUT,Paint.Align.CENTER,num());
+            for(int i=0;i<n;i++){float y=178+i*30;int col=tok[i]?GRN:INK[tg[i]];dot(c,32,y-7,9,col);bold(c,String.valueOf(tg[i]),32,y-1,14,BG,Paint.Align.CENTER);
+                text(c,String.format(java.util.Locale.US,"%,d",Math.round(tr[i]/50)*50),106,y,19,tok[i]?GRN:FG,Paint.Align.RIGHT,num());}
+        }else for(int i=0;i<2;i++){float tc=v(i==0?Telemetry.CLUTCH_ODD:Telemetry.CLUTCH_EVEN),y=206+i*58;
+            int col=Float.isNaN(tc)?MUT:tc>=Telemetry.CLUTCH_HOT?RED:tc>=Telemetry.CLUTCH_WARM?YEL:FG;
+            text(c,t(i==0?"홀수단":"짝수단"),26,y-30,12,MUT,Paint.Align.LEFT,Typeface.DEFAULT);
+            text(c,fmt("%.0f",tc),88,y,28,col,Paint.Align.RIGHT,num());text(c,"°C",91,y,11,MUT,Paint.Align.LEFT,Typeface.DEFAULT);}
         // pedals (right middle), left to right as in the car
         float br=v(10),sw=v(Telemetry.BRAKE_SWITCH),acl=v(9);
         float brake=!Float.isNaN(br)?clamp(br/80f,0,1):!Float.isNaN(sw)&&sw>0?1:0;
         float[] lv=mt?new float[]{clutch?1:0,brake,Float.isNaN(acl)?0:acl/100}:new float[]{brake,Float.isNaN(acl)?0:acl/100};
         int[] lc=mt?new int[]{YEL,RED,acc}:new int[]{RED,acc};
-        float bw=mt?20:30,x0=W-104+6,gap=(78-lv.length*bw)/(lv.length-1);
+        float bw=mt?20:30,x0=W-112+8,gap=(82-lv.length*bw)/(lv.length-1);
         for(int i=0;i<lv.length;i++){float x=x0+i*(bw+gap),h=92*clamp(lv[i],0,1);if(h>.5f)fill(c,x,250-h,x+bw,250,lc[i]);}
         c.restore();
     }
@@ -131,8 +136,8 @@ final class TachoCluster extends ClusterKit {
         boolean mt=prof.trans==VehicleProfile.Trans.MT;
         cell(c,TL,false,true);cell(c,TL,true,true);cell(c,MID,false,false);cell(c,MID,true,false);cell(c,BL,false,true);cell(c,BL,true,true);
         label(c,false,40,t("외기온"),acc);label(c,true,40,t("연료"),acc);label(c,false,322,t("배터리"),acc);label(c,true,322,t("주행 가능"),acc);
-        bold(c,t("다운"),26,148,13,acc,Paint.Align.LEFT);bold(c,t("페달"),W-90,148,13,acc,Paint.Align.LEFT);
-        int bars=mt?3:2;float bw=mt?20:30,x0=W-104+6,gap=(78-bars*bw)/(bars-1);String[] names=mt?new String[]{"C","B","A"}:new String[]{"B","A"};
+        bold(c,t(mt?"다운":"클러치"),26,148,13,acc,Paint.Align.LEFT);bold(c,t("페달"),W-98,148,13,acc,Paint.Align.LEFT);
+        int bars=mt?3:2;float bw=mt?20:30,x0=W-112+8,gap=(82-bars*bw)/(bars-1);String[] names=mt?new String[]{"C","B","A"}:new String[]{"B","A"};
         for(int i=0;i<bars;i++){float x=x0+i*(bw+gap);fill(c,x,158,x+bw,250,TRACK);text(c,names[i],x+bw/2,272,14,MUT,Paint.Align.CENTER,num());}
         sectorCell(c,184,220,t("부스트"),acc);sectorCell(c,320,356,t("냉각수"),acc);sectorCell(c,140,176,t("흡기"),acc);sectorCell(c,4,40,t("부하"),acc);
         dot(c,CX,CY,R+18,0xff0b1014);ring(c,CX,CY,R+18,1.5f,0xff1c252b);

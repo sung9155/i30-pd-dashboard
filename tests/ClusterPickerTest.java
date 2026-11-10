@@ -6,7 +6,7 @@ public final class ClusterPickerTest {
     private static void check(boolean b,String s){checks++;if(!b)throw new AssertionError(s);}
     public static void main(String[] args){
         check(ClusterPicker.COUNT==26&&ClusterPicker.NAMES.length==26&&ClusterPicker.DESC.length==26,"26 screens, one name and line each");
-        check(ClusterPicker.NAMES[ClusterPicker.ECO].equals("에코")&&ClusterPicker.NAMES[ClusterPicker.TACHO].equals("타코")&&ClusterPicker.TACHO==ClusterPicker.COUNT-1,"에코, then the 타코 screen last");
+        check(ClusterPicker.NAMES[ClusterPicker.ECO].equals("에코")&&ClusterPicker.NAMES[ClusterPicker.TACHO].equals("RPM")&&ClusterPicker.TACHO==ClusterPicker.COUNT-1,"에코, then the RPM screen last");
         check(ClusterPicker.NAMES[ClusterPicker.MANUAL].equals("람다"),"the 람다 (twin Λ) screen before it");
         {int[] old=new int[23];for(int i=0;i<23;i++)old[i]=22-i;int[] o=ClusterPicker.validOrder(old);
          check(o.length==26&&o[0]==22&&o[22]==0&&o[23]==23&&o[24]==24&&o[25]==25,"an order saved with 23 screens keeps its arrangement, 수동 and 에코 last");}

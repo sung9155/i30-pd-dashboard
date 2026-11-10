@@ -20,6 +20,10 @@ final class EngineSound implements Runnable {
     private static final int[] ROUTE_STREAM={STREAM_NAVI,STREAM_NAVI,AudioManager.STREAM_MUSIC,AudioManager.STREAM_MUSIC};
     private static final int[] ROUTE_MICOM={0x41,0x40,0x31,-1};   // SYSTEM_ALARM, NAVI_SOUNDEFFECT, MY_MUSIC, none
     private static final int BLOCK=512;   // about 46 ms at 11.025 kHz on top of the 40..80 ms hscan rate
+    /** 소리 반응 속도 "빠름": blocks of 256 (23 ms) and a buffer of 2 blocks instead of 512 and 4, so the sound is written about
+     *  70 ms instead of 139 ms ahead. The risk is a gap when the UI thread stalls (the draw takes 40..130 ms here), which is why
+     *  it is a switch; read when the thread starts, so changing it restarts the thread. */
+    static volatile boolean fast;
     private final Context context;
     private final Telemetry data;
     private volatile Thread thread;
@@ -59,14 +63,15 @@ final class EngineSound implements Runnable {
         Object router=null;AudioTrack track=null;
         try{
             int min=AudioTrack.getMinBufferSize(EngineSynth.RATE,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT);
-            int bytes=Math.max(min,BLOCK*2*4);long aheadMs=(bytes/2+BLOCK)*1000L/EngineSynth.RATE;   // write blocks on a full buffer: this far ahead
+            final int blk=fast?BLOCK/2:BLOCK;
+            int bytes=Math.max(min,blk*2*(fast?2:4));long aheadMs=(bytes/2+blk)*1000L/EngineSynth.RATE;   // write blocks on a full buffer: this far ahead
             track=new AudioTrack(ROUTE_STREAM[r],EngineSynth.RATE,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT,
                 bytes,AudioTrack.MODE_STREAM);
             if(track.getState()!=AudioTrack.STATE_INITIALIZED){android.util.Log.w("VehicleDash","Engine sound: AudioTrack not initialised, stream "+ROUTE_STREAM[r]);return;}
             if(micom>=0)router=startMicom(context,micom);
             track.play();
-            android.util.Log.i("VehicleDash","Engine sound on: route "+r+" stream "+ROUTE_STREAM[r]+" micom 0x"+Integer.toHexString(micom)+" min buffer "+min);
-            EngineSynth.Voice playing=voice;EngineSynth synth=new EngineSynth(EngineSynth.RATE,playing);float[] f=new float[BLOCK];short[] pcm=new short[BLOCK];int flames=0;
+            android.util.Log.i("VehicleDash","Engine sound on: route "+r+" stream "+ROUTE_STREAM[r]+" micom 0x"+Integer.toHexString(micom)+" min buffer "+min+" block "+blk+" buffer "+bytes+" B ahead "+aheadMs+" ms");
+            EngineSynth.Voice playing=voice;EngineSynth synth=new EngineSynth(EngineSynth.RATE,playing);float[] f=new float[blk];short[] pcm=new short[blk];int flames=0;
             while(thread==Thread.currentThread()){
                 long now=SystemClock.elapsedRealtime();EngineSynth.voiced=volume>0;
                 Telemetry.Sample rpm=data.sample(0,now),pedal=data.sample(9,now),boost=data.sample(Telemetry.BOOST,now),
@@ -76,16 +81,16 @@ final class EngineSound implements Runnable {
                 synth.set(rpm.valid&&rpm.ageMs<=1000&&!reverse?rpm.value:Double.NaN,pedal.valid?pedal.value/100.0:0,boost.valid?boost.value:0);
                 if(voice!=playing){playing=voice;synth.use(playing);}
                 synth.popRate=popRate;synth.turboVol=turboVol;synth.bovVol=bovVol;synth.lead=lead;
-                synth.render(f,0,BLOCK,volume);
+                synth.render(f,0,blk,volume);
                 if(synth.flames!=flames){flames=synth.flames;if(volume>0)EngineSynth.flameAt=now+aheadMs;}
                 short[] bm=beepMix;
                 if(bm!=null){int bp=beepPos;float bg=beepGain;
-                    for(int i=0;i<BLOCK&&bp<bm.length;i++,bp++){float s=f[i]+(bm[bp]/32000f)*bg;f[i]=s>1?1:s<-1?-1:s;}
+                    for(int i=0;i<blk&&bp<bm.length;i++,bp++){float s=f[i]+(bm[bp]/32000f)*bg;f[i]=s>1?1:s<-1?-1:s;}
                     beepPos=bp;if(bp>=bm.length)beepMix=null;}
-                for(int i=0;i<BLOCK;i++)pcm[i]=(short)Math.round(f[i]*32000);
+                for(int i=0;i<blk;i++)pcm[i]=(short)Math.round(f[i]*32000);
                 // MODE_STREAM write blocks on a full buffer and paces the loop; a negative return is an error, not
                 // back-pressure, so stop rather than spin the CPU rewriting a dead track.
-                int w=track.write(pcm,0,BLOCK);
+                int w=track.write(pcm,0,blk);
                 if(w<0){android.util.Log.w("VehicleDash","Engine sound: AudioTrack.write "+w+", stopping");break;}
             }
         }catch(RuntimeException e){android.util.Log.e("VehicleDash","Engine sound stopped",e);}

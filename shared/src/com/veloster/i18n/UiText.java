@@ -298,6 +298,7 @@ public final class UiText {
         EN.put("변속·구동","Transmission");
         EN.put("변속기 (TCU)","Transmission (TCU)");
         EN.put("보정 토크","Corrected torque");
+        EN.put("보통","Normal");
         EN.put("복구","Restore");
         EN.put("복구 후 AP 꺼짐 상태 재확인 실패. 백업 보존.","Could not reconfirm AP off after restoration. Backup retained.");
         EN.put("복구할 시험 백업이 없습니다. 변경하지 않았습니다.","No test backup to restore. No changes were made.");
@@ -328,6 +329,8 @@ public final class UiText {
         EN.put("비행기 엔진 계기판","Airliner engine display");
         EN.put("빈차","Vacant");
         EN.put("빠른 상승 4음","Quick rising 4 tones");
+        EN.put("빠름","Fast");
+        EN.put("빠름: 소리가 덜 늦음 · 화면이 느려질 때 소리가 끊기면 보통으로","Fast: less sound delay · if the sound breaks up when the screen slows down, go back to Normal");
         EN.put("삐빅","Double beep");
         EN.put("삐빅 · 3번","Beep · 3 times");
         EN.put("삐빅 · 4번 빠르게","Beep · 4 quick");
@@ -360,6 +363,7 @@ public final class UiText {
         EN.put("설치된 기본 앱 중 외부 실행이 허용된 앱만 표시합니다.","Only installed system apps that allow external launch are shown.");
         EN.put("세션 최대","Session peaks");
         EN.put("세종","Sejong");
+        EN.put("소리 반응 속도","Sound response");
         EN.put("속도 GPS 보정 값 초기화","Reset the GPS speed correction");
         EN.put("속도 km/h","Speed km/h");
         EN.put("속도계가 실제보다 %.1f %% 낮게 나옴","The speedometer reads %.1f %% low");

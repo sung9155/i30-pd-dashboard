@@ -730,5 +730,9 @@
   "일반유": "Regular",
   "고급유": "Premium",
   "경유": "Diesel",
-  "원/L": " won/L"
+  "원/L": " won/L",
+  "소리 반응 속도": "Sound response",
+  "빠름: 소리가 덜 늦음 · 화면이 느려질 때 소리가 끊기면 보통으로": "Fast: less sound delay · if the sound breaks up when the screen slows down, go back to Normal",
+  "보통": "Normal",
+  "빠름": "Fast"
 }

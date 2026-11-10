@@ -113,7 +113,7 @@ final class TachoCluster extends ClusterKit {
             p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(8);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(acc);this.r.set(CX-r,CY-r,CX+r,CY+r);
             c.drawArc(this.r,s0,s1-s0,false,p);p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
             float tip=fromEnd?s0:s1;dot(c,px(tip,r),py(tip,r),4.5f,FG);}
-        float am=(d0+d1)/2,tx=px(am,AR0+42),ty=py(am,AR0+42);
+        float am=(d0+d1)/2,tx=px(am,AR0+28),ty=py(am,AR0+28);
         c.save();c.rotate(tilt(am),tx,ty);   // the reading leans with the round dial
         float vw=width(val,20,num());text(c,val,tx-6,ty+13,20,FG,Paint.Align.CENTER,num());text(c,unit,tx-6+vw/2+3,ty+13,11,MUT,Paint.Align.LEFT,Typeface.DEFAULT);
         c.restore();
@@ -167,7 +167,7 @@ final class TachoCluster extends ClusterKit {
         path.arcTo(o,d0,d1-d0);path.arcTo(in,d1,d0-d1);path.close();poly(c,CELL);
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawPath(path,p);
         p.setStrokeWidth(8);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(TRACK);float r=AR1-8;r(r);c.drawArc(this.r,d0+3.5f,d1-d0-7,false,p);p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
-        float am=(d0+d1)/2,lx=px(am,AR0+42),ly=py(am,AR0+42);
+        float am=(d0+d1)/2,lx=px(am,AR0+28),ly=py(am,AR0+28);
         c.save();c.rotate(tilt(am),lx,ly);bold(c,label,lx,ly-8,12,acc,Paint.Align.CENTER);c.restore();
     }
     private void r(float rad){r.set(CX-rad,CY-rad,CX+rad,CY+rad);}

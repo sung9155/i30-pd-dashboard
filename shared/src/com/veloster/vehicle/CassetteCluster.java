@@ -103,7 +103,7 @@ final class CassetteCluster extends ClusterKit {
         for(int i=0;i<5;i++){float kx=44+i*93;if(x>=kx&&x<=kx+78){
             tapKey=i;tapUntil=now+180;
             cue=(i==0||i==2)?ShiftBeep.TAP:ShiftBeep.LATCH;   // ◀◀/▶▶ spring back, ▶/■/❚❚ latch
-            keyCmd=i==0?-1:i==2?1:i==1?2:i==3?4:3;   // ◀◀ prev / ▶▶ next / ▶ play / ■ stop / ❚❚ pause
+            keyCmd=i==0?-1:i==2?1:i==1?2:5;   // ◀◀ prev / ▶▶ next / ▶ play; ■ and ❚❚ mute (the head unit has no BT pause, only mute)
             return true;}}
         return false;
     }

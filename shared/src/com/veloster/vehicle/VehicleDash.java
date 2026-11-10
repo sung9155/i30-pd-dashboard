@@ -392,6 +392,7 @@ public final class VehicleDash extends View implements Runnable {
                     :command==2?MediaControl.key(activity,displayedMode,126)   // KEYCODE_MEDIA_PLAY
                     :command==3?MediaControl.key(activity,displayedMode,127)   // KEYCODE_MEDIA_PAUSE
                     :command==4?MediaControl.key(activity,displayedMode,86)    // KEYCODE_MEDIA_STOP
+                    :command==5?MediaControl.key(activity,displayedMode,91)    // KEYCODE_MUTE (the car's mute: BT has no pause)
                     :MediaControl.toggle(activity,displayedMode,displayed.playState);   // 0: play/pause toggle (race panel)
                 if(!ok)error=UiText.t("현재 재생 소스에서 음악을 제어할 수 없습니다");}
             catch(Exception e){android.util.Log.e("VehicleDash","Media control unavailable",e);error=UiText.t("음악 제어 요청을 보낼 수 없습니다");}

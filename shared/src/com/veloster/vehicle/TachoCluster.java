@@ -35,6 +35,8 @@ final class TachoCluster extends ClusterKit {
     private float ang(float rpm){return A0+SW*clamp(rpm/prof.maxRpm,0,1);}
     private static float px(float deg,float r){return CX+(float)Math.cos(Math.toRadians(deg))*r;}
     private static float py(float deg,float r){return CY+(float)Math.sin(Math.toRadians(deg))*r;}
+    /** A sector label turned to run along the dial (tangent: 90° off the radius), flipped to stay upright. */
+    private static float tilt(float deg){float r=(deg+90)%360;if(r>180)r-=360;if(r<-180)r+=360;if(r>90)r-=180;else if(r<-90)r+=180;return r;}
     private int accent(){int m=Theme.modeAccent();return m!=0?0xff000000|m:Theme.current().accent;}
     private GearRatios learned(){return st==null?null:st.ratios;}
 
@@ -83,10 +85,10 @@ final class TachoCluster extends ClusterKit {
         text(c,fmt("%.0f",kmh),CX,CY+166,54,FG,Paint.Align.CENTER,num());
         // sector cells: the arc graph on the inner edge, the number on the outer
         float boost=v(Telemetry.BOOST),cool=v(2),iat=v(Telemetry.INTAKE),load=v(Telemetry.ENGINE_LOAD);
-        sector(c,190,226,fmt("%+.2f",boost),"bar",(boost+.6f)/2.1f,false,acc);
-        sector(c,314,350,fmt("%.0f",cool),"°C",(cool-40)/80,true,acc);
-        sector(c,134,170,fmt("%.0f",iat),"°C",(iat+20)/80,true,acc);
-        sector(c,10,46,fmt("%.0f",load),"%",load/100,false,acc);
+        sector(c,184,220,fmt("%+.2f",boost),"bar",(boost+.6f)/2.1f,false,acc);     // boost + intake flank 9 o'clock,
+        sector(c,320,356,fmt("%.0f",cool),"°C",(cool-40)/80,true,acc);              // coolant + load mirror them at 3 o'clock
+        sector(c,140,176,fmt("%.0f",iat),"°C",(iat+20)/80,true,acc);
+        sector(c,4,40,fmt("%.0f",load),"%",load/100,false,acc);
         // grid cells
         value(c,false,true,fmt("%.0f",v(Telemetry.AMBIENT)),"°C");
         value(c,true,true,fmt("%.0f",v(Telemetry.FUEL_LEVEL)),"%");
@@ -112,7 +114,9 @@ final class TachoCluster extends ClusterKit {
             c.drawArc(this.r,s0,s1-s0,false,p);p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
             float tip=fromEnd?s0:s1;dot(c,px(tip,r),py(tip,r),4.5f,FG);}
         float am=(d0+d1)/2,tx=px(am,AR0+42),ty=py(am,AR0+42);
+        c.save();c.rotate(tilt(am),tx,ty);   // the reading leans with the round dial
         float vw=width(val,20,num());text(c,val,tx-6,ty+13,20,FG,Paint.Align.CENTER,num());text(c,unit,tx-6+vw/2+3,ty+13,11,MUT,Paint.Align.LEFT,Typeface.DEFAULT);
+        c.restore();
     }
     private void value(Canvas c,boolean right,boolean top,String val,String unit){
         float x=right?W-28:28,vy=top?88:370;
@@ -130,7 +134,7 @@ final class TachoCluster extends ClusterKit {
         bold(c,t("다운"),26,148,13,acc,Paint.Align.LEFT);bold(c,t("페달"),W-90,148,13,acc,Paint.Align.LEFT);
         int bars=mt?3:2;float bw=mt?20:30,x0=W-104+6,gap=(78-bars*bw)/(bars-1);String[] names=mt?new String[]{"C","B","A"}:new String[]{"B","A"};
         for(int i=0;i<bars;i++){float x=x0+i*(bw+gap);fill(c,x,158,x+bw,250,TRACK);text(c,names[i],x+bw/2,272,14,MUT,Paint.Align.CENTER,num());}
-        sectorCell(c,190,226,t("부스트"),acc);sectorCell(c,314,350,t("냉각수"),acc);sectorCell(c,134,170,t("흡기"),acc);sectorCell(c,10,46,t("부하"),acc);
+        sectorCell(c,184,220,t("부스트"),acc);sectorCell(c,320,356,t("냉각수"),acc);sectorCell(c,140,176,t("흡기"),acc);sectorCell(c,4,40,t("부하"),acc);
         dot(c,CX,CY,R+18,0xff0b1014);ring(c,CX,CY,R+18,1.5f,0xff1c252b);
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(10);p.setColor(0xd9ff3b30);r.set(CX-(R-8),CY-(R-8),CX+R-8,CY+R-8);
         c.drawArc(r,ang(prof.redline),ang(prof.maxRpm)-ang(prof.redline),false,p);p.setStyle(Paint.Style.FILL);
@@ -142,7 +146,16 @@ final class TachoCluster extends ClusterKit {
         return b;
     }
     private void cell(Canvas c,float[][] pts,boolean mirror){
-        path.reset();for(int i=0;i<pts.length;i++){float x=mirror?W-pts[i][0]:pts[i][0];if(i==0)path.moveTo(x,pts[i][1]);else path.lineTo(x,pts[i][1]);}path.close();
+        path.reset();
+        for(int i=0;i<pts.length;i++){float x=mirror?W-pts[i][0]:pts[i][0],y=pts[i][1];
+            if(i==0)path.moveTo(x,y);
+            else if(i==2){   // the inner edge (pts[1]->pts[2], toward the dial) curves concentric with the dial, not a straight trapezoid edge
+                float x1=mirror?W-pts[1][0]:pts[1][0],y1=pts[1][1],mx=(x1+x)/2,my=(y1+y)/2,dx=CX-mx,dy=CY-my,d=(float)Math.hypot(dx,dy);
+                path.quadTo(mx-dx/d*14,my-dy/d*14,x,y);   // bow away from the dial centre: the edge hugs the round dial
+            }
+            else path.lineTo(x,y);
+        }
+        path.close();
         poly(c,CELL);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawPath(path,p);p.setStyle(Paint.Style.FILL);
     }
     private void label(Canvas c,boolean right,float y,String s,int acc){bold(c,s,right?W-28:28,y,14,acc,right?Paint.Align.RIGHT:Paint.Align.LEFT);}
@@ -151,7 +164,8 @@ final class TachoCluster extends ClusterKit {
         path.arcTo(o,d0,d1-d0);path.arcTo(in,d1,d0-d1);path.close();poly(c,CELL);
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawPath(path,p);
         p.setStrokeWidth(8);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(TRACK);float r=AR0+8;r(r);c.drawArc(this.r,d0+3.5f,d1-d0-7,false,p);p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
-        float am=(d0+d1)/2;bold(c,label,px(am,AR0+42),py(am,AR0+42)-8,12,acc,Paint.Align.CENTER);
+        float am=(d0+d1)/2,lx=px(am,AR0+42),ly=py(am,AR0+42);
+        c.save();c.rotate(tilt(am),lx,ly);bold(c,label,lx,ly-8,12,acc,Paint.Align.CENTER);c.restore();
     }
     private void r(float rad){r.set(CX-rad,CY-rad,CX+rad,CY+rad);}
 }

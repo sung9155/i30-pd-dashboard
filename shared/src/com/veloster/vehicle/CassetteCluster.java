@@ -43,8 +43,8 @@ final class CassetteCluster extends ClusterKit {
         if(art!=null){if(art!=tapeArt){tapeArt=art;tapeColor=dominant(art);}}else{tapeColor=0xffd9542b;tapeArt=null;}
         round(c,58,94,490,250,6,0xffefe6cf);fill(c,58,94,490,116,tapeColor);fill(c,58,116,490,122,mix(tapeColor,0xffffffff,0.4f));
         bold(c,"A",74,111,18,0xffffffff,Paint.Align.LEFT);bold(c,"C-60 · TYPE II",480,111,12,0xffffffff,Paint.Align.RIGHT);
-        boolean cover=art!=null;float tx=cover?128:76,avail=cover?354:404;
-        if(cover){round(c,64,128,116,180,4,0xff20160e);blit(c,art,0,0,art.getWidth(),art.getHeight(),66,130,114,178);outline(c,64,128,116,180,4,1,mix(tapeColor,0xff000000,0.3f));}
+        boolean cover=art!=null;float tx=cover?148:76,avail=cover?334:404;
+        if(cover){round(c,62,122,134,194,5,0xff20160e);blit(c,art,0,0,art.getWidth(),art.getHeight(),64,124,132,192);outline(c,62,122,134,194,5,1,mix(tapeColor,0xff000000,0.3f));}
         String title=has?music.title:t("재생 중인 곡 없음"),artist=has&&music.artist!=null?music.artist:"";
         float tw=width(title,30,Typeface.DEFAULT_BOLD);   // the title slides when it is wider than the label
         if(tw<=avail)text(c,title,tx,154,30,INK,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
@@ -54,8 +54,15 @@ final class CassetteCluster extends ClusterKit {
             text(c,title,tx-off+period,154,30,INK,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
             c.restore();}
         // artist on the left, the time right-aligned so it never runs into the artist
-        if(has&&!artist.isEmpty())text(c,ellipsize(artist,22,cover?200:250),tx,180,17,0xff3a4f9a,Paint.Align.LEFT,Typeface.DEFAULT);
-        if(known)text(c,mmss(pos)+" / "+mmss(music.durationMs),462,180,16,0xff3a4f9a,Paint.Align.RIGHT,Typeface.DEFAULT);
+        float artistRight=456;   // the time takes the right; the artist slides in the lane left of it, never clipped to …
+        if(known){String tm=mmss(pos)+" / "+mmss(music.durationMs);text(c,tm,462,180,16,0xff3a4f9a,Paint.Align.RIGHT,Typeface.DEFAULT);artistRight=462-width(tm,16,Typeface.DEFAULT)-10;}
+        if(has&&!artist.isEmpty()){float aw=width(artist,17,Typeface.DEFAULT);
+            if(tx+aw<=artistRight)text(c,artist,tx,180,17,0xff3a4f9a,Paint.Align.LEFT,Typeface.DEFAULT);
+            else{float gap=40,period=aw+gap,off=(now/1000f*38f)%period;
+                c.save();c.clipRect(tx,168,artistRight,186);
+                text(c,artist,tx-off,180,17,0xff3a4f9a,Paint.Align.LEFT,Typeface.DEFAULT);
+                text(c,artist,tx-off+period,180,17,0xff3a4f9a,Paint.Align.LEFT,Typeface.DEFAULT);
+                c.restore();}}
         fill(c,76,188,480,189,0x401f3a8a);
         // reel window
         round(c,146,194,402,246,26,0xff0b0b0c);

@@ -234,6 +234,65 @@ final class PixelCluster extends ClusterKit {
         else{scroll+=vk*dt*1.4f;sideScene(c,vk,brake,left,boost,rpm);}
         hud(c,g,rpm,boost,v);
         musicNotes(c,vk);
+        if(!chase)nowPlaying(c);
+    }
+    /** The 8-bit side view shows the track itself (the box below), so the generic track-change bar stays off. */
+    @Override boolean showsMusic(){return !chase&&playing();}
+    private boolean playing(){return music!=null&&music.playState==1&&music.title!=null&&music.title.length()>0;}
+    // ---- now playing: a dialog box on the right, the cover shrunk to 14 x 14 pixels in a small palette ----------------
+    private static final float NP_L=468,NP_T=222,NP_R=780,NP_B=344,BTN_T=NP_B-42,BTN_B=NP_B-12,BTN_MID=(NP_L+NP_R)/2;
+    private Bitmap npArt,npArtFrom;private String npTrack="";private long npSince,npPressAt;private int npPress;
+    private void nowPlaying(Canvas c){
+        if(!playing())return;
+        String trk=music.title+"|"+music.artist;if(!trk.equals(npTrack)){npTrack=trk;npSince=now;}   // a new track starts at its first letter, 1.5 s still
+        fill(c,NP_L,NP_T,NP_R,NP_B,0xff000000);outline(c,NP_L+3,NP_T+3,NP_R-3,NP_B-3,0,3,W);
+        float tx=NP_L+16;
+        if(artwork!=null){
+            if(npArtFrom!=artwork){npArtFrom=artwork;npArt=pixelArt(artwork);}
+            blit(c,npArt,0,0,16,16,NP_L+12,NP_T+12,NP_L+12+64,NP_T+12+64);outline(c,NP_L+10,NP_T+10,NP_L+78,NP_T+78,0,2,0xff3a3a4a);tx=NP_L+88;
+        }
+        float avail=NP_R-14-tx;
+        Bitmap tb=label(music.title,W);
+        c.save();c.clipRect(tx,NP_T+10,tx+avail,NP_T+38);marquee(c,tb,tx,NP_T+12,avail);c.restore();
+        String ar=music.artist==null?"":music.artist;
+        if(ar.length()>0){Bitmap ab=label(ar,0xffb0b0c0);c.save();c.clipRect(tx,NP_T+40,tx+avail,NP_T+66);marquee(c,ab,tx,NP_T+42,avail);c.restore();}
+        // progress as blocks, like the EXP bar
+        if(music.durationMs>0&&music.positionMs>=0){int n=12,lit=Math.round(clamp(music.positionMs/(float)music.durationMs,0,1)*n);float bw=avail/n;
+            for(int i=0;i<n;i++){fill(c,tx+i*bw,NP_T+68,tx+(i+1)*bw-2,NP_T+76,0xff000000);fill(c,tx+i*bw+1,NP_T+69,tx+(i+1)*bw-3,NP_T+75,i<lit?0xff3ad8ff:0xff2a2a3a);}}
+        // previous / next: two pixel keys along the bottom, yellow for a moment when pressed
+        for(int k=0;k<2;k++){float l=k==0?NP_L+12:BTN_MID+4,r=k==0?BTN_MID-4:NP_R-12;boolean hot=npPress==k+1&&now-npPressAt<220;
+            fill(c,l,BTN_T,r,BTN_B,hot?Y:0xff1a1a26);outline(c,l,BTN_T,r,BTN_B,0,2,hot?Y:W);
+            int ink=hot?0xff000000:W;float cx=(l+r)/2,cy=(BTN_T+BTN_B)/2;
+            for(int t=0;t<2;t++){float ox=cx+(t==0?-14:2);   // two pixel triangles: ◀◀ or ▶▶, 3 px rows
+                for(int row=0;row<7;row++){float w2=(row<4?row+1:7-row)*3,x0=k==0?ox+12-w2:ox;fill(c,x0,cy-10.5f+row*3,x0+w2,cy-7.5f+row*3,ink);}}}
+    }
+    /** The previous / next keys of the now-playing box: the media command goes out the way the cassette's keys send theirs. */
+    @Override boolean tap(float x,float y){
+        if(chase||!playing()||y<BTN_T-4||y>BTN_B+4||x<NP_L+8||x>NP_R-8)return false;
+        boolean prev=x<BTN_MID;CassetteCluster.keyCmd=prev?-1:1;npPress=prev?1:2;npPressAt=now;return true;
+    }
+    /** A label at 2 x, still when it fits, else (after 1.5 s at its start) scrolling left in whole pixels, a gap before it comes round. */
+    private void marquee(Canvas c,Bitmap b,float x,float y,float avail){
+        float w=b.getWidth()*2,h=b.getHeight()*2;
+        if(w<=avail){blit(c,b,0,0,b.getWidth(),b.getHeight(),x,y,x+w,y+h);return;}
+        float gap=40,off=((Math.max(0,now-npSince-1500)/30)*2)%(w+gap);for(float xx=x-off;xx<x+avail;xx+=w+gap)blit(c,b,0,0,b.getWidth(),b.getHeight(),xx,y,xx+w,y+h);
+    }
+    /** The cover at 16 x 16 with 3 bits a channel: drawn back at 4 x 4 per pixel it reads as game art. */
+    private static Bitmap pixelArt(Bitmap src){
+        Bitmap b=bitmap(16,16);android.graphics.Rect sr=new android.graphics.Rect();sr.set(0,0,src.getWidth(),src.getHeight());android.graphics.RectF dr=new android.graphics.RectF();dr.set(0,0,16,16);new Canvas(b).drawBitmap(src,sr,dr,new Paint(Paint.FILTER_BITMAP_FLAG));
+        int[] px=new int[256];b.getPixels(px,0,16,0,0,16,16);for(int i=0;i<px.length;i++)px[i]=0xff000000|(px[i]&0xe0e0e0);b.setPixels(px,0,16,0,0,16,16);return b;
+    }
+    /** A label at half scale with a one-pixel shadow: the pixel font when it has every letter, otherwise the system face
+     *  drawn small without smoothing (Hangul and the like), so both come out as chunky pixels at 2 x. */
+    private final java.util.LinkedHashMap<String,Bitmap> labelCache=new java.util.LinkedHashMap<String,Bitmap>(16,0.75f,true){
+        @Override protected boolean removeEldestEntry(java.util.Map.Entry<String,Bitmap> e){return size()>8;}};
+    private Bitmap label(String s,int color){
+        String key=color+"|"+s;Bitmap b=labelCache.get(key);if(b!=null)return b;
+        boolean ascii=true;for(int i=0;i<s.length();i++){char ch=s.charAt(i);if(FONT_CHARS.indexOf(Character.toUpperCase(ch))<0&&ch!=' '){ascii=false;break;}}
+        if(ascii)b=textBitmap(s.toUpperCase(Locale.US),color);
+        else{Paint tp=new Paint(0);tp.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);tp.setTextSize(9);int w=Math.max(1,(int)Math.ceil(tp.measureText(s))+2);
+            b=bitmap(w,11);Canvas k=new Canvas(b);tp.setColor(0xff000000);k.drawText(s,1,9,tp);tp.setColor(color);k.drawText(s,0,8,tp);}
+        labelCache.put(key,b);return b;
     }
     /** Pixel music notes drifting up while a track plays, like sound out of the car. */
     /** Notes stream out of the car: born as a dot, growing as they drift, and swept backwards faster the quicker it goes. */

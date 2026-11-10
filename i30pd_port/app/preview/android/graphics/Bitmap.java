@@ -12,6 +12,9 @@ public class Bitmap {
     public void eraseColor(int c){if(img==null)return;for(int y=0;y<img.getHeight();y++)for(int x=0;x<img.getWidth();x++)img.setRGB(x,y,c);}
     public int getWidth(){return img==null?0:img.getWidth();}
     public int getHeight(){return img==null?0:img.getHeight();}
+    public static Bitmap createScaledBitmap(Bitmap src,int w,int h,boolean filter){Bitmap b=createBitmap(w,h,Config.ARGB_8888);java.awt.Graphics2D g=b.img.createGraphics();
+        g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,filter?java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR:java.awt.RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);g.drawImage(src.img,0,0,w,h,null);g.dispose();return b;}
+    public void recycle(){}
     public void getPixels(int[] px,int off,int stride,int x,int y,int w,int h){img.getRGB(x,y,w,h,px,off,stride);}
     public void setPixels(int[] px,int off,int stride,int x,int y,int w,int h){img.setRGB(x,y,w,h,px,off,stride);}
     /** Preview only: a PNG the renderer reads as an app resource. */

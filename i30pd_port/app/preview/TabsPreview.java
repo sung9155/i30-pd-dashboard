@@ -104,6 +104,23 @@ public final class TabsPreview {
         MediaState ms=new MediaState();ms.mode(0x36);
         ms.update(1,true,"한강 따라 달리는 밤의 드라이브 (Night Drive Remix)",true,"City Lights Band",true,83000,true,214000,false,now);ms.playback(1,1);
         taxi(out,"9d_cluster_taxi_music",model,now,ms.snapshot(now),false);
+        {   // 8비트 with a track playing: the now-playing box on the right (a made-up cover; a Korean title and an English one)
+            BufferedImage art=new BufferedImage(64,64,BufferedImage.TYPE_INT_ARGB);java.awt.Graphics2D ag=art.createGraphics();
+            ag.setPaint(new java.awt.GradientPaint(0,0,new java.awt.Color(0xff5f8a),64,64,new java.awt.Color(0x3a6ea5)));ag.fillRect(0,0,64,64);
+            ag.setColor(new java.awt.Color(0xffe04a));ag.fillOval(18,14,28,28);ag.setColor(new java.awt.Color(0x1d2025));ag.fillRect(0,46,64,18);ag.dispose();
+            for(int pass=0;pass<3;pass++){
+                MediaState m8=new MediaState();m8.mode(0x36);
+                if(pass!=1)m8.update(1,true,"한강 따라 달리는 밤의 드라이브 (Night Drive Remix)",true,"서울 시티 라이츠 밴드 & 한강 오케스트라",true,83000,true,214000,false,now);
+                else m8.update(1,true,"Midnight Run",true,"Neon Riders",true,150000,true,200000,false,now);
+                m8.playback(1,1);
+                ClusterKit.artwork=pass!=1?android.graphics.Bitmap.of(art):null;
+                BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+                new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+                PixelCluster pk=new PixelCluster(false);pk.frame(c,model.snapshot(now),model,new DriveStats(),VehicleProfile.PETROL_DCT,now,m8.snapshot(now));
+                if(pass==2)pk.frame(c,model.snapshot(now),model,new DriveStats(),VehicleProfile.PETROL_DCT,now+4500,m8.snapshot(now));
+                ImageIO.write(img,"png",new File(out,pass==0?"9g_cluster_8bit_music.png":pass==1?"9g_cluster_8bit_music_en.png":"9g_cluster_8bit_music_scroll.png"));}
+            ClusterKit.artwork=null;
+        }
         taxi(out,"9d_cluster_taxi_receipt",model,now,ms.snapshot(now),true);
         taxiArea(out,"9d_cluster_taxi_busan_out",model,now,ms.snapshot(now));
         for(int ci=0;ci<Circuits.count();ci++)circuit(out,"9o_circuit_"+Circuits.id(ci),ci,model,now);

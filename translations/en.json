@@ -734,5 +734,11 @@
   "소리 반응 속도": "Sound response",
   "빠름: 소리가 덜 늦음 · 화면이 느려질 때 소리가 끊기면 보통으로": "Fast: less sound delay · if the sound breaks up when the screen slows down, go back to Normal",
   "보통": "Normal",
-  "빠름": "Fast"
+  "빠름": "Fast",
+  "'내 앱' 열기": "Open 'My Apps'",
+  "USB 디버깅 · 시동 안내 건너뛰기 · 블루투스 등": "USB debugging · skip the start-up notice · Bluetooth and more",
+  "'내 앱'이 설치돼 있지 않습니다.": "'My Apps' is not installed.",
+  "'내 앱'을 열지 못했습니다.": "Could not open 'My Apps'.",
+  "카세트 찰칵 소리": "Cassette click sound",
+  "카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개": "Cassette screen keys: play and pause latch with a clunk, a track skip clicks · separate from the engine sound"
 }

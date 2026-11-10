@@ -41,6 +41,11 @@ public final class ObdScheduleTest {
         check(!w.active()&&w.retrying()&&x.next(5000)==null&&x.next(64000)==w&&x.summary().endsWith("none retry"),"timeouts: tried again a minute later ("+x.summary()+")");
         x.done(w,64000,true);check(w.active()&&x.untilNext(64000)==2000,"an answer brings it back");
         x.skip(w,70000);check(w.misses()==0&&x.untilNext(70000)==2000,"skipped while another tester asks: no miss");
+        // a request that answered before (the TCU's clutch block) and then misses three: asked again in 3 s, so its values never go stale
+        ObdSchedule.Poll tc=new ObdSchedule.Poll(0x26,new byte[]{0x22,1,(byte)0xA4},Telemetry.DID_CLUTCH,1000,3);ObdSchedule y=new ObdSchedule(tc);
+        y.done(tc,0,true);tc.bad="none";y.done(tc,1000,false);y.done(tc,2000,false);y.done(tc,3000,false);
+        check(!tc.active()&&y.untilNext(3000)==3000&&y.next(6000)==tc,"an ECU that answered before: retried in 3 s, not a minute");
+        y.done(tc,6000,true);check(tc.active()&&y.untilNext(6000)==1000,"and back to every second on its answer");
         // replies another tester asked for (an OBD dongle on a diesel PD, 2026-11-06): used when they answer one of our requests
         ObdSchedule m=ObdSchedule.standard();
         ObdSchedule.Poll cl=m.match(0x26,new byte[]{0x62,0x01,(byte)0xA4,1,2,3});

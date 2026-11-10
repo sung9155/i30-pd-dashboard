@@ -64,7 +64,12 @@ public final class ObdSchedule {
         return w;
     }
     /** After an answer (ok) or a miss: next due one period from now, so a late request does not burst. */
-    public void done(Poll p,long now,boolean ok){p.misses=ok?0:p.misses+1;p.sent++;if(ok)p.answered++;p.due=now+(p.active()?p.every:RETRY_MS);}
+    /** A dropped request that has answered before is asked again after three of its periods (at least 3 s), not a minute:
+     *  the ECU is there and was only busy. At a minute the 7DCT clutch temperatures went stale (60 s) and showed "-" after
+     *  three missed replies in a row (an owner's record: 01A4 802/819, "none retry"). One that never answered (a 6MT has no
+     *  TCU, a DAG3 holding the engine) still waits RETRY_MS. */
+    public void done(Poll p,long now,boolean ok){p.misses=ok?0:p.misses+1;p.sent++;if(ok)p.answered++;
+        p.due=now+(p.active()?p.every:p.answered>0?Math.max(3000,p.every*3):RETRY_MS);}
     /** Not sent this time (another tester holds the ECU): due again a period on, no miss counted. */
     public void skip(Poll p,long now){p.due=now+p.every;}
     /** Every request's tally on one short line ("ED1D 0/3 7F 22 31 off, 43 40/40, ..."): the 5 s diagnostics line

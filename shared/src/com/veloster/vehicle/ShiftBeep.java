@@ -65,6 +65,32 @@ final class ShiftBeep implements Runnable {
         if(busy)return;
         busy=true;this.own=coinPcm(k,false);this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"coin-clink").start();
     }
+    /** The 카세트 screen's key sounds (res/raw, 16-bit mono 22.05 kHz little-endian): LATCH a key that stays down (PLAY, PAUSE),
+     *  UP a held key popping back up (stop), TAP a key that springs straight back (track skip). Resynthesised from the band
+     *  loudness of a Walkman key recording ("Sony Walkman - Sound Effect-", The Computer Corner, YouTube; no licence stated):
+     *  the timing and colour follow it, the waveform is new noise. The owner chose them (2026-11-10). */
+    static final int LATCH=1,UP=2,TAP=3;
+    private static final String[] CASSETTE_RAW={null,"cassette_latch","cassette_up","cassette_tap"};
+    private static final short[][] CASSETTE=new short[4][],CASSETTE_MIX=new short[4][];
+    /** Loads the samples once (the own-track copy with the 60 ms lead the alarm path needs, and an 11.025 kHz copy for the mix). */
+    static synchronized void loadCassette(Context c){
+        for(int k=1;k<4;k++){if(CASSETTE[k]!=null)continue;
+            try{int id=c.getResources().getIdentifier(CASSETTE_RAW[k],"raw",c.getPackageName());if(id==0)continue;
+                java.io.InputStream in=c.getResources().openRawResource(id);java.io.ByteArrayOutputStream b=new java.io.ByteArrayOutputStream();
+                try{byte[] buf=new byte[4096];int r;while((r=in.read(buf))>0)b.write(buf,0,r);}finally{in.close();}
+                byte[] d=b.toByteArray();int n=d.length/2,lead=Math.round(RATE*0.06f);short[] own=new short[lead+n],mix=new short[n/2];
+                for(int q=0;q<n;q++)own[lead+q]=(short)((d[2*q]&255)|(d[2*q+1]<<8));
+                for(int q=0;q<mix.length;q++)mix[q]=(short)((own[lead+2*q]+own[lead+2*q+1])/2);   // 22.05 -> 11.025 kHz, pair average
+                CASSETTE[k]=own;CASSETTE_MIX[k]=mix;
+            }catch(Exception e){android.util.Log.w("VehicleDash","Cassette sound "+CASSETTE_RAW[k]+" not loaded",e);}}
+    }
+    /** Plays a 카세트 key sound (LATCH, UP, TAP) on the same paths as playCoin(). Nothing if the samples did not load. */
+    void playCassette(EngineSound onPath,int kind,float vol){
+        if(kind<1||kind>3||CASSETTE[kind]==null)return;
+        if(onPath!=null){onPath.mixBeep(CASSETTE_MIX[kind],vol);return;}
+        if(busy)return;
+        busy=true;this.own=CASSETTE[kind];this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"cassette-key").start();
+    }
     /** Inharmonic partials (Hz, amplitude, decay ms) per coin, one strike per contact: the small
      *  10 won rings high and short, the 500 won lower, longer and with a thud. */
     private static final double[][][] COIN={

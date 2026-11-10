@@ -14,10 +14,16 @@ final class CassetteCluster extends ClusterKit {
     private static final int VF=0xff5effc0,VF_OFF=0xff0b2a20,INK=0xff1f3a8a,FACE=0xffefe3c2;
     private float rot,needleL,needleR;
     private long last;
+    /** 카세트 찰칵 소리 switch (설정 → 사운드), and the cue VehicleDash plays and clears: ShiftBeep.LATCH (PLAY or PAUSE goes down and
+     *  stays), UP (the held key pops up, nothing playing), TAP (▶▶ goes down and springs straight back: the track changed). */
+    static volatile boolean clickSound=true;
+    static volatile int cue;
+    private int prevKey=-2;private String prevTitle;private long tapUntil;
 
     @Override protected void draw(Canvas c){
         float rpm=v(0),pedal=v(9),boost=v(Telemetry.BOOST),spd=v(7),top=boostTop();
         float dt=last==0||now-last>2000?0:(now-last)/1000f;last=now;
+        if(dt==0){prevKey=-2;prevTitle=null;}   // just shown (or a long gap): a key that changed while away does not click
         rot+=dt*(0.4f+(Float.isNaN(rpm)?0:rpm)/1500);
         float tl=Float.isNaN(pedal)?0:pedal/100,tr=Float.isNaN(boost)?0:clamp((boost+0.7f)/(top+0.7f),0,1);
         needleL+=(tl-needleL)*Math.min(1,dt*(tl>needleL?10:4));needleR+=(tr-needleR)*Math.min(1,dt*(tr>needleR?10:4));
@@ -47,11 +53,14 @@ final class CassetteCluster extends ClusterKit {
         path.reset();path.moveTo(110,270);path.lineTo(438,270);path.lineTo(460,336);path.lineTo(88,336);path.close();poly(c,0xff232528);
         fill(c,100,324,448,327,0xff3a2516);
         for(float x:new float[]{140,226,300,386})round(c,x,312,x+22,330,3,0xff0b0b0c);
-        // piano keys, PLAY down when music plays
+        // piano keys, PLAY down when music plays; ▶▶ dips for 180 ms on a new track
         String[] keys={"●","◀◀","▶","▶▶","■","❚❚"};
         boolean playing=has&&music.playState==1;
         int pressed=!has||music.playState<0?-1:playing?2:5;   // unknown play state: no key down
-        for(int i=0;i<6;i++){boolean down=i==pressed;float x=24+i*84,y=372+(down?5:0);
+        if(prevKey!=-2&&pressed!=prevKey)cue=pressed>=0?ShiftBeep.LATCH:ShiftBeep.UP;   // PLAY or PAUSE latched down, or the held key released
+        else if(has&&prevTitle!=null&&!prevTitle.equals(music.title)){tapUntil=now+180;if(cue==0)cue=ShiftBeep.TAP;}   // a new track: ▶▶ taps
+        prevKey=pressed;prevTitle=has?music.title:null;
+        for(int i=0;i<6;i++){boolean down=i==pressed||i==3&&now<tapUntil;float x=24+i*84,y=372+(down?5:0);
             round(c,x,y,x+78,y+72,6,down?0xff2c2e32:0xff3a3c41);outline(c,x,y,x+78,y+72,6,1,0xff55585e);fill(c,x+4,y+4,x+74,y+10,down?0xff202225:0xff4a4d52);
             bold(c,keys[i],x+39,y+46,20,i==0?0xffe0312f:i==2?0xff3ddc84:0xffdddddd,Paint.Align.CENTER);
             dot(c,x+39,364,3.5f,down?0xff3ddc84:0xff1d2a22);}

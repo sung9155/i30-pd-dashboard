@@ -45,9 +45,11 @@ final class HscanFrameDecoder {
             case 0x10: return 8; // EMS_H12: manual-gearbox gear sent to the cluster (CF_Ems_DesCurGr)
             case 0x12: return 7; // EPB11: electronic parking brake
             case 0x13: return 8; // ESP12: brake pressure, lateral/longitudinal acceleration
+            case 0x14: return 8; // outside air temperature (byte3 x 0.5 - 40), both our cars
             case 0x17: return 8; // MDPS11: driver steering torque
             case 0x19: return 5; // SAS11: steering angle and speed
             case 0x1b: return 8; // TCS13: driver braking
+            case 0x1c: return 4; // TCS / ESC switched off, ABS lamp (Telemetry decodes since 2026-11-08; until 2026-11-11 this table dropped it)
             case 0x1d: return 8; // LVR12: gear selector P/R/N/D/M
             case 0x1f: return 8; // current gear while driving
             case 0x20: return 6; // TPMS: byte1 valid flag, bytes 2-5 tire pressure psi

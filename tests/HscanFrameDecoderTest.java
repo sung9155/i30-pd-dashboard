@@ -63,8 +63,8 @@ public final class HscanFrameDecoderTest {
         decoder.accept(frame(0x07, new byte[8]), 0, 264, 2); // JSN BAT11 slot: not a PD slot
         decoder.accept(frame(0x08, new byte[5]), 0, 264, 2);
         check(count[0] == before, "unknown function, JSN-only function and wrong known size ignored");
-        for (int function : new int[] {0x01, 0x02, 0x04, 0x09, 0x0a, 0x0c, 0x0e, 0x10, 0x12, 0x13, 0x17, 0x19, 0x1b, 0x1d, 0x1f, 0x21}) {
-            byte[] value = frame(function, new byte[function == 0x02 ? 4 : function == 0x19 ? 5 : function == 0x12 ? 7 : function == 0x21 ? 6 : 8]);
+        for (int function : new int[] {0x01, 0x02, 0x04, 0x09, 0x0a, 0x0c, 0x0e, 0x10, 0x12, 0x13, 0x14, 0x17, 0x19, 0x1b, 0x1c, 0x1d, 0x1f, 0x21}) {
+            byte[] value = frame(function, new byte[function == 0x02 || function == 0x1c ? 4 : function == 0x19 ? 5 : function == 0x12 ? 7 : function == 0x21 ? 6 : 8]);
             decoder.accept(value, 0, 264, 2);
             check(count[0] == ++before, "allowlisted function " + function);
         }

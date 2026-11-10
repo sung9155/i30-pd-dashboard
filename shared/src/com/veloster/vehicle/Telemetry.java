@@ -189,7 +189,7 @@ public final class Telemetry {
     // EMS12 CLU_ACK (byte3 bit7) = drivetrain open: on our 7DCT 1 in P/N, 0 in D/R and driving (34 logs). Its receivers
     // are EPB/ESC (drive-away, hill-start); on the 6MT it follows the clutch pedal (owner-verified 2026-11-01, v1.5.4). It
     // counts only once it has toggled (a manual needs the clutch in to crank); a frozen bit keeps the plain match.
-    private int clutchLast=-1; private boolean clutchToggled;
+    private int clutchLast=-1; private boolean clutchToggled,mtStale;
     /** 6MT downshift targets: the rpm one, two and three gears below `gear` would turn at this speed, rounded to 50 rpm
      *  so a mark does not flicker; NaN where that gear does not exist, below 10 km/h, or with the gear unknown (N, R). */
     public static float[] mtDownshift(float kmh,float gear){
@@ -221,7 +221,7 @@ public final class Telemetry {
         calculation.remove();
         observedPreviousRpm=-1;observedTorqueValid=false;
         sparkSeen=false;selectorSeen=false;leverAlive=false;emsGearSeen=false;rpmMax=0;zeroSpark=0;ambientHscan=false;
-        leverCheck=-1;leverFrozen=0;mtCand=0;mtShown=0;mtCandAt=0;mtRatioMin=mtRatioMax=0;mtReverse=false;idleTarget=Float.NaN;idleKmh=0;clutchLast=-1;clutchToggled=false;
+        leverCheck=-1;leverFrozen=0;mtCand=0;mtShown=0;mtCandAt=0;mtRatioMin=mtRatioMax=0;mtReverse=false;idleTarget=Float.NaN;idleKmh=0;clutchLast=-1;clutchToggled=false;mtStale=false;
         for(int i=0;i<LABELS.length;i++) { counts[i]=0; valid[i]=false; changed[i]=false; seen[i]=false; history[i]=null; }
     }
     public synchronized Sample sample(int i, long now) {
@@ -488,6 +488,10 @@ public final class Telemetry {
                 boolean atIdle=clutchToggled&&clutchLast==0&&kmh>=15&&!Float.isNaN(idleTarget)&&Math.abs(rpm-idleTarget)<=15
                     &&valid[9]&&values[9]<1;
                 if(!atIdle)idleKmh=0;else if(idleKmh==0)idleKmh=kmh;else if(Math.abs(kmh-idleKmh)>=idleKmh*0.05f)g=MT_N;
+                // Slow or lugging (under 8 km/h, or the ratio off every gear) the last gear stays until the clutch is pressed:
+                // without the clutch the gear cannot change. Once pressed, the old gear is stale until a ratio matches again.
+                if(clutchLast==1)mtStale=true;else if(g>0)mtStale=false;
+                if(g==0&&clutchToggled&&clutchLast==0&&!mtStale&&mtShown>0)g=mtShown;
                 float ratio=kmh>0?rpm/kmh:0;
                 if(mtReverse||rearView==1||rearView==3){
                     // Reverse (EMS_H12 R code or the rear camera view): a switch, not a ratio, so shown at once. Also keeps a

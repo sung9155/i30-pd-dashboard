@@ -90,7 +90,7 @@ public final class PitRenderer {
     }
     private static String screenName(int s){return s>=0&&s<ClusterPicker.COUNT?ClusterPicker.NAMES[s]:"원래 화면";}
     /** Body tap on a Cluster layout (taxi meter button and the like); true when it was used. */
-    public boolean clusterTap(float x,float y){return symmetric&&(isCluster(page)&&clusterRenderer.tap(page-PAGE_CLASSIC,x,y)||page==PAGE_ECO&&eco.tap(x,y));}
+    public boolean clusterTap(float x,float y){return symmetric&&(isCluster(page)&&clusterRenderer.tap(page-PAGE_CLASSIC,x,y)||page==PAGE_ECO&&eco.tap(x,y)||page==PAGE_MANUAL&&mtSport.tap(x,y));}
     /** The 에코 screen shows (VehicleDash: the fare hold, the coin sound, the frame rate). */
     public boolean ecoShown(){return symmetric&&page==PAGE_ECO;}
     private final HeaderTabs header=new HeaderTabs();

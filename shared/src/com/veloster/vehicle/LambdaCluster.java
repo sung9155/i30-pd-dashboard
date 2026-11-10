@@ -38,6 +38,12 @@ final class LambdaCluster extends ClusterKit {
     private float legY(float f){return BOT+(TOP-BOT)*f;}
     private GearRatios learned(){return st==null?null:st.ratios;}
 
+    /** Tap the rpm Λ: downshift targets always at full colour instead of dim until the clutch / brake (saved by VehicleDash). */
+    public static boolean downAlways;
+    @Override boolean tap(float x,float y){
+        if(x<LCX-HALF-40||x>LCX+HALF+40||y<TOP-20||y>BOT+30)return false;
+        downAlways=!downAlways;return true;
+    }
     @Override protected void draw(Canvas c){
         fill(c,0,52,800,480,0xff000000);
         int ma=Theme.modeAccent();acc=ma!=0?0xff000000|ma:CYAN;
@@ -91,7 +97,7 @@ final class LambdaCluster extends ClusterKit {
         boolean still=cur.equals("N")||cur.equals("R")||cur.equals("P");
         int top=mt?6:7;String[] gs=new String[top+1];for(int k=0;k<top;k++)gs[k]=String.valueOf(top-k);gs[top]=still?cur:"N";
         float dy=(COL_Y1-COL_Y0)/(gs.length-1),rad=Math.min(18,dy/2-2);float fs=rad>=17?22:19;
-        int n=RevMatch.targets(s,prof,learned(),tg,tr),alpha=RevMatch.active(s)?0xff:0x80;
+        int n=RevMatch.targets(s,prof,learned(),tg,tr),alpha=downAlways||RevMatch.active(s)?0xff:0x80;
         int g=Float.isNaN(gear)?0:(int)gear;   // the gear up and where it would land
         float up=g>=1&&g<prof.topGear&&!Float.isNaN(kmh)&&kmh>=10?RevMatch.rpmIn(prof,learned(),kmh,g+1):Float.NaN;
         // a bar across each leg at each predicted rpm, in the gear's colour: shows the level against the scale and the redline

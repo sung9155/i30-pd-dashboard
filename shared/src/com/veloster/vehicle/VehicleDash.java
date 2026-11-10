@@ -168,7 +168,7 @@ public final class VehicleDash extends View implements Runnable {
         applySound();
         if(LambdaCluster.FACE==null){LambdaCluster.FACE=rawFont(a,"chakra_petch_medium");LambdaCluster.FACE_BOLD=rawFont(a,"chakra_petch_bold");}
         if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}ShiftBeep.loadCassette(a);
-        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);EcoCluster.coins=p.getBoolean("eco_coins",false);EcoCluster.l100=p.getBoolean("eco_l100",false);
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);EcoCluster.coins=p.getBoolean("eco_coins",false);LambdaCluster.downAlways=p.getBoolean("lambda_down_always",false);EcoCluster.l100=p.getBoolean("eco_l100",false);
             EcoCluster.grade=p.getInt("eco_grade",0)==1?1:0;
             for(int g=0;g<3;g++)EcoCluster.prices[g]=Math.max(0,Math.min(EcoCluster.PRICE_MAX,p.getInt("eco_price_"+g,0)));EcoCluster.hintDone=p.getBoolean("eco_hint_done",false);EcoCluster.coinSound=p.getBoolean("eco_coin_sound",false);}
         catch(ClassCastException e){/* defaults */}
@@ -539,7 +539,8 @@ public final class VehicleDash extends View implements Runnable {
             if(!lapHeld)lap.tap(SystemClock.elapsedRealtime());
             invalidate();return true;
         }
-        if(tap&&!blocked&&symmetric&&(PitRenderer.isCluster(page)||page==PitRenderer.PAGE_ECO)&&y>52&&downY>52&&renderer.clusterTap(x,y)){int kc=CassetteCluster.consumeKeyCmd();if(kc!=0)requestMedia(kc);if(EcoCluster.consumeChanged())saveEco();invalidate();return true;}
+        if(tap&&!blocked&&symmetric&&(PitRenderer.isCluster(page)||page==PitRenderer.PAGE_ECO||page==PitRenderer.PAGE_MANUAL)&&y>52&&downY>52&&renderer.clusterTap(x,y)){int kc=CassetteCluster.consumeKeyCmd();if(kc!=0)requestMedia(kc);if(EcoCluster.consumeChanged())saveEco();
+            if(page==PitRenderer.PAGE_MANUAL)activity.getSharedPreferences("pit_vehicle_ui",0).edit().putBoolean("lambda_down_always",LambdaCluster.downAlways).apply();invalidate();return true;}
         if(tap&&!blocked&&gauges&&x>=650&&x<=788&&downX>=650&&downX<=788&&y>=54&&y<=78&&downY>=54&&downY<=78){gaugeEditor.toggleGrid();return true;}
         if(tap&&!blocked&&graphs&&y>=54&&y<=79&&downY>=54&&downY<=79){
             if(x>=628&&x<=702&&downX>=628&&downX<=702)graphEditor.window(60000);

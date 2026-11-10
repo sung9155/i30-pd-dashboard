@@ -101,6 +101,19 @@ public final class HscanPdTelemetryTest {
         cl.hscanPd(0xc7,0x02,b(0,0,0,0),t2+=10);cl.hscanPd(0xc7,0x09,b(0,0xaf,0,0x8c,0,0,0,0x10),t2);
         cl.hscanPd(0xc7,0x08,b(0,0,0x10,0x0e,0,0,0,0),t2+=10);cl.hscanPd(0xc7,0x08,b(0,0,0x10,0x0e,0,0,0,0),t2+=300);
         check(!cl.sample(8,t2).valid,"clutch in at a standstill: no gear");
+        // Slowing in 2nd with the clutch out: under 8 km/h no ratio can be read, the 2 stays (no clutch, no gear change).
+        // Clutch in, then out at the same slow speed: the old gear is stale, so no gear until a ratio matches.
+        {Telemetry sl=new Telemetry();long t5=1000;
+        sl.hscanPd(0xc7,0x10,b(0,0x26,0,0,0,0,1<<2,0),t5);sl.hscanPd(0xc7,0x02,b(0,60,0,0),t5);   // 30 km/h
+        sl.hscanPd(0xc7,0x09,b(0,0xaf,0,0x8c,0,0,0,0x10),t5);sl.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),t5);
+        int q2=Math.round(30*8.1f*4.467f*1.962f)*4;sl.hscanPd(0xc7,0x08,b(0,0,q2&255,q2>>8,0,0,0,0),t5+=10);
+        sl.hscanPd(0xc7,0x08,b(0,0,q2&255,q2>>8,0,0,0,0),t5+=300);equal(sl,8,2,t5);
+        sl.hscanPd(0xc7,0x02,b(0,10,0,0),t5+=10);   // 5 km/h at 1000 rpm, clutch out
+        sl.hscanPd(0xc7,0x08,b(0,0,0xa0,0x0f,0,0,0,0),t5+=10);sl.hscanPd(0xc7,0x08,b(0,0,0xa0,0x0f,0,0,0,0),t5+=1000);equal(sl,8,2,t5);
+        sl.hscanPd(0xc7,0x09,b(0,0xaf,0,0x8c,0,0,0,0x10),t5+=10);sl.hscanPd(0xc7,0x08,b(0,0,0xa0,0x0f,0,0,0,0),t5+=10);
+        sl.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),t5+=10);
+        sl.hscanPd(0xc7,0x08,b(0,0,0xa0,0x0f,0,0,0,0),t5+=10);sl.hscanPd(0xc7,0x08,b(0,0,0xa0,0x0f,0,0,0,0),t5+=300);
+        check(!sl.sample(8,t5).valid,"clutch pressed and let out slowly: old gear dropped");}
         // Clutch out at a standstill with the engine running can only be neutral: N.
         cl.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),t2+=10);
         cl.hscanPd(0xc7,0x08,b(0,0,0x80,0x0c,0,0,0,0),t2+=10);cl.hscanPd(0xc7,0x08,b(0,0,0x80,0x0c,0,0,0,0),t2+=300);

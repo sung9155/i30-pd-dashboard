@@ -101,6 +101,13 @@ public final class HscanPdTelemetryTest {
         cl.hscanPd(0xc7,0x02,b(0,0,0,0),t2+=10);cl.hscanPd(0xc7,0x09,b(0,0xaf,0,0x8c,0,0,0,0x10),t2);
         cl.hscanPd(0xc7,0x08,b(0,0,0x10,0x0e,0,0,0,0),t2+=10);cl.hscanPd(0xc7,0x08,b(0,0,0x10,0x0e,0,0,0,0),t2+=300);
         check(!cl.sample(8,t2).valid,"clutch in at a standstill: no gear");
+        // Off the pedal in 3rd, no clutch: 40 km/h at 750 rpm with fuel flowing (lugging, no ratio) stays 3, not N.
+        {Telemetry og=new Telemetry();long t6=1000;
+        og.hscanPd(0xc7,0x10,b(0,0x26,0,0,0,0,1<<2,0),t6);og.hscanPd(0xc7,0x02,b(0,120,0,0),t6);
+        og.hscanPd(0xc7,0x09,b(0,0xaf,0,0x8c,0,0,0,0x10),t6);og.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),t6);
+        og.hscanPd(0xc7,0x08,b(0,0,0xe5,0x2b,0,0,0,0),t6+=10);og.hscanPd(0xc7,0x08,b(0,0,0xe5,0x2b,0,0,0,0),t6+=300);equal(og,8,3,t6);
+        og.hscanPd(0xc7,0x02,b(0,80,0,0),t6+=10);og.hscanPd(0xc7,0x21,b(11,0,0,0,0,0),t6);
+        og.hscanPd(0xc7,0x08,b(0,0,0xb8,0x0b,0,0,0,0),t6+=10);og.hscanPd(0xc7,0x08,b(0,0,0xb8,0x0b,0,0,0,0),t6+=1000);equal(og,8,3,t6);}
         // Slowing in 2nd with the clutch out: under 8 km/h no ratio can be read, the 2 stays (no clutch, no gear change).
         // Clutch in, then out at the same slow speed: the old gear is stale, so no gear until a ratio matches.
         {Telemetry sl=new Telemetry();long t5=1000;
@@ -129,7 +136,10 @@ public final class HscanPdTelemetryTest {
         for(int rpm:new int[]{3900,4050,4200,4350,4500,4650,3600,2900}){
             int q=rpm*4;nb.hscanPd(0xc7,0x08,b(0,0,q&255,q>>8,0,0,0,0),t3+=80);equal(nb,8,3,t3);}
         nb.hscanPd(0xc7,0x08,b(0,0,0xe5,0x2b,0,0,0,0),t3+=80);nb.hscanPd(0xc7,0x08,b(0,0,0xe5,0x2b,0,0,0,0),t3+=300);equal(nb,8,3,t3);
-        // Coasting in neutral at 40 km/h: 750 rpm, pedal off, idle fuel (0.5 L/h) and no gear matching -> N after the hold.
+        // Clutch in and out to take it out of gear (without the clutch the 3 would stay), then
+        nb.hscanPd(0xc7,0x09,b(0,0xaf,0,0x8c,0,0,0,0x10),t3+=10);nb.hscanPd(0xc7,0x08,b(0,0,0xe5,0x2b,0,0,0,0),t3+=10);
+        nb.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),t3+=10);
+        // coasting in neutral at 40 km/h: 750 rpm, pedal off, idle fuel (0.5 L/h) and no gear matching -> N after the hold.
         // The same with a fuel cut (engine braking, so a gear is in) is not called N.
         nb.hscanPd(0xc7,0x02,b(0,80,0,0),t3+=10);nb.hscanPd(0xc7,0x21,b(11,0,0,0,0,0),t3);
         nb.hscanPd(0xc7,0x08,b(0,0,0xb8,0x0b,0,0,0,0),t3+=10);nb.hscanPd(0xc7,0x08,b(0,0,0xb8,0x0b,0,0,0,0),t3+=150);equal(nb,8,3,t3);

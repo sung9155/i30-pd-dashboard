@@ -244,9 +244,9 @@ final class PixelCluster extends ClusterKit {
     /** Both views show the track themselves, so the generic track-change bar and the corner cover button stay off. */
     @Override boolean showsMusic(){return musicPanel();}
     @Override boolean ownsMediaToggle(){return musicPanel();}
-    private boolean mpWide(){return !chase&&artwork!=null;}
+    private boolean mpWide(){return artwork!=null;}   // a cover: the wide box, cover left (both views)
     private float mpL(){return mpWide()?468:580;}
-    private float mpT(){return mpWide()?222:chase?204:228;}
+    private float mpT(){return mpWide()?(chase?192:222):chase?204:228;}   // Arcade: above the car's roof
     private float mpW(){return mpWide()?312:200;}
     private float mpOff(){return artwork!=null?0:-42;}                     // narrow box: rows rise when there is no cover
     private float mpH(){return mpWide()?122:176+mpOff();}
@@ -268,9 +268,6 @@ final class PixelCluster extends ClusterKit {
         if(wide){   // cover left, text beside it, keys across the bottom
             fill(c,l+10,t+10,l+74,t+74,0xff1c303b);blit(c,artwork,0,0,artwork.getWidth(),artwork.getHeight(),l+10,t+10,l+74,t+74);
             tx=l+84;tw=r-12-tx;ty=t+28;ay=t+46;my=t+63;by0=t+70;
-        }else if(art){
-            fill(c,l+10,t+10,l+66,t+66,0xff1c303b);blit(c,artwork,0,0,artwork.getWidth(),artwork.getHeight(),l+10,t+10,l+66,t+66);
-            tx=l+10;tw=mpW()-20;ty=t+84;ay=t+100;my=t+113;by0=t+118;
         }else{
             tx=l+10;tw=mpW()-20;ty=t+72+o;ay=t+90+o;my=t+108+o;by0=t+118+o;
         }

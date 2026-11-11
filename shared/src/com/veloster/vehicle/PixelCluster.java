@@ -234,10 +234,11 @@ final class PixelCluster extends ClusterKit {
         else{scroll+=vk*dt*1.4f;sideScene(c,vk,brake,left,boost,rpm);}
         hud(c,g,rpm,boost,v);
         musicNotes(c,vk);
-        if(!chase)nowPlaying(c);
+        nowPlaying(c);
     }
-    /** The 8-bit side view shows the track itself (the box below), so the generic track-change bar stays off. */
-    @Override boolean showsMusic(){return !chase&&playing();}
+    /** Both views show the track itself (the box below), so the generic track-change bar and the corner cover button stay off. */
+    @Override boolean showsMusic(){return playing();}
+    @Override boolean ownsMediaToggle(){return playing();}
     private boolean playing(){return music!=null&&music.playState==1&&music.title!=null&&music.title.length()>0;}
     // ---- now playing: a dialog box on the right, the cover shrunk to 14 x 14 pixels in a small palette ----------------
     private static final float NP_L=468,NP_T=222,NP_R=780,NP_B=344,BTN_T=NP_B-42,BTN_B=NP_B-12,BTN_MID=(NP_L+NP_R)/2;
@@ -257,7 +258,13 @@ final class PixelCluster extends ClusterKit {
         String ar=music.artist==null?"":music.artist;
         if(ar.length()>0){Bitmap ab=label(ar,0xffb0b0c0);c.save();c.clipRect(tx,NP_T+40,tx+avail,NP_T+66);marquee(c,ab,tx,NP_T+42,avail);c.restore();}
         // progress as blocks, like the EXP bar
-        if(music.durationMs>0&&music.positionMs>=0){int n=12,lit=Math.round(clamp(music.positionMs/(float)music.durationMs,0,1)*n);float bw=avail/n;
+        boolean known=music.durationMs>0&&music.positionMs>=0;
+        float barW=avail;
+        if(chase&&known){   // Arcade only: elapsed / total as one small line after the bar
+            long ps=Math.min(music.durationMs,music.positionMs+music.timeAgeMs)/1000,ds=music.durationMs/1000;
+            String tm=String.format(Locale.US,"%d:%02d / %d:%02d",ps/60,ps%60,ds/60,ds%60);
+            text(c,tm,NP_R-14,NP_T+77,11,0xffb0b0c0,Paint.Align.RIGHT,android.graphics.Typeface.DEFAULT);barW=avail-76;}
+        if(known){int n=12,lit=Math.round(clamp(music.positionMs/(float)music.durationMs,0,1)*n);float bw=barW/n;
             for(int i=0;i<n;i++){fill(c,tx+i*bw,NP_T+68,tx+(i+1)*bw-2,NP_T+76,0xff000000);fill(c,tx+i*bw+1,NP_T+69,tx+(i+1)*bw-3,NP_T+75,i<lit?0xff3ad8ff:0xff2a2a3a);}}
         // previous / next: two pixel keys along the bottom, yellow for a moment when pressed
         for(int k=0;k<2;k++){float l=k==0?NP_L+12:BTN_MID+4,r=k==0?BTN_MID-4:NP_R-12;boolean hot=npPress==k+1&&now-npPressAt<220;
@@ -268,7 +275,7 @@ final class PixelCluster extends ClusterKit {
     }
     /** The previous / next keys of the now-playing box: the media command goes out the way the cassette's keys send theirs. */
     @Override boolean tap(float x,float y){
-        if(chase||!playing()||y<BTN_T-4||y>BTN_B+4||x<NP_L+8||x>NP_R-8)return false;
+        if(!playing()||y<BTN_T-4||y>BTN_B+4||x<NP_L+8||x>NP_R-8)return false;
         boolean prev=x<BTN_MID;CassetteCluster.keyCmd=prev?-1:1;npPress=prev?1:2;npPressAt=now;return true;
     }
     /** A label at 2 x, still when it fits, else (after 1.5 s at its start) scrolling left in whole pixels, a gap before it comes round. */

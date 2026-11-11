@@ -89,6 +89,8 @@ public final class PitRenderer {
         return row==SettingsLayout.SOUND_LEAD?(v==0?UiText.t("끔"):v+" ms"):v+" %";
     }
     private static String screenName(int s){return s>=0&&s<ClusterPicker.COUNT?ClusterPicker.NAMES[s]:"원래 화면";}
+    /** False when the shown layout draws its own track controls (the corner album-art button is hidden). */
+    public boolean mediaToggleShown(){return !(symmetric&&isCluster(page)&&clusterRenderer.ownsMediaToggle(page-PAGE_CLASSIC));}
     /** Body tap on a Cluster layout (taxi meter button and the like); true when it was used. */
     public boolean clusterTap(float x,float y){return symmetric&&(isCluster(page)&&clusterRenderer.tap(page-PAGE_CLASSIC,x,y)||page==PAGE_ECO&&eco.tap(x,y)||page==PAGE_MANUAL&&mtSport.tap(x,y));}
     /** The 에코 screen shows (VehicleDash: the fare hold, the coin sound, the frame rate). */
@@ -178,7 +180,7 @@ public final class PitRenderer {
         }
         if(picker)drawPicker(c,screen(cluster));
         else if(graphLayout==null&&!mediaPage && music!=null && music.notice && !showsMusic())drawMedia(c,true);
-        if(cluster&&!picker&&gaugeLayout==null&&graphLayout==null)drawArtworkToggle(c);
+        if(cluster&&!picker&&gaugeLayout==null&&graphLayout==null&&mediaToggleShown())drawArtworkToggle(c);
         c.restore();
     }
     // Page background and header strip, painted into two bitmaps and repainted only when they change. On Android 4.2's

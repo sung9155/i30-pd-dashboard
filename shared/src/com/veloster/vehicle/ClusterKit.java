@@ -45,6 +45,8 @@ abstract class ClusterKit {
     boolean tap(float x,float y){return false;}
     /** True while the layout shows the now-playing track itself, so the track-change bar stays off. */
     boolean showsMusic(){return false;}
+    /** True when the layout has its own track controls, so the corner album-art button is not drawn or tappable. */
+    boolean ownsMediaToggle(){return false;}
 
     /** Display text in the selected language (Korean source strings, translations/en.json). */
     protected static String t(String ko){return com.veloster.i18n.UiText.t(ko);}
@@ -85,6 +87,16 @@ abstract class ClusterKit {
     protected void bold(Canvas c,String str,float x,float y,float size,int color,Paint.Align align){text(c,str,x,y,size,color,align,Typeface.DEFAULT_BOLD);}
     protected void mono(Canvas c,String str,float x,float y,float size,int color,Paint.Align align){text(c,str,x,y,size,color,align,Typeface.MONOSPACE);}
     protected float width(String str,float size,Typeface face){p.setTypeface(face);p.setTextSize(size);return p.measureText(str);}
+    /** One line at x/baseline y inside width w; wider than that it flows (looping, with a gap) instead of ending in …. */
+    protected void marquee(Canvas c,String str,float x,float y,float w,float size,int color,Typeface face,float pxPerSec){
+        float tw=width(str,size,face);
+        if(tw<=w){text(c,str,x,y,size,color,Paint.Align.LEFT,face);return;}
+        float gap=48,period=tw+gap,off=(now/1000f*pxPerSec)%period;
+        c.save();c.clipRect(x,y-size-2,x+w,y+size*0.35f);
+        text(c,str,x-off,y,size,color,Paint.Align.LEFT,face);
+        text(c,str,x-off+period,y,size,color,Paint.Align.LEFT,face);
+        c.restore();
+    }
     /** Key colours: face, top highlight, shadow lip, lamp, label. */
     static final int[] KEY_GREEN={0xff1f4a2c,0xff3a7a4c,0xff0f2416,0xff2fe06a,0xfff2f2f4},KEY_RED={0xff5a2420,0xff8a3a32,0xff2a100e,0xffff3b2f,0xfff2f2f4},
         KEY_AMBER={0xff4a3a12,0xff7a6224,0xff241c08,0xffffb000,0xfff2f2f4},KEY_GREY={0xff26262a,0xff3a3a40,0xff121214,0xff3a3a40,0xff6a6a70},

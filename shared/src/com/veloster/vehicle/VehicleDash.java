@@ -548,7 +548,7 @@ public final class VehicleDash extends View implements Runnable {
             return true;
         }
         if(tap&&!blocked&&cluster&&!gauges){
-            boolean small=x>=18&&x<=70&&downX>=18&&downX<=70&&y>=436&&y<=480&&downY>=436&&downY<=480;
+            boolean small=renderer.mediaToggleShown()&&x>=18&&x<=70&&downX>=18&&downX<=70&&y>=436&&y<=480&&downY>=436&&downY<=480;
             boolean large=media&&x>=518&&x<=758&&downX>=518&&downX<=758&&y>=72&&y<=312&&downY>=72&&downY<=312;
             if(small||large){media=!media;mediaState.dismissNotice();invalidate();return true;}
         }

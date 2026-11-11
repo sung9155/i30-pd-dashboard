@@ -262,20 +262,19 @@ final class PixelCluster extends ClusterKit {
         String trk=music.title+"|"+music.artist;if(!trk.equals(mpTrack)){mpTrack=trk;mpSince=now;}   // a new track starts at its first letter
         fill(c,l,t,r,t+mpH(),0xff000000);outline(c,l+2,t+2,r-2,t+mpH()-2,0,2,W);
         String tm=null;
-        if(chase&&music.hasProgress()){long ps=Math.min(music.durationMs,music.positionMs+(pl?music.timeAgeMs:0))/1000,ds=music.durationMs/1000;   // Arcade only: one small line
+        if(music.hasProgress()){long ps=Math.min(music.durationMs,music.positionMs+(pl?music.timeAgeMs:0))/1000,ds=music.durationMs/1000;
             tm=String.format(Locale.US,"%d:%02d / %d:%02d",ps/60,ps%60,ds/60,ds%60);}
-        float tx,tw,ty,ay,by0;   // text column: left, width, title baseline, artist baseline, progress bar top
+        float tx,tw,ty,ay,my,by0;   // text column: left, width, title / artist / time baselines, progress bar top
         if(wide){   // cover left, text beside it, keys across the bottom
             fill(c,l+10,t+10,l+74,t+74,0xff1c303b);blit(c,artwork,0,0,artwork.getWidth(),artwork.getHeight(),l+10,t+10,l+74,t+74);
-            tx=l+84;tw=r-12-tx;ty=t+46;ay=t+62;by0=t+70;
+            tx=l+84;tw=r-12-tx;ty=t+28;ay=t+46;my=t+63;by0=t+70;
         }else if(art){
             fill(c,l+10,t+10,l+66,t+66,0xff1c303b);blit(c,artwork,0,0,artwork.getWidth(),artwork.getHeight(),l+10,t+10,l+66,t+66);
-            if(tm!=null)text(c,tm,l+76,t+52,11,0xff9a9aaa,Paint.Align.LEFT,Typeface.DEFAULT);
-            tx=l+10;tw=mpW()-20;ty=t+90;ay=t+108;by0=t+118;
-        }else{   // no cover: the time on the top row
-            if(tm!=null)text(c,tm,l+10,t+26,11,0xff9a9aaa,Paint.Align.LEFT,Typeface.DEFAULT);
-            tx=l+10;tw=mpW()-20;ty=t+90+o;ay=t+108+o;by0=t+118+o;
+            tx=l+10;tw=mpW()-20;ty=t+84;ay=t+100;my=t+113;by0=t+118;
+        }else{
+            tx=l+10;tw=mpW()-20;ty=t+72+o;ay=t+90+o;my=t+108+o;by0=t+118+o;
         }
+        if(tm!=null)text(c,tm,tx,my,11,0xff9a9aaa,Paint.Align.LEFT,Typeface.DEFAULT);   // small elapsed / total over the bar
         float sy=Math.max(0,now-mpSince-1500)/1000f;   // scrolling waits 1.5 s at the start of a track
         flow(c,music.title,tx,ty,tw,16,W,Typeface.DEFAULT_BOLD,sy*40);
         if(music.artist!=null&&music.artist.length()>0)flow(c,music.artist,tx,ay,tw,12,0xff9a9aaa,Typeface.DEFAULT,sy*34);

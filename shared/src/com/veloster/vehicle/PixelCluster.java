@@ -525,10 +525,11 @@ final class PixelCluster extends ClusterKit {
         if(plateText==null)plateText=bake(PLATE[0].length(),5,new Art(){public void paint(Canvas b){
             for(int r=0;r<5;r++)for(int k=0;k<PLATE[r].length();k++)if(PLATE[r].charAt(k)=='1')px(b,k,r,1,1,0xff1c2532);}});
         int[] b=plateBox[fi];if(b[1]<0)return;
-        float cx=(Math.round(x)+(b[0]+b[1]+1)/2f)*4,cy=52+(Math.round(y)+(b[2]+b[3]+1)/2f)*4;
+        float cx=(Math.round(x)+(b[0]+b[1]+1)/2f)*4+4,cy=52+(Math.round(y)+(b[2]+b[3]+1)/2f)*4;
         int w=plateText.getWidth()*2;float l=Math.round(cx-w/2f),t=Math.round(cy-5);
         float x0=(Math.round(x)+b[0])*4,x1=(Math.round(x)+b[1]+1)*4,y0=52+(Math.round(y)+b[2])*4,y1=52+(Math.round(y)+b[3]+1)*4;
         fill(c,x0,y0,x1,y0+2,0xff2a2d33);fill(c,x0,y1-2,x1,y1,0xff2a2d33);fill(c,x0,y0,x0+2,y1,0xff2a2d33);fill(c,x1-2,y0,x1,y1,0xff2a2d33);   // a half-pixel dark rim
+        fill(c,x0+2,y0+2,x0+10,y1-2,0xff2a5bb0);   // the Korean plate's blue band on the left (text shifted 4 px right)
         blit(c,plateText,0,0,plateText.getWidth(),5,l,t,l+w,t+10);
     }
     /** Exhaust smoke by age (0..1): pale, then darker; gone after two thirds instead of fading out. */

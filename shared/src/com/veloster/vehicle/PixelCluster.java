@@ -3,6 +3,7 @@ package com.veloster.vehicle;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Typeface;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
@@ -234,72 +235,74 @@ final class PixelCluster extends ClusterKit {
         else{scroll+=vk*dt*1.4f;sideScene(c,vk,brake,left,boost,rpm);}
         hud(c,g,rpm,boost,v);
         musicNotes(c,vk);
-        nowPlaying(c);
+        if(musicPanel())drawMusic(c);
     }
-    /** Both views show the track itself (the box below), so the generic track-change bar and the corner cover button stay off. */
-    @Override boolean showsMusic(){return playing();}
-    @Override boolean ownsMediaToggle(){return playing();}
-    private boolean playing(){return music!=null&&music.playState==1&&music.title!=null&&music.title.length()>0;}
-    // ---- now playing: a dialog box on the right, the cover shrunk to 14 x 14 pixels in a small palette ----------------
-    private static final float NP_L=468,NP_T=222,NP_R=780,NP_B=344,BTN_T=NP_B-42,BTN_B=NP_B-12,BTN_MID=(NP_L+NP_R)/2;
-    private Bitmap npArt,npArtFrom;private String npTrack="";private long npSince,npPressAt;private int npPress;
-    private void nowPlaying(Canvas c){
-        if(!playing())return;
-        String trk=music.title+"|"+music.artist;if(!trk.equals(npTrack)){npTrack=trk;npSince=now;}   // a new track starts at its first letter, 1.5 s still
-        fill(c,NP_L,NP_T,NP_R,NP_B,0xff000000);outline(c,NP_L+3,NP_T+3,NP_R-3,NP_B-3,0,3,W);
-        float tx=NP_L+16;
-        if(artwork!=null){
-            if(npArtFrom!=artwork){npArtFrom=artwork;npArt=pixelArt(artwork);}
-            blit(c,npArt,0,0,16,16,NP_L+12,NP_T+12,NP_L+12+64,NP_T+12+64);outline(c,NP_L+10,NP_T+10,NP_L+78,NP_T+78,0,2,0xff3a3a4a);tx=NP_L+88;
+    // ---- Music box (both views): cover, state, title, artist, progress, previous / play-pause / next. Narrow and tall on the
+    // right (Arcade: under the banner row; 8-bit: below the speed); the 8-bit view with a cover widens it to a 312 x 122 box.
+    // Without a cover the box closes up around the text. ----
+    private boolean musicPanel(){return music!=null&&music.title!=null&&music.title.length()>0;}
+    /** Both views show the track themselves, so the generic track-change bar and the corner cover button stay off. */
+    @Override boolean showsMusic(){return musicPanel();}
+    @Override boolean ownsMediaToggle(){return musicPanel();}
+    private boolean mpWide(){return !chase&&artwork!=null;}
+    private float mpL(){return mpWide()?468:580;}
+    private float mpT(){return mpWide()?222:chase?204:228;}
+    private float mpW(){return mpWide()?312:200;}
+    private float mpOff(){return artwork!=null?0:-42;}                     // narrow box: rows rise when there is no cover
+    private float mpH(){return mpWide()?122:176+mpOff();}
+    /** The three keys: left edge of key i, key width, top and bottom. */
+    private float keyX(int i){return mpWide()?mpL()+12+i*99:mpL()+10+i*62;}
+    private float keyW(){return mpWide()?90:56;}
+    private float keyT(){return mpT()+(mpWide()?82:132+mpOff());}
+    private float keyB(){return mpT()+(mpWide()?112:166+mpOff());}
+    private long mpPressAt;private int mpPress=-1;private String mpTrack="";private long mpSince;
+    private void drawMusic(Canvas c){
+        boolean pl=music.playState==1,art=artwork!=null,wide=mpWide();int ac=pl?0xff4ad66d:0xff9a9aaa;
+        float l=mpL(),t=mpT(),r=l+mpW(),o=mpOff();
+        String trk=music.title+"|"+music.artist;if(!trk.equals(mpTrack)){mpTrack=trk;mpSince=now;}   // a new track starts at its first letter
+        fill(c,l,t,r,t+mpH(),0xff000000);outline(c,l+2,t+2,r-2,t+mpH()-2,0,2,W);
+        String tag=music.playState<0?"MUSIC":pl?"PLAY":"PAUSE";
+        String tm=null;
+        if(chase&&music.hasProgress()){long ps=Math.min(music.durationMs,music.positionMs+(pl?music.timeAgeMs:0))/1000,ds=music.durationMs/1000;   // Arcade only: one small line
+            tm=String.format(Locale.US,"%d:%02d / %d:%02d",ps/60,ps%60,ds/60,ds%60);}
+        float tx,tw,ty,ay,by0;   // text column: left, width, title baseline, artist baseline, progress bar top
+        if(wide){   // cover left, text beside it, keys across the bottom
+            fill(c,l+10,t+10,l+74,t+74,0xff1c303b);blit(c,artwork,0,0,artwork.getWidth(),artwork.getHeight(),l+10,t+10,l+74,t+74);
+            tx=l+84;tw=r-12-tx;sh(c,tag,tx,t+26,11,ac);ty=t+46;ay=t+62;by0=t+70;
+        }else if(art){
+            fill(c,l+10,t+10,l+66,t+66,0xff1c303b);blit(c,artwork,0,0,artwork.getWidth(),artwork.getHeight(),l+10,t+10,l+66,t+66);
+            sh(c,tag,l+76,t+30,11,ac);if(tm!=null)text(c,tm,l+76,t+52,11,0xff9a9aaa,Paint.Align.LEFT,Typeface.DEFAULT);
+            tx=l+10;tw=mpW()-20;ty=t+90;ay=t+108;by0=t+118;
+        }else{   // no cover: the state and the time share one row
+            sh(c,tag,l+10,t+28,11,ac);if(tm!=null)text(c,tm,l+10+fontWidth(tag,11)+12,t+26,11,0xff9a9aaa,Paint.Align.LEFT,Typeface.DEFAULT);
+            tx=l+10;tw=mpW()-20;ty=t+90+o;ay=t+108+o;by0=t+118+o;
         }
-        float avail=NP_R-14-tx;
-        Bitmap tb=label(music.title,W);
-        c.save();c.clipRect(tx,NP_T+10,tx+avail,NP_T+38);marquee(c,tb,tx,NP_T+12,avail);c.restore();
-        String ar=music.artist==null?"":music.artist;
-        if(ar.length()>0){Bitmap ab=label(ar,0xffb0b0c0);c.save();c.clipRect(tx,NP_T+40,tx+avail,NP_T+66);marquee(c,ab,tx,NP_T+42,avail);c.restore();}
-        // progress as blocks, like the EXP bar
-        boolean known=music.durationMs>0&&music.positionMs>=0;
-        float barW=avail;
-        if(chase&&known){   // Arcade only: elapsed / total as one small line after the bar
-            long ps=Math.min(music.durationMs,music.positionMs+music.timeAgeMs)/1000,ds=music.durationMs/1000;
-            String tm=String.format(Locale.US,"%d:%02d / %d:%02d",ps/60,ps%60,ds/60,ds%60);
-            text(c,tm,NP_R-14,NP_T+77,11,0xffb0b0c0,Paint.Align.RIGHT,android.graphics.Typeface.DEFAULT);barW=avail-76;}
-        if(known){int n=12,lit=Math.round(clamp(music.positionMs/(float)music.durationMs,0,1)*n);float bw=barW/n;
-            for(int i=0;i<n;i++){fill(c,tx+i*bw,NP_T+68,tx+(i+1)*bw-2,NP_T+76,0xff000000);fill(c,tx+i*bw+1,NP_T+69,tx+(i+1)*bw-3,NP_T+75,i<lit?0xff3ad8ff:0xff2a2a3a);}}
-        // previous / next: two pixel keys along the bottom, yellow for a moment when pressed
-        for(int k=0;k<2;k++){float l=k==0?NP_L+12:BTN_MID+4,r=k==0?BTN_MID-4:NP_R-12;boolean hot=npPress==k+1&&now-npPressAt<220;
-            fill(c,l,BTN_T,r,BTN_B,hot?Y:0xff1a1a26);outline(c,l,BTN_T,r,BTN_B,0,2,hot?Y:W);
-            int ink=hot?0xff000000:W;float cx=(l+r)/2,cy=(BTN_T+BTN_B)/2;
-            for(int t=0;t<2;t++){float ox=cx+(t==0?-14:2);   // two pixel triangles: ◀◀ or ▶▶, 3 px rows
-                for(int row=0;row<7;row++){float w2=(row<4?row+1:7-row)*3,x0=k==0?ox+12-w2:ox;fill(c,x0,cy-10.5f+row*3,x0+w2,cy-7.5f+row*3,ink);}}}
+        float sy=Math.max(0,now-mpSince-1500)/1000f;   // scrolling waits 1.5 s at the start of a track
+        flow(c,music.title,tx,ty,tw,16,W,Typeface.DEFAULT_BOLD,sy*40);
+        if(music.artist!=null&&music.artist.length()>0)flow(c,music.artist,tx,ay,tw,12,0xff9a9aaa,Typeface.DEFAULT,sy*34);
+        fill(c,tx,by0,tx+tw,by0+6,0xff2a2a3a);
+        if(music.hasProgress())fill(c,tx,by0,tx+tw*clamp(music.progress(),0,1),by0+6,ac);
+        String[] lab={"◀◀",pl?"❚❚":"▶","▶▶"};
+        for(int i=0;i<3;i++){float x=keyX(i),w=keyW(),kt=keyT(),kb=keyB();boolean hot=mpPress==i&&now-mpPressAt<220;
+            int edge=hot?Y:i==1?ac:0xff7a7a8a;
+            fill(c,x,kt,x+w,kb,hot?Y:0xff000000);outline(c,x+1,kt+1,x+w-1,kb-1,0,2,edge);
+            bold(c,lab[i],x+w/2,(kt+kb)/2+6,15,hot?0xff000000:i==1?ac:W,Paint.Align.CENTER);}
     }
-    /** The previous / next keys of the now-playing box: the media command goes out the way the cassette's keys send theirs. */
+    /** One line inside width w; wider than that it scrolls by off pixels, looping with a gap. */
+    private void flow(Canvas c,String str,float x,float y,float w,float size,int color,Typeface face,float off){
+        float tw=width(str,size,face);
+        if(tw<=w){text(c,str,x,y,size,color,Paint.Align.LEFT,face);return;}
+        float gap=48,period=tw+gap,o=off%period;
+        c.save();c.clipRect(x,y-size-2,x+w,y+size*0.35f);
+        text(c,str,x-o,y,size,color,Paint.Align.LEFT,face);text(c,str,x-o+period,y,size,color,Paint.Align.LEFT,face);
+        c.restore();
+    }
+    /** Previous / play-pause / next drive the media (VehicleDash reads CassetteCluster's key command). */
     @Override boolean tap(float x,float y){
-        if(!playing()||y<BTN_T-4||y>BTN_B+4||x<NP_L+8||x>NP_R-8)return false;
-        boolean prev=x<BTN_MID;CassetteCluster.keyCmd=prev?-1:1;npPress=prev?1:2;npPressAt=now;return true;
-    }
-    /** A label at 2 x, still when it fits, else (after 1.5 s at its start) scrolling left in whole pixels, a gap before it comes round. */
-    private void marquee(Canvas c,Bitmap b,float x,float y,float avail){
-        float w=b.getWidth()*2,h=b.getHeight()*2;
-        if(w<=avail){blit(c,b,0,0,b.getWidth(),b.getHeight(),x,y,x+w,y+h);return;}
-        float gap=40,off=((Math.max(0,now-npSince-1500)/30)*2)%(w+gap);for(float xx=x-off;xx<x+avail;xx+=w+gap)blit(c,b,0,0,b.getWidth(),b.getHeight(),xx,y,xx+w,y+h);
-    }
-    /** The cover at 16 x 16 with 3 bits a channel: drawn back at 4 x 4 per pixel it reads as game art. */
-    private static Bitmap pixelArt(Bitmap src){
-        Bitmap b=bitmap(16,16);android.graphics.Rect sr=new android.graphics.Rect();sr.set(0,0,src.getWidth(),src.getHeight());android.graphics.RectF dr=new android.graphics.RectF();dr.set(0,0,16,16);new Canvas(b).drawBitmap(src,sr,dr,new Paint(Paint.FILTER_BITMAP_FLAG));
-        int[] px=new int[256];b.getPixels(px,0,16,0,0,16,16);for(int i=0;i<px.length;i++)px[i]=0xff000000|(px[i]&0xe0e0e0);b.setPixels(px,0,16,0,0,16,16);return b;
-    }
-    /** A label at half scale with a one-pixel shadow: the pixel font when it has every letter, otherwise the system face
-     *  drawn small without smoothing (Hangul and the like), so both come out as chunky pixels at 2 x. */
-    private final java.util.LinkedHashMap<String,Bitmap> labelCache=new java.util.LinkedHashMap<String,Bitmap>(16,0.75f,true){
-        @Override protected boolean removeEldestEntry(java.util.Map.Entry<String,Bitmap> e){return size()>8;}};
-    private Bitmap label(String s,int color){
-        String key=color+"|"+s;Bitmap b=labelCache.get(key);if(b!=null)return b;
-        boolean ascii=true;for(int i=0;i<s.length();i++){char ch=s.charAt(i);if(FONT_CHARS.indexOf(Character.toUpperCase(ch))<0&&ch!=' '){ascii=false;break;}}
-        if(ascii)b=textBitmap(s.toUpperCase(Locale.US),color);
-        else{Paint tp=new Paint(0);tp.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);tp.setTextSize(9);int w=Math.max(1,(int)Math.ceil(tp.measureText(s))+2);
-            b=bitmap(w,11);Canvas k=new Canvas(b);tp.setColor(0xff000000);k.drawText(s,1,9,tp);tp.setColor(color);k.drawText(s,0,8,tp);}
-        labelCache.put(key,b);return b;
+        if(!musicPanel()||y<keyT()-6||y>keyB()+6)return false;
+        for(int i=0;i<3;i++){float bx=keyX(i);if(x>=bx-3&&x<=bx+keyW()+3){
+            CassetteCluster.keyCmd=i==0?-1:i==2?1:music.playState==1?3:2;mpPress=i;mpPressAt=now;return true;}}
+        return false;
     }
     /** Pixel music notes drifting up while a track plays, like sound out of the car. */
     /** Notes stream out of the car: born as a dot, growing as they drift, and swept backwards faster the quicker it goes. */

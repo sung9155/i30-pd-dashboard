@@ -499,6 +499,7 @@ final class PixelCluster extends ClusterKit {
         int key=fi|(brake?32:0)|(left?64:0)|(right?128:0)|(lp?256:0);Bitmap car=arcadeCar.get(key);
         if(car==null){car=bake(ArcadeCarFrames.W,ArcadeCarFrames.H,new Art(){public void paint(Canvas b){arcadeArt(b,fi,b0,l0,r0,lp);}});arcadeCar.put(key,car);}
         put(c,car,ox+ArcadeCarFrames.DX,oy+ArcadeCarFrames.DY);
+        plate(c,fi,ox+ArcadeCarFrames.DX,oy+ArcadeCarFrames.DY);
         if(!Float.isNaN(boost)&&boost>0.9f&&blink(now,120)){for(int ex:new int[]{8,37}){run(c,0xffffcc33,ox,oy,34,ex,ex+3);run(c,0xffff7a1a,ox,oy,35,ex+1,ex+2);}}
         else if(!Float.isNaN(boost)&&boost>0.3f){int k=(int)(now/125%3);for(int ex:new int[]{8,37})px(c,ox+ex+k,oy+34+k%2,3,1,0xffc8c8d2);}
         float ped=v(9);   // exhaust smoke from both tailpipes under throttle (more gas, more smoke)
@@ -507,6 +508,26 @@ final class PixelCluster extends ClusterKit {
         spray(c,ox-4,oy+34,ox+41,oy+34,12);   // a wet road throws spray off both rear tyres
         if(mode==ECO)for(int i=0;i<3;i++){float ag=((now/90+i*11)%32)/32f;int side=i%2==0?-1:1;   // ECO: leaves kicked off the rear wheels: a hop, then out and toward the camera (growing)
             leaf(c,ox+24+side*(20+ag*60),oy+34-(float)Math.sin(ag*Math.PI)*12+ag*6,i,ag<0.5f?1:2);}
+    }
+    /** Plate box per frame {x0,x1,y0,y1} from the frames' plate codes (20 rim, 21 face). */
+    private static int[][] plateBox;
+    /** "i30 PD" in a 3 x 5 font, 4 columns a glyph (3 for the space). */
+    private static final String[] PLATE={"010.111.111...110.110","000.001.101...101.101","010.011.101...110.101","010.001.101...100.101","010.111.111...100.110"};
+    private static Bitmap plateText;
+    /** The plate text at 2 screen px a font pixel (half a scene pixel, like the HUD font), centred on the frame's plate. */
+    private void plate(Canvas c,int fi,float x,float y){
+        if(plateBox==null){int[][] pb=new int[ArcadeCarFrames.FRAMES.length][];
+            for(int i=0;i<pb.length;i++){int[] b={99,-1,99,-1};
+                for(int yy=0;yy<ArcadeCarFrames.H;yy++)for(int xx=0;xx<ArcadeCarFrames.W;xx++){int k=ArcadeCarFrames.code(i,xx,yy);
+                    if(k==20||k==21){b[0]=Math.min(b[0],xx);b[1]=Math.max(b[1],xx);b[2]=Math.min(b[2],yy);b[3]=Math.max(b[3],yy);}}
+                pb[i]=b;}
+            plateBox=pb;}
+        if(plateText==null)plateText=bake(PLATE[0].length(),5,new Art(){public void paint(Canvas b){
+            for(int r=0;r<5;r++)for(int k=0;k<PLATE[r].length();k++)if(PLATE[r].charAt(k)=='1')px(b,k,r,1,1,0xff1c2532);}});
+        int[] b=plateBox[fi];if(b[1]<0)return;
+        float cx=(Math.round(x)+(b[0]+b[1]+1)/2f)*4,cy=52+(Math.round(y)+(b[2]+b[3]+1)/2f)*4;
+        int w=plateText.getWidth()*2;float l=Math.round(cx-w/2f),t=Math.round(cy-5);
+        blit(c,plateText,0,0,plateText.getWidth(),5,l,t,l+w,t+10);
     }
     /** Exhaust smoke by age (0..1): pale, then darker; gone after two thirds instead of fading out. */
     private static int smoke(float ag){return ag<0.33f?0xffb8bcc2:0xff8e939b;}
@@ -533,7 +554,7 @@ final class PixelCluster extends ClusterKit {
         int[] e=ArcadeCarFrames.CODES[code-1];
         if(e[0]==4){if(e[1]<0?left:right)return AMBER;e=ArcadeCarFrames.CODES[e[2]-1];}
         if(e[0]==1)return e[1]==0?B:e[1]==1?BH:e[1]==2?BD:BS;
-        if(e[0]==2)return e[1];
+        if(e[0]==2)return code==21?0xffe8e8ec:e[1];   // the plate face white, for the plate text
         switch(e[1]){   // tail, LED line, high stop lamp, reflector, clear lens
             case 0:return brake?0xffff3a2a:0xff5a0c14;
             case 1:return brake?0xffffd0c4:lp?0xffe0323c:0xff7a1a22;

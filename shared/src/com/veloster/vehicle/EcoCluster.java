@@ -287,7 +287,8 @@ final class EcoCluster extends ClusterKit {
         int ph=(int)((roadOff%TH)/TH*PH)%PH;blit(c,asphalt[ph],0,0,AW,AH,L_L,AY,L_L+AW,AY+AH);
         int paint=CarPaint.body()[0];
         if(CAR!=null&&PAINT!=null&&(car==null||carFor!=paint)){car=tint(CAR,PAINT,paint);carFor=paint;}
-        if(car!=null)blitSmooth(c,car,0,0,AW,240,L_L,TOP,L_L+AW,BOT);
+        if(car!=null){blitSmooth(c,car,0,0,AW,240,L_L,TOP,L_L+AW,BOT);   // plate in the car's plate recess
+            round(c,176,99,232,117,2,0xff20242a);round(c,177,100,231,116,2,0xffeef0f2);bold(c,"i30 PD",204,113,12,0xff15181c,Paint.Align.CENTER);}
         for(int i=0;i<pn;i++){float k=puffT[i];p.setColor(((int)(90*(1-k/0.8f))<<24)|0xaab4b9);c.drawCircle(puffX[i]+k*8,puffY[i]+8+k*12,8+k*24,p);}
         if(flat==null)buildCoins();
         for(int i=0;i<gn;i++)sprite(c,flat[di(gden[i])],gx[i],gy[i],(1.3f+(gy[i]-224)/90)/2.2f);

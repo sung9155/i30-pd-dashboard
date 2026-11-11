@@ -244,11 +244,11 @@ final class PixelCluster extends ClusterKit {
     /** Both views show the track themselves, so the generic track-change bar and the corner cover button stay off. */
     @Override boolean showsMusic(){return musicPanel();}
     @Override boolean ownsMediaToggle(){return musicPanel();}
-    private boolean mpWide(){return artwork!=null;}   // a cover: the wide box, cover left (both views)
+    private boolean mpWide(){return !chase&&artwork!=null;}
     private float mpL(){return mpWide()?468:580;}
-    private float mpT(){return mpWide()?(chase?192:222):chase?204:228;}   // Arcade: above the car's roof
+    private float mpT(){return mpWide()?222:chase?204:228;}
     private float mpW(){return mpWide()?312:200;}
-    private float mpOff(){return artwork!=null?0:-42;}                     // narrow box: rows rise when there is no cover
+    private float mpOff(){return artwork!=null?-10:-42;}                     // narrow box: rows rise when there is no cover
     private float mpH(){return mpWide()?122:176+mpOff();}
     /** The three keys: left edge of key i, key width, top and bottom. */
     private float keyX(int i){return mpWide()?mpL()+12+i*99:mpL()+10+i*62;}
@@ -264,14 +264,17 @@ final class PixelCluster extends ClusterKit {
         String tm=null;
         if(music.hasProgress()){long ps=Math.min(music.durationMs,music.positionMs+(pl?music.timeAgeMs:0))/1000,ds=music.durationMs/1000;
             tm=String.format(Locale.US,"%d:%02d / %d:%02d",ps/60,ps%60,ds/60,ds%60);}
-        float tx,tw,ty,ay,my,by0;   // text column: left, width, title / artist / time baselines, progress bar top
+        float tx,tw,ty,ay,mx,my,by0;   // text column: left, width, title / artist / time baselines, progress bar top
         if(wide){   // cover left, text beside it, keys across the bottom
             fill(c,l+10,t+10,l+74,t+74,0xff1c303b);blit(c,artwork,0,0,artwork.getWidth(),artwork.getHeight(),l+10,t+10,l+74,t+74);
-            tx=l+84;tw=r-12-tx;ty=t+28;ay=t+46;my=t+63;by0=t+70;
+            tx=l+84;tw=r-12-tx;ty=t+28;ay=t+46;mx=tx;my=t+63;by0=t+70;
+        }else if(art){   // Arcade, tall: cover with the time beside it, then title, artist, bar
+            fill(c,l+10,t+10,l+66,t+66,0xff1c303b);blit(c,artwork,0,0,artwork.getWidth(),artwork.getHeight(),l+10,t+10,l+66,t+66);
+            tx=l+10;tw=mpW()-20;ty=t+84;ay=t+100;mx=l+76;my=t+42;by0=t+108;
         }else{
-            tx=l+10;tw=mpW()-20;ty=t+72+o;ay=t+90+o;my=t+108+o;by0=t+118+o;
+            tx=l+10;tw=mpW()-20;ty=t+72+o;ay=t+90+o;mx=tx;my=t+108+o;by0=t+118+o;
         }
-        if(tm!=null)text(c,tm,tx,my,11,0xff9a9aaa,Paint.Align.LEFT,Typeface.DEFAULT);   // small elapsed / total over the bar
+        if(tm!=null)text(c,tm,mx,my,11,0xff9a9aaa,Paint.Align.LEFT,Typeface.DEFAULT);   // small elapsed / total over the bar
         float sy=Math.max(0,now-mpSince-1500)/1000f;   // scrolling waits 1.5 s at the start of a track
         flow(c,music.title,tx,ty,tw,16,W,Typeface.DEFAULT_BOLD,sy*40);
         if(music.artist!=null&&music.artist.length()>0)flow(c,music.artist,tx,ay,tw,12,0xff9a9aaa,Typeface.DEFAULT,sy*34);

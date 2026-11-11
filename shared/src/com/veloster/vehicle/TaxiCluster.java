@@ -173,9 +173,12 @@ final class TaxiCluster extends ClusterKit {
                 bold(c,playing?"▶":"❚❚",l+30,tp+72,16,AMB,Paint.Align.LEFT);
                 text(c,playing?t("재생 중"):t("일시정지"),l+54,tp+71,12,ALBL,Paint.Align.LEFT,Typeface.DEFAULT);
             }
-            String[] lines=wrap(music.title,20,rr-l-56);
-            for(int i=0;i<lines.length;i++)bold(c,lines[i],l+28,tp+108+i*28,20,AMB,Paint.Align.LEFT);
-            if(music.artist!=null&&!music.artist.isEmpty())text(c,wrap(music.artist,14,rr-l-56)[0],l+28,tp+108+lines.length*28+4,14,ALT,Paint.Align.LEFT,Typeface.DEFAULT);
+            float lw=rr-l-56;
+            String[] lines=wrap(music.title,20,lw);
+            boolean cut=lines[lines.length-1].endsWith("…")&&!music.title.endsWith("…");   // does not fit two lines: scroll it on one instead of ending in …
+            if(cut){lines=new String[]{music.title};marquee(c,music.title,l+28,tp+108,lw,20,AMB,Typeface.DEFAULT_BOLD,45);}
+            else for(int i=0;i<lines.length;i++)bold(c,lines[i],l+28,tp+108+i*28,20,AMB,Paint.Align.LEFT);
+            if(music.artist!=null&&!music.artist.isEmpty())marquee(c,music.artist,l+28,tp+108+lines.length*28+4,lw,14,ALT,Typeface.DEFAULT,38);
             long pos=Math.min(music.durationMs,music.positionMs+(playing?music.timeAgeMs:0));
             if(music.hasProgress()){   // position and duration both known
                 float f=clamp(pos/(float)music.durationMs,0,1);

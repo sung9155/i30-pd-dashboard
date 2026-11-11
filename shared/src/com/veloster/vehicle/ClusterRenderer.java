@@ -43,6 +43,7 @@ public final class ClusterRenderer {
     public void tick(Telemetry.Sample[] samples,long now){for(ClusterKit k:extra)if(k!=null)k.background(samples,now);}
     /** True when layout (ClusterPicker index from 클래식) already shows the now-playing track. */
     public boolean showsMusic(int layout){return layout>=3&&layout-3<extra.length&&extra[layout-3]!=null&&extra[layout-3].showsMusic();}
+    public boolean ownsMediaToggle(int layout){return layout>=3&&layout-3<extra.length&&extra[layout-3]!=null&&extra[layout-3].ownsMediaToggle();}
     /** Body tap on layout (ClusterPicker index); true when the layout used it. */
     public boolean tap(int layout,float x,float y){return layout>=3&&layout-3<extra.length&&extra[layout-3]!=null&&extra[layout-3].tap(x,y);}
     public void draw(Canvas c,int layout,Telemetry.Sample[] samples,long frameTime,DriveStats stats,VehicleProfile profile,Telemetry model,MediaState.Snapshot music){

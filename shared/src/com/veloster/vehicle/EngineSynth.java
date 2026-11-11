@@ -174,7 +174,7 @@ public final class EngineSynth {
      *  more saturated without ever leaving -1..1 — no hard clipping). */
     public void render(float[] out,int off,int n,double volume){
         Voice P=p;int nc=P.cyl.length,nf=bq.length;double popC=1-(1-P.popChance)*popRate,tv=turboVol,bv=bovVol;double[] pl=P.pulse;
-        double k=1-Math.exp(-1/(.08*rate)),kr=lead>0?1-Math.exp(-1/(.03*rate)):k,leadN=lead*rate,ke=1-Math.exp(-1/(.15*rate)),
+        double k=1-Math.exp(-1/(.08*rate)),ka=1-Math.exp(-1/(.025*rate)),kr=lead>0?1-Math.exp(-1/(.03*rate)):k,leadN=lead*rate,ke=1-Math.exp(-1/(.15*rate)),
             pulseDecay=Math.exp(-1/(.0025*rate)),blowDecay=Math.exp(-1/(.15*rate)),dt=n/rate;
         if(!running&&master<1e-5){master=0;for(int i=0;i<n;i++)out[off+i]=0;return;}   // fully faded: silence
         double load=pedal;
@@ -186,7 +186,7 @@ public final class EngineSynth {
                 targetRpm=lastRaw+Math.max(-400,Math.min(400,slope*ahead));
             }
             sinceNew++;
-            rpm+=(targetRpm-rpm)*kr;pedal+=(targetPedal-pedal)*k;boost+=(targetBoost-boost)*k;
+            rpm+=(targetRpm-rpm)*kr;pedal+=(targetPedal-pedal)*(targetPedal>pedal?ka:k);/* pressing follows in 25 ms, lifting eases off over 80 ms */boost+=(targetBoost-boost)*k;
             master+=((running?1:0)-master)*ke;
             double f=rpm/120;   // half-order frequency: one cycle per two revolutions
             phase+=2*Math.PI*f/rate;

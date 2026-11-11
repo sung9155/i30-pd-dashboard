@@ -347,7 +347,9 @@ final class EcoCluster extends ClusterKit {
     private static void plate(int[] o,int[] a,int w){
         Bitmap m=bitmap(AW,240);Canvas c=new Canvas(m);Paint q=new Paint(3);RectF r=new RectF(161,40,AW+53,62);
         q.setColor(0xff505050);c.drawRoundRect(r,3,3,q);r.set(r.left+1.2f,r.top+1.2f,r.right-1.2f,r.bottom-1.2f);q.setColor(0xffd4d4d4);c.drawRoundRect(r,2,2,q);
-        q.setColor(0xff2c2c2c);q.setTypeface(Typeface.DEFAULT_BOLD);q.setTextSize(17);q.setTextAlign(Paint.Align.CENTER);c.drawText("i30 PD",AW,58,q);
+        q.setColor(0xff2a5bb0);c.drawRect(r.left,r.top,r.left+11,r.bottom,q);   // the Korean plate's blue band, KOR
+        q.setColor(0xffd4d4d4);q.setTextSize(5);q.setTextAlign(Paint.Align.CENTER);c.drawText("KOR",r.left+5.5f,r.bottom-3,q);
+        q.setColor(0xff2c2c2c);q.setTypeface(Typeface.DEFAULT_BOLD);q.setTextSize(17);c.drawText("i30 PD",AW+4,58,q);
         int[] pm=new int[AW*240];m.getPixels(pm,0,AW,0,0,AW,240);
         for(int i=0;i<pm.length;i++){int al=pm[i]>>>24;if(al==0||o[i]==0)continue;
             float L=Math.max(.35f,Math.min(1.15f,((a[Math.min(a.length-1,(i/AW)*2*w+(i%AW)*2)]>>16)&255)/150f)),k=al/255f;int px=pm[i],d=o[i],out=0xff000000;

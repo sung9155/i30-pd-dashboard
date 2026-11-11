@@ -527,6 +527,8 @@ final class PixelCluster extends ClusterKit {
         int[] b=plateBox[fi];if(b[1]<0)return;
         float cx=(Math.round(x)+(b[0]+b[1]+1)/2f)*4,cy=52+(Math.round(y)+(b[2]+b[3]+1)/2f)*4;
         int w=plateText.getWidth()*2;float l=Math.round(cx-w/2f),t=Math.round(cy-5);
+        float x0=(Math.round(x)+b[0])*4,x1=(Math.round(x)+b[1]+1)*4,y0=52+(Math.round(y)+b[2])*4,y1=52+(Math.round(y)+b[3]+1)*4;
+        fill(c,x0,y0,x1,y0+2,0xff2a2d33);fill(c,x0,y1-2,x1,y1,0xff2a2d33);fill(c,x0,y0,x0+2,y1,0xff2a2d33);fill(c,x1-2,y0,x1,y1,0xff2a2d33);   // a half-pixel dark rim
         blit(c,plateText,0,0,plateText.getWidth(),5,l,t,l+w,t+10);
     }
     /** Exhaust smoke by age (0..1): pale, then darker; gone after two thirds instead of fading out. */
@@ -554,7 +556,7 @@ final class PixelCluster extends ClusterKit {
         int[] e=ArcadeCarFrames.CODES[code-1];
         if(e[0]==4){if(e[1]<0?left:right)return AMBER;e=ArcadeCarFrames.CODES[e[2]-1];}
         if(e[0]==1)return e[1]==0?B:e[1]==1?BH:e[1]==2?BD:BS;
-        if(e[0]==2)return code==21?0xffe8e8ec:e[1];   // the plate face white, for the plate text
+        if(e[0]==2)return code==20||code==21?0xffe8e8ec:e[1];   // the plate face white (plate() adds the rim and text)
         switch(e[1]){   // tail, LED line, high stop lamp, reflector, clear lens
             case 0:return brake?0xffff3a2a:0xff5a0c14;
             case 1:return brake?0xffffd0c4:lp?0xffe0323c:0xff7a1a22;

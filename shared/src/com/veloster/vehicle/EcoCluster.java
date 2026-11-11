@@ -287,8 +287,7 @@ final class EcoCluster extends ClusterKit {
         int ph=(int)((roadOff%TH)/TH*PH)%PH;blit(c,asphalt[ph],0,0,AW,AH,L_L,AY,L_L+AW,AY+AH);
         int paint=CarPaint.body()[0];
         if(CAR!=null&&PAINT!=null&&(car==null||carFor!=paint)){car=tint(CAR,PAINT,paint);carFor=paint;}
-        if(car!=null){blitSmooth(c,car,0,0,AW,240,L_L,TOP,L_L+AW,BOT);   // plate in the car's plate recess
-            round(c,176,99,232,117,2,0xff20242a);round(c,177,100,231,116,2,0xffeef0f2);bold(c,"i30 PD",204,113,12,0xff15181c,Paint.Align.CENTER);}
+        if(car!=null)blitSmooth(c,car,0,0,AW,240,L_L,TOP,L_L+AW,BOT);
         for(int i=0;i<pn;i++){float k=puffT[i];p.setColor(((int)(90*(1-k/0.8f))<<24)|0xaab4b9);c.drawCircle(puffX[i]+k*8,puffY[i]+8+k*12,8+k*24,p);}
         if(flat==null)buildCoins();
         for(int i=0;i<gn;i++)sprite(c,flat[di(gden[i])],gx[i],gy[i],(1.3f+(gy[i]-224)/90)/2.2f);
@@ -335,7 +334,21 @@ final class EcoCluster extends ClusterKit {
                 if(pa>0){float m=pa/255f;r=Math.round(r*(1-m)+gr*cr/255f*m);g=Math.round(g*(1-m)+gr*cg/255f*m);bb=Math.round(bb*(1-m)+gr*cbl/255f*m);}
                 A+=al;R+=r*al;G+=g*al;B+=bb*al;}
             o[y*AW+x]=A==0?0:((A/4)<<24)|((R/A)<<16)|((G/A)<<8)|(B/A);}
+        plate(o,a,w);
         Bitmap out=bitmap(AW,240);out.setPixels(o,0,AW,0,0,AW,240);return out;
+    }
+    /** The number plate in the recess, centred on the car's middle (the image's right edge), so only its left half shows.
+     *  Drawn flat (plate white, rim and "i30 PD" dark), then lit by the render's own light: each pixel times the grey of
+     *  the recess under it, so it takes the same shading as the body around it. */
+    private static void plate(int[] o,int[] a,int w){
+        Bitmap m=bitmap(AW,240);Canvas c=new Canvas(m);Paint q=new Paint(3);RectF r=new RectF(161,40,AW+53,62);
+        q.setColor(0xff505050);c.drawRoundRect(r,3,3,q);r.set(r.left+1.2f,r.top+1.2f,r.right-1.2f,r.bottom-1.2f);q.setColor(0xffd4d4d4);c.drawRoundRect(r,2,2,q);
+        q.setColor(0xff2c2c2c);q.setTypeface(Typeface.DEFAULT_BOLD);q.setTextSize(17);q.setTextAlign(Paint.Align.CENTER);c.drawText("i30 PD",AW,58,q);
+        int[] pm=new int[AW*240];m.getPixels(pm,0,AW,0,0,AW,240);
+        for(int i=0;i<pm.length;i++){int al=pm[i]>>>24;if(al==0||o[i]==0)continue;
+            float L=Math.max(.35f,Math.min(1.15f,((a[Math.min(a.length-1,(i/AW)*2*w+(i%AW)*2)]>>16)&255)/150f)),k=al/255f;int px=pm[i],d=o[i],out=0xff000000;
+            for(int s=0;s<24;s+=8){int v=Math.min(255,Math.round(((px>>s)&255)*L));out|=Math.round(((d>>s)&255)*(1-k)+v*k)<<s;}
+            o[i]=out;}
     }
     private static final int[][] COIN={{8,0xffe0a061,0xff9c5e27,0xff6b3c14,0},{10,0xffc9ced2,0xff7f878c,0xff555c61,1},{11,0xffe3e6e8,0xff8f989e,0xff5f676c,1}};   // 10, 100, 500: radius, face, rim, edge, milled
     /** Coin sprites at 2.2x: one lying flat per coin, twelve turns per coin in the air, each a short cylinder. */

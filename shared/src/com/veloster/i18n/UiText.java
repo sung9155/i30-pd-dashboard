@@ -210,7 +210,7 @@ public final class UiText {
         EN.put("누르면 음악으로","Tap for music");
         EN.put("누르면 페트병 보기","Tap: bottle view");
         EN.put("누를 때마다 바뀌고 한 번 들려줌","Tap to change · plays it once");
-        EN.put("눌러서 N 계기판과 앱 목록 열기","Tap to open N Dashboard and your app list");
+        EN.put("눌러서 계기판과 앱 목록 열기","Tap to open the dashboard and your app list");
         EN.put("눌러서 사용·미사용","Tap to turn on/off");
         EN.put("눌러서 화면 고르기","Tap to choose a screen");
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");

@@ -119,7 +119,7 @@ public final class QuickEntryService extends Service {
         PendingIntent open=PendingIntent.getActivity(this,0,hubIntent(),flags);
         PendingIntent stop=PendingIntent.getService(this,1,new Intent(this,QuickEntryService.class).setAction(STOP),flags);
         Notification.Builder builder=new Notification.Builder(this).setSmallIcon(android.R.drawable.ic_menu_view)
-            .setContentTitle(UiText.t("내 앱 / My Apps")).setContentText(UiText.t("눌러서 N 계기판과 앱 목록 열기"))
+            .setContentTitle(UiText.t("내 앱 / My Apps")).setContentText(UiText.t("눌러서 계기판과 앱 목록 열기"))
             .setContentIntent(open).setOngoing(true).setOnlyAlertOnce(true)
             .addAction(android.R.drawable.ic_menu_close_clear_cancel,UiText.t("바로가기 끄기"),stop);
         if(Build.VERSION.SDK_INT>=26)Notification.Builder.class.getMethod("setChannelId",String.class).invoke(builder,CHANNEL);

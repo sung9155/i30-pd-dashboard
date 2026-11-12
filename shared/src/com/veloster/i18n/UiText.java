@@ -265,6 +265,7 @@ public final class UiText {
         EN.put("레트로","Retro");
         EN.put("로즈","Rose");
         EN.put("마리나 블루","Marina Blue");
+        EN.put("마젠타","Magenta");
         EN.put("마찰 토크","Friction torque");
         EN.put("마찰원","Friction circle");
         EN.put("막대","Bar");
@@ -450,6 +451,7 @@ public final class UiText {
         EN.put("언어","Language");
         EN.put("언어 설정을 저장하지 못했습니다.","Could not save the language setting.");
         EN.put("없음","none");
+        EN.put("에메랄드","Emerald");
         EN.put("에어백 (ACU)","Airbag (ACU)");
         EN.put("에코","Eco");
         EN.put("에코 동전 소리","Eco coin sound");
@@ -487,6 +489,7 @@ public final class UiText {
         EN.put("옥타브 위로","Up an octave");
         EN.put("온도","Temperatures");
         EN.put("와이퍼","Wiper");
+        EN.put("와인","Wine");
         EN.put("완료","Done");
         EN.put("외기 온도","Ambient temperature");
         EN.put("외기온","Outside");

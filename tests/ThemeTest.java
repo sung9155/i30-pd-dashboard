@@ -12,7 +12,7 @@ public final class ThemeTest {
         check(Theme.current().map(0xff3ddc84)==0xff3ddc84,"semantic green is shared");
         check(Theme.current().map(0xff123456)==0xff123456,"unknown color passes through");
         Theme.select("redblack");check(Theme.current().id.equals("n"),"removed red-black falls back to N");
-        check(Theme.next("n").equals("lambo")&&Theme.next("lambo").equals("bmw")&&Theme.next("bmw").equals("ice")&&Theme.next("night").equals("rose")&&Theme.next("rose").equals("copper")&&Theme.next("copper").equals("red")&&Theme.next("bogus").equals("lambo"),"cycle order");
+        check(Theme.next("bogus").equals(Theme.IDS[1]),"an unknown id steps to the first theme after N");
         // Car-cluster themes: true black background so the screen does not glow at night.
         for(String id:new String[]{"ice","mono","amber","teal","night","rose","copper","red","green"}){Theme.select(id);
             check(Theme.current().id.equals(id)&&Theme.current().map(0xff040506)==0xff000000,id+": true black background");}
@@ -27,7 +27,8 @@ public final class ThemeTest {
         Theme.select("n");check(Theme.current().shape==Theme.SHAPE_CUT&&!Theme.current().mStripe,"N keeps today's cut corner");
         // Red and green: true black; red warns in yellow with the ring (its accent is red), green's lime stays apart from
         // the shared semantic green and the ECO accent.
-        check(Theme.next("copper").equals("red")&&Theme.next("red").equals("green")&&Theme.next("green").equals("purple")&&Theme.next("purple").equals("n"),"red, green and purple come after copper");
+        String[] order={"n","red","wine","copper","amber","lambo","green","emerald","teal","ice","bmw","night","purple","magenta","rose","mono"};check(java.util.Arrays.equals(Theme.IDS,order),"themes in colour order: N, then by hue, mono last");
+        for(int i=0;i<order.length;i++)check(Theme.next(order[i]).equals(order[(i+1)%order.length])&&Theme.of(order[i]).id.equals(order[i]),order[i]+": next follows the list and the id resolves");
         Theme.select("red");Theme red=Theme.current();
         check(red.label.equals("RD")&&red.map(0xff040506)==0xff000000&&red.dangerRing,"red: label, true black, danger ring");
         check(((red.danger>>16)&0xff)>0xe0&&((red.danger>>8)&0xff)>0xb0&&(red.accent&0xffffff)!=(red.danger&0xffffff),"red: warnings are yellow, not the red accent");

@@ -118,16 +118,10 @@ public final class HubActivity extends Activity {
         if ("radio".equals(page)) radioPage(); else if("android".equals(page)) androidAppsPage(); else if("bluetooth".equals(page))bluetoothPanel.show(content);
     }
     // ---- look: dark cards, one accent; sizes in px for the 800 x 480 head unit ----
-    private static final int BG=0xff0e1014,CARD=0xff1e2228,LINE=0xff343a42,TXT=0xffe8eaee,MUT=0xff8c929c,ACC=0xff00788f,ON=0xff46c86e,RED=0xffdc463c;
-    private static android.graphics.drawable.GradientDrawable shape(int fill,int stroke,int radius){
-        android.graphics.drawable.GradientDrawable d=new android.graphics.drawable.GradientDrawable();d.setColor(fill);d.setCornerRadius(radius);if(stroke!=0)d.setStroke(2,stroke);return d;}
-    /** Card background with a pressed state, so a tap shows. */
-    private static android.graphics.drawable.StateListDrawable look(int fill,int stroke,int radius){
-        android.graphics.drawable.StateListDrawable s=new android.graphics.drawable.StateListDrawable();
-        s.addState(new int[]{android.R.attr.state_pressed},shape(fill==0?0x33ffffff:0xff2c333c,stroke,radius));s.addState(new int[0],shape(fill,stroke,radius));return s;}
-    private TextView label(String text,float size,int color,boolean bold){
-        TextView v=new TextView(this);v.setText(text);v.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,size);v.setTextColor(color);
-        if(bold)v.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);return v;}
+    private static final int BG=Look.BG,CARD=Look.CARD,LINE=Look.LINE,TXT=Look.TXT,MUT=Look.MUT,ACC=Look.ACC,ON=Look.ON,RED=Look.RED;
+    private static android.graphics.drawable.GradientDrawable shape(int fill,int stroke,int radius){return Look.shape(fill,stroke,radius);}
+    private static android.graphics.drawable.StateListDrawable look(int fill,int stroke,int radius){return Look.look(fill,stroke,radius);}
+    private TextView label(String text,float size,int color,boolean bold){return Look.label(this,text,size,color,bold);}
     private void tap(View v,final Runnable action){v.setClickable(true);v.setOnClickListener(new View.OnClickListener(){public void onClick(View view){action.run();}});}
     private void pill(LinearLayout parent,String text,int width,Runnable action){
         TextView v=label(text,15,TXT,false);v.setGravity(android.view.Gravity.CENTER);v.setBackgroundDrawable(look(CARD,LINE,8));tap(v,action);
@@ -157,13 +151,13 @@ public final class HubActivity extends Activity {
         r.addView(m,new LinearLayout.LayoutParams(60,30));
         LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.topMargin=8;parent.addView(r,p);}
     private void add(LinearLayout parent, String title, final Runnable action) {
-        Button button = new Button(this); button.setText(title); button.setTextSize(17);
-        parent.addView(button, new LinearLayout.LayoutParams(parent.getOrientation()==0 ? 0 : -1, 52,
-                parent.getOrientation()==0 ? 1 : 0));
+        TextView button = Look.button(this, title);boolean row=parent.getOrientation()==0;
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(row ? 0 : -1, 48, row ? 1 : 0);p.topMargin=8;if(row&&parent.getChildCount()>0)p.leftMargin=8;
+        parent.addView(button, p);
         button.setOnClickListener(new View.OnClickListener(){public void onClick(View view){action.run();}});
     }
     private void text(String value) {
-        TextView v = new TextView(this); v.setText(value); v.setTextSize(17); v.setPadding(5, 6, 5, 6); content.addView(v);
+        content.addView(Look.note(this, value));
     }
     private List<ResolveInfo> launchable() {
         Intent query = new Intent(Intent.ACTION_MAIN); query.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -320,7 +314,8 @@ public final class HubActivity extends Activity {
             if((info.activityInfo.applicationInfo.flags & (ApplicationInfo.FLAG_SYSTEM|ApplicationInfo.FLAG_UPDATED_SYSTEM_APP))==0)continue;
             if("com.android.settings".equals(info.activityInfo.packageName)||"com.hkmc.app.nmode.ui".equals(info.activityInfo.packageName)||"com.hkmc.system.app.engineering".equals(info.activityInfo.packageName))continue;
             if("com.android.providers.downloads.ui".equals(info.activityInfo.packageName)||"com.android.providers.downloads".equals(info.activityInfo.packageName))continue;
-            count++;add(content,info.loadLabel(getPackageManager()).toString(),new Runnable(){public void run(){
+            count++;String shown=info.loadLabel(getPackageManager()).toString().trim();if(shown.length()==0)shown=info.activityInfo.packageName;   // an app without a label still gets a name
+            add(content,shown,new Runnable(){public void run(){
                 open(new Intent(Intent.ACTION_MAIN).setComponent(new ComponentName(info.activityInfo.packageName,info.activityInfo.name)),info.loadLabel(getPackageManager()).toString());
             }});
         }
@@ -371,7 +366,7 @@ public final class HubActivity extends Activity {
     }
     private void radioPage() {
         text(UiText.t("정차 상태에서 확인하세요. 이 화면을 여는 것만으로 무선 설정은 바뀌지 않습니다."));
-        status = new TextView(this); status.setTextSize(16); content.addView(status);
+        status = Look.note(this, ""); content.addView(status);
         add(content,UiText.t("상태 새로 확인"),new Runnable(){public void run(){inspect();}});
         add(content,UiText.t("시험 핫스팟 켜기"),new Runnable(){public void run(){confirm(true);}});
         add(content,UiText.t("시험 접속정보 보기"),new Runnable(){public void run(){credentials();}});

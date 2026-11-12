@@ -62,10 +62,11 @@ public final class BluetoothPanel {
         try{session.stop();}catch(Exception e){message=UiText.t("검색 종료 상태를 확인하지 못했습니다.");}
         root=null;
     }
-    private void text(String label){TextView v=new TextView(activity);v.setText(label);v.setTextSize(17);v.setPadding(5,6,5,6);root.addView(v);}
+    private void text(String label){root.addView(Look.note(activity,label));}
     private void button(LinearLayout parent,String title,final Runnable click){
-        Button button=new Button(activity);button.setText(title);button.setTextSize(17);
-        parent.addView(button,new LinearLayout.LayoutParams(parent.getOrientation()==0?0:-1,52,parent.getOrientation()==0?1:0));
+        TextView button=Look.button(activity,title);boolean row=parent.getOrientation()==0;
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(row?0:-1,48,row?1:0);p.topMargin=8;if(row&&parent.getChildCount()>0)p.leftMargin=8;
+        parent.addView(button,p);
         button.setOnClickListener(new View.OnClickListener(){public void onClick(View v){click.run();}});
     }
     private void draw(){

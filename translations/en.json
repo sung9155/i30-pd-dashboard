@@ -64,7 +64,6 @@
   "알림 바로가기를 만들지 못했습니다. 서비스가 중지되었습니다.": "Could not create the shortcut notification. The service has stopped.",
   "화면 잠금 상태를 추적할 수 없어 알림만 표시합니다.": "Screen lock state cannot be tracked. Only the notification is shown.",
   "내 앱 / My Apps": "My Apps",
-  "눌러서 N 계기판과 앱 목록 열기": "Tap to open N Dashboard and your app list",
   "바로가기 끄기": "Turn shortcut off",
   "앱": "Apps",
   "내 앱 열기 · 길게 끌어서 위치 변경 / My Apps": "Open My Apps; drag to move",
@@ -747,5 +746,6 @@
   "배터리": "Battery",
   "주행 가능": "Range",
   "타코": "Tacho",
-  "원형 RPM·다운시프트": "Round rpm · downshift"
+  "원형 RPM·다운시프트": "Round rpm · downshift",
+  "눌러서 계기판과 앱 목록 열기": "Tap to open the dashboard and your app list"
 }

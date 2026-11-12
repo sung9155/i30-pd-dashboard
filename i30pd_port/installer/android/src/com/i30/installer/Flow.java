@@ -44,7 +44,7 @@ final class Flow {
     /** A failure the user should read as is (no stack trace). */
     static final class Stop extends Exception { Stop(String m) { super(m); } }
 
-    static final String VERSION = "2026-11-04c";   // shown on screen and compared with the published source; raise on every change
+    static final String VERSION = "2026-11-12";   // shown on screen and compared with the published source; raise on every change
     static final String RELEASES = "https://github.com/sung9155/i30-pd-dashboard/releases";
     static final String RAW = "https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/";
     static final String VERIFIED_BUILD = "eng.vmadmin.20260114.084130", LOW_BUILD = "eng.vmadmin.20260114.084725",
@@ -120,7 +120,7 @@ final class Flow {
                 ui.say("\n■ 앱 설치");
                 for (int i = 0; i < APPS.length; i++) install(adb, APPS[i], apk[i], ui);
                 adb.shell("am start -n com.veloster.carplayhub/.HubActivity", 30_000);
-                ui.say("\n완료! 차 화면 '내 앱'에서  실행 바로가기 → 가장자리 버튼 + 알림 → 저장  을 고르면");
+                ui.say("\n완료! 차 화면 '내 앱'에서  바로가기 버튼 → 버튼 + 알림 → 저장  을 고르면");
                 ui.say("가장자리 '계기판' 버튼으로 대시보드가 열립니다.");
             }
             ui.say("USB 디버깅은 시동을 껐다 켜면 저절로 꺼집니다. 바로 끄려면 Factory Test에서  0A 01 → 65 00 → 0A 02");

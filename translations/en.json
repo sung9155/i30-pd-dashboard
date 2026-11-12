@@ -770,5 +770,14 @@
   "퍼플": "Purple",
   "와인": "Wine",
   "에메랄드": "Emerald",
-  "마젠타": "Magenta"
+  "마젠타": "Magenta",
+  "대시보드 열기": "Open the dashboard",
+  "도구": "Tools",
+  "설정": "Settings",
+  "바로가기 버튼": "Shortcut button",
+  "버튼 + 알림": "Button + notification",
+  "기본앱": "Built-in apps",
+  "블루투스": "Bluetooth",
+  "엔지니어링": "Engineering",
+  "바로가기 버튼은 화면 가장자리에 늘 떠 있는 작은 버튼입니다. 짧게 누르면 계기판, 길게 누르면 내 앱이 열리고, 부팅 뒤에도 다시 나타납니다. 순정 홈에는 이 앱들이 나오지 않으니 처음 설치했다면 켜 두세요.": "The shortcut button is a small button that stays on the screen edge. A short tap opens the dashboard, a long press opens My Apps, and it comes back after a reboot. The factory home screen does not list these apps, so turn it on after the first installation."
 }

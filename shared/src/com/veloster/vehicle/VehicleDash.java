@@ -162,7 +162,7 @@ public final class VehicleDash extends View implements Runnable {
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);soundOn=SettingsLayout.ENGINE_SOUND&&p.getBoolean("engine_sound",false);
             soundRoute=Math.max(0,Math.min(SettingsLayout.SOUND_ROUTES.length-1,p.getInt("engine_sound_route",0)));
             soundEngine=Math.max(0,Math.min(EngineSynth.engines()-1,p.getInt("engine_sound_engine",0)));
-            soundExhaust=Math.max(0,Math.min(EngineSynth.exhausts()-1,p.getInt("engine_sound_exhaust",0)));EngineSound.fast=p.getBoolean("engine_sound_fast",false);SpeedChime.kmh=p.getInt("speed_chime_kmh",0);CassetteCluster.clickSound=p.getBoolean("cassette_click",true);
+            soundExhaust=Math.max(0,Math.min(EngineSynth.exhausts()-1,p.getInt("engine_sound_exhaust",0)));EngineSound.fast=p.getBoolean("engine_sound_fast",false);SpeedChime.kmh=p.getInt("speed_chime_kmh",0);SpeedChime.sound=Math.max(0,Math.min(SpeedChime.NAMES.length-1,p.getInt("speed_chime_sound",0)));CassetteCluster.clickSound=p.getBoolean("cassette_click",true);
             for(int k=0;k<soundVals.length;k++)soundVals[k]=Math.max(SettingsLayout.SOUND_MIN[k],Math.min(SettingsLayout.SOUND_MAX[k],p.getInt(SOUND_KEYS[k],SettingsLayout.SOUND_DEFAULT[k])));}
         catch(ClassCastException e){/* Sound off for an incompatible saved value. */}
         applySound();
@@ -378,7 +378,7 @@ public final class VehicleDash extends View implements Runnable {
         if(beepEdge.fire(up,now)&&beepOn&&shown)beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);
         int dn=downCue.fire(scoped?renderer.revMatchDowns():0,now);   // the blip landed on a gear's target: that gear's sound
         if(dn>0&&downSounds[dn-1]>=0&&shown)beep.play(soundOn&&soundRoute==0?sound:null,downSounds[dn-1],beepVol/100f);
-        {Telemetry.Sample sp=DATA.sample(7,now);if(chime.due(sp.valid?sp.value:Float.NaN,now)&&shown)beep.playChime(soundOn&&soundRoute==0?sound:null,beepVol/100f);}   // 과속 차임
+        {Telemetry.Sample sp=DATA.sample(7,now);if(chime.due(sp.valid?sp.value:Float.NaN,now)&&shown&&beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f))chime.rang(now);}   // 과속 차임
         long took=System.nanoTime()-drawStart;drawNs+=took;drawMaxNs=Math.max(drawMaxNs,took);drawFrames++;
         if(introStart==0)introStart=now;
         long introEl=now-introStart;
@@ -496,7 +496,9 @@ public final class VehicleDash extends View implements Runnable {
                     if(i==SettingsLayout.SOUND_COIN){EcoCluster.coinSound=!EcoCluster.coinSound;saveEco();   // eco coin sound: independent of the engine sound, plays through the beep channel
                         if(EcoCluster.coinSound&&EcoCluster.coins)beep.playCoin(soundOn&&soundRoute==0?sound:null,500,beepVol/100f);break;}   // a sample clink
                     if(i==SettingsLayout.SOUND_CHIME){SpeedChime.kmh=SpeedChime.next(SpeedChime.kmh);e.putInt("speed_chime_kmh",SpeedChime.kmh);
-                        if(SpeedChime.kmh>0)beep.playChime(soundOn&&soundRoute==0?sound:null,beepVol/100f);break;}   // a sample 킨콘
+                        if(SpeedChime.kmh>0)beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f);break;}   // a sample ring
+                    if(i==SettingsLayout.SOUND_CHIME_SOUND){if(SpeedChime.kmh<=0)break;SpeedChime.sound=(SpeedChime.sound+1)%SpeedChime.NAMES.length;e.putInt("speed_chime_sound",SpeedChime.sound);
+                        beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f);break;}
                     if(i==SettingsLayout.SOUND_CLICK){CassetteCluster.clickSound=!CassetteCluster.clickSound;e.putBoolean("cassette_click",CassetteCluster.clickSound);
                         if(CassetteCluster.clickSound)beep.playCassette(soundOn&&soundRoute==0?sound:null,ShiftBeep.LATCH,beepVol/100f);break;}   // a sample click
                     if(i==SettingsLayout.SOUND_FAST){EngineSound.fast=!EngineSound.fast;e.putBoolean("engine_sound_fast",EngineSound.fast);sound.play(-1);}   // the block size is read when the thread starts: stop it here, the play() below starts it again

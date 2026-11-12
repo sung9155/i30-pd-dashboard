@@ -49,6 +49,7 @@ public final class UiText {
         EN.put("8비트 게임","8-bit game");
         EN.put("8비트 추격 시점","8-bit chase view");
         EN.put("8비트 하늘","8-bit sky");
+        EN.put("AE86 킨콘","AE86 ding-dong");
         EN.put("AMG 스피드웨이","AMG Speedway");
         EN.put("AP 상태 13 확인. IP 주소와 iPhone의 SSID 검색을 다음으로 확인하세요.","AP state 13 confirmed. Next check the IP address and whether the iPhone sees the SSID.");
         EN.put("CH1 횡G 0.2 g/div","CH1 lat G 0.2 g/div");
@@ -85,6 +86,7 @@ public final class UiText {
         EN.put("GPS 없음","no GPS");
         EN.put("GPS·오디오 등 실제 연결은 해당 앱에서 진행합니다. 기기를 선택해 확인할 때만 페어링을 요청합니다.","Use the relevant app for GPS or audio connections. Pairing is requested only after you select and confirm a device.");
         EN.put("GPS로 속도계 오차 재는 중 · %d %%","Measuring the speedometer against GPS · %d %%");
+        EN.put("GR86 삐삐삐","GR86 beep-beep-beep");
         EN.put("KIC 상설 서킷","KIC Permanent Circuit");
         EN.put("L · 가속 페달","L · accelerator");
         EN.put("N 계기판","N Dashboard");
@@ -170,6 +172,7 @@ public final class UiText {
         EN.put("그린","Green");
         EN.put("급가속","Hard acceleration");
         EN.put("급제동","Hard braking");
+        EN.put("기계식 종","Mechanical bell");
         EN.put("기기 검색 요청이 거부되었습니다.","The discovery request was denied.");
         EN.put("기기 주소를 확인할 수 없습니다.","The device address could not be verified.");
         EN.put("기기 페어링","Pair device");
@@ -215,6 +218,7 @@ public final class UiText {
         EN.put("누르면 배기구 보기","Tap: tailpipe view");
         EN.put("누르면 음악으로","Tap for music");
         EN.put("누르면 페트병 보기","Tap: bottle view");
+        EN.put("누를 때마다 다음 소리를 들려줌","Each tap plays the next sound");
         EN.put("누를 때마다 바뀌고 한 번 들려줌","Tap to change · plays it once");
         EN.put("눌러서 계기판과 앱 목록 열기","Tap to open the dashboard and your app list");
         EN.put("눌러서 사용·미사용","Tap to turn on/off");
@@ -251,6 +255,7 @@ public final class UiText {
         EN.put("드래그 출발 트리","Drag start tree");
         EN.put("디젤 DPF","Diesel DPF");
         EN.put("디지털 3틱","Digital 3 ticks");
+        EN.put("딩","Ding");
         EN.put("라바 오렌지","Lava Orange");
         EN.put("람다","Lambda");
         EN.put("람다 · 레이스 · F1 · 퍼포먼스","Lambda · Race · F1 · Performance");
@@ -519,6 +524,7 @@ public final class UiText {
         EN.put("원형 RPM·다운시프트","Round rpm · downshift");
         EN.put("위치를 바꿀 칸","Choose a slot to swap");
         EN.put("유리 톡","Glass tap");
+        EN.put("유리 톡톡","Glass tap");
         EN.put("유온","Oil");
         EN.put("유온 (냉각수 대체)","Oil (coolant sub)");
         EN.put("유온(대체)","Oil (ECT)");
@@ -575,6 +581,7 @@ public final class UiText {
         EN.put("전기·차체","Electrics · body");
         EN.put("전남","Jeonnam");
         EN.put("전북","Jeonbuk");
+        EN.put("전자 부저","Electronic buzzer");
         EN.put("전조등","Headlamps");
         EN.put("전체 기본 배치로 복원","Reset all gauges");
         EN.put("전체 조망","Overview");
@@ -595,7 +602,7 @@ public final class UiText {
         EN.put("정차 후 다음 운행","Stop for next trip");
         EN.put("정차 후 출발하면 측정","starts when you pull away from a stop");
         EN.put("정차하면 트리가 켜집니다","Stop to light the tree");
-        EN.put("정한 속도를 넘는 동안 1초마다 킨콘 종소리 (AE86 같은 옛 일본차) · 엔진 사운드와 별개","A ding-dong bell every second while over the set speed (like the AE86 and other old Japanese cars) · separate from the engine sound");
+        EN.put("정한 속도를 넘는 동안 반복해서 울림 (AE86 같은 옛 일본차) · 엔진 사운드와 별개","Rings again and again while over the set speed (like the AE86 and other old Japanese cars) · separate from the engine sound");
         EN.put("제동","Braking");
         EN.put("제동 (ABS/ESC)","Brakes (ABS/ESC)");
         EN.put("제주","Jeju");
@@ -648,6 +655,7 @@ public final class UiText {
         EN.put("차량 색","Car colour");
         EN.put("차량 속도","Vehicle speed");
         EN.put("차량 표시 상태를 확인하지 못했습니다. N 계기판 버튼으로 다시 열어주세요.","Could not confirm vehicle display status. Try the N Dashboard button again.");
+        EN.put("차임 소리","Chime sound");
         EN.put("처리 실패: ","Operation failed: ");
         EN.put("처리 중입니다. 완료될 때까지 기다려 주세요.","Working. Please wait until this finishes.");
         EN.put("처음 설치했다면 실행 바로가기를 설정하세요. 순정 홈에는 앱이 자동으로 추가되지 않습니다.","After first installation, set up Quick entry. The factory home screen does not add this app automatically.");

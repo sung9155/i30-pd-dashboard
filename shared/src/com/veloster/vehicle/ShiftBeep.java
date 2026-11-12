@@ -91,28 +91,41 @@ final class ShiftBeep implements Runnable {
         if(busy)return;
         busy=true;this.own=CASSETTE[kind];this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"cassette-key").start();
     }
-    /** 과속 차임 (SpeedChime): a small struck bell, high then low ("킨콘"), each strike a few inharmonic partials (Hz ratio to
-     *  the strike, amplitude, decay ms) like a real bell's; the second 280 ms after the first, 780 ms in all. */
-    private static final double[][] BELL={{1,.55,420},{2.76,.25,160},{5.40,.12,70},{8.93,.06,40}};
-    private static final double[] BELL_HZ={1568,1245},BELL_AT={0,280};
-    private static final short[][] CHIME_PCM=new short[2][];
-    static synchronized short[] chimePcm(boolean mix){
-        int slot=mix?1:0;if(CHIME_PCM[slot]!=null)return CHIME_PCM[slot];
-        int rate=mix?EngineSynth.RATE:RATE,lead=mix?0:Math.round(rate*0.06f),n=lead+rate*780/1000;double[] w=new double[n];
-        for(int k=0;k<2;k++){int start=lead+(int)Math.round(rate*BELL_AT[k]/1000);
+    /** 과속 차임 sounds, in SpeedChime.NAMES order: per sound its length (ms) and hits. A hit is {at ms, kind, noise, ...}:
+     *  kind 0 a struck bell, then partials Hz, amplitude, decay ms; kind 1 a square beep, then Hz, ms. AE86 and GR86 were
+     *  measured from a comparison video (AE86: 킨 2,560 Hz, 콘 2,233 Hz 0.37 s later, a 6,050 Hz plate ring and a short
+     *  7,590 / 6,960 Hz click; GR86: three 2,221 Hz beeps 0.12 s apart); the rest the owner picked from a sample page. */
+    static final int[] CHIME_MS={1000,340,1600,1800,700,300};
+    static final double[][][] CHIMES={
+        {{0,0,.15, 2560,1,110, 6051,.9,260, 7588,.5,18, 6963,.35,25},{370,0,.12, 2233,1,100, 6051,.3,260, 7588,.35,18}},   // AE86 킨콘
+        {{0,1,0,2221,80},{120,1,0,2221,80},{240,1,0,2221,80}},                                                          // GR86 삐삐삐
+        {{0,0,.25, 2093,.5,700, 4186,.18,350, 6279,.12,180, 8791,.1,90}},                                                // 기계식 종
+        {{0,0,0, 1319,.55,900, 3640,.22,300, 7123,.10,120}},                                                            // 딩
+        {{0,0,0, 2637,.55,260, 6118,.2,120},{180,0,0, 2637,.55,260, 6118,.2,120}},                                      // 유리 톡톡
+        {{0,1,0,2000,90},{160,1,0,2000,90}}};                                                                           // 전자 부저
+    private static final short[][] CHIME_PCM=new short[CHIMES.length*2][];
+    static synchronized short[] chimePcm(int sound,boolean mix){
+        int slot=sound*2+(mix?1:0);if(CHIME_PCM[slot]!=null)return CHIME_PCM[slot];
+        int rate=mix?EngineSynth.RATE:RATE,lead=mix?0:Math.round(rate*0.06f),n=lead+rate*CHIME_MS[sound]/1000;double[] w=new double[n];
+        java.util.Random r=new java.util.Random(7);
+        for(double[] h:CHIMES[sound]){int start=lead+(int)Math.round(rate*h[0]/1000);
             for(int i=start;i<n;i++){double tm=(i-start)/(double)rate,ms=tm*1000,v=0;
-                for(double[] p:BELL){double f=BELL_HZ[k]*p[0];if(f<rate*.45)v+=p[1]*Math.exp(-ms/p[2])*Math.sin(2*Math.PI*f*tm);}
-                w[i]+=v*Math.min(1,ms/1.5);}}   // a 1.5 ms attack: struck, not clicked
+                if(h[1]==1){double dur=h[4];if(ms<dur){double q=0;for(int k=1;k<=7;k+=2)q+=Math.sin(2*Math.PI*h[3]*k*tm)/k;v=.4*q*Math.min(1,Math.min(ms/4,(dur-ms)/4));}}
+                else{for(int p=3;p+2<h.length;p+=3)if(h[p]<rate*.45)v+=h[p+1]*Math.exp(-ms/h[p+2])*Math.sin(2*Math.PI*h[p]*tm);
+                    v*=Math.min(1,ms);if(h[2]>0&&ms<2)v+=h[2]*(r.nextDouble()*2-1)*(1-ms/2);}   // struck: a 1 ms attack and a click
+                w[i]+=v;}}
         double peak=1e-9;for(double x:w)peak=Math.max(peak,Math.abs(x));
         int fade=Math.round(rate*0.03f);short[] out=new short[n];
         for(int i=0;i<n;i++){double g=Math.min(1,(n-1-i)/(double)fade);out[i]=(short)Math.round(w[i]/peak*.8*g*32767);}
         return CHIME_PCM[slot]=out;
     }
-    /** One 킨콘 on the same paths as playCoin(); dropped while the last own-track one still sounds. */
-    void playChime(EngineSound onPath,float vol){
-        if(onPath!=null){onPath.mixBeep(chimePcm(true),vol);return;}
-        if(busy)return;
-        busy=true;this.own=chimePcm(false);this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"speed-chime").start();
+    /** One ring of 과속 차임 sound `sound` on the same paths as playCoin(); false (not played) while the last own-track
+     *  sound still plays, so the caller can try again on the next frame. */
+    boolean playChime(EngineSound onPath,int sound,float vol){
+        int s=Math.max(0,Math.min(CHIMES.length-1,sound));
+        if(onPath!=null){onPath.mixBeep(chimePcm(s,true),vol);return true;}
+        if(busy)return false;
+        busy=true;this.own=chimePcm(s,false);this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"speed-chime").start();return true;
     }
     /** Inharmonic partials (Hz, amplitude, decay ms) per coin, one strike per contact: the small
      *  10 won rings high and short, the 500 won lower, longer and with a thud. */

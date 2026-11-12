@@ -178,6 +178,7 @@ public final class UiText {
         EN.put("기본 %,d원 (%.1f km)","Base %,d won (%.1f km)");
         EN.put("기본 배치로 복원","Reset layout");
         EN.put("기본값으로 되돌리기","Back to the default");
+        EN.put("기본앱","Built-in apps");
         EN.put("기본요금 %.1f km","Base %.1f km");
         EN.put("기존 AP 설정 복원 요청 실패. 백업 보존.","Could not request restoration of the original AP settings. Backup retained.");
         EN.put("기존 AP 설정 읽기 검증 실패. 백업 보존.","Could not verify the restored AP settings. Backup retained.");
@@ -229,9 +230,11 @@ public final class UiText {
         EN.put("단 = 워프 단계","gear = warp stage");
         EN.put("닫기","Close");
         EN.put("대구","Daegu");
+        EN.put("대시보드 열기","Open the dashboard");
         EN.put("대전","Daejeon");
         EN.put("대칭","Sym");
         EN.put("데미타스 브라운","Demitasse Brown");
+        EN.put("도구","Tools");
         EN.put("돌아가기","Back");
         EN.put("동전 소리","Coin sound");
         EN.put("두 번 · 길고 짧게","Long then short");
@@ -288,6 +291,8 @@ public final class UiText {
         EN.put("미사용","Off");
         EN.put("바디 (BCM)","Body (BCM)");
         EN.put("바로가기 끄기","Turn shortcut off");
+        EN.put("바로가기 버튼","Shortcut button");
+        EN.put("바로가기 버튼은 화면 가장자리에 늘 떠 있는 작은 버튼입니다. 짧게 누르면 계기판, 길게 누르면 내 앱이 열리고, 부팅 뒤에도 다시 나타납니다. 순정 홈에는 이 앱들이 나오지 않으니 처음 설치했다면 켜 두세요.","The shortcut button is a small button that stays on the screen edge. A short tap opens the dashboard, a long press opens My Apps, and it comes back after a reboot. The factory home screen does not list these apps, so turn it on after the first installation.");
         EN.put("바로가기 서비스 종료 요청에 실패했습니다.","Could not request shortcut service shutdown.");
         EN.put("바로가기 시작 실패. 내 앱을 다시 열어 설정을 확인하세요.","Shortcut could not start. Reopen My Apps and check its settings.");
         EN.put("바로가기 시작 실패. 설정 상태와 시스템 권한을 확인하세요.","Shortcut could not start. Check its settings and system permissions.");
@@ -299,6 +304,7 @@ public final class UiText {
         EN.put("배터리 SOC","Battery SOC");
         EN.put("배터리 전압","Battery voltage");
         EN.put("백업 저장 실패. 무선 설정을 변경하지 않았습니다.","Backup could not be saved. Wireless settings were not changed.");
+        EN.put("버튼 + 알림","Button + notification");
         EN.put("버튼 위치를 갱신하지 못해 알림만 유지합니다.","Could not update the button position. Only the notification remains.");
         EN.put("번 · "," - ");
         EN.put("범위","Range");
@@ -333,6 +339,7 @@ public final class UiText {
         EN.put("브레이크 압력 bar","Brake pressure bar");
         EN.put("브레이크·안전","Brakes · safety");
         EN.put("블로오프","Blow-off");
+        EN.put("블루투스","Bluetooth");
         EN.put("블루투스 기기 검색·페어링","Bluetooth discovery and pairing");
         EN.put("블루투스 꺼짐 · 차량 설정에서 먼저 켜주세요.","Bluetooth is off. Turn it on in the vehicle settings first.");
         EN.put("블루투스 연결 설정","Bluetooth settings");
@@ -368,6 +375,7 @@ public final class UiText {
         EN.put("서킷 선택","Choose circuit");
         EN.put("서킷까지 %s","%s to the circuit");
         EN.put("설명 / Help","Help");
+        EN.put("설정","Settings");
         EN.put("설정 복원 확인. 백업 표시 삭제 실패로 다음 실행 때 재확인 필요.","Settings restoration verified, but the backup marker could not be cleared. Check again next time.");
         EN.put("설정 상태 확인 불가","Setting unavailable");
         EN.put("설정: ","Setting: ");
@@ -450,6 +458,7 @@ public final class UiText {
         EN.put("에코 점수","Eco score");
         EN.put("에코 코치","Eco coach");
         EN.put("에코 화면에서 동전이 떨어질 때 · 엔진 사운드와 별개","When coins drop on the Eco screen · separate from the engine sound");
+        EN.put("엔지니어링","Engineering");
         EN.put("엔지니어링 모드","Engineering mode");
         EN.put("엔진","Engine");
         EN.put("엔진 (EMS)","Engine (EMS)");

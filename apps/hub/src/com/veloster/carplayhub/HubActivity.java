@@ -95,17 +95,67 @@ public final class HubActivity extends Activity {
     }
     private void render() {
         if(bluetoothPanel!=null&&!"bluetooth".equals(page))bluetoothPanel.stop();
-        LinearLayout root = new LinearLayout(this); root.setOrientation(1); root.setPadding(14, 5, 14, 5);
-        LinearLayout bar = new LinearLayout(this);
-        add(bar, UiText.t("내 앱"), new Runnable(){public void run(){page="apps";render();}});
-        add(bar,"Language / 언어",new Runnable(){public void run(){LanguageSettings.show(HubActivity.this,new Runnable(){public void run(){render();QuickEntryService.restore(HubActivity.this);}});}});
-        add(bar, UiText.t("닫기"), new Runnable(){public void run(){finish();}});
-        root.addView(bar);
+        LinearLayout root = new LinearLayout(this); root.setOrientation(1); root.setPadding(16, 8, 16, 10); root.setBackgroundColor(BG);
+        LinearLayout bar = new LinearLayout(this); bar.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        boolean home="apps".equals(page);
+        TextView title=label(home?UiText.t("내 앱"):"‹ "+UiText.t("내 앱"),24,TXT,true);
+        if(!home)tap(title,new Runnable(){public void run(){page="apps";render();}});
+        bar.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+        pill(bar,"Language / 언어",150,new Runnable(){public void run(){LanguageSettings.show(HubActivity.this,new Runnable(){public void run(){render();QuickEntryService.restore(HubActivity.this);}});}});
+        pill(bar,UiText.t("닫기"),90,new Runnable(){public void run(){finish();}});
+        root.addView(bar,new LinearLayout.LayoutParams(-1,48));
         ScrollView scroll = new ScrollView(this);
         content = new LinearLayout(this); content.setOrientation(1); scroll.addView(content);
+        if(home){   // two columns: launch and tools on the left (scrolls), settings on the right
+            LinearLayout body=new LinearLayout(this);
+            scroll.setVerticalScrollBarEnabled(false);body.addView(scroll,new LinearLayout.LayoutParams(300,-1));
+            LinearLayout right=new LinearLayout(this);right.setOrientation(1);
+            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(0,-1,1);rp.leftMargin=24;body.addView(right,rp);
+            LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,0,1);bp.topMargin=4;root.addView(body,bp);setContentView(root);
+            appsPage(right);return;
+        }
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1)); setContentView(root);
-        if ("radio".equals(page)) radioPage(); else if("android".equals(page)) androidAppsPage(); else if("bluetooth".equals(page))bluetoothPanel.show(content);else appsPage();
+        if ("radio".equals(page)) radioPage(); else if("android".equals(page)) androidAppsPage(); else if("bluetooth".equals(page))bluetoothPanel.show(content);
     }
+    // ---- look: dark cards, one accent; sizes in px for the 800 x 480 head unit ----
+    private static final int BG=0xff0e1014,CARD=0xff1e2228,LINE=0xff343a42,TXT=0xffe8eaee,MUT=0xff8c929c,ACC=0xff00788f,ON=0xff46c86e,RED=0xffdc463c;
+    private static android.graphics.drawable.GradientDrawable shape(int fill,int stroke,int radius){
+        android.graphics.drawable.GradientDrawable d=new android.graphics.drawable.GradientDrawable();d.setColor(fill);d.setCornerRadius(radius);if(stroke!=0)d.setStroke(2,stroke);return d;}
+    /** Card background with a pressed state, so a tap shows. */
+    private static android.graphics.drawable.StateListDrawable look(int fill,int stroke,int radius){
+        android.graphics.drawable.StateListDrawable s=new android.graphics.drawable.StateListDrawable();
+        s.addState(new int[]{android.R.attr.state_pressed},shape(fill==0?0x33ffffff:0xff2c333c,stroke,radius));s.addState(new int[0],shape(fill,stroke,radius));return s;}
+    private TextView label(String text,float size,int color,boolean bold){
+        TextView v=new TextView(this);v.setText(text);v.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,size);v.setTextColor(color);
+        if(bold)v.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);return v;}
+    private void tap(View v,final Runnable action){v.setClickable(true);v.setOnClickListener(new View.OnClickListener(){public void onClick(View view){action.run();}});}
+    private void pill(LinearLayout parent,String text,int width,Runnable action){
+        TextView v=label(text,15,TXT,false);v.setGravity(android.view.Gravity.CENTER);v.setBackgroundDrawable(look(CARD,LINE,8));tap(v,action);
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(width,38);p.leftMargin=10;parent.addView(v,p);}
+    /** A card button: text centred; fill 0 = outline only. */
+    private TextView card(LinearLayout parent,String text,int fill,int stroke,int color,int height,float weight,Runnable action){
+        TextView v=label(text,15,color,false);v.setGravity(android.view.Gravity.CENTER);v.setBackgroundDrawable(look(fill,stroke,8));tap(v,action);
+        v.setSingleLine(true);v.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(weight>0?0:-1,height,weight);p.topMargin=8;if(weight>0&&parent.getChildCount()>0)p.leftMargin=8;parent.addView(v,p);return v;}
+    private void heading(LinearLayout parent,String text){
+        TextView v=label(text,15,MUT,true);LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-2,-2);p.topMargin=10;parent.addView(v,p);}
+    /** An app tile: its own launcher icon over its name. */
+    private void appTile(LinearLayout row,android.graphics.drawable.Drawable icon,String name,Runnable action){
+        LinearLayout t=new LinearLayout(this);t.setOrientation(1);t.setGravity(android.view.Gravity.CENTER);t.setBackgroundDrawable(look(CARD,0,10));tap(t,action);
+        android.widget.ImageView i=new android.widget.ImageView(this);i.setImageDrawable(icon);i.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+        t.addView(i,new LinearLayout.LayoutParams(44,44));
+        TextView l=label(name,12,MUT,false);l.setSingleLine(true);l.setEllipsize(android.text.TextUtils.TruncateAt.END);l.setGravity(android.view.Gravity.CENTER);l.setPadding(2,4,2,0);
+        t.addView(l,new LinearLayout.LayoutParams(-1,-2));
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,76,1);if(row.getChildCount()>0)p.leftMargin=8;row.addView(t,p);}
+    /** A setting on the right: name, its state under it, an ON / OFF mark; a tap opens its dialog. */
+    private void settingRow(LinearLayout parent,String name,String value,boolean on,Runnable action){
+        LinearLayout r=new LinearLayout(this);r.setGravity(android.view.Gravity.CENTER_VERTICAL);r.setPadding(18,10,16,10);r.setBackgroundDrawable(look(CARD,0,12));tap(r,action);
+        LinearLayout c=new LinearLayout(this);c.setOrientation(1);
+        c.addView(label(name,18,TXT,true));TextView v=label(value,14,on?ON:MUT,false);v.setPadding(0,4,0,0);c.addView(v);
+        r.addView(c,new LinearLayout.LayoutParams(0,-2,1));
+        TextView m=label(on?"ON":"OFF",13,on?BG:MUT,true);m.setGravity(android.view.Gravity.CENTER);m.setBackgroundDrawable(shape(on?ON:0,on?0:LINE,15));
+        r.addView(m,new LinearLayout.LayoutParams(60,30));
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.topMargin=8;parent.addView(r,p);}
     private void add(LinearLayout parent, String title, final Runnable action) {
         Button button = new Button(this); button.setText(title); button.setTextSize(17);
         parent.addView(button, new LinearLayout.LayoutParams(parent.getOrientation()==0 ? 0 : -1, 52,
@@ -124,45 +174,54 @@ public final class HubActivity extends Activity {
         for (ResolveInfo r : all) if (!getPackageName().equals(r.activityInfo.packageName) && accessible(r.activityInfo) && seen.add(r.activityInfo.packageName)) unique.add(r);
         return unique;
     }
-    private void appsPage() {
-        add(content,UiText.t("실행 바로가기 / Quick entry"),new Runnable(){public void run(){quickEntry();}});
-        text(UiText.t("바로가기: ")+QuickEntryService.status(this));
-        add(content,UiText.t("☆ 버튼 → 계기판"),new Runnable(){public void run(){starKey();}});
-        text(UiText.t("☆ 버튼: ")+StarKey.status(this));
-        // ponytail: 시동 안내 화면 건너뛰기 hidden (did not confirm the notice in the car); consentSkip() and ConsentSkip kept to retry
-        if(QuickEntryService.mode(this)==QuickEntryPolicy.OFF)
-            text(UiText.t("처음 설치했다면 실행 바로가기를 설정하세요. 순정 홈에는 앱이 자동으로 추가되지 않습니다."));
-        LinearLayout first=new LinearLayout(this),second=new LinearLayout(this);
-        add(first,UiText.t("계기판"),new Runnable(){public void run(){openDashboard();}});
-        add(first,UiText.t("USB 디버깅"),new Runnable(){public void run(){usbDebug();}});
-        add(second,UiText.t("엔지니어링 모드"),new Runnable(){public void run(){openEngineering();}});
-        add(second,UiText.t("안드로이드 기본앱"),new Runnable(){public void run(){page="android";render();}});
-        content.addView(first);content.addView(second);
-        add(content,UiText.t("블루투스 연결 설정"),new Runnable(){public void run(){openBluetooth();}});
-        add(content,UiText.t("강제 재시작"),new Runnable(){public void run(){confirmReboot();}});
+    private void appsPage(LinearLayout right) {
+        LinearLayout dash=new LinearLayout(this);dash.setOrientation(1);dash.setGravity(android.view.Gravity.CENTER_VERTICAL);dash.setPadding(20,0,12,0);
+        dash.setBackgroundDrawable(look(ACC,0,14));tap(dash,new Runnable(){public void run(){openDashboard();}});
+        dash.addView(label(UiText.t("계기판"),30,TXT,true));TextView sub=label(UiText.t("대시보드 열기"),14,0xffc8ebf5,false);sub.setPadding(0,2,0,0);dash.addView(sub);
+        content.addView(dash,new LinearLayout.LayoutParams(-1,80));
         final List<ResolveInfo> all = new ArrayList<ResolveInfo>();
         for(ResolveInfo item:launchable())
             if(!"com.veloster.dashboard".equals(item.activityInfo.packageName)&&!"com.hkmc.app.nmode.ui".equals(item.activityInfo.packageName)&&!"com.hkmc.system.app.engineering".equals(item.activityInfo.packageName))all.add(item);
         Set<String> hidden = prefs.getStringSet("hidden", new HashSet<String>());
         Set<String> pinned = prefs.getStringSet("pinned", new HashSet<String>());
-        int count = 0;
+        int count = 0;LinearLayout row=null;
         for (final ResolveInfo r : all) {
             int flags = r.activityInfo.applicationInfo.flags;
             boolean ordinary = (flags & (ApplicationInfo.FLAG_SYSTEM|ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) == 0;
             if ((!ordinary && !pinned.contains(r.activityInfo.packageName)) || hidden.contains(r.activityInfo.packageName)) continue;
+            if(count%4==0)row=tileRow();
             count++;
-            add(content, r.loadLabel(getPackageManager()).toString(),new Runnable(){public void run(){launch(r.activityInfo.packageName);}});
+            appTile(row,r.loadIcon(getPackageManager()),r.loadLabel(getPackageManager()).toString(),new Runnable(){public void run(){launch(r.activityInfo.packageName);}});
         }
-        if (count == 0) text(UiText.t("표시할 설치 앱이 없습니다. 앱 설치 뒤 다시 열거나 목록 편집에서 선택하세요."));
-        add(content,UiText.t("목록 편집"),new Runnable(){public void run(){editApps(all);}});
-        text(UiText.t("일반 설치 앱은 자동 표시됩니다. 목록에서 숨겨도 앱은 삭제되지 않습니다."));
+        if(count%4==0)row=tileRow();
+        android.graphics.drawable.Drawable sys;try{sys=getPackageManager().getApplicationIcon("com.android.settings");}catch(PackageManager.NameNotFoundException e){sys=getResources().getDrawable(android.R.drawable.sym_def_app_icon);}
+        appTile(row,sys,UiText.t("기본앱"),new Runnable(){public void run(){page="android";render();}});
+        while(row.getChildCount()<4){View gap=new View(this);LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,76,1);p.leftMargin=8;row.addView(gap,p);}
+        card(content,"+ "+UiText.t("목록 편집"),0,LINE,MUT,38,0,new Runnable(){public void run(){editApps(all);}});
+        heading(content,UiText.t("도구"));
+        LinearLayout tools=new LinearLayout(this);content.addView(tools);
+        card(tools,UiText.t("USB 디버깅"),CARD,LINE,TXT,46,1,new Runnable(){public void run(){usbDebug();}});
+        card(tools,UiText.t("블루투스"),CARD,LINE,TXT,46,1,new Runnable(){public void run(){openBluetooth();}});
+        card(tools,UiText.t("엔지니어링"),CARD,LINE,TXT,46,1,new Runnable(){public void run(){openEngineering();}});
+        card(content,UiText.t("강제 재시작"),0,RED,RED,46,0,new Runnable(){public void run(){confirmReboot();}});
+        if(count==0)text(UiText.t("표시할 설치 앱이 없습니다. 앱 설치 뒤 다시 열거나 목록 편집에서 선택하세요."));
+        heading(right,UiText.t("설정"));
+        int mode=QuickEntryService.mode(this);
+        settingRow(right,UiText.t("바로가기 버튼"),QuickEntryService.status(this),mode!=QuickEntryPolicy.OFF,new Runnable(){public void run(){quickEntry();}});
+        String star=StarKey.status(this);
+        settingRow(right,UiText.t("☆ 버튼 → 계기판"),star,!star.equals(UiText.t("꺼짐"))&&!star.equals(UiText.t("확인 불가")),new Runnable(){public void run(){starKey();}});
+        TextView help=label(UiText.t("바로가기 버튼은 화면 가장자리에 늘 떠 있는 작은 버튼입니다. 짧게 누르면 계기판, 길게 누르면 내 앱이 열리고, 부팅 뒤에도 다시 나타납니다. 순정 홈에는 이 앱들이 나오지 않으니 처음 설치했다면 켜 두세요."),14,MUT,false);
+        help.setLineSpacing(6,1);help.setPadding(18,14,18,14);help.setBackgroundDrawable(shape(0,LINE,12));
+        LinearLayout.LayoutParams hp=new LinearLayout.LayoutParams(-1,-2);hp.topMargin=12;right.addView(help,hp);
+        // ponytail: 시동 안내 화면 건너뛰기 hidden (did not confirm the notice in the car); consentSkip() and ConsentSkip kept to retry
     }
+    private LinearLayout tileRow(){LinearLayout row=new LinearLayout(this);LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.topMargin=8;content.addView(row,p);return row;}
     private void quickEntry(){
         final int[] modes={QuickEntryPolicy.FLOATING,QuickEntryPolicy.NOTIFICATION,QuickEntryPolicy.OFF};
         final int[] selected={2};int current=QuickEntryService.mode(this);
         for(int i=0;i<modes.length;i++)if(modes[i]==current)selected[0]=i;
-        new AlertDialog.Builder(this).setTitle(UiText.t("실행 바로가기 / Quick entry"))
-            .setSingleChoiceItems(new String[]{UiText.t("가장자리 버튼 + 알림 / Floating + notification"),UiText.t("알림만 / Notification only"),UiText.t("사용 안 함 / Off")},selected[0],new android.content.DialogInterface.OnClickListener(){
+        new AlertDialog.Builder(this).setTitle(UiText.t("바로가기 버튼"))
+            .setSingleChoiceItems(new String[]{UiText.t("버튼 + 알림"),UiText.t("알림만"),UiText.t("끄기")},selected[0],new android.content.DialogInterface.OnClickListener(){
                 public void onClick(android.content.DialogInterface dialog,int which){selected[0]=which;}
             })
             .setPositiveButton(UiText.t("저장 / Save"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface dialog,int which){

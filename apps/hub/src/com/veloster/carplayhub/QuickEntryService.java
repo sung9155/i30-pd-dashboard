@@ -54,10 +54,10 @@ public final class QuickEntryService extends Service {
     public static String status(Context context){
         LanguageSettings.init(context);
         int mode=mode(context);
-        String base=mode==QuickEntryPolicy.FLOATING?UiText.t("가장자리 버튼 + 알림"):mode==QuickEntryPolicy.NOTIFICATION?UiText.t("알림만"):UiText.t("사용 안 함");
+        String base=mode==QuickEntryPolicy.FLOATING?UiText.t("버튼 + 알림"):mode==QuickEntryPolicy.NOTIFICATION?UiText.t("알림만"):UiText.t("꺼짐");
         String error;
         try{error=prefs(context).getString("error","");}catch(ClassCastException ignored){error="";}
-        return error.length()==0?UiText.t("설정: ")+base:UiText.t("설정: ")+base+"\n"+UiText.t(error);
+        return error.length()==0?base:base+"\n"+UiText.t(error);
     }
     private static void error(Context context,String message){
         prefs(context).edit().putString("error",message).commit();

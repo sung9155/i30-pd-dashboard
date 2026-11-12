@@ -69,7 +69,13 @@ public final class ObdSchedule {
      *  three missed replies in a row (an owner's record: 01A4 802/819, "none retry"). One that never answered (a 6MT has no
      *  TCU, a DAG3 holding the engine) still waits RETRY_MS. */
     public void done(Poll p,long now,boolean ok){p.misses=ok?0:p.misses+1;p.sent++;if(ok)p.answered++;
-        p.due=now+(p.active()?p.every:p.answered>0?Math.max(3000,p.every*3):RETRY_MS);}
+        p.due=now+(p.active()?(ok?p.every:missedEvery(p)):p.answered>0?Math.max(3000,p.every*3):RETRY_MS);}
+    /** A slow value (fuel level, asked every 30 s) whose reply was missed is asked again in FAST_MS, not a period on: two
+     *  misses at 30 s let it pass STALE_MS (60 s) and show "-" (owners of 1.6T and 1.4T petrol cars, 2026-11-12), and at start
+     *  it would wait a period for a first value. Back to its period on an answer. One that has never answered gets FAST_TRIES
+     *  quick tries, then its period: an engine without it (the diesel's 01 2F) is not asked every 5 s for the whole drive. */
+    static final long SLOW_MS=30000,FAST_MS=5000;static final int FAST_TRIES=10;
+    private static long missedEvery(Poll p){return p.every>=SLOW_MS&&(p.answered>0||p.misses<=FAST_TRIES)?FAST_MS:p.every;}
     /** Not sent this time (another tester holds the ECU): due again a period on, no miss counted. */
     public void skip(Poll p,long now){p.due=now+p.every;}
     /** Every request's tally on one short line ("ED1D 0/3 7F 22 31 off, 43 40/40, ..."): the 5 s diagnostics line

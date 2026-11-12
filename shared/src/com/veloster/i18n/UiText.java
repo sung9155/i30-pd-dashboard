@@ -716,6 +716,7 @@ public final class UiText {
         EN.put("팬텀 블랙","Phantom Black");
         EN.put("퍼포먼스","Perf");
         EN.put("퍼포먼스 블루","Performance Blue");
+        EN.put("퍼플","Purple");
         EN.put("페달","Pedal");
         EN.put("페달 50% 이하로 충분합니다","Under 50 % pedal is enough");
         EN.put("페어링","Pair");

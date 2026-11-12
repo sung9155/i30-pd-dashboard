@@ -63,6 +63,7 @@ public final class Tiles {
         if(s==Telemetry.CLUTCH)return mt;
         if(s==CLUTCH||s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN)return !mt;
         if(s==Telemetry.SPARK)return !diesel;
+        if(Telemetry.noSource(s))return false;
         return s>=0&&s<Telemetry.LABELS.length||s>=TIRES&&s<=CORNER_MAX_LAT;
     }
     /** Group g's signals on this car; tiles also get the several-value entries and session statistics. */

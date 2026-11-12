@@ -6,7 +6,7 @@ public final class GraphLayout {
     private final int[] signals={1,2,Telemetry.STEERING};
     private long window=60000;
     public int signal(int slot){check(slot);return signals[slot];}
-    public void signal(int slot,int signal){check(slot);if(signal<0||signal>=Telemetry.LABELS.length)throw new IllegalArgumentException("graph signal");signals[slot]=signal;}
+    public void signal(int slot,int signal){check(slot);if(signal<0||signal>=Telemetry.LABELS.length||Telemetry.noSource(signal))throw new IllegalArgumentException("graph signal");signals[slot]=signal;}
     public long window(){return window;}
     public void window(long value){if(value!=60000&&value!=300000)throw new IllegalArgumentException("graph window");window=value;}
     public static float top(int slot){check(slot);return 86+130*slot;}

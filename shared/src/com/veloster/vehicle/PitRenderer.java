@@ -309,6 +309,7 @@ public final class PitRenderer {
                     else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}
                     else if(i==SettingsLayout.SOUND_FAST){sel=EngineSound.fast;name="소리 반응 속도";dim=!soundOn;sub="빠름: 소리가 덜 늦음 · 화면이 느려질 때 소리가 끊기면 보통으로";value=EngineSound.fast?"빠름":"보통";}
                     else if(i==SettingsLayout.SOUND_CLICK){sel=CassetteCluster.clickSound;name="카세트 찰칵 소리";sub="카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개";value=CassetteCluster.clickSound?"켬":"끔";}
+                    else if(i==SettingsLayout.SOUND_CHIME){int k=SpeedChime.kmh;sel=k>0;name="과속 차임";sub="정한 속도를 넘는 동안 1초마다 킨콘 종소리 (AE86 같은 옛 일본차) · 엔진 사운드와 별개";value=k>0?k+" km/h":"끔";}
                     else if(i==SettingsLayout.SOUND_COIN){sel=EcoCluster.coinSound;name="에코 동전 소리";sub="에코 화면에서 동전이 떨어질 때 · 엔진 사운드와 별개";value=EcoCluster.coinSound?"켬":"끔";}
                     else{name=SOUND_ROW_NAMES[i-SettingsLayout.SOUND_VOLUME];
                         boolean noTurbo=(i==SettingsLayout.SOUND_TURBO||i==SettingsLayout.SOUND_BOV)&&!SettingsLayout.SOUND_HAS_TURBO[soundEngine];

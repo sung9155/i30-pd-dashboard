@@ -81,7 +81,7 @@ public final class TabsPreview {
         rec.setPicker(false,false,0);Theme.select("copper");
         int[] tl={9,11,13,8,10,6,5};String[] tn={"night","engine","warp","gcircle","drag","8bit","hud"};
         for(int ti=0;ti<tl.length;ti++){rec.setPage(PitRenderer.PAGE_CLASSIC+tl[ti]);save(out,"z_theme_"+tn[ti]+"_copper",rec,model,now,false,false);}
-        Theme.select("n");
+        Theme.select(System.getProperty("preview.theme","n"));   // back to the theme this run renders in
         String[] cats={"screens","theme","paint","mode","rpm","sound","lang","diag"};   // settings (the gear), one shot per category
         rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<20));rec.setModeOptions(true,false);rec.setSound(true,0,0,0,SettingsLayout.SOUND_DEFAULT);
         int[] targets={ClusterPicker.F1+2,ClusterPicker.GAUGES,-1};   // SPORT set to the race page, ECO to the gauges

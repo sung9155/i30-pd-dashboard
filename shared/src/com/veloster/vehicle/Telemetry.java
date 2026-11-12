@@ -3,6 +3,10 @@ package com.veloster.vehicle;
 /** Packet observations only. No CAN writes, preferences, simulation or Android dependency. */
 public final class Telemetry {
     public static final int STEERING=13,AMBIENT=14,POWER=15,TORQUE=16,BOOST=17;
+    /** Power and torque come only from the Veloster N head unit's N-mode service (its own calculation, or ours from its
+     *  inputs); an i30 PD has no such service, so they never get a value: not offered, not in a default layout, and a
+     *  saved choice of them falls back to the slot's default (owner, 2026-11-12). */
+    public static boolean noSource(int s){return s==POWER||s==TORQUE;}
     public static final int TPMS_FL=18,TPMS_FR=19,TPMS_RL=20,TPMS_RR=21;
     public static final int TCS=22,ESC=23,ABS=24,BAT_SOC=25,BAT_VOLTAGE=26,STEERING_SPEED=27,ELSD=28;
     public static final int INTAKE=29,GEAR_SELECTOR=30,ODOMETER=31,ENGINE_LOAD=32,YAW=33,DRIVE_MODE=34,PARK_BRAKE=35;

@@ -3,7 +3,7 @@ package com.veloster.vehicle;
 /** Six or twelve display slots. Preferences never write vehicle settings. */
 public final class GaugeLayout {
     public static final int SLOTS=12;
-    private static final int[] DEFAULT_SIGNALS={0,7,9,29,2,10,11,12,15,16,17,13};
+    private static final int[] DEFAULT_SIGNALS={0,7,9,29,2,10,11,12,Telemetry.ENGINE_LOAD,Telemetry.BAT_VOLTAGE,17,13};   // load and battery where power and torque were
     private final int[] signals=new int[SLOTS], styles=new int[SLOTS];
     private boolean dense;
     public GaugeLayout(){reset();}
@@ -20,7 +20,7 @@ public final class GaugeLayout {
     public float height(){return dense?124:190;}
     public void set(int i,int signal,int style){
         slot(i);
-        if(signal<0||signal>=Telemetry.LABELS.length||style<0||style>2)throw new IllegalArgumentException("gauge selection");
+        if(signal<0||signal>=Telemetry.LABELS.length||Telemetry.noSource(signal)||style<0||style>2)throw new IllegalArgumentException("gauge selection");
         signals[i]=signal;styles[i]=style;
     }
     public void swap(int a,int b){slot(a);slot(b);int n=signals[a];signals[a]=signals[b];signals[b]=n;n=styles[a];styles[a]=styles[b];styles[b]=n;}

@@ -171,7 +171,10 @@ def test(a):
         head, rest = cur["body"].split("\n", 8)[:8], cur["body"].split("\n", 8)[8:]
         body = "\n".join(l.replace(m[1], stable_tag) for l in head) + "\n" + "\n".join(rest)   # header lines only; the history below stays
         notes = out / "test-notes.md"
-        notes.write_text(body, encoding="utf-8")
+        # Bytes, not write_text: on Windows write_text turned the body's \r\n into \r\r\n, so the blank lines doubled on
+        # every run until GitHub refused the notes (125,000 characters). Normalise to \n and at most one blank line.
+        body = re.sub(r"\n{3,}", "\n\n", re.sub(r"\r+\n", "\n", body))
+        notes.write_bytes(body.encode("utf-8"))
         sh("gh", "release", "edit", "test", "-R", REPO, "--title", title, "--notes-file", notes)
         print("test title:", title)
     else:

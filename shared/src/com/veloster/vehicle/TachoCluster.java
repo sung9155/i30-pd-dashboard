@@ -43,9 +43,8 @@ final class TachoCluster extends ClusterKit {
     @Override protected void draw(Canvas c){
         c.save();c.translate(0,52);
         int acc=accent();
-        boolean avgCell=avgCell();   // a diesel's engine ECU gives no fuel level (01 2F unanswered, 2026-11-08): its cell shows the average economy
-        String key=prof.maxRpm+"/"+prof.redline+"/"+shiftTarget+"/"+acc+"/"+com.veloster.i18n.UiText.language()+"/"+(prof.trans==VehicleProfile.Trans.MT)+"/"+avgCell;
-        if(face==null||!key.equals(faceKey)){face=buildFace(acc,avgCell);faceKey=key;}
+        String key=prof.maxRpm+"/"+prof.redline+"/"+shiftTarget+"/"+acc+"/"+com.veloster.i18n.UiText.language()+"/"+(prof.trans==VehicleProfile.Trans.MT);
+        if(face==null||!key.equals(faceKey)){face=buildFace(acc);faceKey=key;}
         c.drawBitmap(face,0,0,null);
         float rpm=v(0),kmh=v(7),raw=s[8].valid?s[8].value:Float.NaN;
         boolean mt=prof.trans==VehicleProfile.Trans.MT,moving=!Float.isNaN(kmh)&&kmh>=10;
@@ -92,7 +91,7 @@ final class TachoCluster extends ClusterKit {
         sector(c,4,40,fmt("%.0f",load),"%",load/100,false,acc);
         // grid cells
         value(c,false,true,fmt("%.0f",v(Telemetry.AMBIENT)),"°C");
-        if(avgCell)value(c,true,true,fmt("%.1f",v(Telemetry.AVG_FUEL)),"km/L");else value(c,true,true,fmt("%.0f",v(Telemetry.FUEL_LEVEL)),"%");
+        value(c,true,true,fmt("%.0f",v(Telemetry.FUEL_LEVEL)),"%");
         value(c,false,false,fmt("%.1f",v(Telemetry.BAT_VOLTAGE)),"V");
         value(c,true,false,fmt("%.0f",v(Telemetry.RANGE)),"km");
         // left middle: the downshift list on a 6MT; a DCT (paddles step one gear) shows its two clutch temperatures instead
@@ -131,14 +130,12 @@ final class TachoCluster extends ClusterKit {
     }
 
     // ---- the still parts, drawn once ----
-    /** The fuel cell's stand-in: a diesel with no fuel level, once the cluster's trip average (CLU13) is known. */
-    private boolean avgCell(){return prof.fuel==VehicleProfile.Fuel.DIESEL&&Float.isNaN(v(Telemetry.FUEL_LEVEL))&&!Float.isNaN(v(Telemetry.AVG_FUEL));}
-    private Bitmap buildFace(int acc,boolean avgCell){
+    private Bitmap buildFace(int acc){
         Bitmap b=bitmap((int)W,(int)H);Canvas c=new Canvas(b);
         fill(c,0,0,W,H,BG);
         boolean mt=prof.trans==VehicleProfile.Trans.MT;
         cell(c,TL,false,true);cell(c,TL,true,true);cell(c,MID,false,false);cell(c,MID,true,false);cell(c,BL,false,true);cell(c,BL,true,true);
-        label(c,false,40,t("외기온"),acc);label(c,true,40,t(avgCell?"평균 연비":"연료"),acc);label(c,false,322,t("배터리"),acc);label(c,true,322,t("주행 가능"),acc);
+        label(c,false,40,t("외기온"),acc);label(c,true,40,t("연료"),acc);label(c,false,322,t("배터리"),acc);label(c,true,322,t("주행 가능"),acc);
         bold(c,t(mt?"다운":"클러치"),26,148,13,acc,Paint.Align.LEFT);bold(c,t("페달"),W-98,148,13,acc,Paint.Align.LEFT);
         int bars=mt?3:2;float bw=mt?20:30,x0=W-112+8,gap=(82-bars*bw)/(bars-1);String[] names=mt?new String[]{"C","B","A"}:new String[]{"B","A"};
         for(int i=0;i<bars;i++){float x=x0+i*(bw+gap);fill(c,x,158,x+bw,250,TRACK);text(c,names[i],x+bw/2,272,14,MUT,Paint.Align.CENTER,num());}

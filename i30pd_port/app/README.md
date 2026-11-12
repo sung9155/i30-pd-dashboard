@@ -87,7 +87,7 @@
 4. **점화 상태 폴백** `VehicleDataClient`: PD에 `BCMManager`(IGN 상태)가 없으면 hscan 구독이 영영 안 시작되므로, BCM 서비스 획득 실패 시 점화 ON으로 간주(`ignitionUnknown`). hscan은 수신 전용이라 안전.
 5. **주행 모드·주차 브레이크 표시**: 게이지 탭에서 두 신호를 골라 `SPORT`·`ON`처럼 글자로 볼 수 있다(`Telemetry.label`). 처음 넣었던 클러스터 대칭 화면은 2026-10-30에 앱에서 뺐다(같은 정보는 레이스 탭, 보관 소스 `i30pd_port/cluster/`).
 6. 번역 `translations/en.json`에 "변속 레버"(Shift lever) 등 추가 → `UiText.java` 재생성. 테스트: 디코더 화이트리스트 갱신, 실차 바이트 고정값으로 PD 디코더를 검사하는 `tests/HscanPdTelemetryTest.java` 신설(v1.6.9 기준 PD HSCAN 검사 186건, 전체 Java·Python 시험 통과).
-7. **화면 차종 문구**: 상단 `N / PIT` → `i30 PD`, F1 기어 패널 `V E L O S T E R  N` → `i 3 0  P D`, F1+음악 `VELOSTER N` → `HYUNDAI i30` (`PitRenderer`). 앱 이름 `N Dashboard`는 그대로.
+7. **화면 차종 문구**: 상단 `N / PIT` → `i30 PD`, F1 기어 패널 `V E L O S T E R  N` → `i 3 0  P D`, F1+음악 `VELOSTER N` → `HYUNDAI i30` (`PitRenderer`). 앱 이름은 `i30 계기판`(영어 `i30 Dashboard`, 2026-11-12부터; 그 전에는 `N Dashboard`).
 
 ## 빌드 (노트북, Git Bash)
 
@@ -122,7 +122,7 @@ BT=/d/Android/sdk/build-tools/34.0.0
 PD 펌웨어 대조(공개 펌웨어를 받아 확인, 이 레포에는 미포함):
 - **엔지니어링 모드**: `com.hkmc.system.app.engineering/.EngineeringModeMainActivity`가 있고 MAIN 인텐트 필터가 있어 외부에서 실행된다. 숨은 탭과 암호 화면을 거치지 않으므로 **진단 메뉴를 함부로 건드리지 말 것.**
 - **USB 디버깅**: PD(`com.hkmc.software.ium` 기능 없음)에서는 엔지니어 모드 Factory Test와 같은 줄을 보낸다 — ON `0A 01 → 65 01 → 0A 02`, OFF `0A 01 → 65 00 → 0A 02`(0.8초 간격, `intent.action.FACTORY_TEST` 방송). 시스템의 `MicomFactoryService`가 각 줄을 마이컴에 그대로 넘기고, 마이컴이 USB 포트를 바로 바꾼다. 예전처럼 `MiscManager.setSystem(5)`만 부르면 PD에서는 `persist.sys.dipo.state=debug`만 저장되고 `rsd`가 **다음 부팅부터 계속** 디버그 모드로 올려서(CarPlay 안 됨) 버튼을 눌러도 바로 연결되지 않았다. OFF도 코드만 보내고, 예전 버튼이 저장한 `debug`가 남아 있을 때만 `setSystem(6)`으로 `carplay`로 되돌린다. ium 기능이 있는 내비는 `setSystem(5/6)`가 바로 `sys.usb.config`를 바꾸므로 그대로 쓴다. 상태 표시는 지금 `sys.usb.config`에 `adb`가 있는지로 판단한다. 2026-11-03 실차 확인(ON·OFF).
-- **시동 안내 화면 건너뛰기** (테스트 빌드, 기본 꺼짐): 켜면 내비가 켜질 때 나오는 안내 및 동의 화면(`com.hkmc.internal.consentscreen.ConsentScreen`)을 '내 앱'이 대신 [확인]한다. 순정 `FactoryManager.hideConsentScreen()`이 `MicomFactoryService`에 공장 하드키 1을 넣고(권한 검사 없음), 동의 화면의 factory 리스너가 키 1을 확인 버튼으로 받는다 — 손으로 누른 것과 같다. 부팅 완료 때와 화면이 켜질 때(퀵부트 시동, 실행 바로가기 서비스가 떠 있을 때) 1·3·6초 뒤에 보낸다. 동의 화면이 없을 때는 공장 시험 리스너만 키를 받는다. 실차 미검증 — `adb logcat -s ConsentScreen VNCarPlayHub`로 확인.
+- **시동 안내 화면 건너뛰기** (2026-11-12부터 숨김: 실차에서 동작하지 않았다. 아래는 만들 때의 설명): 켜면 내비가 켜질 때 나오는 안내 및 동의 화면(`com.hkmc.internal.consentscreen.ConsentScreen`)을 '내 앱'이 대신 [확인]한다. 순정 `FactoryManager.hideConsentScreen()`이 `MicomFactoryService`에 공장 하드키 1을 넣고(권한 검사 없음), 동의 화면의 factory 리스너가 키 1을 확인 버튼으로 받는다 — 손으로 누른 것과 같다. 부팅 완료 때와 화면이 켜질 때(퀵부트 시동, 실행 바로가기 서비스가 떠 있을 때) 1·3·6초 뒤에 보낸다. 동의 화면이 없을 때는 공장 시험 리스너만 키를 받는다. 실차 미검증 — `adb logcat -s ConsentScreen VNCarPlayHub`로 확인.
 - **☆ 버튼 → 계기판**: 켜면 ☆(사용자 버튼)를 짧게 눌러 계기판을 연다. 순정 `ModeManager.setCustomKey`로 ☆ 동작(`persist.sys.key.custom`)을 `com.veloster.carplayhub.STAR_KEY`로 바꾸고, 순정 모드 서비스가 목록에 없는 동작을 방송으로 보내면 `StarKey` 수신기가 계기판을 연다. 켤 때 이전 동작을 기억했다가 끌 때 되돌린다(☆가 아직 우리 값일 때만). ☆를 길게 누르면 순정 "사용자 버튼 설정" 화면이 열리고 그 화면이 목록 밖 값을 "없음"으로 되돌리므로 연결이 풀린다 — 상태는 실제 값을 읽어 "꺼짐"으로 보이고, 다시 켜는 것은 버튼으로만 한다. 2026-11-03 실차 확인.
 - 강제 재시작(`REBOOT`), 다른 앱 위 표시(`SYSTEM_ALERT_WINDOW`, `TYPE_PHONE`)는 platform 키 서명이라 권한이 있다.
 
@@ -136,7 +136,7 @@ adb install -r build/hub/myapps-i30pd-platform.apk
 adb shell am start -n com.veloster.carplayhub/.HubActivity
 ```
 
-'내 앱'에서 **실행 바로가기 → 가장자리 버튼 + 알림 → 저장**을 고른다. 기본값은 OFF이고 설치만으로는 켜지지 않는다. 그다음 HOME에서 가장자리 `계기판` 버튼으로 대시보드가 열리는지 확인한다. 실차에서 볼 것:
+'내 앱'에서 **바로가기 버튼 → 버튼 + 알림 → 저장**을 고른다. 기본값은 OFF이고 설치만으로는 켜지지 않는다. 그다음 HOME에서 가장자리 `계기판` 버튼으로 대시보드가 열리는지 확인한다. 실차에서 볼 것:
 - 버튼이 보이는지
 - 후방카메라·순정 조작부를 가리지 않는지
 - 정차 상태에서 정상 재시동한 뒤에도 버튼이 복원되는지

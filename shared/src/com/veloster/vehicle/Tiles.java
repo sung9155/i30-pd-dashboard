@@ -52,7 +52,7 @@ public final class Tiles {
         {8,30,52,56,34,28},
         {7,3,4,5,6,11,12,33,13,27,44,CORNER_MIN_SPEED,CORNER_MAX_LAT},
         {10,43,35,22,23,24},
-        {TIRES,18,19,20,21},
+        {TIRES,18,19,20,21,70,71,72,73},
         {26,25,31,45,47,48,49,53,54,55,46,50,51},
         {DPF,EXHAUST,68,60,61,69,62,63,64,65}};
     /** Whether this car has the signal: DPF only on a diesel, the clutch pedal only on a 6MT, the DCT clutch
@@ -92,7 +92,7 @@ public final class Tiles {
         "SOC","BATT","STEER RATE","E-LSD","INTAKE","SELECTOR","ODO","LOAD","YAW","MODE","PARK BRK","THROTTLE","FUEL FLOW","RANGE",
         "AVG","TQ CORR","TQ FRIC","SPARK","BRK SW","STR TORQUE","DOOR L","WIPER","DOOR R","TRUNK","HOOD","TURN L","TURN R","SHIFT",
         "HEADLAMP","TAIL","HIGH BEAM","CLUTCH","FUEL","CAT","ABS LOAD","DPF ΔP","DPF TEMP","DPF REGEN","DPF TRIG","DPF LAST","DPF AVG",
-        "CLUTCH ODD","CLUTCH EVEN","DPF SOOT","EGT CAT"};
+        "CLUTCH ODD","CLUTCH EVEN","DPF SOOT","EGT CAT","TIRE T FL","TIRE T FR","TIRE T RL","TIRE T RR"};
     public static String caption(int s){
         switch(s){case TIRES:return "TPMS";case CLUTCH:return "CLUTCH";case DPF:return "DPF";case EXHAUST:return "EXHAUST";case CORNER_MIN_SPEED:return "BTM SPEED";case CORNER_MAX_LAT:return "PREV LAT G";}
         return s>=0&&s<CAPTION.length?CAPTION[s]:"—";
@@ -119,6 +119,8 @@ public final class Tiles {
         if(s==10||s==Telemetry.DPF_SOOT||"V".equals(u)||"L/h".equals(u)||"km/L".equals(u)||"kPa".equals(u))return "%.1f";
         return "%.0f";
     }
+    /** The tyre temperature of wheel k (0 FL .. 3 RR) as a whole number, or "-" until the BCM has answered. */
+    public static String tyreTemp(float t){return Float.isNaN(t)?"-":String.format(java.util.Locale.US,"%.0f",t);}
     /** 0 normal, 1 warm / low (amber), 2 critical (red). */
     public static int level(int s,float v){
         if(Float.isNaN(v))return 0;
@@ -137,7 +139,7 @@ public final class Tiles {
         else if(s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN){lo=0;hi=250;}else if(s==Telemetry.DPF_TEMP||s==Telemetry.EGT_CAT){lo=0;hi=700;}
         else if(s==Telemetry.DPF_SOOT){lo=0;hi=20;}else if(s==Telemetry.DPF_DP){lo=0;hi=50;}
         else if(s==Telemetry.BOOST){lo=-1;hi=1.5f;}else if(s==10){lo=0;hi=100;}else if(s==Telemetry.BAT_VOLTAGE){lo=10;hi=15;}
-        else if(s>=Telemetry.TPMS_FL&&s<=Telemetry.TPMS_RR){lo=0;hi=45;}else if(s==11||s==12||s==CORNER_MAX_LAT){return Float.isNaN(v)?Float.NaN:Math.abs(v)/1.5f;}
+        else if(s>=Telemetry.TPMS_FL&&s<=Telemetry.TPMS_RR){lo=0;hi=45;}else if(s>=Telemetry.TIRE_TEMP_FL&&s<=Telemetry.TIRE_TEMP_RR){lo=0;hi=90;}else if(s==11||s==12||s==CORNER_MAX_LAT){return Float.isNaN(v)?Float.NaN:Math.abs(v)/1.5f;}
         else if(s==7||s>=3&&s<=6||s==CORNER_MIN_SPEED){lo=0;hi=240;}else if("%".equals(unit(s))){lo=0;hi=100;}
         else return Float.NaN;
         return Float.isNaN(v)?Float.NaN:(v-lo)/(hi-lo);

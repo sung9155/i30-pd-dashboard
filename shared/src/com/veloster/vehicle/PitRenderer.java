@@ -611,7 +611,9 @@ public final class PitRenderer {
     /** One of F1's two lines under speed and rpm: caption, value, unit; several-value entries in a smaller line. */
     private void f1Tile(Canvas c,int i,float capX,float valX,float unitX){
         int sig=Tiles.signal(Tiles.F1,i,profile);String txt;int lv=0;float size=22;
-        if(sig==Tiles.TIRES){StringBuilder b=new StringBuilder();for(int k=0;k<4;k++){float x=clutchT(Telemetry.TPMS_FL+k);lv=Math.max(lv,Tiles.level(Telemetry.TPMS_FL+k,x));b.append(k>0?" ":"").append(Tiles.text(Telemetry.TPMS_FL+k,x));}txt=b.toString();size=16;}
+        if(sig==Tiles.TIRES){StringBuilder b=new StringBuilder();for(int k=0;k<4;k++){float x=clutchT(Telemetry.TPMS_FL+k);lv=Math.max(lv,Tiles.level(Telemetry.TPMS_FL+k,x));b.append(k>0?" ":"").append(Tiles.text(Telemetry.TPMS_FL+k,x));}
+            boolean anyT=false;StringBuilder tb=new StringBuilder(" | ");for(int k=0;k<4;k++){float t=clutchT(Telemetry.TIRE_TEMP_FL+k);if(!Float.isNaN(t))anyT=true;tb.append(k>0?" ":"").append(Tiles.tyreTemp(t));}
+            txt=b.toString()+(anyT?tb.append("C"):"");size=anyT?13:16;}   // the tyre temperatures ride after the pressures, a size smaller
         else if(sig==Tiles.CLUTCH){float o=clutchT(Telemetry.CLUTCH_ODD),e=clutchT(Telemetry.CLUTCH_EVEN);lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));txt=Tiles.text(Telemetry.CLUTCH_ODD,o)+" / "+Tiles.text(Telemetry.CLUTCH_EVEN,e);size=18;}
         else if(sig==Tiles.EXHAUST){txt=Tiles.text(Telemetry.DPF_TEMP,clutchT(Telemetry.DPF_TEMP))+" / "+Tiles.text(Telemetry.EGT_CAT,clutchT(Telemetry.EGT_CAT));size=18;}
         else if(sig==Tiles.DPF){int k=Tiles.dpfLead(clutchT(Telemetry.DPF_SOOT),clutchT(Telemetry.DPF_TRIGGER),clutchT(Telemetry.DPF_DP));
@@ -714,6 +716,8 @@ public final class PitRenderer {
                 float l=x+10+(n%2)*69,t=y+44+(n/2)*25;
                 text(c,corners[n],l,t,10,MUTED,false);
                 text(c,value(PREFIX[i+n]),l+20,t,20,BLUE,true);
+                float tt=samples[Telemetry.TIRE_TEMP_FL+n].value;
+                if(samples[Telemetry.TIRE_TEMP_FL+n].valid&&!Float.isNaN(tt))text(c,String.format(Locale.US,"%.0f°",tt),l+47,t,10,MUTED,false);
             }
             text(c,"psi",x+10,y+88,11,MUTED,false);
         }else{

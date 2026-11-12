@@ -51,8 +51,9 @@ public final class GraphRenderer {
             if(!series.valid[i]){connected=false;continue;}
             float v=Telemetry.displayValue(signal,series.values[i]);
             float x=right-(now-series.times[i])*(right-left)/layout.window(),y=bottom-(v-lo)/(hi-lo)*(bottom-plotTop);
-            if(!connected||series.breakBefore[i]||series.times[i]-previous>2000)path.moveTo(x,y);else path.lineTo(x,y);
-            connected=true;previous=series.times[i];p.setStyle(Paint.Style.FILL);p.setColor(T(BLUE));c.drawCircle(x,y,1.4f,p);
+            // a dot only where a stretch starts (a lone sample has no line): one per sample was about 720 circles a frame
+            if(!connected||series.breakBefore[i]||series.times[i]-previous>2000){path.moveTo(x,y);p.setStyle(Paint.Style.FILL);p.setColor(T(BLUE));c.drawCircle(x,y,1.4f,p);}else path.lineTo(x,y);
+            connected=true;previous=series.times[i];
         }
         p.setStyle(Paint.Style.STROKE);p.setColor(T(BLUE));p.setStrokeWidth(2);c.drawPath(path,p);p.setStyle(Paint.Style.FILL);c.restoreToCount(saved);
     }

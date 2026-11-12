@@ -763,5 +763,13 @@
   "에메랄드": "Emerald",
   "마젠타": "Magenta",
   "과속 차임": "Speed chime",
-  "정한 속도를 넘는 동안 1초마다 킨콘 종소리 (AE86 같은 옛 일본차) · 엔진 사운드와 별개": "A ding-dong bell every second while over the set speed (like the AE86 and other old Japanese cars) · separate from the engine sound"
+  "정한 속도를 넘는 동안 반복해서 울림 (AE86 같은 옛 일본차) · 엔진 사운드와 별개": "Rings again and again while over the set speed (like the AE86 and other old Japanese cars) · separate from the engine sound",
+  "차임 소리": "Chime sound",
+  "누를 때마다 다음 소리를 들려줌": "Each tap plays the next sound",
+  "AE86 킨콘": "AE86 ding-dong",
+  "GR86 삐삐삐": "GR86 beep-beep-beep",
+  "기계식 종": "Mechanical bell",
+  "딩": "Ding",
+  "유리 톡톡": "Glass tap",
+  "전자 부저": "Electronic buzzer"
 }

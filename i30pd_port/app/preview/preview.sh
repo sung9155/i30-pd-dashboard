@@ -10,7 +10,7 @@ out="${3:-$here/../screens}"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 javac -proc:none -encoding UTF-8 -d "$tmp" "$here"/android/graphics/*.java "$src/i18n/UiText.java" \
   "$src"/vehicle/*Cluster*.java "$src"/vehicle/{CarPaint,EngineSynth,LapTimer,Tiles,RoadJolt,Weather,ArcadeCarFrames,TaxiFare,TaxiTariff,TaxiZones,TaxiZoneData,GpsFix,CircuitLap,Circuits,CircuitData,TrackPath,Telemetry,Theme,ThemeShapes,HeaderTabs,SettingsLayout,PitRenderer,SparkRetard,DayPhase,GaugeRenderer,GraphRenderer,PerformanceRenderer,RaceRenderer,RevMatch,ShiftCoach,GearRatios,SpeedCal,ShowRenderer,VehicleProfile,DriveStats,GaugeLayout,GraphLayout,OverviewLayout,ShiftGuide,MediaState}.java \
-  "$here/TabsPreview.java"
+  "$here"/stubs/*.java "$here/TabsPreview.java"   # stubs: ShiftBeep / EngineSound need android.media, the renderers only read their constants
 # Android 4.2 Roboto (see TABS.md "다시 그리기"); without it Latin text falls back to the CJK font.
 fonts="${PREVIEW_FONTS:-$here/fonts}"
 [ -f "$fonts/Roboto-Regular.ttf" ] || echo "note: no Roboto in $fonts, Latin text uses the CJK font" >&2

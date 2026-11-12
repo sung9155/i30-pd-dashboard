@@ -637,6 +637,20 @@ public final class PitRenderer {
             text(c,Float.isNaN(t[k])?"—":Telemetry.format("%.0f",t[k]),x+70,ty,22,hot?BG:lv==1?AMBER:BLUE,true);}
         text(c,"°C",x+w-28,y+88,11,hot?BG:MUTED,false);
     }
+    /** DCT clutch life candidates for the owner to compare with a scanner: two pairs (A, B) of odd / even percentages, 2 decimals. */
+    private void lifeCard(Canvas c,float x,float y,float w,float h){
+        panel(c,x,y,w,h,PANEL,LINE);box(c,x+10,y,x+53,y+2,BLUE);
+        fitted(c,UiText.t("DCT 잔량 후보 (확인용)"),x+10,y+20,13,w-20,MUTED);
+        String[] n={"A","B"};
+        for(int k=0;k<2;k++){
+            float o=clutchT(Telemetry.DCT_LIFE_A_ODD+2*k),e=clutchT(Telemetry.DCT_LIFE_A_ODD+1+2*k),ty=y+48+k*28;
+            text(c,n[k],x+10,ty,13,MUTED,true);
+            text(c,Float.isNaN(o)?"—":String.format(Locale.US,"%.2f",o),x+28,ty,15,BLUE,true);
+            String es=Float.isNaN(e)?"—":String.format(Locale.US,"%.2f",e);paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(15);
+            text(c,es,x+w-12-paint.measureText(es),ty,15,BLUE,true);
+        }
+        text(c,UiText.t("홀 · 짝, % (아직 어느 쪽인지 모름)"),x+10,y+88,9,MUTED,false);
+    }
     private float clutchT(int i){Telemetry.Sample k=samples[i];return k.valid?k.value:Float.NaN;}
     /** F1 brake card: the clutch temperatures where a 6MT shows its clutch switch; filled at red, nothing before the TCU answers. */
     private void clutchTempChip(Canvas c,float x,float y){
@@ -701,13 +715,14 @@ public final class PitRenderer {
         String[] names={"SPEED / km/h","ENGINE / rpm","EMS GEAR","ACCEL / %","BRAKE / bar"};
         for(int slot=0;slot<overviewLayout.count();slot++){
             int i=overviewLayout.signalAt(slot);boolean head=overviewLayout.headline(i);
-            if(i==Telemetry.CLUTCH_ODD&&profile.trans==VehicleProfile.Trans.MT)continue;   // a 6MT has no clutch temperatures: the slot stays empty
+            if((i==Telemetry.CLUTCH_ODD||i==Telemetry.DCT_LIFE_A_ODD)&&profile.trans==VehicleProfile.Trans.MT)continue;   // a 6MT has no clutch temperatures: the slot stays empty
             if(overviewLayout.grouped(i))groupCard(c,i);else overviewCard(c,i,head?names[slot]:UiText.t(Telemetry.LABELS[i]));
         }
     }
     private void groupCard(Canvas c,int i){
         float x=overviewLayout.left(i),y=overviewLayout.top(i),w=overviewLayout.width(i);
         if(i==Telemetry.CLUTCH_ODD){clutchCard(c,x,y,w,overviewLayout.height(i));return;}
+        if(i==Telemetry.DCT_LIFE_A_ODD){lifeCard(c,x,y,w,overviewLayout.height(i));return;}
         panel(c,x,y,w,overviewLayout.height(i),PANEL,LINE);box(c,x+10,y,x+53,y+2,BLUE);
         if(i==Telemetry.TPMS_FL){
             fitted(c,UiText.t("타이어 공기압"),x+10,y+20,13,w-20,MUTED);

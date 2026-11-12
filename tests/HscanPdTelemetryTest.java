@@ -338,7 +338,7 @@ public final class HscanPdTelemetryTest {
         t.obd(0x3c,0x0b,0x54,3402);check(Math.abs(t.sample(Telemetry.CAT_TEMP,3402).value-250f)<1f,"catalyst temp ~250 C");
         t.obd(0x43,0x00,0x31,3403);check(Math.abs(t.sample(Telemetry.ABS_LOAD,3403).value-19.2f)<0.5f,"absolute load ~19%");
         t.obd(0x0b,new byte[]{0x67},3404);check(t.boostCheck(3404).startsWith("MAP 103 kPa"),"MAP 01 0B kept for the boost-scale line: "+t.boostCheck(3404));
-        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.TIRE_TEMP_RR+1,"label/unit tables cover the added signals");
+        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.DCT_LIFE_B_EVEN+1,"label/unit tables cover the added signals");
         // diesel DPF PIDs (J1979-DA): a support byte first, only marked fields published; other PIDs fall through
         t.obd(0x7a,new byte[]{0x07,0x05,(byte)0xdc,0,0,0,0},3410);check(Math.abs(t.sample(Telemetry.DPF_DP,3410).value-15f)<0.01f,"DPF delta pressure 1500 x 0.01 = 15 kPa");
         t.obd(0x7a,new byte[]{0x07,(byte)0xff,(byte)0x9c,0,0,0,0},3411);check(Math.abs(t.sample(Telemetry.DPF_DP,3411).value+1f)<0.01f,"delta pressure is signed (-1 kPa)");
@@ -373,6 +373,13 @@ public final class HscanPdTelemetryTest {
         Telemetry z=new Telemetry();z.obd(Telemetry.DID_TIRE,w,3436);
         check(z.sample(Telemetry.TIRE_TEMP_FL,3436).valid&&!z.sample(Telemetry.TIRE_TEMP_RL,3436).valid&&!z.sample(Telemetry.TIRE_TEMP_RR,3436).valid,"an unreported wheel stays unpublished");
         k.obd(Telemetry.DID_TIRE,new byte[10],3437);check(k.sample(Telemetry.TIRE_TEMP_FL,3437).value==20,"a short reply leaves them alone");}
+        // TCU 22 01A6 clutch life candidates (a PD, parked): two blocks at data bytes 22 and 50, V1 / V2 as u16 / 100
+        {Telemetry k=new Telemetry();byte[] d=new byte[100];
+            int[][] b={{22,5229,6253},{50,4827,6363}};for(int[] x:b){int o=x[0];d[o]=0;d[o+1]=60;d[o+2]=(byte)(1000>>8);d[o+3]=(byte)(1000&255);d[o+12]=(byte)(x[1]>>8);d[o+13]=(byte)x[1];d[o+14]=(byte)(x[2]>>8);d[o+15]=(byte)x[2];}
+            k.obd(Telemetry.DID_TCU_LIFE,d,3438);
+            check(Math.abs(k.sample(Telemetry.DCT_LIFE_A_ODD,3438).value-52.29f)<0.001f&&Math.abs(k.sample(Telemetry.DCT_LIFE_A_EVEN,3438).value-48.27f)<0.001f
+                &&Math.abs(k.sample(Telemetry.DCT_LIFE_B_ODD,3438).value-62.53f)<0.001f&&Math.abs(k.sample(Telemetry.DCT_LIFE_B_EVEN,3438).value-63.63f)<0.001f,"DCT life candidates 52.29 / 48.27 and 62.53 / 63.63");
+            Telemetry z=new Telemetry();z.obd(Telemetry.DID_TCU_LIFE,new byte[100],3439);check(!z.sample(Telemetry.DCT_LIFE_A_ODD,3439).valid,"a reply without the block header is not read");}
         // Hyundai diesel DPF block 22 ED03 (OBDb layout): 35 -> 15.1 kPa, 58 -> 372 C upstream, 123 400 m since the regeneration
         {Telemetry k=new Telemetry();byte[] e=new byte[56];e[36]=35;e[38]=58;e[45]=0;e[46]=1;e[47]=(byte)0xE2;e[48]=0x08;
         k.obd(Telemetry.DID_DPF,e,3440);

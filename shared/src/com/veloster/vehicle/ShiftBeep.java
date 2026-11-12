@@ -91,6 +91,29 @@ final class ShiftBeep implements Runnable {
         if(busy)return;
         busy=true;this.own=CASSETTE[kind];this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"cassette-key").start();
     }
+    /** 과속 차임 (SpeedChime): a small struck bell, high then low ("킨콘"), each strike a few inharmonic partials (Hz ratio to
+     *  the strike, amplitude, decay ms) like a real bell's; the second 280 ms after the first, 780 ms in all. */
+    private static final double[][] BELL={{1,.55,420},{2.76,.25,160},{5.40,.12,70},{8.93,.06,40}};
+    private static final double[] BELL_HZ={1568,1245},BELL_AT={0,280};
+    private static final short[][] CHIME_PCM=new short[2][];
+    static synchronized short[] chimePcm(boolean mix){
+        int slot=mix?1:0;if(CHIME_PCM[slot]!=null)return CHIME_PCM[slot];
+        int rate=mix?EngineSynth.RATE:RATE,lead=mix?0:Math.round(rate*0.06f),n=lead+rate*780/1000;double[] w=new double[n];
+        for(int k=0;k<2;k++){int start=lead+(int)Math.round(rate*BELL_AT[k]/1000);
+            for(int i=start;i<n;i++){double tm=(i-start)/(double)rate,ms=tm*1000,v=0;
+                for(double[] p:BELL){double f=BELL_HZ[k]*p[0];if(f<rate*.45)v+=p[1]*Math.exp(-ms/p[2])*Math.sin(2*Math.PI*f*tm);}
+                w[i]+=v*Math.min(1,ms/1.5);}}   // a 1.5 ms attack: struck, not clicked
+        double peak=1e-9;for(double x:w)peak=Math.max(peak,Math.abs(x));
+        int fade=Math.round(rate*0.03f);short[] out=new short[n];
+        for(int i=0;i<n;i++){double g=Math.min(1,(n-1-i)/(double)fade);out[i]=(short)Math.round(w[i]/peak*.8*g*32767);}
+        return CHIME_PCM[slot]=out;
+    }
+    /** One 킨콘 on the same paths as playCoin(); dropped while the last own-track one still sounds. */
+    void playChime(EngineSound onPath,float vol){
+        if(onPath!=null){onPath.mixBeep(chimePcm(true),vol);return;}
+        if(busy)return;
+        busy=true;this.own=chimePcm(false);this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"speed-chime").start();
+    }
     /** Inharmonic partials (Hz, amplitude, decay ms) per coin, one strike per contact: the small
      *  10 won rings high and short, the 500 won lower, longer and with a thud. */
     private static final double[][][] COIN={

@@ -29,7 +29,7 @@ public final class SettingsLayout {
     /** Virtual engine sound (off 2026-11-04, back 2026-11-05 at the user's word). false: the 사운드 pane shows one dimmed
      *  line and the sound never starts, whatever was saved. ponytail: a flag, not a removal. */
     public static final boolean ENGINE_SOUND=true;
-    public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_POP=5,SOUND_TURBO=6,SOUND_BOV=7,SOUND_LEAD=8,SOUND_COIN=9,SOUND_FAST=10,SOUND_CLICK=11;
+    public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_POP=5,SOUND_TURBO=6,SOUND_BOV=7,SOUND_LEAD=8,SOUND_COIN=9,SOUND_FAST=10,SOUND_CLICK=11,SOUND_CHIME=12;
     /** Rows from SOUND_VOLUME on have − and + (screenZone 1 and 2); the rest of the row puts the default back. */
     public static final int[] SOUND_MIN={10,0,0,0,0},SOUND_MAX={200,200,200,200,150},SOUND_STEP={10,10,10,10,10},SOUND_DEFAULT={70,100,100,100,80};
     /** EngineSynth.ENGINES and EXHAUSTS names, in their order. */
@@ -68,7 +68,7 @@ public final class SettingsLayout {
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
         switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
-            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_CLICK+1:1;case LANG:return LANGS.length;case DIAG:return 4;
+            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_CHIME+1:1;case LANG:return LANGS.length;case DIAG:return 4;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
     public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME||cat==PAINT?2:1;}

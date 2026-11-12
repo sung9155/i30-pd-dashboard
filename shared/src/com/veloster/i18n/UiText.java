@@ -159,6 +159,7 @@ public final class UiText {
         EN.put("공짜 주행","Free distance");
         EN.put("공회전","Idle");
         EN.put("공회전 중","Idling");
+        EN.put("과속 차임","Speed chime");
         EN.put("관성","Inertia");
         EN.put("광주","Gwangju");
         EN.put("구간 아래에서 가속하면 측정","starts when you accelerate through the range");
@@ -594,6 +595,7 @@ public final class UiText {
         EN.put("정차 후 다음 운행","Stop for next trip");
         EN.put("정차 후 출발하면 측정","starts when you pull away from a stop");
         EN.put("정차하면 트리가 켜집니다","Stop to light the tree");
+        EN.put("정한 속도를 넘는 동안 1초마다 킨콘 종소리 (AE86 같은 옛 일본차) · 엔진 사운드와 별개","A ding-dong bell every second while over the set speed (like the AE86 and other old Japanese cars) · separate from the engine sound");
         EN.put("제동","Braking");
         EN.put("제동 (ABS/ESC)","Brakes (ABS/ESC)");
         EN.put("제주","Jeju");

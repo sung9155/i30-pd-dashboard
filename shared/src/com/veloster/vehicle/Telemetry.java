@@ -16,6 +16,9 @@ public final class Telemetry {
     public static final int DPF_SINCE_KM=64,DPF_AVG_KM=65;   // km since the last regeneration the app saw end; ECU average between regenerations
     public static final int DPF_SOOT=68;
     public static final int TIRE_TEMP_FL=70,TIRE_TEMP_FR=71,TIRE_TEMP_RL=72,TIRE_TEMP_RR=73;   // tyre temperatures, °C: BCM 22 C00B, wheels in FL FR RL RR order (the order is assumed, the bytes are from a PD)
+    /** 7DCT clutch life candidates (percent, u16 / 100): TCU 22 01A6, two blocks (assumed odd, even) of [60, 1000, 3000, 3340, 0, 0, V1, V2 ...]; A = V1, B = V2. Which pair is the real remaining life is not settled (i30pd_port/DCT_WEAR.md). */
+    public static final int DCT_LIFE_A_ODD=74,DCT_LIFE_A_EVEN=75,DCT_LIFE_B_ODD=76,DCT_LIFE_B_EVEN=77;
+    public static final int DID_TCU_LIFE=0x1A6;
     public static final int EGT_CAT=69;   // diesel exhaust temperature before the oxidation catalyst (ED03 [37]); DPF_TEMP is before the DPF   // diesel soot load, g: 22 ED1D (Kia Ceed CD 2018, the PD's sibling, in OBDb)
     public static final int CLUTCH_ODD=66,CLUTCH_EVEN=67;   // 7DCT clutch temperatures: #1 odd gears (1 3 5 7), #2 even gears (2 4 6 R); TCU 22 01A4
     /** DCT clutch heat for every screen: 0 normal, 1 warm (amber), 2 hot (red, the cell fills).
@@ -34,8 +37,8 @@ public final class Telemetry {
     /** Sink key for the BCM's mode 22 DID C00B reply: four wheels of [pressure, temperature + 50, 01, 00] after a four-byte header. */
     public static final int DID_TIRE=0xC00B;
     public static final int DID_DPF2=0xE0F1;   // the DPF block a DAG3 asks (it never asks ED03)
-    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격", "DCT 홀수단 클러치 온도", "DCT 짝수단 클러치 온도", "DPF 포집량", "산화촉매 앞 배기 온도", "앞 왼쪽 타이어 온도", "앞 오른쪽 타이어 온도", "뒤 왼쪽 타이어 온도", "뒤 오른쪽 타이어 온도"};
-    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%", "km", "km", "°C", "°C", "g", "°C", "°C", "°C", "°C", "°C"};
+    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격", "DCT 홀수단 클러치 온도", "DCT 짝수단 클러치 온도", "DPF 포집량", "산화촉매 앞 배기 온도", "앞 왼쪽 타이어 온도", "앞 오른쪽 타이어 온도", "뒤 왼쪽 타이어 온도", "뒤 오른쪽 타이어 온도", "DCT 잔량 후보 A 홀수단", "DCT 잔량 후보 A 짝수단", "DCT 잔량 후보 B 홀수단", "DCT 잔량 후보 B 짝수단"};
+    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%", "km", "km", "°C", "°C", "g", "°C", "°C", "°C", "°C", "°C", "%", "%", "%", "%"};
     public static final long STALE_MS = 60000; // UI freshness threshold, not an OEM timeout.
     public static final long HISTORY_MS=300000,HISTORY_STEP_MS=250;
     private final History[] history=new History[LABELS.length];
@@ -303,6 +306,11 @@ public final class Telemetry {
             // BCM 62 C0 0B (a PD, parked after a drive: FFFF0000 AE460100 AD460100 AD420100 AD420100, pressures broadcast 33 psi):
             // four wheels of four bytes after a four-byte header, the second byte of each is the tyre temperature, raw - 50 °C
             // (0x46 -> 20, 0x42 -> 16). Wheel order FL FR RL RR is assumed; a sensor that has not reported reads FF/00 and stays unpublished.
+            // TCU 62 01 A6 (a PD, parked): two blocks 28 bytes apart at data bytes 22 and 50, each [60, 1000, 3000, 3340, 0, 0, V1, V2, ...] as BE u16;
+            // V1 / V2 read as percent after /100 are 52.29 / 48.27 and 62.53 / 63.63 (odd / even assumed). Only a reply with that header is read.
+            case DID_TCU_LIFE: if(n>=66&&u16(d,22)==60&&u16(d,24)==1000&&u16(d,50)==60&&u16(d,52)==1000){
+                put(DCT_LIFE_A_ODD,u16(d,34)/100f,u16(d,34)<=10000,now);put(DCT_LIFE_B_ODD,u16(d,36)/100f,u16(d,36)<=10000,now);
+                put(DCT_LIFE_A_EVEN,u16(d,62)/100f,u16(d,62)<=10000,now);put(DCT_LIFE_B_EVEN,u16(d,64)/100f,u16(d,64)<=10000,now);} break;
             case DID_TIRE: if(n>=20)for(int w=0;w<4;w++){int raw=d[5+4*w]&255;put(TIRE_TEMP_FL+w,raw-50f,raw>0&&raw<255,now);} break;
             case DID_CLUTCH: if(n>=33){put(CLUTCH_ODD,u16(d,29),true,now);put(CLUTCH_EVEN,u16(d,31),true,now);} break;
             // Hyundai diesel DPF block 62 ED 03 (OBDb Hyundai-i30, CC BY-SA 4.0, not yet seen on our side): data byte 36

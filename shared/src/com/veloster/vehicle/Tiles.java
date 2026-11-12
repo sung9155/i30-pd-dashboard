@@ -49,7 +49,7 @@ public final class Tiles {
         {0,32,59,36,9,42,15,16,40,41},
         {1,2,29,14,58,CLUTCH,66,67},
         {17,37,39,38,57},
-        {8,30,52,56,34,28},
+        {8,30,52,56,34,28,74,75,76,77},
         {7,3,4,5,6,11,12,33,13,27,44,CORNER_MIN_SPEED,CORNER_MAX_LAT},
         {10,43,35,22,23,24},
         {TIRES,18,19,20,21,70,71,72,73},
@@ -61,7 +61,7 @@ public final class Tiles {
         boolean diesel=p.fuel==VehicleProfile.Fuel.DIESEL,mt=p.trans==VehicleProfile.Trans.MT;
         if(s==DPF||s==EXHAUST||s>=Telemetry.DPF_DP&&s<=Telemetry.DPF_AVG_KM||s==Telemetry.DPF_SOOT||s==Telemetry.EGT_CAT)return diesel;
         if(s==Telemetry.CLUTCH)return mt;
-        if(s==CLUTCH||s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN)return !mt;
+        if(s==CLUTCH||s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN||s>=Telemetry.DCT_LIFE_A_ODD&&s<=Telemetry.DCT_LIFE_B_EVEN)return !mt;
         if(s==Telemetry.SPARK)return !diesel;
         if(Telemetry.noSource(s))return false;
         return s>=0&&s<Telemetry.LABELS.length||s>=TIRES&&s<=CORNER_MAX_LAT;
@@ -92,7 +92,7 @@ public final class Tiles {
         "SOC","BATT","STEER RATE","E-LSD","INTAKE","SELECTOR","ODO","LOAD","YAW","MODE","PARK BRK","THROTTLE","FUEL FLOW","RANGE",
         "AVG","TQ CORR","TQ FRIC","SPARK","BRK SW","STR TORQUE","DOOR L","WIPER","DOOR R","TRUNK","HOOD","TURN L","TURN R","SHIFT",
         "HEADLAMP","TAIL","HIGH BEAM","CLUTCH","FUEL","CAT","ABS LOAD","DPF ΔP","DPF TEMP","DPF REGEN","DPF TRIG","DPF LAST","DPF AVG",
-        "CLUTCH ODD","CLUTCH EVEN","DPF SOOT","EGT CAT","TIRE T FL","TIRE T FR","TIRE T RL","TIRE T RR"};
+        "CLUTCH ODD","CLUTCH EVEN","DPF SOOT","EGT CAT","TIRE T FL","TIRE T FR","TIRE T RL","TIRE T RR","LIFE A ODD","LIFE A EVEN","LIFE B ODD","LIFE B EVEN"};
     public static String caption(int s){
         switch(s){case TIRES:return "TPMS";case CLUTCH:return "CLUTCH";case DPF:return "DPF";case EXHAUST:return "EXHAUST";case CORNER_MIN_SPEED:return "BTM SPEED";case CORNER_MAX_LAT:return "PREV LAT G";}
         return s>=0&&s<CAPTION.length?CAPTION[s]:"—";

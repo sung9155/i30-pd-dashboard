@@ -53,6 +53,11 @@ public final class UiText {
         EN.put("AP 상태 13 확인. IP 주소와 iPhone의 SSID 검색을 다음으로 확인하세요.","AP state 13 confirmed. Next check the IP address and whether the iPhone sees the SSID.");
         EN.put("CH1 횡G 0.2 g/div","CH1 lat G 0.2 g/div");
         EN.put("CH2 종G 0.2 g/div","CH2 long G 0.2 g/div");
+        EN.put("DCT 잔량 후보 (확인용)","DCT life candidates (to check)");
+        EN.put("DCT 잔량 후보 A 짝수단","DCT clutch life candidate A, even gears");
+        EN.put("DCT 잔량 후보 A 홀수단","DCT clutch life candidate A, odd gears");
+        EN.put("DCT 잔량 후보 B 짝수단","DCT clutch life candidate B, even gears");
+        EN.put("DCT 잔량 후보 B 홀수단","DCT clutch life candidate B, odd gears");
         EN.put("DCT 짝수단 클러치 온도","DCT even-gear clutch temperature");
         EN.put("DCT 클러치","DCT clutch");
         EN.put("DCT 클러치 온도 (홀·짝 묶음)","DCT clutch temperatures (odd · even)");
@@ -749,6 +754,7 @@ public final class UiText {
         EN.put("현재 차량 표시 제한으로 N 계기판을 열 수 없습니다.","N Dashboard is unavailable under the current vehicle display restriction.");
         EN.put("현재: ","Now: ");
         EN.put("호출","Call");
+        EN.put("홀 · 짝, % (아직 어느 쪽인지 모름)","odd · even, % (which pair is real: unknown)");
         EN.put("홀수단","Odd");
         EN.put("화면","Screens");
         EN.put("화면 잠금 상태를 추적할 수 없어 알림만 표시합니다.","Screen lock state cannot be tracked. Only the notification is shown.");

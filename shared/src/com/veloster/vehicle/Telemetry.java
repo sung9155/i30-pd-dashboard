@@ -52,7 +52,16 @@ public final class Telemetry {
     public static float displayValue(int signal,float raw){return signal==STEERING?(raw==0?0:-raw):signal==7?raw*speedScale:raw;}
     /** String.format(Locale.US,f,x), but a value that rounds to zero loses its minus: idle boost -0.004 reads 0.00
      * (+0.00 under a '+' flag), not -0.00. */
+    /** One formatted number, kept: most numbers on screen are formatted again every frame with the value unchanged, and
+     *  String.format allocates a Formatter and several strings each time (garbage the head unit's old collector pauses for). */
+    private static final class Fmt{final String f,s;final int bits;Fmt(String f,int bits,String s){this.f=f;this.bits=bits;this.s=s;}}
+    private static final Fmt[] FMT=new Fmt[1024];   // direct-mapped; an entry is immutable, so a race only costs a miss
     public static String format(String f,float x){
+        int bits=Float.floatToIntBits(x),at=(f.hashCode()*31+bits*0x9E3779B1>>>12)&1023;Fmt e=FMT[at];
+        if(e!=null&&e.bits==bits&&(e.f==f||e.f.equals(f)))return e.s;
+        String s=format0(f,x);FMT[at]=new Fmt(f,bits,s);return s;
+    }
+    private static String format0(String f,float x){
         String s=String.format(java.util.Locale.US,f,x);
         if(s.length()<2||s.charAt(0)!='-'||s.charAt(1)!='0')return s;
         // A character scan, not a regex: this runs for most numbers on screen every frame (String.matches compiles a Pattern per call).

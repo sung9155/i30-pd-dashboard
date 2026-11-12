@@ -129,8 +129,7 @@ public final class HubActivity extends Activity {
         text(UiText.t("바로가기: ")+QuickEntryService.status(this));
         add(content,UiText.t("☆ 버튼 → 계기판"),new Runnable(){public void run(){starKey();}});
         text(UiText.t("☆ 버튼: ")+StarKey.status(this));
-        add(content,UiText.t("시동 안내 화면 건너뛰기"),new Runnable(){public void run(){consentSkip();}});
-        text(UiText.t("시동 안내 화면: ")+(ConsentSkip.enabled(this)?UiText.t("자동 확인"):UiText.t("그대로 표시")));
+        // ponytail: 시동 안내 화면 건너뛰기 hidden (did not confirm the notice in the car); consentSkip() and ConsentSkip kept to retry
         if(QuickEntryService.mode(this)==QuickEntryPolicy.OFF)
             text(UiText.t("처음 설치했다면 실행 바로가기를 설정하세요. 순정 홈에는 앱이 자동으로 추가되지 않습니다."));
         LinearLayout first=new LinearLayout(this),second=new LinearLayout(this);

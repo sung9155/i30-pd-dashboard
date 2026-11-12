@@ -10,6 +10,6 @@ public final class QuickEntryReceiver extends BroadcastReceiver {
         String action=intent==null?null:intent.getAction();
         if(Intent.ACTION_BOOT_COMPLETED.equals(action)||"android.intent.action.MY_PACKAGE_REPLACED".equals(action))
             QuickEntryService.restore(context);
-        if(Intent.ACTION_BOOT_COMPLETED.equals(action))ConsentSkip.onWake(context);
+        // consent skip hidden: ConsentSkip.onWake not sent (did not work in the car)
     }
 }

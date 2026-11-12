@@ -41,6 +41,17 @@ public final class ObdScheduleTest {
         check(!w.active()&&w.retrying()&&x.next(5000)==null&&x.next(64000)==w&&x.summary().endsWith("none retry"),"timeouts: tried again a minute later ("+x.summary()+")");
         x.done(w,64000,true);check(w.active()&&x.untilNext(64000)==2000,"an answer brings it back");
         x.skip(w,70000);check(w.misses()==0&&x.untilNext(70000)==2000,"skipped while another tester asks: no miss");
+        // a slow value (fuel level, 30 s): a miss is asked again in 5 s, an answer goes back to 30 s; never answered: 10 quick tries
+        ObdSchedule.Poll fuelP=new ObdSchedule.Poll(0x27,new byte[]{1,0x2f},0x2f,30000,0);ObdSchedule fuelS=new ObdSchedule(fuelP);
+        fuelS.done(fuelP,0,true);check(fuelS.untilNext(0)==30000,"answered: next in 30 s");
+        fuelS.done(fuelP,30000,false);check(fuelS.untilNext(30000)==5000,"missed: next in 5 s");
+        fuelS.done(fuelP,35000,false);check(fuelS.untilNext(35000)==5000,"still missing: 5 s again");
+        fuelS.done(fuelP,40000,true);check(fuelS.untilNext(40000)==30000,"answered: back to 30 s");
+        ObdSchedule.Poll fuelNever=new ObdSchedule.Poll(0x27,new byte[]{1,0x2f},0x2f,30000,0);ObdSchedule fuelNS=new ObdSchedule(fuelNever);long fuelT=0;
+        for(int i=0;i<10;i++){fuelNS.done(fuelNever,fuelT,false);check(fuelNS.untilNext(fuelT)==5000,"never answered, try "+(i+1)+": 5 s");fuelT+=5000;}
+        fuelNS.done(fuelNever,fuelT,false);check(fuelNS.untilNext(fuelT)==30000,"never answered after 10 quick tries: back to 30 s");
+        ObdSchedule.Poll loadP=new ObdSchedule.Poll(0x27,new byte[]{1,0x43},0x43,1000,0);ObdSchedule loadS=new ObdSchedule(loadP);
+        loadS.done(loadP,0,false);check(loadS.untilNext(0)==1000,"a fast value keeps its period on a miss");
         // a request that answered before (the TCU's clutch block) and then misses three: asked again in 3 s, so its values never go stale
         ObdSchedule.Poll tc=new ObdSchedule.Poll(0x26,new byte[]{0x22,1,(byte)0xA4},Telemetry.DID_CLUTCH,1000,3);ObdSchedule y=new ObdSchedule(tc);
         y.done(tc,0,true);tc.bad="none";y.done(tc,1000,false);y.done(tc,2000,false);y.done(tc,3000,false);

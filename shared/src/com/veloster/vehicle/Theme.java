@@ -8,7 +8,7 @@ import java.util.Arrays;
  * remap table. Semantic green / amber (ok / caution) are never remapped. No Android imports: host-tested.
  */
 public final class Theme {
-    public static final String[] IDS={"n","lambo","bmw","ice","mono","amber","teal","night","rose","copper","red","green","purple"};
+    public static final String[] IDS={"n","red","wine","copper","amber","lambo","green","emerald","teal","ice","bmw","night","purple","magenta","rose","mono"};   // the settings list order: N, then by hue, mono last
     public static final int SHAPE_CUT=0,SHAPE_HEX=1,SHAPE_ROUND=2;
 
     // N palette literals grouped by role (RGB only; alpha is kept from the caller).
@@ -64,6 +64,11 @@ public final class Theme {
         new Theme("red","RD",SHAPE_CUT,2,false,true,0xffffd21f,0xffffffff,new int[]{0x000000,0x080303,0x110707,0x3e1a1a,0x261111,0xfff1ee,0xaa8b86,0xff3b30,0x3d0d0a,0xff8a1f}),
         new Theme("green","GR",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x040703,0x0a1007,0x27391a,0x172412,0xf1fbe8,0x8fa384,0xa6e22e,0x22320b,0xd9e84a}),
         // Purple: a violet accent like the cabin's ambient light, magenta for the red decoration; warnings stay red.
+        // Wine: a deep red, warnings yellow with the ring like Red. Emerald: a true green between the lime and teal, clear of
+        // the semantic green (3ddc84) and ECO (6fe39a). Magenta: vivid pink-purple, between Purple and the pastel Rose.
+        new Theme("wine","WN",SHAPE_CUT,1,false,true,0xffffd21f,0xffffffff,new int[]{0x000000,0x070304,0x0f0709,0x3a1a22,0x241015,0xfbeef1,0xa88a92,0xc8365e,0x34101b,0xe07a3a}),
+        new Theme("emerald","EM",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x020705,0x07100c,0x1a3a2c,0x10241b,0xeafff5,0x80a596,0x12c48a,0x073322,0xf2c94c}),
+        new Theme("magenta","MG",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x080308,0x110811,0x3c1a3a,0x261124,0xfff0fc,0xa98aa6,0xff4fd8,0x3a0f36,0xff7a59}),
         new Theme("purple","PU",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x060409,0x0d0912,0x2e2340,0x1c1528,0xf4eeff,0x968aa8,0xb072ff,0x26143f,0xe04fd8}),
     };
     private static volatile Theme current=ALL[0];

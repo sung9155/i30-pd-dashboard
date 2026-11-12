@@ -27,7 +27,7 @@ public final class ThemeTest {
         Theme.select("n");check(Theme.current().shape==Theme.SHAPE_CUT&&!Theme.current().mStripe,"N keeps today's cut corner");
         // Red and green: true black; red warns in yellow with the ring (its accent is red), green's lime stays apart from
         // the shared semantic green and the ECO accent.
-        check(Theme.next("copper").equals("red")&&Theme.next("red").equals("green")&&Theme.next("green").equals("n"),"red and green come after copper");
+        check(Theme.next("copper").equals("red")&&Theme.next("red").equals("green")&&Theme.next("green").equals("purple")&&Theme.next("purple").equals("n"),"red, green and purple come after copper");
         Theme.select("red");Theme red=Theme.current();
         check(red.label.equals("RD")&&red.map(0xff040506)==0xff000000&&red.dangerRing,"red: label, true black, danger ring");
         check(((red.danger>>16)&0xff)>0xe0&&((red.danger>>8)&0xff)>0xb0&&(red.accent&0xffffff)!=(red.danger&0xffffff),"red: warnings are yellow, not the red accent");

@@ -76,7 +76,7 @@ public final class RaceRenderer {
     private void mediaPanel(Canvas c){
         box(c,RC,232,R,BOT,0xff0c1a20);
         // TPMS and steering give up their cells to the music panel, so keep them as a compact header line.
-        text(c,"TPMS "+fmt("%.0f",v(Telemetry.TPMS_FL))+" "+fmt("%.0f",v(Telemetry.TPMS_FR))+" "+fmt("%.0f",v(Telemetry.TPMS_RL))+" "+fmt("%.0f",v(Telemetry.TPMS_RR)),RC+12,252,11,MUTED,Paint.Align.LEFT);
+        text(c,"TPMS "+fmt("%.0f",v(Telemetry.TPMS_FL))+" "+fmt("%.0f",v(Telemetry.TPMS_FR))+" "+fmt("%.0f",v(Telemetry.TPMS_RL))+" "+fmt("%.0f",v(Telemetry.TPMS_RR))+tyreTempsLine(),RC+12,252,11,MUTED,Paint.Align.LEFT);
         text(c,"STEER "+fmt("%+.1f",v(13))+"°",R-12,252,11,MUTED,Paint.Align.RIGHT);
         box(c,RC+12,262,R-12,263,LINE);
         text(c,"♪ "+(music==null||music.source.length()==0?"MEDIA":music.source),RC+12,284,11,BLUE,Paint.Align.LEFT);
@@ -259,7 +259,15 @@ public final class RaceRenderer {
             p.setColor(T(Float.isNaN(val)?TRACK:val<TIRE_CRIT?D():val<TIRE_LOW?AMBER:Theme.current().dangerRing?WHITE:BLUE));r.set(tx,ty,tx+tw,ty+th);c.drawRoundRect(r,3,3,p);   // amber: a normal tyre must not look like a warning
             if(!Float.isNaN(val)&&val<TIRE_CRIT)ThemeShapes.ring(c,p,tx-3,ty-3,tx+tw+3,ty+th+3);
             text(c,fmt("%.0f",val),right?R-12:RC+12,ty+th-1,24,WHITE,right?Paint.Align.RIGHT:Paint.Align.LEFT);
+            float tt=v(Telemetry.TIRE_TEMP_FL+i);
+            if(!Float.isNaN(tt))text(c,fmt("%.0f",tt)+"°",right?R-12-38:RC+12+38,ty+th-1,12,MUTED,right?Paint.Align.RIGHT:Paint.Align.LEFT);   // °C of the same tyre, inside its pressure
         }
+    }
+    /** " | 20 20 16 16C" once the BCM has answered with tyre temperatures, else nothing. */
+    private String tyreTempsLine(){
+        boolean any=false;StringBuilder b=new StringBuilder(" | ");
+        for(int k=0;k<4;k++){float t=v(Telemetry.TIRE_TEMP_FL+k);if(!Float.isNaN(t))any=true;b.append(k>0?" ":"").append(Tiles.tyreTemp(t));}
+        return any?b.append("C").toString():"";
     }
     private void raceTile(Canvas c,float[] r,int sig){
         float l=r[0],t=r[1],rr=r[2],b=r[3];
@@ -274,6 +282,7 @@ public final class RaceRenderer {
                 float x=tyres?(k%2==0?l+(rr-l)*0.45f:rr-10):rr-28,y=t+(tyres?(k<2?36:56):(k==0?36:56));   // temperatures: °C after the number
                 if(!tyres)text(c,egt?(k==0?"DPF":"CAT"):k==0?"ODD":"EVEN",l+8,y,11,hot?BG:MUTED,Paint.Align.LEFT);
                 text(c,fmt("%.0f",val),x,y,17,hot?BG:lv==2?D():lv==1?AMBER:WHITE,Paint.Align.RIGHT);
+                if(tyres){float tt=v(Telemetry.TIRE_TEMP_FL+k);if(!Float.isNaN(tt))text(c,fmt("%.0f",tt)+"°",x+4,y,10,MUTED,Paint.Align.LEFT);}   // °C right after the pressure
                 if(!tyres)text(c,"°C",rr-8,y,11,hot?BG:MUTED,Paint.Align.RIGHT);
             }
             return;

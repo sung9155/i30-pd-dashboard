@@ -100,12 +100,19 @@ public final class ClusterRenderer {
         if(!Float.isNaN(frac))fill(c,l+10,b-16,l+10+(rr-l-20)*Math.max(0,Math.min(1,frac)),b-11,barCol);
         if(ring)ThemeShapes.ring(c,p,l,t,rr,b);
     }
+    /** "20 20 16 16 °C" (FL FR RL RR) in small type across a tile, once the BCM has answered; nothing before. */
+    private void tyreTempRow(Canvas c,float l,float rr,float y,int col){
+        boolean any=false;StringBuilder b=new StringBuilder();
+        for(int k=0;k<4;k++){float t=v(Telemetry.TIRE_TEMP_FL+k);if(!Float.isNaN(t))any=true;b.append(k>0?"  ":"").append(Tiles.tyreTemp(t));}
+        if(any)text(c,b.append(" °C").toString(),(l+rr)/2,y,10,col,Paint.Align.CENTER,Typeface.DEFAULT_BOLD,1,0);
+    }
     private void classicTile(Canvas c,float[] r,int sig,int hero){
         float l=r[0],t=r[1],rr=r[2],b=r[3];
         if(sig==Tiles.TIRES){   // the four tyres in one tile: FL FR over RL RR, each coloured by its own pressure
             meter(c,l,t,rr,b,"TPMS","psi","",WHITE,Float.NaN,hero,false);boolean crit=false;
             for(int k=0;k<4;k++){float val=v(Telemetry.TPMS_FL+k);int lv=Tiles.level(Telemetry.TPMS_FL+k,val);crit|=lv==2;
                 bigItalic(c,fmt("%.0f",val),k%2==0?l+(rr-l)*0.40f:rr-10,t+(k<2?62:104),28,lv==2?D():lv==1?AMBER:WHITE,Paint.Align.RIGHT);}
+            tyreTempRow(c,l,rr,b-4,WHITE);
             if(crit)ThemeShapes.ring(c,p,l,t,rr,b);
             return;
         }
@@ -143,7 +150,9 @@ public final class ClusterRenderer {
         String txt;int col=R_AMBER;
         if(sig==Tiles.TIRES){StringBuilder b=new StringBuilder();int lv=0;
             for(int k=0;k<4;k++){float val=v(Telemetry.TPMS_FL+k);lv=Math.max(lv,Tiles.level(Telemetry.TPMS_FL+k,val));b.append(k>0?" ":"").append(fmt("%.0f",val));}
-            mono(c,b.toString(),x+10,r[3]-18,24,lv==2?LCD_RED:lv==1?R_YELLOW:R_AMBER,Paint.Align.LEFT);return;}
+            mono(c,b.toString(),x+10,r[3]-18,24,lv==2?LCD_RED:lv==1?R_YELLOW:R_AMBER,Paint.Align.LEFT);
+            StringBuilder tb=new StringBuilder();boolean any=false;for(int k=0;k<4;k++){float t=v(Telemetry.TIRE_TEMP_FL+k);if(!Float.isNaN(t))any=true;tb.append(k>0?" ":"").append(Tiles.tyreTemp(t));}
+            if(any)mono(c,tb.append("C").toString(),x+10,r[3]-5,11,R_AMBER,Paint.Align.LEFT);return;}
         if(sig==Tiles.CLUTCH){float o=v(Telemetry.CLUTCH_ODD),e=v(Telemetry.CLUTCH_EVEN);int lv=Math.max(Telemetry.clutchLevel(o),Telemetry.clutchLevel(e));
             txt=fmt("%.0f",o)+"/"+fmt("%.0f",e);col=lv==2?LCD_RED:lv==1?R_YELLOW:R_AMBER;}
         else if(sig==Tiles.EXHAUST)txt=fmt("%.0f",v(Telemetry.DPF_TEMP))+"/"+fmt("%.0f",v(Telemetry.EGT_CAT));
@@ -200,6 +209,7 @@ public final class ClusterRenderer {
             fill(c,x,y,x+16,y+40,Float.isNaN(val)?R_DIM:crit?D():val<TIRE_LOW?R_AMBER:CYAN);
             if(crit)ThemeShapes.ring(c,p,x-3,y-3,x+19,y+43);
             mono(c,fmt("%.0f",val),right?780:548,y+28,22,R_AMBER,right?Paint.Align.RIGHT:Paint.Align.LEFT);
+            float tt=v(Telemetry.TIRE_TEMP_FL+i);if(!Float.isNaN(tt))mono(c,fmt("%.0f",tt)+"°",right?780:548,y+42,11,R_AMBER,right?Paint.Align.RIGHT:Paint.Align.LEFT);
         }
         // Bottom: four tiles, hold one to pick what it shows (default: last corner's lowest speed and peak G, live G, battery).
         for(int i=0;i<Tiles.RECTS[Tiles.RETRO].length;i++)retroTile(c,Tiles.RECTS[Tiles.RETRO][i],Tiles.signal(Tiles.RETRO,i,prof));
@@ -237,7 +247,8 @@ public final class ClusterRenderer {
         frame(c,12,170,262,356,0xffdddddd);caption(c,"TIRE PRESS",137,190);
         int[] ts={Telemetry.TPMS_FL,Telemetry.TPMS_FR,Telemetry.TPMS_RL,Telemetry.TPMS_RR};
         for(int i=0;i<4;i++){float val=v(ts[i]);boolean crit=!Float.isNaN(val)&&val<TIRE_CRIT;
-            wide(c,fmt("%.0f",val),i%2==0?80:194,i<2?256:330,40,crit?D():!Float.isNaN(val)&&val<TIRE_LOW?AMBER:0xffffffff);}
+            wide(c,fmt("%.0f",val),i%2==0?80:194,i<2?256:330,40,crit?D():!Float.isNaN(val)&&val<TIRE_LOW?AMBER:0xffffffff);
+            float tt=v(Telemetry.TIRE_TEMP_FL+i);if(!Float.isNaN(tt))wide(c,fmt("%.0f",tt)+"°C",i%2==0?80:194,i<2?276:350,12,0xffbbbbbb);}
         frame(c,538,170,788,356,0xffdddddd);caption(c,"COOLANT · INTAKE",663,190);
         wide(c,fmt("%.0f",v(2)),606,290,44,temp(v(2),100,110));wide(c,fmt("%.0f",v(Telemetry.INTAKE)),722,290,44,temp(v(Telemetry.INTAKE),60,80));
         float mode=v(Telemetry.DRIVE_MODE);

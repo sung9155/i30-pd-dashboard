@@ -165,6 +165,16 @@ already use). Which device the micom puts on 7A0 is not known, so the probe asks
 TPMS (0x24) and BCM (0x30), and `21 06` of TPMS. The sensors only report after the car has moved, and
 they measure the air inside the tyre at the valve, not the tread.
 
+### Tyre temperatures answered (2026-11-12)
+
+A PD answered **BCM (0x30) `22 C00B`** (23 B); the TPMS ECU (0x24) answered neither `22 C00B` nor `21 06`. The reply, parked
+after a drive, with the broadcast pressures at 33 psi each: `62 C0 0B  FFFF0000  AE460100  AD460100  AD420100  AD420100`. Read as a
+four-byte header and four wheels of `[pressure, temperature + 50, 01, 00]`: temperatures `0x46` / `0x46` / `0x42` / `0x42` = 20 / 20 /
+16 / 16 °C, pressure bytes 174 / 173 (about 5.3 counts per psi). That is neither of OBDb's two layouts. The bytes did not change over
+several minutes of driving, so the wheel order (FL FR RL RR) and the pressure scale are **assumed, not confirmed**. `Telemetry.DID_TIRE`
+decodes the temperatures (a 00 / FF byte stays unpublished) and `ObdSchedule` asks every 10 s; shown beside the pressures on the race,
+classic, retro, rally, overview and F1 screens.
+
 ## Live request schedule (2026-11-04)
 
 Everything `ObdLive` asks while driving now goes through `ObdSchedule`: each request has its own period,

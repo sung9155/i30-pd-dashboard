@@ -31,7 +31,7 @@ public final class ObdSchedule {
         public int dropAfter(){return dropAfter;}
         public int misses(){return misses;}
     }
-    static final int EMS=0x27,TCU=0x26;   // MiComDefine TP_DEVICE_*
+    static final int EMS=0x27,TCU=0x26,BCM=0x30;   // MiComDefine TP_DEVICE_*
     /** The live table. Fast: what a gauge shows moving; slow: what drifts over minutes. */
     public static ObdSchedule standard(){
         return new ObdSchedule(
@@ -44,6 +44,7 @@ public final class ObdSchedule {
             new Poll(EMS,new byte[]{0x21,0x03},Telemetry.LID_DPF,2000,3),                   // the same block over KWP (exhaust temperature); whichever answers
             new Poll(EMS,new byte[]{0x22,(byte)0xE0,(byte)0xF1},Telemetry.DID_DPF2,5000,3),   // distance since regeneration; a DAG3 asks it, so it also arrives while we listen
             new Poll(EMS,new byte[]{0x22,(byte)0xED,0x1D},Telemetry.DID_SOOT,2000,3),         // soot load g (Kia Ceed 2018 in OBDb); a petrol drops it       // Hyundai diesel DPF block (the PD diesel ignores the standard PIDs); a petrol EMS says 7F 31
+            new Poll(BCM,new byte[]{0x22,(byte)0xC0,0x0B},Telemetry.DID_TIRE,10000,3),         // tyre temperatures (the sensors report every few tens of seconds); an ECU that lacks it drops it
             pid(0x46,30000,0),pid(0x2f,30000,0),                                           // ambient, fuel level
             pid(0x0b,2000,3));                                                             // intake manifold pressure: checks the diesel boost scale (VehicleDash logs it beside the hscan byte)
     }

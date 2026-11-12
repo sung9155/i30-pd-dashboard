@@ -235,8 +235,10 @@ public final class UiText {
         EN.put("두 번 · 길고 짧게","Long then short");
         EN.put("두 음 차임","Two-tone chime");
         EN.put("뒤 오른쪽 공기압","Rear-right pressure");
+        EN.put("뒤 오른쪽 타이어 온도","Rear-right tyre temperature");
         EN.put("뒤 오른쪽 휠","Rear-right wheel");
         EN.put("뒤 왼쪽 공기압","Rear-left pressure");
+        EN.put("뒤 왼쪽 타이어 온도","Rear-left tyre temperature");
         EN.put("뒤 왼쪽 휠","Rear-left wheel");
         EN.put("뒤로","Back");
         EN.put("드래그","Drag");
@@ -429,8 +431,10 @@ public final class UiText {
         EN.put("알림음 음량","Beep volume");
         EN.put("알림음 종류","Beep sound");
         EN.put("앞 오른쪽 공기압","Front-right pressure");
+        EN.put("앞 오른쪽 타이어 온도","Front-right tyre temperature");
         EN.put("앞 오른쪽 휠","Front-right wheel");
         EN.put("앞 왼쪽 공기압","Front-left pressure");
+        EN.put("앞 왼쪽 타이어 온도","Front-left tyre temperature");
         EN.put("앞 왼쪽 휠","Front-left wheel");
         EN.put("앰버","Amber");
         EN.put("앱","Apps");

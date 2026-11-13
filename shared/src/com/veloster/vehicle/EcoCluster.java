@@ -108,7 +108,7 @@ final class EcoCluster extends ClusterKit {
         boolean known=!Float.isNaN(kmh)&&!Float.isNaN(lph),moving=known&&kmh>3,cut=moving&&lph<0.05f,idle=known&&!moving;
         int am=Theme.modeAccent(),acc=am!=0?0xff000000|am:Theme.current().accent;
         step(dt,known?kmh:0,known?lph:0,cut);
-        animating=moving||cn>0||dn>0||sn>0||pn>0;
+        animating=moving||cn>0||dn>0||sn>0||pn>0||flash>0||(coins?pend>=10:known&&lph>0.01f);   // a drip or a coin due keeps the pace steady between them
         // left
         round(c,L_L,TOP,L_R,BOT,10,PANEL);
         if(coins)tailpipe(c,cut,lph);else bottles(c,cut,lph);
@@ -264,7 +264,10 @@ final class EcoCluster extends ClusterKit {
         bottle(c,bigPath,83,272,60,112,1,1,frac(),regen()?ORG:cut?AMB:col,false);
         if(cut)leaf(c,83,154+(float)Math.sin(now/400.0)*2,16);
         int done=(int)(litres/BOTTLE_L),shown=Math.min(done,8);
-        for(int n=0;n<shown;n++){boolean sl=false;for(int k=0;k<sn;k++)if(slideN[k]==n)sl=true;if(!sl)bottle(c,bigPath,shelfX(n),shelfY(n),60,112,17/60f,36/112f,1,AMB,true);}
+        if(sn==0){if(shelfBmp==null||shelfFor!=shown){if(shelfBmp==null)shelfBmp=bitmap(SHELF_W,SHELF_H);shelfBmp.eraseColor(0);shelfFor=shown;
+                Canvas sc=new Canvas(shelfBmp);sc.translate(-SHELF_X,-SHELF_Y);for(int n=0;n<shown;n++)bottle(sc,bigPath,shelfX(n),shelfY(n),60,112,17/60f,36/112f,1,AMB,true);}
+            c.drawBitmap(shelfBmp,SHELF_X,SHELF_Y,null);}
+        else for(int n=0;n<shown;n++){boolean sl=false;for(int k=0;k<sn;k++)if(slideN[k]==n)sl=true;if(!sl)bottle(c,bigPath,shelfX(n),shelfY(n),60,112,17/60f,36/112f,1,AMB,true);}
         for(int k=0;k<sn;k++){if(slideN[k]>=8)continue;float e=slideT[k]*slideT[k]*(3-2*slideT[k]);int n=slideN[k];
             bottle(c,bigPath,83+(shelfX(n)-83)*e,272+(shelfY(n)-272)*e,60,112,1+(17/60f-1)*e,1+(36/112f-1)*e,1,AMB,true);}
         if(done>8)bold(c,"+"+(done-8),222,164,15,MUT,Paint.Align.RIGHT);
@@ -272,6 +275,7 @@ final class EcoCluster extends ClusterKit {
         text(c,done+t("개"),222,116,30,FG,Paint.Align.RIGHT,numFace());
         bold(c,"+ "+Math.round(frac()*100)+" %",222,138,16,AMB,Paint.Align.RIGHT);
     }
+    private Bitmap shelfBmp;private int shelfFor=-1;private static final int SHELF_X=134,SHELF_Y=154,SHELF_W=100,SHELF_H=124;
     private static float shelfX(int n){return 150+(n%4)*21;}
     private static float shelfY(int n){return 272-((n/4)%2)*56;}
 
@@ -375,7 +379,16 @@ final class EcoCluster extends ClusterKit {
 
     // ---- graph ----
     private LinearGradient barShade,legendShade;private final Paint gp=new Paint(1);
+    private Bitmap graphBmp;private String graphKey="";
+    /** The graph only changes when a bar is added (once a second) or the average line moves a pixel: cached in between. */
     private void graph(Canvas c){
+        float yb=G_B-12,ymax=G_B-G_T-46,avgL=km>0.05f?100*litres/km:Float.NaN;
+        String key=barHead+"/"+barN+"/"+(Float.isNaN(avgL)?-1:Math.round(Math.min(LMAX,avgL)/LMAX*ymax))+"/"+com.veloster.i18n.UiText.language();
+        if(graphBmp==null){graphBmp=bitmap((int)(R_R-L_L),(int)(G_B-G_T));graphKey="";}
+        if(!key.equals(graphKey)){graphKey=key;graphBmp.eraseColor(0);Canvas gc=new Canvas(graphBmp);gc.translate(-L_L,-G_T);drawGraph(gc);}
+        c.drawBitmap(graphBmp,L_L,G_T,null);
+    }
+    private void drawGraph(Canvas c){
         round(c,L_L,G_T,R_R,G_B,10,PANEL);outline(c,L_L,G_T,R_R,G_B,10,1,LINE);
         bold(c,t("최근 2분"),34,G_T+24,16,MUT,Paint.Align.LEFT);
         float x0=34,bw=(760-28)/(float)BARS,yb=G_B-12,ymax=G_B-G_T-46;

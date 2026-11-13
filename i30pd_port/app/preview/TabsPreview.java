@@ -93,7 +93,17 @@ public final class TabsPreview {
                 BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
                 new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
                 java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,sz),FloatPanel.defaultY(sh,n,sz));
-                FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),false);ImageIO.write(img,"png",new File(out,"x_float_"+cn[ci]+".png"));}
+                FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),false,now);ImageIO.write(img,"png",new File(out,"x_float_"+cn[ci]+".png"));}
+            {   // the three graphs, the line filled from the last 30 s of the drive (a sample every 0.5 s)
+                Telemetry hm=new Telemetry();long t0=now-30000;int from=Math.max(0,last-(int)(31000/step));
+                for(int q2=0;q2<=last;q2++){long tq=1_000_000+q2*step;feed(hm,raw.get(q2),tq);if(q2>=from&&(q2-from)%Math.max(1,(int)(500/step))==0)FloatPanel.draw(new android.graphics.Canvas(new BufferedImage(400,300,BufferedImage.TYPE_INT_ARGB).createGraphics()),FloatPanel.CARD,4,2,hm.snapshot(tq),false,tq);}
+                FloatPanel.graphs[0]=FloatPanel.LINE;FloatPanel.graphs[1]=FloatPanel.BAR;FloatPanel.graphs[2]=FloatPanel.LED;FloatPanel.graphs[3]=FloatPanel.LINE;FloatPanel.cells[3]=0;
+                for(int[] cb:new int[][]{{1,4,2},{2,4,1}}){BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
+                    new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
+                    java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(cb[0],cb[1],cb[2]),FloatPanel.defaultY(cb[0],cb[1],cb[2]));
+                    FloatPanel.draw(new android.graphics.Canvas(g2),cb[0],cb[1],cb[2],hm.snapshot(1_000_000+last*step),false,1_000_000+last*step);ImageIO.write(img,"png",new File(out,"x_float_graphs_"+(cb[0]==1?"card":"strip")+".png"));}
+                FloatPanel.cells[3]=-1;
+            }
             FloatPanel.shape=FloatPanel.CARD;FloatPanel.count=2;   // the settings shot below shows the window on, two cells
         }
         rec.setBeep(true,2,70,new int[]{0,2,-1},1);rec.setSettings(4,"auto",-1,targets);save(out,"9_settings_rpm_beep",rec,model,now,false,false);rec.setBeep(false,0,70,new int[]{-1,-1,-1},0);

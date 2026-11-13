@@ -306,12 +306,12 @@ public final class VehicleDash extends View implements Runnable {
             if(shape<0){int old=p.getInt("float_style",0);shape=old==1||old==2?FloatPanel.CARD:old==3?FloatPanel.STRIP:old==4?FloatPanel.SIDE:FloatPanel.OFF;if(old==2)size=3;}   // the first test build's single choice
             FloatPanel.shape=Math.max(FloatPanel.OFF,Math.min(FloatPanel.SIDE,shape));FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
             int n=p.getInt("float_count",4);FloatPanel.count=n==1||n==2?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);
-            for(int k=0;k<4;k++){int v=p.getInt("float_cell_"+k,-1);FloatPanel.cells[k]=v<0||v>=Telemetry.LABELS.length?-1:v;}}
+            for(int k=0;k<4;k++){int v=p.getInt("float_cell_"+k,-1);FloatPanel.cells[k]=v<0||v>=Telemetry.LABELS.length?-1:v;int g=p.getInt("float_graph_"+k,0);FloatPanel.graphs[k]=g>=0&&g<FloatPanel.GRAPH_NAMES.length?g:0;}}
         catch(ClassCastException e){FloatPanel.shape=FloatPanel.OFF;}
     }
     private static void saveFloat(android.content.SharedPreferences.Editor e){
         e.putInt("float_shape",FloatPanel.shape).putInt("float_count",FloatPanel.count).putInt("float_size",FloatPanel.size).putBoolean("float_hide_button",FloatPanel.hideButton).remove("float_style");
-        for(int k=0;k<4;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]);}
+        for(int k=0;k<4;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]).putInt("float_graph_"+k,FloatPanel.graphs[k]);}
     /** Every signal now, for the floating window (FloatService) while the dashboard is not on screen. */
     public static Telemetry.Sample[] snapshotNow(){return DATA.snapshot(SystemClock.elapsedRealtime());}
     public static boolean diesel(){return DATA.profile().fuel==VehicleProfile.Fuel.DIESEL;}
@@ -534,7 +534,9 @@ public final class VehicleDash extends View implements Runnable {
                     else if(i==SettingsLayout.FLOAT_COUNT)FloatPanel.count=FloatPanel.nextCount(FloatPanel.count);
                     else if(i==SettingsLayout.FLOAT_SIZE)FloatPanel.size=(FloatPanel.size+1)%FloatPanel.SIZES.length;
                     else if(i==SettingsLayout.FLOAT_HIDE)FloatPanel.hideButton=!FloatPanel.hideButton;
-                    else{int fc=i-SettingsLayout.FLOAT_CELL;FloatPanel.cells[fc]=FloatPanel.next(FloatPanel.cells[fc]);}
+                    else{int fc=i-SettingsLayout.FLOAT_CELL;
+                        if(SettingsLayout.screenZone(x)!=0)FloatPanel.graphs[fc]=(FloatPanel.graphs[fc]+1)%FloatPanel.GRAPH_NAMES.length;   // the graph button
+                        else FloatPanel.cells[fc]=FloatPanel.next(FloatPanel.cells[fc]);}
                     saveFloat(e);break;
                 case SettingsLayout.DIAG:
                     if(i==1){speedCalOn=!speedCalOn;e.putBoolean("speed_cal",speedCalOn);break;}

@@ -72,7 +72,7 @@ public final class FloatService extends Service implements Runnable {
             |WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);   // x / y on the whole screen, not below the status bar (it sat 56 px low)
         layout.gravity=Gravity.TOP|Gravity.LEFT;
         layout.x=prefs().getInt("float_x_"+at,FloatPanel.defaultX(shape,n,size));layout.y=prefs().getInt("float_y_"+at,FloatPanel.defaultY(shape,n,size));
-        final View v=new View(this){protected void onDraw(Canvas c){FloatPanel.draw(c,shape,n,size,VehicleDash.snapshotNow(),VehicleDash.diesel());}};
+        final View v=new View(this){protected void onDraw(Canvas c){FloatPanel.draw(c,shape,n,size,VehicleDash.snapshotNow(),VehicleDash.diesel(),android.os.SystemClock.elapsedRealtime());}};
         v.setOnTouchListener(new View.OnTouchListener(){
             float downX,downY;int startX,startY;boolean moved,held;
             final Runnable longPress=new Runnable(){public void run(){held=true;open(HUB,"com.veloster.carplayhub.HubActivity");}};

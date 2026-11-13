@@ -799,5 +799,8 @@
   "크기": "Size",
   "작게": "Small",
   "크게": "Large",
-  "아주 크게": "Extra large"
+  "아주 크게": "Extra large",
+  "선 그래프": "Line",
+  "칸 막대": "Segments",
+  "왼쪽: 보여 줄 값 · 오른쪽 버튼: 그래프 모양": "Left: the reading · right button: the graph"
 }

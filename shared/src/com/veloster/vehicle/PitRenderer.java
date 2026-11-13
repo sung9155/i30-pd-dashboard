@@ -277,7 +277,7 @@ public final class PitRenderer {
         for(int i=0;i<SettingsLayout.count(cat);i++){
             float l=SettingsLayout.left(cat,i),t=SettingsLayout.top(cat,i)-paneSc;
             if(paneScroll&&(t+h<SettingsLayout.TOP||t>SettingsLayout.BOTTOM))continue;   // scrolled out of view
-            String name,sub=null,value=null;boolean sel=false,dim=false;int swatch=0,swatchBg=0xff000000;
+            String name,sub=null,value=null,floatVal=null,floatGraph=null;boolean sel=false,dim=false;int swatch=0,swatchBg=0xff000000;
             switch(cat){
                 case SettingsLayout.SCREENS:dim=(hidden&(1<<i))!=0;name=ClusterPicker.NAMES[i];sub=dim?"미사용":"사용";break;
                 case SettingsLayout.THEME:{Theme th=Theme.of(Theme.IDS[i]);sel=th==Theme.current();name=SettingsLayout.THEME_NAMES[i];sub=th.label;swatch=th.accent;swatchBg=th.map(0xff101315);break;}
@@ -306,7 +306,8 @@ public final class PitRenderer {
                     else if(i==SettingsLayout.FLOAT_COUNT){dim=off;name="칸 수";value=FloatPanel.count+UiText.t("칸");}
                     else if(i==SettingsLayout.FLOAT_SIZE){dim=off;name="크기";value=FloatPanel.SIZE_NAMES[FloatPanel.size];}
                     else if(i==SettingsLayout.FLOAT_HIDE){sel=FloatPanel.hideButton&&!off;dim=off;name="플로팅 버튼 숨기기";sub="창이 떠 있는 동안 '내 앱'의 가장자리 버튼을 숨김 · 길게 누르면 '내 앱'";value=FloatPanel.hideButton?"켬":"끔";}
-                    else{int k=i-SettingsLayout.FLOAT_CELL,cv=FloatPanel.cells[k];dim=off||k>=FloatPanel.count;name=(k+1)+UiText.t("번 칸");value=cv<0?UiText.t("자동")+" ("+UiText.t(FloatPanel.name(FloatPanel.signal(k,profile!=null&&profile.fuel==VehicleProfile.Fuel.DIESEL)))+")":UiText.t(FloatPanel.name(cv));}
+                    else{int k=i-SettingsLayout.FLOAT_CELL,cv=FloatPanel.cells[k];dim=off||k>=FloatPanel.count;name=(k+1)+UiText.t("번 칸");sub="왼쪽: 보여 줄 값 · 오른쪽 버튼: 그래프 모양";
+                        floatVal=cv<0?UiText.t("자동")+" ("+UiText.t(FloatPanel.name(FloatPanel.signal(k,profile!=null&&profile.fuel==VehicleProfile.Fuel.DIESEL)))+")":UiText.t(FloatPanel.name(cv));floatGraph=UiText.t(FloatPanel.GRAPH_NAMES[FloatPanel.graphs[k]]);}
                     break;}
                 case SettingsLayout.SOUND:
                     if(!SettingsLayout.ENGINE_SOUND){name="엔진 사운드";dim=true;value="사용 안 함";}
@@ -349,6 +350,9 @@ public final class PitRenderer {
                 button(c,"−",SettingsLayout.upBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);
                 button(c,"+",SettingsLayout.downBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);
             }
+            if(floatGraph!=null){float bw=SettingsLayout.downBtnL()+SettingsLayout.SBTN_W-SettingsLayout.upBtnL(),by=t+(h-SettingsLayout.SBTN_W)/2;   // the cell's value, then its graph as a button
+                paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);text(c,floatVal,SettingsLayout.upBtnL()-14-paint.measureText(floatVal),t+h/2+7,18,dim?MUTED:BLUE,true);
+                button(c,floatGraph,SettingsLayout.upBtnL(),by,bw,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);}
             if(value!=null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);String v=UiText.t(value);text(c,v,l+w-20-paint.measureText(v),t+h/2+7,18,sel||(cat==SettingsLayout.MODE&&i>=SettingsLayout.MODE_FIRST||cat==SettingsLayout.SOUND||cat==SettingsLayout.RPM)&&!dim?BLUE:MUTED,true);}
         }
         if(paneScroll){c.restore();float max=SettingsLayout.maxPaneScroll(cat);

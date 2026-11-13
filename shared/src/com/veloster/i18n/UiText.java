@@ -383,6 +383,7 @@ public final class UiText {
         EN.put("서킷","Circuit");
         EN.put("서킷 선택","Choose circuit");
         EN.put("서킷까지 %s","%s to the circuit");
+        EN.put("선 그래프","Line");
         EN.put("설명 / Help","Help");
         EN.put("설정","Settings");
         EN.put("설정 복원 확인. 백업 표시 삭제 실패로 다음 실행 때 재확인 필요.","Settings restoration verified, but the backup marker could not be cleared. Check again next time.");
@@ -508,6 +509,7 @@ public final class UiText {
         EN.put("외기온","Outside");
         EN.put("왼쪽","Left");
         EN.put("왼쪽 ","Left ");
+        EN.put("왼쪽: 보여 줄 값 · 오른쪽 버튼: 그래프 모양","Left: the reading · right button: the graph");
         EN.put("요금 · 정차","Fare · stopped");
         EN.put("요금 · 주행","Fare · moving");
         EN.put("요레이트","Yaw rate");
@@ -706,6 +708,7 @@ public final class UiText {
         EN.put("카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개","Cassette screen keys: play and pause latch with a clunk, a track skip clicks · separate from the engine sound");
         EN.put("카키","Khaki");
         EN.put("칸"," cells");
+        EN.put("칸 막대","Segments");
         EN.put("칸 수","Cells");
         EN.put("켜기","Enable");
         EN.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","When enabled, reboot restores only the shortcut, not the full app screen. Drag the edge button to move it.\n\nIf overlays are denied, the notification remains. If the factory UI also hides notifications, use another entry point. Force-stop may prevent restoration until My Apps is opened again.");

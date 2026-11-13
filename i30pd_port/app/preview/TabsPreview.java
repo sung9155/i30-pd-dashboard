@@ -102,6 +102,10 @@ public final class TabsPreview {
                     new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
                     java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(cb[0],cb[1],cb[2]),FloatPanel.defaultY(cb[0],cb[1],cb[2]));
                     FloatPanel.draw(new android.graphics.Canvas(g2),cb[0],cb[1],cb[2],hm.snapshot(1_000_000+last*step),false,1_000_000+last*step);ImageIO.write(img,"png",new File(out,"x_float_graphs_"+(cb[0]==1?"card":"strip")+".png"));}
+                {   // no values yet (the car just woke): every cell the value alone, large and centred
+                    BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
+                    java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(1,4,2),FloatPanel.defaultY(1,4,2));
+                    FloatPanel.draw(new android.graphics.Canvas(g2),1,4,2,new Telemetry().snapshot(now),false,now+1);ImageIO.write(img,"png",new File(out,"x_float_graphs_empty.png"));}
                 FloatPanel.cells[3]=-1;
             }
             FloatPanel.shape=FloatPanel.CARD;FloatPanel.count=2;   // the settings shot below shows the window on, two cells

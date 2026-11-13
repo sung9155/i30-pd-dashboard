@@ -76,27 +76,34 @@ public final class FloatPanel {
         for(int i=0;i<n;i++){int sig=signal(i,diesel);float x=(i%cols)*cw,y=(i/cols)*ch;Telemetry.Sample m=q[sig];float v=m.valid?m.value:Float.NaN;
             int lv=Tiles.level(sig,v),col=lv==2?HOT:lv==1?WARM:TXT,g=graphs[i];record(i,sig,v,now);
             text(c,name(sig),x+8*k,y+17*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);
-            String unit=Telemetry.UNITS[sig],val=Tiles.text(sig,v);
-            if(g==LINE){   // the value small on the name's line, the last 30 s below it
-                float vs=17*k,uw=width(unit,10*k,Typeface.DEFAULT);
-                text(c,unit,x+cw-8*k,y+17*k,10*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);
-                text(c,val,x+cw-8*k-uw-3*k,y+18*k,vs,Float.isNaN(v)?MUT:col,Paint.Align.RIGHT,Typeface.DEFAULT_BOLD);
-                line(c,i,sig,x+8*k,y+25*k,x+cw-8*k,y+ch-7*k,k,lv);continue;}
+            String unit=Telemetry.UNITS[sig],val=Tiles.text(sig,v);float f=Tiles.fraction(sig,v);
+            if(Float.isNaN(f)||g==LINE&&!drawn(i,sig)){   // nothing to graph (no value yet, or the line has no history): the value alone, large, in the middle
+                float vw=width(val,30*k,Typeface.DEFAULT_BOLD),uw=width(unit,12*k,Typeface.DEFAULT),x0=x+(cw-(vw+3*k+uw))/2;
+                text(c,val,x0,y+ch-13*k,30*k,Float.isNaN(v)?MUT:col,Paint.Align.LEFT,Typeface.DEFAULT_BOLD);text(c,unit,x0+vw+3*k,y+ch-13*k,12*k,MUT,Paint.Align.LEFT,Typeface.DEFAULT);continue;}
+            if(g==LINE){   // the value on the name's line (the unit gives way to a long name), the last 30 s below it
+                float nw=width(name(sig),12*k,Typeface.DEFAULT_BOLD),vw=width(val,21*k,Typeface.DEFAULT_BOLD),uw=width(unit,10*k,Typeface.DEFAULT);
+                boolean fits=nw+vw+uw+26*k<=cw;float right=x+cw-8*k;
+                if(fits){text(c,unit,right,y+20*k,10*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);right-=uw+3*k;}
+                text(c,val,right,y+21*k,21*k,col,Paint.Align.RIGHT,Typeface.DEFAULT_BOLD);
+                line(c,i,sig,x+8*k,y+29*k,x+cw-8*k,y+ch-7*k,k,lv);continue;}
             float uw=width(unit,11*k,Typeface.DEFAULT);
             text(c,unit,x+cw-10*k,y+ch-15*k,11*k,MUT,Paint.Align.RIGHT,Typeface.DEFAULT);
-            text(c,val,x+cw-10*k-uw-3*k,y+ch-15*k,26*k,Float.isNaN(v)?MUT:col,Paint.Align.RIGHT,Typeface.DEFAULT_BOLD);
-            float bl=x+8*k,br=x+cw-8*k,f=Tiles.fraction(sig,v);
+            text(c,val,x+cw-10*k-uw-3*k,y+ch-15*k,26*k,col,Paint.Align.RIGHT,Typeface.DEFAULT_BOLD);
+            float bl=x+8*k,br=x+cw-8*k;
             if(g==LED){   // lit segments, the top fifth amber
                 int segs=Math.max(8,Math.round((br-bl)/(8*k)));float sw=(br-bl)/segs,bt=y+ch-11*k,bb=bt+6*k;int lit=Float.isNaN(f)?0:Math.round(Math.max(0,Math.min(1,f))*segs);
                 for(int s2=0;s2<segs;s2++){p.setColor(s2<lit?(s2>=segs*.8f?WARM:lv==2?HOT:ACC):TRACK);c.drawRect(bl+s2*sw+k,bt,bl+(s2+1)*sw-k,bb,p);}
                 continue;}
             float bt=y+ch-9*k,bb=bt+4*k;p.setColor(TRACK);r.set(bl,bt,br,bb);c.drawRoundRect(r,2*k,2*k,p);
-            if(Float.isNaN(f))continue;f=Math.max(0,Math.min(1,f));
+            f=Math.max(0,Math.min(1,f));
             float zero=sig==Telemetry.BOOST?Math.max(0,Math.min(1,Tiles.fraction(sig,0))):0,a=bl+(br-bl)*Math.min(zero,f),b=bl+(br-bl)*Math.max(zero,f);
             p.setColor(lv==2?HOT:lv==1?WARM:ACC);r.set(a,bt,Math.max(b,a+2),bb);c.drawRoundRect(r,2*k,2*k,p);
             if(zero>0){p.setColor(0x99ffffff);float z=bl+(br-bl)*zero;c.drawRect(z-.5f,bt-2*k,z+.5f,bb+2*k,p);}
         }
     }
+    /** Cell k's line graph has at least two samples with a place on the scale. */
+    private static boolean drawn(int k,int sig){int n=histN[k],ok=0;if(histSig[k]!=sig)return false;
+        for(int j=0;j<n&&ok<2;j++)if(!Float.isNaN(Tiles.fraction(sig,hist[k][(histHead[k]-n+j+HIST*2)%HIST])))ok++;return ok>=2;}
     private static final android.graphics.Path path=new android.graphics.Path();
     /** Cell k's last 30 s in the box l,t-r,b: a filled area under a line, scaled to the signal's bar range, the latest value a dot at the right. */
     private static void line(Canvas c,int k,int sig,float l,float t,float r2,float b,float s,int lv){

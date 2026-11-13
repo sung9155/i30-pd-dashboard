@@ -19,14 +19,14 @@ import com.veloster.vehicle.VehicleDash;
 /**
  * 플로팅 창: while the dashboard is not on screen (any other app: navi, home, media), keeps reading the car (its own
  * VehicleDataClient, like the activity's) and shows FloatPanel over everything. Started by DashboardActivity.onPause and
- * at boot when 설정 → 플로팅 → 플로팅 창 is on; stopped when the dashboard comes back. Redraws 4 times a second. A tap opens
+ * at boot when 설정 → 플로팅 → 플로팅 창 is on; stopped when the dashboard comes back. Redraws 20 times a second. A tap opens
  * the dashboard, a long press 내 앱, a drag moves it (remembered per shape). Steps aside while the rear camera shows. With
  * 플로팅 버튼 숨기기 on it asks 내 앱 to hide its edge button, again every 30 s while up (내 앱 brings the button back on
  * its own when that stops); on the way out it asks for the button back.
  */
 public final class FloatService extends Service implements Runnable {
     static final String HUB="com.veloster.carplayhub",HIDE_ACTION="com.veloster.carplayhub.QUICK_ENTRY_HIDE";
-    private static final long FRAME_MS=250,HIDE_REPEAT_MS=30000;
+    private static final long FRAME_MS=50,HIDE_REPEAT_MS=30000;   // 20 frames a second, like the race screen: the car sends every 40-80 ms
     private final Handler handler=new Handler();
     private VehicleDataClient client;
     private WindowManager windows;

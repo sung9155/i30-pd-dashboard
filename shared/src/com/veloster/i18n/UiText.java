@@ -71,6 +71,7 @@ public final class UiText {
         EN.put("DPF 재생 후 거리","DPF km since regeneration");
         EN.put("DPF 차압","DPF delta pressure");
         EN.put("DPF 평균 재생 간격","DPF average km between regenerations");
+        EN.put("DPF 포집","DPF soot");
         EN.put("DPF 포집량","DPF soot");
         EN.put("DiPlay 연결을 먼저 종료하세요. 시험 AP를 끄고 백업한 AP 설정과 Wi-Fi 켜짐 상태를 복원합니다.","Disconnect DiPlay first. The test AP will be turned off and the backed-up AP settings and Wi-Fi state restored.");
         EN.put("DiPlay와 iPhone에 입력","Enter in DiPlay and iPhone");
@@ -150,6 +151,7 @@ public final class UiText {
         EN.put("경유","Diesel");
         EN.put("계기판","Dashboard");
         EN.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","Open dashboard; long-press for My Apps; drag to move");
+        EN.put("계기판이 아닌 화면 위에 값 4개를 작게 띄움 · 끌어서 옮김 · 누르면 계기판","Four readings in a small window over every other screen · drag to move · tap for the dashboard");
         EN.put("계단 회전 곡선","Stepped rev curve");
         EN.put("고급유","Premium");
         EN.put("고른 값 게이지","Your chosen gauges");
@@ -313,6 +315,7 @@ public final class UiText {
         EN.put("버튼 + 알림","Button + notification");
         EN.put("버튼 위치를 갱신하지 못해 알림만 유지합니다.","Could not update the button position. Only the notification remains.");
         EN.put("번 · "," - ");
+        EN.put("번 칸"," cell");
         EN.put("범위","Range");
         EN.put("변속 권장","Shift hint");
         EN.put("변속 레버","Shift lever");
@@ -392,6 +395,7 @@ public final class UiText {
         EN.put("세션 최대","Session peaks");
         EN.put("세종","Sejong");
         EN.put("소리 반응 속도","Sound response");
+        EN.put("속도","Speed");
         EN.put("속도 GPS 보정 값 초기화","Reset the GPS speed correction");
         EN.put("속도 km/h","Speed km/h");
         EN.put("속도계가 실제보다 %.1f %% 낮게 나옴","The speedometer reads %.1f %% low");
@@ -429,6 +433,7 @@ public final class UiText {
         EN.put("실행 실패: ","Launch failed: ");
         EN.put("심야 %s시 최대 %d%%","Night %s h up to %d%%");
         EN.put("심야 할증 ","Night surcharge ");
+        EN.put("아래 띠 4칸","Bottom strip of 4");
         EN.put("아이스","Ice");
         EN.put("아이언 그레이","Iron Grey");
         EN.put("아케이드","Arcade");
@@ -485,6 +490,7 @@ public final class UiText {
         EN.put("연비·연료비","Economy · fuel cost");
         EN.put("연타 · 5번","Rapid · 5 taps");
         EN.put("영 수 증","RECEIPT");
+        EN.put("옆 세로 4칸","Side column of 4");
         EN.put("예상","PREDICTED");
         EN.put("예약","Booked");
         EN.put("오른쪽","Right");
@@ -565,6 +571,7 @@ public final class UiText {
         EN.put("자동 확인","confirmed automatically");
         EN.put("자동: 와이퍼·외기온·낮 전조등","Auto: wipers, outside temp, daytime lamps");
         EN.put("작동","Active");
+        EN.put("작은 카드 2×2","Small card 2×2");
         EN.put("잔상 3 s","3 s glow");
         EN.put("재생 중","Playing");
         EN.put("재생 중인 곡 없음","No track playing");
@@ -656,6 +663,7 @@ public final class UiText {
         EN.put("차량 속도","Vehicle speed");
         EN.put("차량 표시 상태를 확인하지 못했습니다. N 계기판 버튼으로 다시 열어주세요.","Could not confirm vehicle display status. Try the N Dashboard button again.");
         EN.put("차임 소리","Chime sound");
+        EN.put("창이 떠 있는 동안 '내 앱'의 가장자리 버튼을 숨김 · 길게 누르면 '내 앱'","While the window is up, My Apps' edge button hides · long-press the window for My Apps");
         EN.put("처리 실패: ","Operation failed: ");
         EN.put("처리 중입니다. 완료될 때까지 기다려 주세요.","Working. Please wait until this finishes.");
         EN.put("처음 설치했다면 실행 바로가기를 설정하세요. 순정 홈에는 앱이 자동으로 추가되지 않습니다.","After first installation, set up Quick entry. The factory home screen does not add this app automatically.");
@@ -702,6 +710,7 @@ public final class UiText {
         EN.put("코리아 인터내셔널 서킷","Korea International Circuit");
         EN.put("코치","Coach");
         EN.put("코퍼","Copper");
+        EN.put("큰 카드 2×2","Large card 2×2");
         EN.put("클래식","Classic");
         EN.put("클러스터","Cluster");
         EN.put("클러치","Clutch");
@@ -709,7 +718,9 @@ public final class UiText {
         EN.put("클러치 과열","Clutch overheating");
         EN.put("클러치 밟고 블립이 그 단의 목표 RPM에 맞을 때","Clutch in, the blip on that gear's target rpm");
         EN.put("클러치 온도 높음","Clutch hot");
+        EN.put("클러치 짝수","Clutch even");
         EN.put("클러치 홀 %s° · 짝 %s°","Clutch odd %s° · even %s°");
+        EN.put("클러치 홀수","Clutch odd");
         EN.put("타이어","Tyres");
         EN.put("타이어 공기압","Tire pressure");
         EN.put("타이어 공기압 (4바퀴 묶음)","Tyre pressures (all four)");
@@ -761,6 +772,9 @@ public final class UiText {
         EN.put("풀부하에서 점화가 기준선보다","Spark later than the full-load line");
         EN.put("퓨얼 컷","Fuel cut");
         EN.put("플래티넘 실버","Platinum Silver");
+        EN.put("플로팅","Floating");
+        EN.put("플로팅 버튼 숨기기","Hide the floating button");
+        EN.put("플로팅 창","Floating window");
         EN.put("하강 2음","Falling 2 tones");
         EN.put("하강 3음","Falling 3 tones");
         EN.put("한 번 더 누르면 초기화","Tap again to reset");

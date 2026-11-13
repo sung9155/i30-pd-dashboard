@@ -44,6 +44,19 @@ public final class QuickEntryService extends Service {
     private final BroadcastReceiver screen=new BroadcastReceiver(){public void onReceive(Context context,Intent intent){
         if(Intent.ACTION_SCREEN_OFF.equals(intent.getAction()))removeOverlay();else refreshOverlay();
     }};
+    /** The dashboard's floating window is up and asked for the edge button to step aside (it repeats every 30 s); the
+     *  button comes back when it says so, or by itself when HIDE_FOR passes without a repeat (the dashboard was killed). */
+    static final String HIDE_ACTION="com.veloster.carplayhub.QUICK_ENTRY_HIDE";
+    private static final long HIDE_FOR=75000;
+    private long hiddenUntil;
+    private final android.os.Handler later=new android.os.Handler();
+    private final Runnable unhide=new Runnable(){public void run(){if(SystemClockNow()>=hiddenUntil)refreshOverlay();}};
+    private static long SystemClockNow(){return android.os.SystemClock.elapsedRealtime();}
+    private final BroadcastReceiver floatWindow=new BroadcastReceiver(){public void onReceive(Context context,Intent intent){
+        if(intent.getBooleanExtra("hide",false)){hiddenUntil=SystemClockNow()+HIDE_FOR;removeOverlay();later.removeCallbacks(unhide);later.postDelayed(unhide,HIDE_FOR+500);}
+        else{hiddenUntil=0;later.removeCallbacks(unhide);refreshOverlay();}
+    }};
+    private boolean floatRegistered;
     private static SharedPreferences prefs(Context context){return context.getSharedPreferences(PREFS,Context.MODE_PRIVATE);}
     public static int mode(Context context){
         try{return QuickEntryPolicy.mode(prefs(context).getInt("mode",QuickEntryPolicy.OFF));}
@@ -102,6 +115,7 @@ public final class QuickEntryService extends Service {
             try{registerReceiver(screen,filter);registered=true;}
             catch(RuntimeException e){error(this,"화면 잠금 상태를 추적할 수 없어 알림만 표시합니다.");overlayFailed=true;}
         }
+        if(!floatRegistered){try{registerReceiver(floatWindow,new IntentFilter(HIDE_ACTION));floatRegistered=true;}catch(RuntimeException e){Log.w("VNQuickEntry","Floating window signal unavailable",e);}}
         refreshOverlay();return START_STICKY;
     }
     private Intent hubIntent(){return new Intent(this,HubActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);}
@@ -140,7 +154,7 @@ public final class QuickEntryService extends Service {
         size=Math.max(1,Math.min(Math.min(width,height),Math.round(48*metrics.density)));
     }
     private void refreshOverlay(){
-        if(overlayFailed||!unlockedScreen()){removeOverlay();return;}
+        if(overlayFailed||!unlockedScreen()||SystemClockNow()<hiddenUntil){removeOverlay();return;}
         if(button!=null)return;
         try{
             if(windows==null)throw new IllegalStateException("Window manager unavailable");
@@ -214,6 +228,7 @@ public final class QuickEntryService extends Service {
     public void onConfigurationChanged(Configuration configuration){super.onConfigurationChanged(configuration);removeOverlay();onStartCommand(null,0,0);}
     public void onDestroy(){
         removeOverlay();if(registered){try{unregisterReceiver(screen);}catch(RuntimeException ignored){}registered=false;}
+        later.removeCallbacks(unhide);if(floatRegistered){try{unregisterReceiver(floatWindow);}catch(RuntimeException ignored){}floatRegistered=false;}
         stopForeground(true);super.onDestroy();
     }
     public IBinder onBind(Intent intent){return null;}

@@ -162,7 +162,7 @@ public final class VehicleDash extends View implements Runnable {
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);soundOn=SettingsLayout.ENGINE_SOUND&&p.getBoolean("engine_sound",false);
             soundRoute=Math.max(0,Math.min(SettingsLayout.SOUND_ROUTES.length-1,p.getInt("engine_sound_route",0)));
             soundEngine=Math.max(0,Math.min(EngineSynth.engines()-1,p.getInt("engine_sound_engine",0)));
-            soundExhaust=Math.max(0,Math.min(EngineSynth.exhausts()-1,p.getInt("engine_sound_exhaust",0)));EngineSound.fast=p.getBoolean("engine_sound_fast",false);SpeedChime.kmh=p.getInt("speed_chime_kmh",0);SpeedChime.sound=Math.max(0,Math.min(SpeedChime.NAMES.length-1,p.getInt("speed_chime_sound",0)));CassetteCluster.clickSound=p.getBoolean("cassette_click",true);
+            soundExhaust=Math.max(0,Math.min(EngineSynth.exhausts()-1,p.getInt("engine_sound_exhaust",0)));EngineSound.fast=p.getBoolean("engine_sound_fast",false);SpeedChime.kmh=p.getInt("speed_chime_kmh",0);loadFloat(p);SpeedChime.sound=Math.max(0,Math.min(SpeedChime.NAMES.length-1,p.getInt("speed_chime_sound",0)));CassetteCluster.clickSound=p.getBoolean("cassette_click",true);
             for(int k=0;k<soundVals.length;k++)soundVals[k]=Math.max(SettingsLayout.SOUND_MIN[k],Math.min(SettingsLayout.SOUND_MAX[k],p.getInt(SOUND_KEYS[k],SettingsLayout.SOUND_DEFAULT[k])));}
         catch(ClassCastException e){/* Sound off for an incompatible saved value. */}
         applySound();
@@ -300,6 +300,19 @@ public final class VehicleDash extends View implements Runnable {
         if(pid==0x0b&&now-mapLogAt>=4000&&DATA.profile().fuel==VehicleProfile.Fuel.DIESEL){mapLogAt=now;android.util.Log.i("VehicleDash","OBD "+DATA.boostCheck(now));}
     }
     private static long mapLogAt;
+    /** The floating window's choices from the dashboard's preferences (pit_vehicle_ui); FloatService reads the same. */
+    public static void loadFloat(android.content.SharedPreferences p){
+        try{FloatPanel.style=Math.max(FloatPanel.OFF,Math.min(FloatPanel.SIDE,p.getInt("float_style",FloatPanel.OFF)));FloatPanel.hideButton=p.getBoolean("float_hide_button",true);
+            for(int k=0;k<4;k++){int v=p.getInt("float_cell_"+k,-1);FloatPanel.cells[k]=v<0||v>=Telemetry.LABELS.length?-1:v;}}
+        catch(ClassCastException e){FloatPanel.style=FloatPanel.OFF;}
+    }
+    private static void saveFloat(android.content.SharedPreferences.Editor e){
+        e.putInt("float_style",FloatPanel.style).putBoolean("float_hide_button",FloatPanel.hideButton);for(int k=0;k<4;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]);}
+    /** Every signal now, for the floating window (FloatService) while the dashboard is not on screen. */
+    public static Telemetry.Sample[] snapshotNow(){return DATA.snapshot(SystemClock.elapsedRealtime());}
+    public static boolean diesel(){return DATA.profile().fuel==VehicleProfile.Fuel.DIESEL;}
+    /** The rear camera is showing (PGS): the floating window steps aside. */
+    public static boolean rearCamera(){return DATA.rearCamera();}
     /** The latest valid value of a signal, NaN when there is none (the OBD poller's sports-drive burst reads rpm and pedal). */
     public static float now(int i){Telemetry.Sample x=DATA.sample(i,SystemClock.elapsedRealtime());return x.valid?x.value:Float.NaN;}
     /** A TTF from res/raw (API 17 has no font resources): copied once into the cache, then Typeface.createFromFile; null on any failure. */
@@ -511,6 +524,12 @@ public final class VehicleDash extends View implements Runnable {
                     applySound();
                     e.putBoolean("engine_sound",soundOn).putInt("engine_sound_route",soundRoute).putInt("engine_sound_engine",soundEngine).putInt("engine_sound_exhaust",soundExhaust);
                     sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);break;
+                case SettingsLayout.FLOAT:
+                    if(i==SettingsLayout.FLOAT_STYLE)FloatPanel.style=(FloatPanel.style+1)%FloatPanel.STYLE_NAMES.length;
+                    else if(FloatPanel.style==FloatPanel.OFF)break;
+                    else if(i==SettingsLayout.FLOAT_HIDE)FloatPanel.hideButton=!FloatPanel.hideButton;
+                    else{int fc=i-SettingsLayout.FLOAT_CELL;FloatPanel.cells[fc]=FloatPanel.next(FloatPanel.cells[fc]);}
+                    saveFloat(e);break;
                 case SettingsLayout.DIAG:
                     if(i==1){speedCalOn=!speedCalOn;e.putBoolean("speed_cal",speedCalOn);break;}
                     if(i==2){speedCal.reset();e.remove("speed_cal_ratio").remove("speed_cal_samples");break;}

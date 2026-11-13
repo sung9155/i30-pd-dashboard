@@ -780,5 +780,19 @@
   "기계식 종": "Mechanical bell",
   "딩": "Ding",
   "유리 톡톡": "Glass tap",
-  "전자 부저": "Electronic buzzer"
+  "전자 부저": "Electronic buzzer",
+  "플로팅": "Floating",
+  "플로팅 창": "Floating window",
+  "계기판이 아닌 화면 위에 값 4개를 작게 띄움 · 끌어서 옮김 · 누르면 계기판": "Four readings in a small window over every other screen · drag to move · tap for the dashboard",
+  "플로팅 버튼 숨기기": "Hide the floating button",
+  "창이 떠 있는 동안 '내 앱'의 가장자리 버튼을 숨김 · 길게 누르면 '내 앱'": "While the window is up, My Apps' edge button hides · long-press the window for My Apps",
+  "작은 카드 2×2": "Small card 2×2",
+  "큰 카드 2×2": "Large card 2×2",
+  "아래 띠 4칸": "Bottom strip of 4",
+  "옆 세로 4칸": "Side column of 4",
+  "번 칸": " cell",
+  "속도": "Speed",
+  "클러치 홀수": "Clutch odd",
+  "클러치 짝수": "Clutch even",
+  "DPF 포집": "DPF soot"
 }

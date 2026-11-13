@@ -20,7 +20,8 @@ public final class DashboardActivity extends Activity {
         VehicleDash.attachStandalone(this);
         client=new VehicleDataClient(this);
     }
-    protected void onResume(){super.onResume();LanguageSettings.init(this);VehicleDash.resumeStandalone(this);client.start();}
-    protected void onPause(){client.stop();VehicleDash.pauseStandalone(this);super.onPause();}
+    // the floating window (FloatService) takes over the car data while the dashboard is not on screen
+    protected void onResume(){super.onResume();FloatService.stop(this);LanguageSettings.init(this);VehicleDash.resumeStandalone(this);client.start();}
+    protected void onPause(){client.stop();VehicleDash.pauseStandalone(this);FloatService.startIfOn(this);super.onPause();}
     protected void onDestroy(){if(client!=null)client.stop();super.onDestroy();}
 }

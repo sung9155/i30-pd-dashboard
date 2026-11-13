@@ -422,6 +422,7 @@ public final class Telemetry {
             .append("/").append(seen[i]?now-times[i]:-1).append("ms/").append(sample(i,now).valid?"valid":"unknown");
         return s.toString();
     }
+    public synchronized boolean rearCamera(){return rearView==1||rearView==3;}
     public synchronized void rearView(int view) {
         rearView=view;
         if(view==1 || view==3) { valid[8]=false;changed[8]=false; }

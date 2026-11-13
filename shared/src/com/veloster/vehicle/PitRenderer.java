@@ -301,10 +301,12 @@ public final class PitRenderer {
                         dim=d<0;value=d<0?"끔":SettingsLayout.BEEP_SOUNDS[d];break;}
                     name=i==SettingsLayout.RPM_SHIFT?"변속 목표":"레드라인";
                     sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
-                case SettingsLayout.FLOAT:{boolean off=FloatPanel.style==FloatPanel.OFF;
-                    if(i==SettingsLayout.FLOAT_STYLE){sel=!off;name="플로팅 창";sub="계기판이 아닌 화면 위에 값 4개를 작게 띄움 · 끌어서 옮김 · 누르면 계기판";value=FloatPanel.STYLE_NAMES[FloatPanel.style];}
+                case SettingsLayout.FLOAT:{boolean off=FloatPanel.shape==FloatPanel.OFF;
+                    if(i==SettingsLayout.FLOAT_STYLE){sel=!off;name="플로팅 창";sub="계기판이 아닌 화면 위에 값을 작게 띄움 · 끌어서 옮김 · 누르면 계기판";value=FloatPanel.SHAPE_NAMES[FloatPanel.shape];}
+                    else if(i==SettingsLayout.FLOAT_COUNT){dim=off;name="칸 수";value=FloatPanel.count+UiText.t("칸");}
+                    else if(i==SettingsLayout.FLOAT_SIZE){dim=off;name="크기";value=FloatPanel.SIZE_NAMES[FloatPanel.size];}
                     else if(i==SettingsLayout.FLOAT_HIDE){sel=FloatPanel.hideButton&&!off;dim=off;name="플로팅 버튼 숨기기";sub="창이 떠 있는 동안 '내 앱'의 가장자리 버튼을 숨김 · 길게 누르면 '내 앱'";value=FloatPanel.hideButton?"켬":"끔";}
-                    else{int k=i-SettingsLayout.FLOAT_CELL,cv=FloatPanel.cells[k];dim=off;name=(k+1)+UiText.t("번 칸");value=cv<0?UiText.t("자동")+" ("+UiText.t(FloatPanel.name(FloatPanel.signal(k,profile!=null&&profile.fuel==VehicleProfile.Fuel.DIESEL)))+")":UiText.t(FloatPanel.name(cv));}
+                    else{int k=i-SettingsLayout.FLOAT_CELL,cv=FloatPanel.cells[k];dim=off||k>=FloatPanel.count;name=(k+1)+UiText.t("번 칸");value=cv<0?UiText.t("자동")+" ("+UiText.t(FloatPanel.name(FloatPanel.signal(k,profile!=null&&profile.fuel==VehicleProfile.Fuel.DIESEL)))+")":UiText.t(FloatPanel.name(cv));}
                     break;}
                 case SettingsLayout.SOUND:
                     if(!SettingsLayout.ENGINE_SOUND){name="엔진 사운드";dim=true;value="사용 안 함";}

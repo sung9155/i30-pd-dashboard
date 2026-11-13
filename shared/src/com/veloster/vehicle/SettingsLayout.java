@@ -6,9 +6,10 @@ package com.veloster.vehicle;
  */
 public final class SettingsLayout {
     public static final int SCREENS=0,THEME=1,PAINT=2,MODE=3,RPM=4,SOUND=5,LANG=6,DIAG=7,FLOAT=8,DONE=9;
-    /** 플로팅 pane rows: the window's shape (FloatPanel.STYLE_NAMES, cycles), whether it hides 내 앱's floating button, then
-     *  what each of its four cells shows (cycles 자동 and FloatPanel.CHOICES). */
-    public static final int FLOAT_STYLE=0,FLOAT_HIDE=1,FLOAT_CELL=2;
+    /** 플로팅 pane rows: the window's shape (FloatPanel.SHAPE_NAMES, cycles; 끔 first), how many cells (1, 2, 4), its size
+     *  (FloatPanel.SIZE_NAMES), whether it hides 내 앱's floating button, then what each cell shows (cycles 자동 and
+     *  FloatPanel.CHOICES). */
+    public static final int FLOAT_STYLE=0,FLOAT_COUNT=1,FLOAT_SIZE=2,FLOAT_HIDE=3,FLOAT_CELL=4;
     /** Not a category: the screen chooser a mode row opens (every screen, then 원래 화면), under a title line. */
     public static final int PICK=10;
     /** RPM pane rows: RPM_SHIFT/RPM_RED and RPM_BEEP_VOL have − and + at the right (screenZone 1 and 2), the rest of the

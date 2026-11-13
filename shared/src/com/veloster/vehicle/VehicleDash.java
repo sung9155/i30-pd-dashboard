@@ -302,12 +302,16 @@ public final class VehicleDash extends View implements Runnable {
     private static long mapLogAt;
     /** The floating window's choices from the dashboard's preferences (pit_vehicle_ui); FloatService reads the same. */
     public static void loadFloat(android.content.SharedPreferences p){
-        try{FloatPanel.style=Math.max(FloatPanel.OFF,Math.min(FloatPanel.SIDE,p.getInt("float_style",FloatPanel.OFF)));FloatPanel.hideButton=p.getBoolean("float_hide_button",true);
+        try{int shape=p.getInt("float_shape",-1),size=p.getInt("float_size",1);
+            if(shape<0){int old=p.getInt("float_style",0);shape=old==1||old==2?FloatPanel.CARD:old==3?FloatPanel.STRIP:old==4?FloatPanel.SIDE:FloatPanel.OFF;if(old==2)size=3;}   // the first test build's single choice
+            FloatPanel.shape=Math.max(FloatPanel.OFF,Math.min(FloatPanel.SIDE,shape));FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
+            int n=p.getInt("float_count",4);FloatPanel.count=n==1||n==2?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);
             for(int k=0;k<4;k++){int v=p.getInt("float_cell_"+k,-1);FloatPanel.cells[k]=v<0||v>=Telemetry.LABELS.length?-1:v;}}
-        catch(ClassCastException e){FloatPanel.style=FloatPanel.OFF;}
+        catch(ClassCastException e){FloatPanel.shape=FloatPanel.OFF;}
     }
     private static void saveFloat(android.content.SharedPreferences.Editor e){
-        e.putInt("float_style",FloatPanel.style).putBoolean("float_hide_button",FloatPanel.hideButton);for(int k=0;k<4;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]);}
+        e.putInt("float_shape",FloatPanel.shape).putInt("float_count",FloatPanel.count).putInt("float_size",FloatPanel.size).putBoolean("float_hide_button",FloatPanel.hideButton).remove("float_style");
+        for(int k=0;k<4;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]);}
     /** Every signal now, for the floating window (FloatService) while the dashboard is not on screen. */
     public static Telemetry.Sample[] snapshotNow(){return DATA.snapshot(SystemClock.elapsedRealtime());}
     public static boolean diesel(){return DATA.profile().fuel==VehicleProfile.Fuel.DIESEL;}
@@ -525,8 +529,10 @@ public final class VehicleDash extends View implements Runnable {
                     e.putBoolean("engine_sound",soundOn).putInt("engine_sound_route",soundRoute).putInt("engine_sound_engine",soundEngine).putInt("engine_sound_exhaust",soundExhaust);
                     sound.play(soundOn&&resumed&&getVisibility()==VISIBLE?soundRoute:-1);break;
                 case SettingsLayout.FLOAT:
-                    if(i==SettingsLayout.FLOAT_STYLE)FloatPanel.style=(FloatPanel.style+1)%FloatPanel.STYLE_NAMES.length;
-                    else if(FloatPanel.style==FloatPanel.OFF)break;
+                    if(i==SettingsLayout.FLOAT_STYLE)FloatPanel.shape=(FloatPanel.shape+1)%FloatPanel.SHAPE_NAMES.length;
+                    else if(FloatPanel.shape==FloatPanel.OFF)break;
+                    else if(i==SettingsLayout.FLOAT_COUNT)FloatPanel.count=FloatPanel.nextCount(FloatPanel.count);
+                    else if(i==SettingsLayout.FLOAT_SIZE)FloatPanel.size=(FloatPanel.size+1)%FloatPanel.SIZES.length;
                     else if(i==SettingsLayout.FLOAT_HIDE)FloatPanel.hideButton=!FloatPanel.hideButton;
                     else{int fc=i-SettingsLayout.FLOAT_CELL;FloatPanel.cells[fc]=FloatPanel.next(FloatPanel.cells[fc]);}
                     saveFloat(e);break;

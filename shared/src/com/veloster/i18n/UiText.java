@@ -151,7 +151,7 @@ public final class UiText {
         EN.put("경유","Diesel");
         EN.put("계기판","Dashboard");
         EN.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","Open dashboard; long-press for My Apps; drag to move");
-        EN.put("계기판이 아닌 화면 위에 값 4개를 작게 띄움 · 끌어서 옮김 · 누르면 계기판","Four readings in a small window over every other screen · drag to move · tap for the dashboard");
+        EN.put("계기판이 아닌 화면 위에 값을 작게 띄움 · 끌어서 옮김 · 누르면 계기판","Readings in a small window over every other screen · drag to move · tap for the dashboard");
         EN.put("계단 회전 곡선","Stepped rev curve");
         EN.put("고급유","Premium");
         EN.put("고른 값 게이지","Your chosen gauges");
@@ -433,9 +433,10 @@ public final class UiText {
         EN.put("실행 실패: ","Launch failed: ");
         EN.put("심야 %s시 최대 %d%%","Night %s h up to %d%%");
         EN.put("심야 할증 ","Night surcharge ");
-        EN.put("아래 띠 4칸","Bottom strip of 4");
+        EN.put("아래 띠","Bottom strip");
         EN.put("아이스","Ice");
         EN.put("아이언 그레이","Iron Grey");
+        EN.put("아주 크게","Extra large");
         EN.put("아케이드","Arcade");
         EN.put("안드로이드 기본 · 차에서 무음","Android default · silent in car");
         EN.put("안드로이드 기본앱","Android utilities");
@@ -490,7 +491,7 @@ public final class UiText {
         EN.put("연비·연료비","Economy · fuel cost");
         EN.put("연타 · 5번","Rapid · 5 taps");
         EN.put("영 수 증","RECEIPT");
-        EN.put("옆 세로 4칸","Side column of 4");
+        EN.put("옆 세로","Side column");
         EN.put("예상","PREDICTED");
         EN.put("예약","Booked");
         EN.put("오른쪽","Right");
@@ -570,8 +571,8 @@ public final class UiText {
         EN.put("자동 · 가장 가까운 서킷","Auto · nearest circuit");
         EN.put("자동 확인","confirmed automatically");
         EN.put("자동: 와이퍼·외기온·낮 전조등","Auto: wipers, outside temp, daytime lamps");
+        EN.put("작게","Small");
         EN.put("작동","Active");
-        EN.put("작은 카드 2×2","Small card 2×2");
         EN.put("잔상 3 s","3 s glow");
         EN.put("재생 중","Playing");
         EN.put("재생 중인 곡 없음","No track playing");
@@ -698,11 +699,14 @@ public final class UiText {
         EN.put("측정 준비를 누르세요","Tap Arm to start");
         EN.put("측정 중","timing");
         EN.put("측정 중 · 버튼","Timing");
+        EN.put("카드","Card");
         EN.put("카세트","Cassette");
         EN.put("카세트 데크","Cassette deck");
         EN.put("카세트 찰칵 소리","Cassette click sound");
         EN.put("카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개","Cassette screen keys: play and pause latch with a clunk, a track skip clicks · separate from the engine sound");
         EN.put("카키","Khaki");
+        EN.put("칸"," cells");
+        EN.put("칸 수","Cells");
         EN.put("켜기","Enable");
         EN.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","When enabled, reboot restores only the shortcut, not the full app screen. Drag the edge button to move it.\n\nIf overlays are denied, the notification remains. If the factory UI also hides notifications, use another entry point. Force-stop may prevent restoration until My Apps is opened again.");
         EN.put("켜짐 (짧게 누르면 계기판)","On (short press opens the dashboard)");
@@ -710,7 +714,8 @@ public final class UiText {
         EN.put("코리아 인터내셔널 서킷","Korea International Circuit");
         EN.put("코치","Coach");
         EN.put("코퍼","Copper");
-        EN.put("큰 카드 2×2","Large card 2×2");
+        EN.put("크게","Large");
+        EN.put("크기","Size");
         EN.put("클래식","Classic");
         EN.put("클러스터","Cluster");
         EN.put("클러치","Clutch");

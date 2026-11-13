@@ -86,12 +86,15 @@ public final class TabsPreview {
         rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<20));rec.setModeOptions(true,false);rec.setSound(true,0,0,0,SettingsLayout.SOUND_DEFAULT);
         int[] targets={ClusterPicker.F1+2,ClusterPicker.GAUGES,-1};   // SPORT set to the race page, ECO to the gauges
         for(int k=0;k<cats.length;k++){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k],rec,model,now,false,false);}
-        {   // the floating window (FloatPanel), each shape over the 개요 page standing in for another app
-            String[] fn={"","small","large","strip","side"};FloatPanel.cells[2]=-1;
-            for(int st=1;st<=4;st++){BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);java.awt.Graphics2D g=img.createGraphics();
-                new PitRenderer().draw(new android.graphics.Canvas(g),800,480,false,model,now);
-                java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(st),FloatPanel.defaultY(st));
-                FloatPanel.draw(new android.graphics.Canvas(g2),st,model.snapshot(now),false);ImageIO.write(img,"png",new File(out,"x_float_"+fn[st]+".png"));}
+        {   // the floating window (FloatPanel): shapes, cell counts and sizes over the 개요 page standing in for another app
+            int[][] combos={{1,4,1},{1,4,3},{1,2,1},{1,1,2},{2,4,1},{2,2,0},{3,4,1},{3,2,2}};
+            String[] cn={"card4","card4_xl","card2","card1_l","strip4","strip2_s","side4","side2_l"};FloatPanel.cells[2]=-1;
+            for(int ci=0;ci<combos.length;ci++){int sh=combos[ci][0],n=combos[ci][1],sz=combos[ci][2];
+                BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
+                new PitRenderer().draw(new android.graphics.Canvas(img.createGraphics()),800,480,false,model,now);
+                java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(sh,n,sz),FloatPanel.defaultY(sh,n,sz));
+                FloatPanel.draw(new android.graphics.Canvas(g2),sh,n,sz,model.snapshot(now),false);ImageIO.write(img,"png",new File(out,"x_float_"+cn[ci]+".png"));}
+            FloatPanel.shape=FloatPanel.CARD;FloatPanel.count=2;   // the settings shot below shows the window on, two cells
         }
         rec.setBeep(true,2,70,new int[]{0,2,-1},1);rec.setSettings(4,"auto",-1,targets);save(out,"9_settings_rpm_beep",rec,model,now,false,false);rec.setBeep(false,0,70,new int[]{-1,-1,-1},0);
         rec.setModeOptions(true,true);rec.setSettings(3,"auto",-1,targets);save(out,"9_settings_mode_on",rec,model,now,false,false);

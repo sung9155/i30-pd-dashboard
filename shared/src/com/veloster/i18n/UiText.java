@@ -258,8 +258,8 @@ public final class UiText {
         EN.put("딩","Ding");
         EN.put("라바 오렌지","Lava Orange");
         EN.put("람다","Lambda");
-        EN.put("람다 · 레이스 · F1 · 퍼포먼스","Lambda · Race · F1 · Performance");
-        EN.put("람다만","Lambda only");
+        EN.put("람다 · RPM · 레이스 · F1 · 퍼포먼스","Lambda · RPM · Race · F1 · Performance");
+        EN.put("람다 · RPM","Lambda · RPM");
         EN.put("람보","Lambo");
         EN.put("랠리","Rally");
         EN.put("랩 타이머","Lap timer");

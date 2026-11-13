@@ -82,16 +82,15 @@ public final class ObdLive {
     /** Replies another tester asked for that we could use (the same request as one of ours), and the kinds we could not. */
     private static volatile int passive;
     private static final java.util.Set<String> OTHER=new java.util.LinkedHashSet<String>();
-    /** The latest reply of each engine block we do not decode ("27 62 E0 F1" -> hex), and of the body / TPMS blocks (a DAG3's
-     *  BCM 22 C00B, 23 bytes, holds the tyre temperatures it shows): two ride on each status line in turn, so a record shows
-     *  them in full. */
+    /** The latest reply of each engine block we do not decode ("27 62 E0 F1" -> hex): two ride on each status line in turn,
+     *  so a record shows a DAG3's E0F1 / ED07 / ED01 (or our probe's) in full. */
     private static final java.util.Map<String,String> RAW=new java.util.LinkedHashMap<String,String>();private static int rawTurn;
     private static void keepRaw(int ecu,byte[] r){
-        if(ecu!=EMS&&ecu!=BCM&&ecu!=TPMS||r==null||r.length<4||(r[0]&255)!=0x62)return;
+        if(ecu!=EMS||r==null||r.length<4||(r[0]&255)!=0x62)return;
         int did=(r[1]&255)<<8|(r[2]&255);if(did==Telemetry.DID_DPF||did==Telemetry.DID_SOOT)return;   // decoded, and logged by dpfLog
         String k=String.format("%02X %02X %02X %02X",ecu,r[0]&255,r[1]&255,r[2]&255);StringBuilder b=new StringBuilder();
         for(int i=3;i<r.length;i++)b.append(String.format("%02X",r[i]&255));
-        synchronized(RAW){if(RAW.containsKey(k)||RAW.size()<10)RAW.put(k,b.toString());}
+        synchronized(RAW){if(RAW.containsKey(k)||RAW.size()<8)RAW.put(k,b.toString());}
     }
     /** Another tester on the engine (a DAG3 polls it nonstop and the engine then answers none of ours, 2026-11-07/08): three of
      *  its replies within 10 s start a 30 s listen-only spell, renewed while they keep coming. */

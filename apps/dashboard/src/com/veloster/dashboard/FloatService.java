@@ -68,7 +68,8 @@ public final class FloatService extends Service implements Runnable {
     private void add(final int shape,final int n,final int size){
         final int w=FloatPanel.width(shape,n,size),h=FloatPanel.height(shape,n,size);final String at=shape+"_"+n+"_"+size;
         layout=new WindowManager.LayoutParams(w,h,WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,PixelFormat.TRANSLUCENT);
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE|WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL|WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            |WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);   // x / y on the whole screen, not below the status bar (it sat 56 px low)
         layout.gravity=Gravity.TOP|Gravity.LEFT;
         layout.x=prefs().getInt("float_x_"+at,FloatPanel.defaultX(shape,n,size));layout.y=prefs().getInt("float_y_"+at,FloatPanel.defaultY(shape,n,size));
         final View v=new View(this){protected void onDraw(Canvas c){FloatPanel.draw(c,shape,n,size,VehicleDash.snapshotNow(),VehicleDash.diesel());}};

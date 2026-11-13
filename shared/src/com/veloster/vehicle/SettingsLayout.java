@@ -18,11 +18,11 @@ public final class SettingsLayout {
      *  screens with the downshift sounds (and the shift beep held while the clutch is in); RPM_DOWN1..+2 pick the sound
      *  for a blip matched one, two or three gears down (cycles 끔 and BEEP_SOUNDS). */
     public static final int RPM_SHIFT=0,RPM_RED=1,RPM_BEEP=2,RPM_BEEP_SOUND=3,RPM_BEEP_VOL=4,RPM_DOWN_SCOPE=5,RPM_DOWN1=6;
-    public static final String[] DOWN_SCOPES={"람다만","람다 · 레이스 · F1 · 퍼포먼스","모든 화면"};
-    /** Whether screen (ClusterPicker index) is in downshift-sound scope s: 람다 always, the rev-match screens (F1,
+    public static final String[] DOWN_SCOPES={"람다 · RPM","람다 · RPM · 레이스 · F1 · 퍼포먼스","모든 화면"};
+    /** Whether screen (ClusterPicker index) is in downshift-sound scope s: 람다 and RPM (its dial shows the downshift targets) always, the rev-match screens (F1,
      *  퍼포먼스, 레이스: their rpm turns green on a match too) from 1, every screen at 2. */
     public static boolean downScreen(int s,int screen){
-        return s>=2||screen==ClusterPicker.MANUAL||s==1&&screen>=ClusterPicker.F1&&screen<=ClusterPicker.F1+2;
+        return s>=2||screen==ClusterPicker.MANUAL||screen==ClusterPicker.TACHO||s==1&&screen>=ClusterPicker.F1&&screen<=ClusterPicker.F1+2;
     }
     /** Shift beep sounds, in ShiftBeep.SOUNDS order. */
     public static final String[] BEEP_SOUNDS={"삐빅","삑","상승 3음","레이스 버저","틱틱",

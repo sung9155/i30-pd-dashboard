@@ -107,6 +107,16 @@ public final class TabsPreview {
                     java.awt.Graphics2D g2=img.createGraphics();g2.translate(FloatPanel.defaultX(1,4,2),FloatPanel.defaultY(1,4,2));
                     FloatPanel.draw(new android.graphics.Canvas(g2),1,4,2,new Telemetry().snapshot(now),false,now+1);ImageIO.write(img,"png",new File(out,"x_float_graphs_empty.png"));}
                 FloatPanel.cells[3]=-1;
+                {   // FloatPanel.tick: a redraw only when the window would look different
+                    Telemetry.Sample[] e=new Telemetry().snapshot(now);int[] keep=FloatPanel.graphs.clone();java.util.Arrays.fill(FloatPanel.graphs,FloatPanel.BAR);long ft0=now+100000;
+                    FloatPanel.tick(4,1,e,false,ft0);
+                    if(FloatPanel.tick(4,1,e,false,ft0+50)||FloatPanel.tick(4,1,e,false,ft0+2000))throw new AssertionError("float tick: nothing changed, no draw");
+                    FloatPanel.graphs[0]=FloatPanel.LINE;
+                    if(!FloatPanel.tick(4,1,e,false,ft0+2050))throw new AssertionError("float tick: a graph changed, draw");
+                    if(FloatPanel.tick(4,1,e,false,ft0+2100))throw new AssertionError("float tick: same line sample, no draw");
+                    if(!FloatPanel.tick(4,1,e,false,ft0+2700))throw new AssertionError("float tick: a new line sample, draw");
+                    if(!FloatPanel.tick(4,1,model.snapshot(now),false,ft0+2750))throw new AssertionError("float tick: values changed, draw");
+                    System.arraycopy(keep,0,FloatPanel.graphs,0,4);}
             }
             FloatPanel.shape=FloatPanel.CARD;FloatPanel.count=2;   // the settings shot below shows the window on, two cells
         }

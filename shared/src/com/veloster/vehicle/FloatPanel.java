@@ -44,6 +44,18 @@ public final class FloatPanel {
         histAt[k]=now;hist[k][histHead[k]]=v;histHead[k]=(histHead[k]+1)%HIST;if(histN[k]<HIST)histN[k]++;
     }
 
+    private static int lastLook;
+    /** Every frame tick: records the line graphs and says whether the window would look different from the last tick
+     *  (text, colour, bar end to the pixel, a new line-graph sample), so an unchanged window is not drawn again. */
+    public static boolean tick(int n,int size,Telemetry.Sample[] q,boolean diesel,long now){
+        int h=17;
+        for(int i=0;i<n;i++){int sig=signal(i,diesel);Telemetry.Sample m=q[sig];float v=m.valid?m.value:Float.NaN,f=Tiles.fraction(sig,v);record(i,sig,v,now);
+            h=h*31+sig;h=h*31+Tiles.text(sig,v).hashCode();h=h*31+Tiles.level(sig,v);h=h*31+graphs[i];
+            h=h*31+(Float.isNaN(f)?-1:Math.round(Math.max(0,Math.min(1,f))*cellW(size)));
+            if(graphs[i]==LINE)h=h*31+histHead[i]*64+histN[i];}
+        boolean changed=h!=lastLook;lastLook=h;return changed;
+    }
+
     private FloatPanel(){}
     /** Columns of a shape with n cells: a card is 2 wide from 2 cells, the strip one row, the side one column. */
     public static int cols(int shape,int n){return shape==STRIP?n:shape==SIDE?1:Math.min(2,n);}

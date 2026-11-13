@@ -17,9 +17,9 @@ import com.veloster.vehicle.FloatPanel;
 import com.veloster.vehicle.VehicleDash;
 
 /**
- * 플로팅 창: while the dashboard is not on screen (any other app: navi, home, media), keeps reading the car (its own
- * VehicleDataClient, like the activity's) and shows FloatPanel over everything. Started by DashboardActivity.onPause and
- * at boot when 설정 → 플로팅 → 플로팅 창 is on; stopped when the dashboard comes back. Redraws 20 times a second. A tap opens
+ * 플로팅 창: while the dashboard is not on screen (any other app: navi, home, media), keeps reading the car (the
+ * VehicleDataClient it shares with the activity) and shows FloatPanel over everything. Started by DashboardActivity.onPause and
+ * at boot when 설정 → 플로팅 → 플로팅 창 is on; stopped when the dashboard comes back. Looks 20 times a second, draws when something changed. A tap opens
  * the dashboard, a long press 내 앱, a drag moves it (remembered per shape, cell count and size). Steps aside while the rear camera shows. With
  * 플로팅 버튼 숨기기 on it asks 내 앱 to hide its edge button, again every 30 s while up (내 앱 brings the button back on
  * its own when that stops); on the way out it asks for the button back.
@@ -38,20 +38,23 @@ public final class FloatService extends Service implements Runnable {
     /** Starts the window if it is switched on (the dashboard just left the screen, or the head unit booted). */
     static void startIfOn(Context c){
         VehicleDash.loadFloat(c.getSharedPreferences("pit_vehicle_ui",0));
-        if(FloatPanel.shape!=FloatPanel.OFF)try{c.startService(new Intent(c,FloatService.class));}catch(RuntimeException e){android.util.Log.w("VehicleDash","Floating window not started",e);}
+        if(DashboardActivity.resumed)return;   // boot's broadcast can come after the dashboard is already up
+        if(FloatPanel.shape!=FloatPanel.OFF)try{wanted=c.startService(new Intent(c,FloatService.class))!=null;}catch(RuntimeException e){android.util.Log.w("VehicleDash","Floating window not started",e);}
     }
-    static void stop(Context c){try{c.stopService(new Intent(c,FloatService.class));}catch(RuntimeException ignored){/* not running */}}
+    /** The service is starting or up: it holds the shared car data client, so the dashboard leaves it running on its way out. */
+    static volatile boolean wanted;
+    static void stop(Context c){wanted=false;try{c.stopService(new Intent(c,FloatService.class));}catch(RuntimeException ignored){/* not running */}}
 
     public IBinder onBind(Intent intent){return null;}
     public void onCreate(){
         super.onCreate();
         windows=(WindowManager)getSystemService(Context.WINDOW_SERVICE);
-        client=new VehicleDataClient(this);client.start();
+        wanted=true;client=VehicleDataClient.shared(this);client.start();   // already running when the dashboard handed it over: no gap, values kept
         handler.post(this);
     }
     public int onStartCommand(Intent intent,int flags,int startId){
         VehicleDash.loadFloat(prefs());
-        if(FloatPanel.shape==FloatPanel.OFF){stopSelf();return START_NOT_STICKY;}
+        if(FloatPanel.shape==FloatPanel.OFF||DashboardActivity.resumed){stopSelf();return START_NOT_STICKY;}   // also when it is restarted with the dashboard up
         return START_STICKY;
     }
     private SharedPreferences prefs(){return getSharedPreferences("pit_vehicle_ui",0);}
@@ -59,7 +62,9 @@ public final class FloatService extends Service implements Runnable {
     public void run(){
         int want=VehicleDash.rearCamera()||FloatPanel.shape==FloatPanel.OFF?-1:FloatPanel.shape*100+FloatPanel.count*10+FloatPanel.size;
         if(want!=shown){remove();if(want>=0)add(FloatPanel.shape,FloatPanel.count,FloatPanel.size);}
-        if(panel!=null){panel.invalidate();
+        boolean changed=FloatPanel.shape!=FloatPanel.OFF&&FloatPanel.tick(FloatPanel.count,FloatPanel.size,VehicleDash.floatSamples(FloatPanel.count),VehicleDash.diesel(),android.os.SystemClock.elapsedRealtime());
+        VehicleDash.chimeTick();
+        if(panel!=null){if(changed)panel.invalidate();   // drawn only when it would look different: nothing to composite over the navi at a steady reading
             long now=android.os.SystemClock.elapsedRealtime();
             if(FloatPanel.hideButton&&(!hideSent||now-hideSentAt>=HIDE_REPEAT_MS)){hide(true);hideSentAt=now;}
             else if(!FloatPanel.hideButton&&hideSent)hide(false);}
@@ -72,7 +77,7 @@ public final class FloatService extends Service implements Runnable {
             |WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,PixelFormat.TRANSLUCENT);   // x / y on the whole screen, not below the status bar (it sat 56 px low)
         layout.gravity=Gravity.TOP|Gravity.LEFT;
         layout.x=prefs().getInt("float_x_"+at,FloatPanel.defaultX(shape,n,size));layout.y=prefs().getInt("float_y_"+at,FloatPanel.defaultY(shape,n,size));
-        final View v=new View(this){protected void onDraw(Canvas c){FloatPanel.draw(c,shape,n,size,VehicleDash.snapshotNow(),VehicleDash.diesel(),android.os.SystemClock.elapsedRealtime());}};
+        final View v=new View(this){protected void onDraw(Canvas c){FloatPanel.draw(c,shape,n,size,VehicleDash.floatSamples(n),VehicleDash.diesel(),android.os.SystemClock.elapsedRealtime());}};
         v.setOnTouchListener(new View.OnTouchListener(){
             float downX,downY;int startX,startY;boolean moved,held;
             final Runnable longPress=new Runnable(){public void run(){held=true;open(HUB,"com.veloster.carplayhub.HubActivity");}};
@@ -112,7 +117,7 @@ public final class FloatService extends Service implements Runnable {
     }
     public void onDestroy(){
         handler.removeCallbacks(this);remove();
-        if(client!=null){client.stop();client=null;}
+        wanted=false;if(client!=null){if(!DashboardActivity.resumed)client.stop();client=null;}
         super.onDestroy();
     }
 }

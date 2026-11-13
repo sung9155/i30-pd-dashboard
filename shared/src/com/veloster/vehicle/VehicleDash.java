@@ -314,6 +314,17 @@ public final class VehicleDash extends View implements Runnable {
         for(int k=0;k<4;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]).putInt("float_graph_"+k,FloatPanel.graphs[k]);}
     /** Every signal now, for the floating window (FloatService) while the dashboard is not on screen. */
     public static Telemetry.Sample[] snapshotNow(){return DATA.snapshot(SystemClock.elapsedRealtime());}
+    private static final Telemetry.Sample[] FLOAT_Q=new Telemetry.Sample[Telemetry.LABELS.length];
+    /** Only the signals the floating window's n cells show, in an array indexed by signal that is reused (main thread only). */
+    public static Telemetry.Sample[] floatSamples(int n){long now=SystemClock.elapsedRealtime();boolean diesel=diesel();
+        for(int k=0;k<n;k++){int sig=FloatPanel.signal(k,diesel);FLOAT_Q[sig]=DATA.sample(sig,now);}return FLOAT_Q;}
+    /** 과속 차임 while the floating window is up (the dashboard's own frame does not run then). Needs the dashboard to have
+     *  been opened once since boot: the sound path belongs to its view. */
+    public static void chimeTick(){
+        VehicleDash d=current.get();if(d==null||d.beep==null||SpeedChime.kmh<=0)return;
+        long now=SystemClock.elapsedRealtime();Telemetry.Sample sp=DATA.sample(7,now);
+        if(d.chime.due(sp.valid?sp.value:Float.NaN,now)&&d.beep.playChime(d.soundOn&&d.soundRoute==0?d.sound:null,SpeedChime.sound,d.beepVol/100f))d.chime.rang(now);
+    }
     public static boolean diesel(){return DATA.profile().fuel==VehicleProfile.Fuel.DIESEL;}
     /** The rear camera is showing (PGS): the floating window steps aside. */
     public static boolean rearCamera(){return DATA.rearCamera();}

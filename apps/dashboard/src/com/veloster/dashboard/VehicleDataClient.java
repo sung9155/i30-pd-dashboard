@@ -31,7 +31,10 @@ final class VehicleDataClient implements Runnable {
     private VehicleInfoListener vlistener;
     private BCMPowerListener plistener;
     private PgsStatusListener rlistener;
-    VehicleDataClient(Context context){this.context=context;}
+    private VehicleDataClient(Context context){this.context=context;}
+    private static VehicleDataClient shared;
+    /** The app's one client: the dashboard and the floating window hand it to each other without a stop in between. */
+    static synchronized VehicleDataClient shared(Context c){if(shared==null)shared=new VehicleDataClient(c.getApplicationContext());return shared;}
     /** Retry delay for services that are missing; doubles up to 30 s (the BCM service may not exist on the PD). */
     private long retryMs=2000;
     synchronized void start(){if(active)return;active=true;generation++;ignition=false;VehicleDash.ignition(false);retryMs=2000;run();}

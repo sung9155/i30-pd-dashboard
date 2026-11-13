@@ -18,10 +18,12 @@ public final class DashboardActivity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(new FrameLayout(this));
         VehicleDash.attachStandalone(this);
-        client=new VehicleDataClient(this);
+        client=VehicleDataClient.shared(this);
     }
-    // the floating window (FloatService) takes over the car data while the dashboard is not on screen
-    protected void onResume(){super.onResume();FloatService.stop(this);LanguageSettings.init(this);VehicleDash.resumeStandalone(this);client.start();}
-    protected void onPause(){client.stop();VehicleDash.pauseStandalone(this);FloatService.startIfOn(this);super.onPause();}
-    protected void onDestroy(){if(client!=null)client.stop();super.onDestroy();}
+    // one car data client for the app (VehicleDataClient.shared): the floating window (FloatService) keeps it running while
+    // the dashboard is not on screen, so nothing is cleared or asked twice on the way in or out
+    static volatile boolean resumed;
+    protected void onResume(){super.onResume();resumed=true;FloatService.stop(this);LanguageSettings.init(this);VehicleDash.resumeStandalone(this);client.start();}
+    protected void onPause(){resumed=false;VehicleDash.pauseStandalone(this);FloatService.startIfOn(this);if(!FloatService.wanted)client.stop();super.onPause();}
+    protected void onDestroy(){if(client!=null&&!FloatService.wanted&&!resumed)client.stop();super.onDestroy();}
 }

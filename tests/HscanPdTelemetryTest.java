@@ -342,7 +342,7 @@ public final class HscanPdTelemetryTest {
         t.obd(0x3c,0x0b,0x54,3402);check(Math.abs(t.sample(Telemetry.CAT_TEMP,3402).value-250f)<1f,"catalyst temp ~250 C");
         t.obd(0x43,0x00,0x31,3403);check(Math.abs(t.sample(Telemetry.ABS_LOAD,3403).value-19.2f)<0.5f,"absolute load ~19%");
         t.obd(0x0b,new byte[]{0x67},3404);check(t.boostCheck(3404).startsWith("MAP 103 kPa"),"MAP 01 0B kept for the boost-scale line: "+t.boostCheck(3404));
-        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.ENGINE_DRIVE+1,"label/unit tables cover the added signals");
+        check(Telemetry.LABELS.length==Telemetry.UNITS.length&&Telemetry.LABELS.length==Telemetry.OIL_ECU+1,"label/unit tables cover the added signals");
         // tm_hscan_service read-only values (telematics): engine warning lamp and the run / idle / drive seconds.
         t.tm(Telemetry.MIL,1,true,3420);check("WARN".equals(Telemetry.label(Telemetry.MIL,t.sample(Telemetry.MIL,3420).value)),"MIL WARN when lit");
         check("OK".equals(Telemetry.label(Telemetry.MIL,0))&&com.veloster.vehicle.Tiles.level(Telemetry.MIL,1)==2&&com.veloster.vehicle.Tiles.level(Telemetry.MIL,0)==0,"MIL OK / red when lit");
@@ -429,6 +429,14 @@ public final class HscanPdTelemetryTest {
             hv.hscanPd(0xc7,0x20,b(0,0x11,22,22,22,23),4200);check(Math.abs(hv.sample(Telemetry.TPMS_FL,4200).value-22*1.4503774f)<0.01f,"TPMS in 0.1 bar steps (22 -> 31.9 psi)");
             hv.hscanPd(0xc7,0x20,b(0,0x00,0,0,255,255),4300);check(!hv.sample(Telemetry.TPMS_FL,4300).valid,"TPMS status 0 = not yet reporting");
         }
+        // ECU oil temperature candidate (22 E001 data byte 34, x0.7435 - 49.2) and the N-mode oil / coolant reply on a PD.
+        Telemetry o=new Telemetry();byte[] e=new byte[48];e[34]=(byte)0xBC;o.obd(Telemetry.DID_E001,e,5000);
+        equal(o,Telemetry.OIL_ECU,90.58f,5000);
+        e[34]=0;o.obd(Telemetry.DID_E001,e,5001);check(!o.sample(Telemetry.OIL_ECU,5001).valid,"E001 oil byte 00 withheld");
+        o.obd(Telemetry.DID_E001,new byte[20],5002);check(!o.sample(Telemetry.OIL_ECU,5002).valid,"short E001 reply ignored");
+        o.temperatures(b(0xa0,0xa0),6000);equal(o,1,80f,6000);   // no PD coolant yet: the N-mode reply is used (Veloster N)
+        o.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),7000);float cool=o.sample(2,7000).value;
+        o.temperatures(b(0x00,0xa2),7100);equal(o,2,cool,7100);check(o.sample(1,7100).value>0,"PD: N-mode oil 00 does not overwrite with -40");
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
     private static byte[] hex(String h){String[] p=h.trim().split(" ");byte[] b=new byte[p.length];for(int i=0;i<p.length;i++)b[i]=(byte)Integer.parseInt(p[i],16);return b;}

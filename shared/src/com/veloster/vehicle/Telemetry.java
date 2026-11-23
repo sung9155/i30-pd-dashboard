@@ -20,6 +20,10 @@ public final class Telemetry {
     public static final int DCT_LIFE_A_ODD=74,DCT_LIFE_A_EVEN=75,DCT_LIFE_B_ODD=76,DCT_LIFE_B_EVEN=77;
     /** tm_hscan_service (telematics, read only): engine warning lamp and the run / idle / drive seconds since start. */
     public static final int MIL=78,ENGINE_RUNTIME=79,ENGINE_IDLE=80,ENGINE_DRIVE=81;
+    /** Engine oil temperature from the engine ECU (22 E001), a candidate under test: the Gamma 1.6 T-GDI has no oil sensor,
+     *  so this is the ECU's own figure, shown apart from OIL/CLT (coolant) until one drive settles it. */
+    public static final int OIL_ECU=82;
+    public static final int DID_E001=0xE001;
     public static final int DID_TCU_LIFE=0x1A6;
     public static final int EGT_CAT=69;   // diesel exhaust temperature before the oxidation catalyst (ED03 [37]); DPF_TEMP is before the DPF   // diesel soot load, g: 22 ED1D (Kia Ceed CD 2018, the PD's sibling, in OBDb)
     public static final int CLUTCH_ODD=66,CLUTCH_EVEN=67;   // 7DCT clutch temperatures: #1 odd gears (1 3 5 7), #2 even gears (2 4 6 R); TCU 22 01A4
@@ -39,8 +43,8 @@ public final class Telemetry {
     /** Sink key for the BCM's mode 22 DID C00B reply: four wheels of [pressure, temperature + 50, 01, 00] after a four-byte header. */
     public static final int DID_TIRE=0xC00B;
     public static final int DID_DPF2=0xE0F1;   // the DPF block a DAG3 asks (it never asks ED03)
-    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격", "DCT 홀수단 클러치 온도", "DCT 짝수단 클러치 온도", "DPF 포집량", "산화촉매 앞 배기 온도", "앞 왼쪽 타이어 온도", "앞 오른쪽 타이어 온도", "뒤 왼쪽 타이어 온도", "뒤 오른쪽 타이어 온도", "DCT 잔량 후보 A 홀수단", "DCT 잔량 후보 A 짝수단", "DCT 잔량 후보 B 홀수단", "DCT 잔량 후보 B 짝수단", "엔진 경고등", "엔진 가동 시간", "공회전 시간", "주행 시간"};
-    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%", "km", "km", "°C", "°C", "g", "°C", "°C", "°C", "°C", "°C", "%", "%", "%", "%", "", "", "", ""};
+    public static final String[] LABELS = {"엔진 회전수", "유온 (냉각수 대체)", "냉각수 온도", "앞 왼쪽 휠", "앞 오른쪽 휠", "뒤 왼쪽 휠", "뒤 오른쪽 휠", "차량 속도", "EMS 기어", "가속 페달", "브레이크 압력", "횡가속", "종가속", "조향각", "외기 온도", "출력 (계산)", "토크 (계산)", "부스트 (계산)", "앞 왼쪽 공기압", "앞 오른쪽 공기압", "뒤 왼쪽 공기압", "뒤 오른쪽 공기압", "TCS", "ESC", "ABS", "배터리 SOC", "배터리 전압", "조향 속도", "e-LSD 수치", "흡기 온도", "변속 레버", "주행거리", "엔진 부하", "요레이트", "주행 모드", "주차 브레이크", "스로틀 개도", "순간 연료소모", "주행가능거리", "평균 연비", "보정 토크", "마찰 토크", "점화 시기", "브레이크 스위치", "조향 토크", "운전석 문", "와이퍼", "조수석 문", "트렁크", "후드", "좌 방향지시등", "우 방향지시등", "변속 권장", "전조등", "미등", "상향등", "클러치 (수동)", "연료 잔량", "촉매 온도", "절대 부하", "DPF 차압", "DPF 온도", "DPF 재생", "DPF 재생 트리거", "DPF 재생 후 거리", "DPF 평균 재생 간격", "DCT 홀수단 클러치 온도", "DCT 짝수단 클러치 온도", "DPF 포집량", "산화촉매 앞 배기 온도", "앞 왼쪽 타이어 온도", "앞 오른쪽 타이어 온도", "뒤 왼쪽 타이어 온도", "뒤 오른쪽 타이어 온도", "DCT 잔량 후보 A 홀수단", "DCT 잔량 후보 A 짝수단", "DCT 잔량 후보 B 홀수단", "DCT 잔량 후보 B 짝수단", "엔진 경고등", "엔진 가동 시간", "공회전 시간", "주행 시간", "유온 (ECU 후보)"};
+    public static final String[] UNITS = {"rpm", "°C", "°C", "km/h", "km/h", "km/h", "km/h", "km/h", "", "%", "bar", "G", "G", "°", "°C", "PS", "N·m", "bar", "psi", "psi", "psi", "psi", "", "", "", "%", "V", "°/s", "", "°C", "", "km", "%", "°/s", "", "", "%", "L/h", "km", "km/L", "%", "%", "°", "", "Nm", "", "", "", "", "", "", "", "", "", "", "", "", "%", "°C", "%", "kPa", "°C", "", "%", "km", "km", "°C", "°C", "g", "°C", "°C", "°C", "°C", "°C", "%", "%", "%", "%", "", "", "", "", "°C"};
     public static final long STALE_MS = 60000; // UI freshness threshold, not an OEM timeout.
     public static final long HISTORY_MS=300000,HISTORY_STEP_MS=250;
     private final History[] history=new History[LABELS.length];
@@ -325,6 +329,10 @@ public final class Telemetry {
                 put(DCT_LIFE_A_ODD,u16(d,34)/100f,u16(d,34)<=10000,now);put(DCT_LIFE_B_ODD,u16(d,36)/100f,u16(d,36)<=10000,now);
                 put(DCT_LIFE_A_EVEN,u16(d,62)/100f,u16(d,62)<=10000,now);put(DCT_LIFE_B_EVEN,u16(d,64)/100f,u16(d,64)<=10000,now);} break;
             case DID_TIRE: if(n>=20)for(int w=0;w<4;w++){int raw=d[5+4*w]&255;put(TIRE_TEMP_FL+(w<2?w:5-w),raw-50f,raw>0&&raw<255,now);} break;   // bytes FL FR RR RL
+            // EMS 62 E0 01 (51 B), whole-reply byte [37] = data byte 34: the oil temperature the Veloster N / i30 N gauges read
+            // (x0.7435 - 49.2 °C; CN7 x0.75 - 48). Ours climbed 0x78 -> 0xBC over 15 min from cold (40 -> 91 °C, i30pd_port/OBD_PROBE.md),
+            // so it moves like an oil temperature, but no coolant or gauge reading of that drive anchors it yet.
+            case DID_E001: if(n>=35){int raw=d[34]&255;put(OIL_ECU,raw*0.7435f-49.2f,raw>0&&raw<255,now);} break;
             case DID_CLUTCH: if(n>=33){put(CLUTCH_ODD,u16(d,29),true,now);put(CLUTCH_EVEN,u16(d,31),true,now);} break;
             // Hyundai diesel DPF block 62 ED 03 (OBDb Hyundai-i30, CC BY-SA 4.0, not yet seen on our side): data byte 36
             // differential pressure x4.31373 (hPa, so x0.431373 kPa), 38 exhaust temperature upstream of the DPF x4.7098 + 99 °C,
@@ -576,7 +584,7 @@ public final class Telemetry {
             // 63.8 -> 85.5 C over 15 min, 80-85 C driving (this byte was earlier misread as door lock).
             // PV_AV_CAN @48|8 *0.3906 % accelerator pedal: 0-58 % driving, r=0.90 with EMS11 TQI.
             int coolant=b[1]&255,pedal=b[6]&255;
-            put(2,coolant*0.75f-48,coolant>0&&coolant<255,now);
+            put(2,coolant*0.75f-48,coolant>0&&coolant<255,now);pdCoolantAt=now;
             // BRAKE_ACT @32|2: 1 released, 2 pressed. The engine ECU's brake-light switch, on every PD: our car 99.7 % with
             // TCS13 DriverBraking over a 10-min drive; a diesel DCT (three drives 2026-11-05, DriverBraking always 0)
             // 100 % of samples over 5 bar and 96-97 % of those under 2 bar.
@@ -765,7 +773,12 @@ public final class Telemetry {
         }
         if(!ptValid)invalidateComputed(now);
     }
+    /** When EMS12 last gave the coolant (a PD): the stock N-mode oil / coolant reply is then left out. */
+    private long pdCoolantAt=Long.MIN_VALUE/2;
     public synchronized void temperatures(byte[] b, long now) {
+        // On a PD it is no reading: oil byte 00 (no sensor) would show -40 °C and its coolant byte does not match EMS12
+        // (0xA2 = 74 °C by the formula below while EMS12 read ~98). It only arrives when an N-mode app asks for it.
+        if(now-pdCoolantAt<3000)return;
         for(int i=0;i<2;i++) {
             int raw=b!=null && b.length>=2 ? b[i]&255 : 255;
             // OEM onOilCoolantTemperatureBitMasking explicitly rejects 0xff.

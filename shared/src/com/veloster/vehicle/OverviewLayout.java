@@ -2,7 +2,7 @@ package com.veloster.vehicle;
 
 /** Fixed overview geometry and per-signal display choices, separate from gauges. */
 public final class OverviewLayout {
-    private static final int[] ORDER={7,0,8,9,10,2,29,14,13,17,11,12,18,22,26,27,Telemetry.CLUTCH_ODD,Telemetry.DCT_LIFE_A_ODD};   // power, torque (15, 16) and battery SOC (25) left out: no source on an i30 PD
+    private static final int[] ORDER={7,0,8,9,10,2,Telemetry.OIL_ECU,29,14,13,17,11,12,18,22,26,27,Telemetry.CLUTCH_ODD,Telemetry.DCT_LIFE_A_ODD};   // power, torque (15, 16) and battery SOC (25) left out: no source on an i30 PD
     private final int[] styles=new int[Telemetry.LABELS.length];
     private static void check(int i){if(i<0||i>=Telemetry.LABELS.length)throw new IllegalArgumentException("overview signal");}
     public OverviewLayout(){for(int i=0;i<styles.length;i++)styles[i]=2;}

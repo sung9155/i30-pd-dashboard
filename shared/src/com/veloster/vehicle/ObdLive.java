@@ -153,7 +153,7 @@ public final class ObdLive {
                 if(p.dropAfter()>0&&p.ecu==EMS)dpfLog(p,r,ok);   // the diesel-only PIDs
                 if(!ok){StringBuilder x=new StringBuilder();if(r!=null)for(int i=0;i<Math.min(3,r.length);i++)x.append(i==0?"":" ").append(String.format("%02X",r[i]&255));p.bad=r==null?"none":x.toString();}
                 sched.done(p,System.currentTimeMillis(),ok);
-                if(ok){byte[] d=new byte[r.length-p.req.length];System.arraycopy(r,p.req.length,d,0,d.length);sink.value(p.key,d);}
+                if(ok){byte[] d=new byte[r.length-p.req.length];System.arraycopy(r,p.req.length,d,0,d.length);sink.value(p.key,d);if(p.key==Telemetry.DID_E001)ecuTempLog(r);}
                 nap(ObdSchedule.gapAfter(r==null?0:r.length));
             }
         }finally{try{call(svc,2,listener,token);}catch(Throwable e){}}
@@ -168,6 +168,20 @@ public final class ObdLive {
         android.util.Log.i("VehicleDash","OBD "+String.format("%02X",p.key)+(ok?": "+b.toString().trim():": "+(r==null?"no reply":b.toString().trim())+" "+p.dropAfter()+"x, dropped"));
     }
     static boolean positive(byte[] r,byte[] req){return ObdSchedule.positive(r,req);}
+    /** Oil-temperature check: each E001 reply with the live rpm, pedal, speed, EMS12 coolant and the decoded candidate into
+     *  i30dashboard/ecu_temp.csv on the head unit's storage (its log keeps only about a minute), so one drive from cold
+     *  shows which E001 byte is the oil temperature. Stops at 2 MB (about 30 hours at one line per 5 s). */
+    private static void ecuTempLog(byte[] r){
+        try{
+            java.io.File dir=new java.io.File(android.os.Environment.getExternalStorageDirectory(),SettingsBackup.DIR),f=new java.io.File(dir,"ecu_temp.csv");
+            if(f.length()>2000000)return;
+            StringBuilder b=new StringBuilder();if(!f.exists()){dir.mkdirs();b.append("time,rpm,pedal,speed,coolant,oil_ecu,e001\n");}
+            b.append(new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss",java.util.Locale.US).format(new java.util.Date()));
+            for(int s:new int[]{0,9,7,2,Telemetry.OIL_ECU})b.append(String.format(java.util.Locale.US,",%.1f",VehicleDash.now(s)));
+            b.append(',');for(byte x:r)b.append(String.format("%02X",x&255));b.append('\n');
+            java.io.FileOutputStream out=new java.io.FileOutputStream(f,true);try{out.write(b.toString().getBytes("UTF-8"));}finally{out.close();}
+        }catch(Exception e){android.util.Log.w("VehicleDash","ecu_temp.csv not written: "+e);}
+    }
     /** One round of the mode 22 probe into the log: the whole reply in hex, a negative response code, or no reply. */
     private void probe(IBinder svc,int round){
         for(int[] p:PROBE){

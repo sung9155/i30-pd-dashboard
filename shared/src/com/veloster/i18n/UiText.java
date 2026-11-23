@@ -981,6 +981,7 @@ public final class UiText {
         EN.put("유리 톡","Glass tap");
         EN.put("유리 톡톡","Glass tap");
         EN.put("유온","Oil");
+        EN.put("유온 (ECU 후보)","Oil temp (ECU, candidate)");
         EN.put("유온 (냉각수 대체)","Oil (coolant sub)");
         EN.put("유온(대체)","Oil (ECT)");
         EN.put("유형 %02X","Type %02X");

@@ -245,6 +245,7 @@
   "엔진 가동 시간": "Engine run time",
   "공회전 시간": "Idle time",
   "주행 시간": "Trip time",
+  "유온 (ECU 후보)": "Oil temp (ECU, candidate)",
   "연료 잔량": "Fuel level",
   "촉매 온도": "Catalyst temp",
   "절대 부하": "Absolute load",

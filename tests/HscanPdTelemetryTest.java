@@ -437,6 +437,9 @@ public final class HscanPdTelemetryTest {
         o.temperatures(b(0xa0,0xa0),6000);equal(o,1,80f,6000);   // no PD coolant yet: the N-mode reply is used (Veloster N)
         o.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),7000);float cool=o.sample(2,7000).value;
         o.temperatures(b(0x00,0xa2),7100);equal(o,2,cool,7100);check(o.sample(1,7100).value>0,"PD: N-mode oil 00 does not overwrite with -40");
+        o.hscanPd(0xc7,0x1f,b(0,0,0x10,0,0,0,0,0),7150);check(o.sample(8,7150).valid,"PD gear 1 from the TCU frame");
+        o.additional(new byte[41],7200);   // the N-mode app's NAdd request reply on our car (41 bytes)
+        check(o.sample(8,7200).valid&&o.sample(8,7200).value==1,"PD: NAdd reply does not blank the gear (1/D flicker)");
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
     private static byte[] hex(String h){String[] p=h.trim().split(" ");byte[] b=new byte[p.length];for(int i=0;i<p.length;i++)b[i]=(byte)Integer.parseInt(p[i],16);return b;}

@@ -451,6 +451,10 @@ public final class Telemetry {
         // A clear event alone cannot resurrect a previously received gear.
     }
     public synchronized void additional(byte[] b,long now) {
+        // On a PD, hscan gives gear, pedal, brake and steering. The NAdd reply only comes when an N-mode app asks
+        // (the stock one does every 2 s) and is 41 bytes, which the code below takes as "no data": it blanked the gear
+        // each time, so the gear flipped between 1 and D.
+        if(now-pdCoolantAt<3000)return;
         pressures(b,now);
         if(b==null || (b.length!=19 && b.length!=40)) {
             for(int i=8;i<=10;i++)put(i,0,false,now);
@@ -773,7 +777,7 @@ public final class Telemetry {
         }
         if(!ptValid)invalidateComputed(now);
     }
-    /** When EMS12 last gave the coolant (a PD): the stock N-mode oil / coolant reply is then left out. */
+    /** When EMS12 last gave the coolant (a PD): the stock N-mode oil / coolant and NAdd replies are then left out. */
     private long pdCoolantAt=Long.MIN_VALUE/2;
     public synchronized void temperatures(byte[] b, long now) {
         // On a PD it is no reading: oil byte 00 (no sensor) would show -40 °C and its coolant byte does not match EMS12

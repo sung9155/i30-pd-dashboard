@@ -95,7 +95,7 @@ public final class SettingsLayoutTest {
             &&SettingsLayout.catTop(6)-SettingsLayout.catTop(5)==step+SettingsLayout.GROUP_GAP&&SettingsLayout.catTop(10)-SettingsLayout.catTop(9)==step+SettingsLayout.GROUP_GAP,"a gap before each group");
         check(SettingsLayout.CAT_H>=33,"categories tall enough to tap");
         // 효과음: the four sounds that are not the engine
-        check(SettingsLayout.count(SettingsLayout.FX)==4&&SettingsLayout.count(SettingsLayout.SOUND)==(SettingsLayout.ENGINE_SOUND?SettingsLayout.SOUND_FAST+1:1)&&SettingsLayout.SOUND_FAST==SettingsLayout.SOUND_LEAD+1,"effects pane, engine sound pane ends at 소리 반응 속도");
+        check(SettingsLayout.count(SettingsLayout.FX)==5&&SettingsLayout.count(SettingsLayout.SOUND)==(SettingsLayout.ENGINE_SOUND?SettingsLayout.SOUND_FAST+1:1)&&SettingsLayout.SOUND_FAST==SettingsLayout.SOUND_LEAD+1,"effects pane, engine sound pane ends at 소리 반응 속도");
         // 차량 색 shown by colour family: every paint once
         {boolean[] seen=new boolean[CarPaint.IDS.length];check(SettingsLayout.PAINT_ORDER.length==CarPaint.IDS.length,"a slot per paint");
             for(int p:SettingsLayout.PAINT_ORDER){check(p>=0&&p<seen.length&&!seen[p],"paint "+p+" once");seen[p]=true;}

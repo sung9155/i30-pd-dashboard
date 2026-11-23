@@ -168,6 +168,7 @@ public final class UiText {
         EN.put("e-LSD 수치","e-LSD value");
         EN.put("i30 PD 포팅","i30 PD port");
         EN.put("Λ RPM·속도계","Λ rpm and speed");
+        EN.put("− / + 로 조절 · 동전·카세트·차임 · 변속 알림음은 RPM 화면에서","Tap − / + · coin, cassette, chime · shift beeps are set on the RPM screen");
         EN.put("− / + 로 조절 · 한 번 들려줌","Adjust with − / + · plays it once");
         EN.put("−1분","-1 min");
         EN.put("−2분30초","-2m30s");
@@ -1415,6 +1416,7 @@ public final class UiText {
         EN.put("회로 간헐 불량","Circuit intermittent");
         EN.put("횡가속","Lateral G");
         EN.put("효과음","Effects");
+        EN.put("효과음 음량","Effects volume");
         EN.put("후드","Hood");
         EN.put("후드 열림","Hood open");
         EN.put("후진 기어비 불일치","Incorrect reverse gear ratio");

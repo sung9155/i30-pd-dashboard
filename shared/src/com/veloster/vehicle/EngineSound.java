@@ -37,8 +37,8 @@ final class EngineSound implements Runnable {
     private volatile float beepGain=1;
     EngineSound(Context context,Telemetry data){this.context=context;this.data=data;}
     void volume(int percent){volume=Math.max(0,Math.min(200,percent))/100f;}   // up to 200 %: EngineSynth drives the extra into the soft clip
-    /** Queue a beep to ride on the next blocks of the engine stream at gain g (0..1). A new beep replaces one still playing. */
-    void mixBeep(short[] pcm,float g){beepGain=Math.max(0,Math.min(1,g));beepPos=0;beepMix=pcm;}
+    /** Queue a beep to ride on the next blocks of the engine stream at gain g (0..2, above 1 clips harder). A new beep replaces one still playing. */
+    void mixBeep(short[] pcm,float g){beepGain=Math.max(0,Math.min(2,g));beepPos=0;beepMix=pcm;}
     /** Engine and exhaust (EngineSynth tables), pop rate / turbo whistle / blow-off in percent of the voice's own, and
      *  the latency compensation in ms. Picked up by the audio thread on its next block. */
     private volatile EngineSynth.Voice voice=EngineSynth.voice(0,0);

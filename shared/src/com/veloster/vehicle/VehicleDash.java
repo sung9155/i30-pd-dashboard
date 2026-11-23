@@ -189,7 +189,7 @@ public final class VehicleDash extends View implements Runnable {
         sound=new EngineSound(a.getApplicationContext(),DATA);beep=new ShiftBeep(a);
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);beepOn=p.getBoolean("shift_beep",false);SettingsLayout.floatBeep=beepOn&&p.getBoolean("float_beep",false);SettingsLayout.floatSound=p.getBoolean("engine_sound",false)&&p.getBoolean("float_sound",false);
             beepSound=Math.max(0,Math.min(SettingsLayout.BEEP_SOUNDS.length-1,p.getInt("shift_beep_sound",0)));
-            beepVol=Math.max(0,Math.min(100,p.getInt("shift_beep_vol",70)));
+            beepVol=Math.max(0,Math.min(200,p.getInt("shift_beep_vol",70)));SettingsLayout.fxVol=Math.max(0,Math.min(200,p.getInt("fx_vol",70)));
             downScope=Math.max(0,Math.min(SettingsLayout.DOWN_SCOPES.length-1,p.getInt("downshift_scope",0)));
             for(int k=0;k<3;k++)downSounds[k]=Math.max(-1,Math.min(SettingsLayout.BEEP_SOUNDS.length-1,p.getInt("downshift_sound_"+(k+1),SettingsLayout.DOWN_DEFAULT[k])));}catch(ClassCastException e){/* off, first sound */}
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);soundOn=SettingsLayout.ENGINE_SOUND&&p.getBoolean("engine_sound",false);
@@ -508,7 +508,7 @@ public final class VehicleDash extends View implements Runnable {
     public static void chimeTick(){
         VehicleDash d=current.get();if(d==null||d.beep==null||SpeedChime.kmh<=0)return;
         long now=SystemClock.elapsedRealtime();Telemetry.Sample sp=DATA.sample(7,now);
-        if(d.chime.due(sp.valid?Telemetry.displayValue(7,sp.value):Float.NaN,now)&&d.beep.playChime(d.soundOn&&d.soundRoute==0?d.sound:null,SpeedChime.sound,d.beepVol/100f))d.chime.rang(now);
+        if(d.chime.due(sp.valid?Telemetry.displayValue(7,sp.value):Float.NaN,now)&&d.beep.playChime(d.soundOn&&d.soundRoute==0?d.sound:null,SpeedChime.sound,SettingsLayout.fxVol/100f))d.chime.rang(now);
     }
     /** The floating window's tick (FloatService): while the dashboard is away its onDraw does not run, so the shift beep and
      *  the downshift sounds are worked out here from the samples, with the same edges and settings (the 맞춤 소리 화면 scope
@@ -561,9 +561,9 @@ public final class VehicleDash extends View implements Runnable {
         sound.play(soundWanted()?soundRoute:-1);
         dashHide(tick);
         {int ck=EcoCluster.clink;if(ck!=0){EcoCluster.clink=0;   // a coin reaches the road on the 에코 screen (negative: its bounce)
-            if(EcoCluster.coinSound&&EcoCluster.coins&&resumed&&getVisibility()==VISIBLE&&renderer.ecoShown()&&!picker)beep.playCoin(soundOn&&soundRoute==0?sound:null,Math.abs(ck),beepVol/100f*EcoCluster.clinkGain);}}
+            if(EcoCluster.coinSound&&EcoCluster.coins&&resumed&&getVisibility()==VISIBLE&&renderer.ecoShown()&&!picker)beep.playCoin(soundOn&&soundRoute==0?sound:null,Math.abs(ck),SettingsLayout.fxVol/100f*EcoCluster.clinkGain);}}
         {int ck=CassetteCluster.cue;if(ck!=0){CassetteCluster.cue=0;   // a key of the 카세트 screen: latched, released or tapped
-            if(CassetteCluster.clickSound&&resumed&&getVisibility()==VISIBLE&&!picker)beep.playCassette(soundOn&&soundRoute==0?sound:null,ck,beepVol/100f);}}
+            if(CassetteCluster.clickSound&&resumed&&getVisibility()==VISIBLE&&!picker)beep.playCassette(soundOn&&soundRoute==0?sound:null,ck,SettingsLayout.fxVol/100f);}}
         if(getVisibility()==VISIBLE) {
             invalidate();long now=SystemClock.elapsedRealtime();
             if(graphs)delay=250;
@@ -622,7 +622,7 @@ public final class VehicleDash extends View implements Runnable {
         if(beepEdge.fire(up,now)&&beepOn&&shown)beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);
         int dn=downCue.fire(scoped?renderer.revMatchDowns():0,now);   // the blip landed on a gear's target: that gear's sound
         if(dn>0&&downSounds[dn-1]>=0&&shown)beep.play(soundOn&&soundRoute==0?sound:null,downSounds[dn-1],beepVol/100f);
-        {Telemetry.Sample sp=DATA.sample(7,now);if(chime.due(sp.valid?Telemetry.displayValue(7,sp.value):Float.NaN,now)&&shown&&beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f))chime.rang(now);}   // 과속 차임
+        {Telemetry.Sample sp=DATA.sample(7,now);if(chime.due(sp.valid?Telemetry.displayValue(7,sp.value):Float.NaN,now)&&shown&&beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,SettingsLayout.fxVol/100f))chime.rang(now);}   // 과속 차임
         long took=System.nanoTime()-drawStart;drawNs+=took;drawMaxNs=Math.max(drawMaxNs,took);drawFrames++;drawCost+=(took/1e6f-drawCost)*.1f;
         if(introStart==0)introStart=now;
         long introEl=now-introStart;
@@ -749,7 +749,7 @@ public final class VehicleDash extends View implements Runnable {
                         downSounds[dk]=downSounds[dk]+1>=SettingsLayout.BEEP_SOUNDS.length?-1:downSounds[dk]+1;e.putInt("downshift_sound_"+(dk+1),downSounds[dk]);
                         if(downSounds[dk]>=0)beep.play(soundOn&&soundRoute==0?sound:null,downSounds[dk],beepVol/100f);break;}
                     if(i==SettingsLayout.RPM_BEEP_VOL){if(!beepOn&&downSounds[0]<0&&downSounds[1]<0&&downSounds[2]<0)break;int zv=SettingsLayout.screenZone(x);if(zv!=SettingsLayout.screenZone(downX))break;   // − / + 10%; the rest of the row puts 70% back
-                        beepVol=zv==1?Math.max(0,beepVol-10):zv==2?Math.min(100,beepVol+10):70;e.putInt("shift_beep_vol",beepVol);beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}
+                        beepVol=zv==1?Math.max(0,beepVol-10):zv==2?Math.min(200,beepVol+10):70;e.putInt("shift_beep_vol",beepVol);beep.play(soundOn&&soundRoute==0?sound:null,beepSound,beepVol/100f);break;}
                     int z=SettingsLayout.screenZone(x);if(z!=SettingsLayout.screenZone(downX))break;
                     VehicleProfile prof=DATA.profile();int d=z==1?-100:z==2?100:0;
                     if(i==SettingsLayout.RPM_SHIFT){shiftTarget=d==0?0:ShiftGuide.clamp(ShiftGuide.target(shiftTarget,prof)+d,prof.shiftMin,prof.shiftTop());e.putInt("shift_target",shiftTarget);}
@@ -769,14 +769,17 @@ public final class VehicleDash extends View implements Runnable {
                     e.putBoolean("engine_sound",soundOn).putInt("engine_sound_route",soundRoute).putInt("engine_sound_engine",soundEngine).putInt("engine_sound_exhaust",soundExhaust);
                     sound.play(soundWanted()?soundRoute:-1);break;
                 case SettingsLayout.FX:   // sounds that are not the engine: each its own switch, a sample when it goes on
+                    if(i==SettingsLayout.FX_VOL){int zv=SettingsLayout.screenZone(x);if(zv!=SettingsLayout.screenZone(downX))break;   // − / + 10%; the rest of the row puts 70% back
+                        SettingsLayout.fxVol=zv==1?Math.max(0,SettingsLayout.fxVol-10):zv==2?Math.min(200,SettingsLayout.fxVol+10):70;e.putInt("fx_vol",SettingsLayout.fxVol);
+                        beep.playCoin(soundOn&&soundRoute==0?sound:null,500,SettingsLayout.fxVol/100f);break;}   // a sample clink
                     if(i==SettingsLayout.FX_COIN){EcoCluster.coinSound=!EcoCluster.coinSound;saveEco();   // eco coin sound: plays through the beep channel
-                        if(EcoCluster.coinSound&&EcoCluster.coins)beep.playCoin(soundOn&&soundRoute==0?sound:null,500,beepVol/100f);break;}   // a sample clink
+                        if(EcoCluster.coinSound&&EcoCluster.coins)beep.playCoin(soundOn&&soundRoute==0?sound:null,500,SettingsLayout.fxVol/100f);break;}   // a sample clink
                     if(i==SettingsLayout.FX_CHIME){SpeedChime.kmh=SpeedChime.next(SpeedChime.kmh);e.putInt("speed_chime_kmh",SpeedChime.kmh);
-                        if(SpeedChime.kmh>0)beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f);break;}   // a sample ring
+                        if(SpeedChime.kmh>0)beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,SettingsLayout.fxVol/100f);break;}   // a sample ring
                     if(i==SettingsLayout.FX_CHIME_SOUND){if(SpeedChime.kmh<=0)break;SpeedChime.sound=(SpeedChime.sound+1)%SpeedChime.NAMES.length;e.putInt("speed_chime_sound",SpeedChime.sound);
-                        beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,beepVol/100f);break;}
+                        beep.playChime(soundOn&&soundRoute==0?sound:null,SpeedChime.sound,SettingsLayout.fxVol/100f);break;}
                     CassetteCluster.clickSound=!CassetteCluster.clickSound;e.putBoolean("cassette_click",CassetteCluster.clickSound);   // FX_CLICK
-                    if(CassetteCluster.clickSound)beep.playCassette(soundOn&&soundRoute==0?sound:null,ShiftBeep.LATCH,beepVol/100f);break;   // a sample click
+                    if(CassetteCluster.clickSound)beep.playCassette(soundOn&&soundRoute==0?sound:null,ShiftBeep.LATCH,SettingsLayout.fxVol/100f);break;   // a sample click
                 case SettingsLayout.DIAG:
                     if(i==1){speedCalOn=!speedCalOn;e.putBoolean("speed_cal",speedCalOn);break;}
                     if(i==2){speedCal.reset();e.remove("speed_cal_ratio").remove("speed_cal_samples");break;}

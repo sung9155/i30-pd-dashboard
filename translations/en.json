@@ -632,6 +632,8 @@
   "클러치 밟고 블립이 그 단의 목표 RPM에 맞을 때": "Clutch in, the blip on that gear's target rpm",
   "누를 때마다 바뀌고 한 번 들려줌": "Tap to change · plays it once",
   "알림음 음량": "Beep volume",
+  "효과음 음량": "Effects volume",
+  "− / + 로 조절 · 동전·카세트·차임 · 변속 알림음은 RPM 화면에서": "Tap − / + · coin, cassette, chime · shift beeps are set on the RPM screen",
   "− / + 로 조절 · 한 번 들려줌": "Adjust with − / + · plays it once",
   "삐빅": "Double beep",
   "삑": "Beep",

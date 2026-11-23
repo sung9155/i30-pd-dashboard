@@ -55,7 +55,7 @@ final class ShiftBeep implements Runnable {
         int s=Math.max(0,Math.min(SOUNDS.length-1,sound));
         if(onPath!=null){onPath.mixBeep(pcmMix(s),vol);return;}
         if(busy)return;
-        busy=true;this.sound=s;this.own=pcm(s);this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"shift-beep").start();
+        busy=true;this.sound=s;this.own=pcm(s);this.vol=Math.max(0,Math.min(2,vol));new Thread(this,"shift-beep").start();
     }
     /** A coin hitting the road on the 에코 screen: 10, 100 or 500 won, light to heavy. Same paths as play(); a clink
      *  while the last own-track one still sounds is dropped (at most about three a second). */
@@ -63,7 +63,7 @@ final class ShiftBeep implements Runnable {
         int k=den>=500?2:den>=100?1:0;
         if(onPath!=null){onPath.mixBeep(coinPcm(k,true),vol);return;}
         if(busy)return;
-        busy=true;this.own=coinPcm(k,false);this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"coin-clink").start();
+        busy=true;this.own=coinPcm(k,false);this.vol=Math.max(0,Math.min(2,vol));new Thread(this,"coin-clink").start();
     }
     /** The 카세트 screen's key sounds (res/raw, 16-bit mono 22.05 kHz little-endian): LATCH a key that stays down (PLAY, PAUSE),
      *  UP a held key popping back up (stop), TAP a key that springs straight back (track skip). Resynthesised from the band
@@ -89,7 +89,7 @@ final class ShiftBeep implements Runnable {
         if(kind<1||kind>3||CASSETTE[kind]==null)return;
         if(onPath!=null){onPath.mixBeep(CASSETTE_MIX[kind],vol);return;}
         if(busy)return;
-        busy=true;this.own=CASSETTE[kind];this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"cassette-key").start();
+        busy=true;this.own=CASSETTE[kind];this.vol=Math.max(0,Math.min(2,vol));new Thread(this,"cassette-key").start();
     }
     /** 과속 차임 sounds, in SpeedChime.NAMES order: per sound its length (ms) and hits. A hit is {at ms, kind, noise, ...}:
      *  kind 0 a struck bell, then partials Hz, amplitude, decay ms; kind 1 a square beep, then Hz, ms. AE86 and GR86 were
@@ -125,7 +125,7 @@ final class ShiftBeep implements Runnable {
         int s=Math.max(0,Math.min(CHIMES.length-1,sound));
         if(onPath!=null){onPath.mixBeep(chimePcm(s,true),vol);return true;}
         if(busy)return false;
-        busy=true;this.own=chimePcm(s,false);this.vol=Math.max(0,Math.min(1,vol));new Thread(this,"speed-chime").start();return true;
+        busy=true;this.own=chimePcm(s,false);this.vol=Math.max(0,Math.min(2,vol));new Thread(this,"speed-chime").start();return true;
     }
     /** Inharmonic partials (Hz, amplitude, decay ms) per coin, one strike per contact: the small
      *  10 won rings high and short, the 500 won lower, longer and with a thud. */
@@ -169,6 +169,8 @@ final class ShiftBeep implements Runnable {
     /** Own-track path (the engine sound is not on the alarm channel): open the alarm path, play the static PCM at vol, close it. */
     public void run(){
         AudioTrack track=null;Object router=null;short[] pcm=own;float v=vol;
+        if(v>1){short[] c=new short[pcm.length];   // AudioTrack gain stops at 1: scale a copy (the PCM is shared) and clip, like the engine stream
+            for(int i=0;i<c.length;i++)c[i]=(short)Math.max(-32768,Math.min(32767,Math.round(pcm[i]*v)));pcm=c;v=1;}
         try{
             track=new AudioTrack(STREAM_NAVI,RATE,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT,pcm.length*2,AudioTrack.MODE_STATIC);
             if(track.write(pcm,0,pcm.length)!=pcm.length||track.getState()!=AudioTrack.STATE_INITIALIZED){

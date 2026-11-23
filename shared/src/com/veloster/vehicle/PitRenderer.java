@@ -328,6 +328,7 @@ public final class PitRenderer {
                     if(i==SettingsLayout.FX_CLICK){sel=CassetteCluster.clickSound;name="카세트 찰칵 소리";sub="카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개";value=CassetteCluster.clickSound?"켬":"끔";}
                     else if(i==SettingsLayout.FX_COIN){sel=EcoCluster.coinSound;name="에코 동전 소리";sub="에코 화면에서 동전이 떨어질 때 · 엔진 사운드와 별개";value=EcoCluster.coinSound?"켬":"끔";}
                     else if(i==SettingsLayout.FX_CHIME){int k=SpeedChime.kmh;sel=k>0;name="과속 차임";sub="정한 속도를 넘는 동안 반복해서 울림 (AE86 같은 옛 일본차) · 엔진 사운드와 별개";value=k>0?k+" km/h":"끔";}
+                    else if(i==SettingsLayout.FX_VOL){name="효과음 음량";sub="− / + 로 조절 · 동전·카세트·차임 · 변속 알림음은 RPM 화면에서";}
                     else{name="차임 소리";dim=SpeedChime.kmh<=0;sub="누를 때마다 다음 소리를 들려줌";value=SpeedChime.NAMES[SpeedChime.sound];}
                     break;
                 case SettingsLayout.LANG:sel=SettingsLayout.LANGS[i].equals(langSel);name=SettingsLayout.LANG_NAMES[i];break;
@@ -354,8 +355,8 @@ public final class PitRenderer {
             int ink=dim?MUTED:sel?BLUE:WHITE;
             if(sub==null)text(c,UiText.t(name),tx,t+h/2+7,18,ink,true);
             else{text(c,UiText.t(name),tx,t+h/2-3,18,ink,true);text(c,UiText.t(sub),tx,t+h/2+17,12,cat==SettingsLayout.SCREENS&&!dim?BLUE:MUTED,cat==SettingsLayout.SCREENS);}
-            if(cat==SettingsLayout.RPM&&(i<SettingsLayout.RPM_BEEP||i==SettingsLayout.RPM_BEEP_VOL)||cat==SettingsLayout.SOUND&&i>=SettingsLayout.SOUND_VOLUME&&i<=SettingsLayout.SOUND_LEAD){   // value, then − and +
-                float by=t+(h-SettingsLayout.SBTN_W)/2;String v=cat==SettingsLayout.SOUND?soundValue(i):i==SettingsLayout.RPM_BEEP_VOL?beepVol+"%":(i==SettingsLayout.RPM_SHIFT?shiftTarget:(int)profile.redline)+" rpm";
+            if(cat==SettingsLayout.RPM&&(i<SettingsLayout.RPM_BEEP||i==SettingsLayout.RPM_BEEP_VOL)||cat==SettingsLayout.SOUND&&i>=SettingsLayout.SOUND_VOLUME&&i<=SettingsLayout.SOUND_LEAD||cat==SettingsLayout.FX&&i==SettingsLayout.FX_VOL){   // value, then − and +
+                float by=t+(h-SettingsLayout.SBTN_W)/2;String v=cat==SettingsLayout.FX?SettingsLayout.fxVol+"%":cat==SettingsLayout.SOUND?soundValue(i):i==SettingsLayout.RPM_BEEP_VOL?beepVol+"%":(i==SettingsLayout.RPM_SHIFT?shiftTarget:(int)profile.redline)+" rpm";
                 paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);text(c,v,SettingsLayout.upBtnL()-14-paint.measureText(v),t+h/2+7,18,dim?MUTED:BLUE,true);   // a dimmed row (sound off, no turbo) greys its value and buttons too
                 button(c,"−",SettingsLayout.upBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);
                 button(c,"+",SettingsLayout.downBtnL(),by,SettingsLayout.SBTN_W,SettingsLayout.SBTN_W,false,dim?MUTED:BLUE);

@@ -44,7 +44,9 @@ public final class SettingsLayout {
     public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_TONE=5,SOUND_ROUGH=6,SOUND_BODY=7,SOUND_INTAKE=8,SOUND_UNEVEN=9,SOUND_LOW=10,
         SOUND_POP=11,SOUND_TURBO=12,SOUND_BOV=13,SOUND_LEAD=14,SOUND_FAST=15;
     /** 효과음 pane rows: sounds that are not the engine (each its own switch, independent of ENGINE_SOUND). */
-    public static final int FX_CLICK=0,FX_COIN=1,FX_CHIME=2,FX_CHIME_SOUND=3;
+    public static final int FX_CLICK=0,FX_COIN=1,FX_CHIME=2,FX_CHIME_SOUND=3,FX_VOL=4;
+    /** 효과음 volume in percent (0..200, − / + on FX_VOL): coin, cassette click and speed chime; the shift and downshift beeps keep RPM_BEEP_VOL. */
+    public static volatile int fxVol=70;
     /** Rows SOUND_VOLUME..SOUND_LEAD have − and + (screenZone 1 and 2); the rest of the row puts the default back.
      *  SOUND_TONE..SOUND_LOW tune the engine sound itself (EngineSynth.tune): brightness, flow noise, pipe reflections,
      *  intake, firing-to-firing scatter in % of the design, and the off-load loudness in % of full load. */
@@ -89,7 +91,7 @@ public final class SettingsLayout {
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
         switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
-            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_FAST+1:1;case FX:return FX_CHIME_SOUND+1;case LANG:return LANGS.length;case DIAG:return 5;case FLOAT:return FLOAT_CELL+4;
+            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_FAST+1:1;case FX:return FX_VOL+1;case LANG:return LANGS.length;case DIAG:return 5;case FLOAT:return FLOAT_CELL+4;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
     public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME?3:cat==PAINT?2:1;}

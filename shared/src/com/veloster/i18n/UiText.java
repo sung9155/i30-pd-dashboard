@@ -38,7 +38,6 @@ public final class UiText {
         EN.put(", 상세 설명 없음)",", no detailed description)");
         EN.put(". 백업이 남아 있으면 원상복구하세요.",". Restore the original settings if a backup remains.");
         EN.put("1.6 터보 4기통","1.6 turbo I4");
-        EN.put("1.6 터보 4기통 (예전)","1.6 turbo I4 (classic)");
         EN.put("1단 기어비 불일치","Incorrect 1st gear ratio");
         EN.put("1단 아래 맞춤 소리","Sound: matched 1 gear down");
         EN.put("1번 실린더 실화 감지","Cylinder 1 misfire detected");
@@ -161,11 +160,8 @@ public final class UiText {
         EN.put("USB 모드 전환 실패: ","USB mode request failed: ");
         EN.put("USB 모드 전환 요청이 거부되었습니다.","The USB mode request was denied.");
         EN.put("V6 트윈터보","V6 twin-turbo");
-        EN.put("V6 트윈터보 (예전)","V6 twin-turbo (classic)");
         EN.put("V8 크로스플레인","V8 cross-plane");
-        EN.put("V8 크로스플레인 (예전)","V8 cross-plane (classic)");
         EN.put("V8 플랫플레인","V8 flat-plane");
-        EN.put("V8 플랫플레인 (예전)","V8 flat-plane (classic)");
         EN.put("Wi-Fi 끄기 실패/시간 초과. 백업을 보존했습니다. 원상복구하세요.","Wi-Fi shutdown failed or timed out. Backup retained; restore the original settings.");
         EN.put("Wi-Fi/AP 상태가 안정된 꺼짐/켜짐 상태가 아닙니다. 변경하지 않았습니다.","Wi-Fi/AP is not in a stable on/off state. No changes were made.");
         EN.put("XY · 잔상 3 s","XY · 3 s afterglow");
@@ -209,7 +205,6 @@ public final class UiText {
         EN.put("거리","Distance");
         EN.put("거리  ","Dist  ");
         EN.put("거리 %d m × ","Distance %d m × ");
-        EN.put("거칠기","Roughness");
         EN.put("검색 요청 실패: ","Discovery request failed: ");
         EN.put("검색 종료","Stop discovery");
         EN.put("검색 종료 상태를 확인하지 못했습니다.","Could not confirm that discovery stopped.");
@@ -317,7 +312,6 @@ public final class UiText {
         EN.put("낮 색감 고르기","Choose the day look");
         EN.put("낮은 차임","Low chime");
         EN.put("낮은 톤","Low tone");
-        EN.put("낮추면 둥글게 · 높이면 날카롭게","Lower is rounder · higher is sharper");
         EN.put("내 앱","My Apps");
         EN.put("내 앱 / My Apps","My Apps");
         EN.put("내 앱 버튼 숨기기","Hide the My Apps button");
@@ -514,8 +508,6 @@ public final class UiText {
         EN.put("바로가기: ","Shortcut: ");
         EN.put("반원 계기","Half dial");
         EN.put("반응 시간","Reaction");
-        EN.put("밝기","Brightness");
-        EN.put("밟을 때 앞에서 빨아들이는 소리","Induction sound from the front on throttle");
         EN.put("밤","Night");
         EN.put("밤 색감 고르기","Choose the night look");
         EN.put("배기","Exhaust");
@@ -523,7 +515,6 @@ public final class UiText {
         EN.put("배기 캠 위상(CVVT) 작동기 회로 이상","Exhaust cam phaser (CVVT) actuator circuit malfunction");
         EN.put("배기 캠 타이밍 과지각","Exhaust cam timing over-retarded");
         EN.put("배기 캠 타이밍 과진각 / 성능 이상","Exhaust cam timing over-advanced / performance");
-        EN.put("배기관 안에서 되돌아오는 소리 · 0이면 마른 소리","Echoes inside the exhaust · 0 is dry");
         EN.put("배기온 센서 회로 낮음","Exhaust gas temperature sensor circuit low");
         EN.put("배기온 센서 회로 높음","Exhaust gas temperature sensor circuit high");
         EN.put("배기온 센서 회로 이상","Exhaust gas temperature sensor circuit malfunction");
@@ -597,7 +588,6 @@ public final class UiText {
         EN.put("부하","Load");
         EN.put("부하 %","Load %");
         EN.put("부하율","LOAD");
-        EN.put("불규칙함","Unevenness");
         EN.put("브레이크","Brake");
         EN.put("브레이크 디스크 과열","Brake disc overheated");
         EN.put("브레이크 스위치","Brake switch");
@@ -967,7 +957,6 @@ public final class UiText {
         EN.put("운행 종료 · 버튼","End trip");
         EN.put("운행 중","On a trip");
         EN.put("운행을 마치면 영수증이 나옵니다","The receipt appears when the trip ends");
-        EN.put("울림","Resonance");
         EN.put("울산","Ulsan");
         EN.put("움직이면 자동 시작 · 버튼으로 바로 시작","Starts when you move · or tap Start");
         EN.put("워프","Warp");
@@ -1054,7 +1043,6 @@ public final class UiText {
         EN.put("재시작 요청 실패: ","Restart request failed: ");
         EN.put("재시작 요청이 취소되었습니다.","Restart request cancelled.");
         EN.put("잰 값을 지우고 처음부터","Forget the measurement and start over");
-        EN.put("저부하 음량","Off-throttle volume");
         EN.put("저속 시간","Slow time");
         EN.put("저장","Save");
         EN.put("저장 / Save","Save");
@@ -1191,7 +1179,6 @@ public final class UiText {
         EN.put("지우기","Clear");
         EN.put("직각","Square");
         EN.put("직렬 6기통 터보","Inline-6 turbo");
-        EN.put("직렬 6기통 터보 (예전)","Inline-6 turbo (classic)");
         EN.put("직전 코너 최대 횡가속","Last corner's peak lateral G");
         EN.put("직전 코너 최저 속도","Last corner's lowest speed");
         EN.put("직접 선택","Chosen by you");
@@ -1356,7 +1343,6 @@ public final class UiText {
         EN.put("펄스 부족","Too few pulses");
         EN.put("페달","Pedal");
         EN.put("페달 50% 이하로 충분합니다","Under 50 % pedal is enough");
-        EN.put("페달을 뗐을 때와 공회전의 크기","Loudness off the pedal and at idle");
         EN.put("페어링","Pair");
         EN.put("페어링 요청 실패: ","Pairing request failed: ");
         EN.put("페어링 요청이 거부되었습니다.","The pairing request was denied.");
@@ -1369,8 +1355,6 @@ public final class UiText {
         EN.put("평균","Avg");
         EN.put("평균 연비","Avg economy");
         EN.put("포천 레이스웨이","Pocheon Raceway");
-        EN.put("폭발마다 섞이는 숨소리 잡음","Breath noise mixed into every firing");
-        EN.put("폭발마다 세기와 박자가 흔들리는 정도","How much strength and timing vary per firing");
         EN.put("폴라 화이트","Polar White");
         EN.put("표시 항목","Signal");
         EN.put("표시할 설치 앱이 없습니다. 앱 설치 뒤 다시 열거나 목록 편집에서 선택하세요.","No installed apps to show. Reopen after installing an app or select one in Edit app list.");
@@ -1439,7 +1423,6 @@ public final class UiText {
         EN.put("흡기온 센서 범위·성능 이상","Intake air temperature sensor range/performance");
         EN.put("흡기온 센서 회로 낮음","Intake air temperature sensor circuit low");
         EN.put("흡기온 센서 회로 높음","Intake air temperature sensor circuit high");
-        EN.put("흡기음","Intake sound");
         EN.put("흰 네모 숫자","White boxed numbers");
         EN.put("흰색","White");
         KO.put("가장자리 버튼 + 알림 / Floating + notification","가장자리 버튼 + 알림");

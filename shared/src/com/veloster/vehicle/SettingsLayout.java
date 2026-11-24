@@ -41,24 +41,17 @@ public final class SettingsLayout {
     /** Virtual engine sound (off 2026-11-04, back 2026-11-05 at the user's word). false: the 사운드 pane shows one dimmed
      *  line and the sound never starts, whatever was saved. ponytail: a flag, not a removal. */
     public static final boolean ENGINE_SOUND=true;
-    public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_TONE=5,SOUND_ROUGH=6,SOUND_BODY=7,SOUND_INTAKE=8,SOUND_UNEVEN=9,SOUND_LOW=10,
-        SOUND_POP=11,SOUND_TURBO=12,SOUND_BOV=13,SOUND_LEAD=14,SOUND_FAST=15;
+    public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_POP=5,SOUND_TURBO=6,SOUND_BOV=7,SOUND_LEAD=8,SOUND_FAST=9;
     /** 효과음 pane rows: sounds that are not the engine (each its own switch, independent of ENGINE_SOUND). */
     public static final int FX_CLICK=0,FX_COIN=1,FX_CHIME=2,FX_CHIME_SOUND=3,FX_VOL=4;
     /** 효과음 volume in percent (0..200, − / + on FX_VOL): coin, cassette click and speed chime; the shift and downshift beeps keep RPM_BEEP_VOL. */
     public static volatile int fxVol=70;
-    /** Rows SOUND_VOLUME..SOUND_LEAD have − and + (screenZone 1 and 2); the rest of the row puts the default back.
-     *  SOUND_TONE..SOUND_LOW tune the engine sound itself (EngineSynth.tune): brightness, flow noise, pipe reflections,
-     *  intake, firing-to-firing scatter in % of the design, and the off-load loudness in % of full load. */
-    public static final int[] SOUND_MIN={10, 50,0,0,0,0,10, 0,0,0,0},SOUND_MAX={200, 250,300,200,300,300,60, 200,200,200,150},
-        SOUND_STEP={10, 10,10,10,10,10,5, 10,10,10,10},SOUND_DEFAULT={70, 100,100,100,100,100,30, 100,100,100,80};
-    /** EngineSynth.ENGINES then EngineSynthClassic.ENGINES (the sound before 2026-11-20, "예전"), and EXHAUSTS names, in their order. */
-    public static final String[] SOUND_ENGINES={"1.6 터보 4기통","직렬 6기통 터보","V6 트윈터보","V8 크로스플레인","V8 플랫플레인",
-        "1.6 터보 4기통 (예전)","직렬 6기통 터보 (예전)","V6 트윈터보 (예전)","V8 크로스플레인 (예전)","V8 플랫플레인 (예전)"};
-    /** First SOUND_ENGINES index played by EngineSynthClassic. */
-    public static final int SOUND_CLASSIC=5;
+    /** Rows SOUND_VOLUME..SOUND_LEAD have − and + (screenZone 1 and 2); the rest of the row puts the default back. */
+    public static final int[] SOUND_MIN={10,0,0,0,0},SOUND_MAX={200,200,200,200,150},SOUND_STEP={10,10,10,10,10},SOUND_DEFAULT={70,100,100,100,80};
+    /** EngineSynth.ENGINES and EXHAUSTS names, in their order. */
+    public static final String[] SOUND_ENGINES={"1.6 터보 4기통","직렬 6기통 터보","V6 트윈터보","V8 크로스플레인","V8 플랫플레인"};
     /** Engines with a turbo (whistle and blow-off rows apply), per SOUND_ENGINES. */
-    public static final boolean[] SOUND_HAS_TURBO={true,true,true,false,false, true,true,true,false,false};
+    public static final boolean[] SOUND_HAS_TURBO={true,true,true,false,false};
     public static final String[] SOUND_EXHAUSTS={"순정","스포츠 머플러","중통 제거","풀 배기 · 팝앤뱅"};
     /** A − / + row's value after a tap in zone z (1 −, 2 +, 0 default). */
     public static int soundStep(int row,int value,int z){

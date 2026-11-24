@@ -107,8 +107,11 @@ public final class ObdLive {
     private void passive(int ecu,byte[] r){
         ObdSchedule s=current;Sink k=sink;
         if(r==null||r.length<2||(r[0]&255)==0x7f)return;
-        noteForeign(ecu);keepRaw(ecu,r);
         ObdSchedule.Poll p=s==null?null:s.match(ecu,r);
+        // The stock N Mode app's feeder asks E001 (oil) itself when it hears no one else ask it: its replies are not a tester
+        // holding the engine, so they do not count towards the listen-only spell (a DAG3 asks other blocks too).
+        if(p==null||p.key!=Telemetry.DID_E001)noteForeign(ecu);
+        keepRaw(ecu,r);
         if(p!=null&&k!=null){byte[] d=new byte[r.length-p.req.length];System.arraycopy(r,p.req.length,d,0,d.length);k.value(p.key,d);passive++;return;}
         StringBuilder head=new StringBuilder(String.format("%02X",ecu));for(int i=0;i<Math.min(3,r.length);i++)head.append(String.format(" %02X",r[i]&255));
         synchronized(OTHER){if(OTHER.size()>=40||!OTHER.add(head.toString()+" "+r.length+"B"))return;}

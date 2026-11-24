@@ -37,7 +37,7 @@ public final class FloatService extends Service implements Runnable {
     /** GPU drawing for the window, on by default since 2026-11-17 (our car: draw 5-10 ms -> 2.5-4 ms, worst 51 -> 12 ms, the same picture).
      *  Off while /sdcard/i30pd_float_sw exists (adb shell touch / rm), looked at every 2 s, so the two can still be compared without a new build. */
     private static final String SW_FLAG="i30pd_float_sw";
-    private boolean hw=true,alive;private long hwCheckedAt;
+    private boolean hw=true,alive;private long hwCheckedAt; private boolean nmodeTop;   // the stock N Mode app (i30 PD port) on screen: the window would cover its gauges
     // ---- frame-rate measurement: one "FLOAT ..." line a second (tag VehicleDash), see i30pd_port FLOAT_FPS.md -------------------
     private int mTicks,mInval,mDraws;private long mDrawNs,mDrawMax,mTickNs,mTickMax,mGapMax,mLastTick,mLogAt;private boolean mHwCanvas;
     private final Choreographer.FrameCallback frame=new Choreographer.FrameCallback(){public void doFrame(long ns){
@@ -84,9 +84,9 @@ public final class FloatService extends Service implements Runnable {
     public void run(){
         long t0=System.nanoTime(),now0=android.os.SystemClock.elapsedRealtime();
         if(mLastTick>0)mGapMax=Math.max(mGapMax,now0-mLastTick);mLastTick=now0;
-        if(now0-hwCheckedAt>=2000){hwCheckedAt=now0;java.io.File sd=android.os.Environment.getExternalStorageDirectory();boolean want=!new java.io.File(sd,SW_FLAG).exists();if(want!=hw){hw=want;remove();}
+        if(now0-hwCheckedAt>=2000){hwCheckedAt=now0;nmodeTop=topIs(NMODE);java.io.File sd=android.os.Environment.getExternalStorageDirectory();boolean want=!new java.io.File(sd,SW_FLAG).exists();if(want!=hw){hw=want;remove();}
             FloatPanel.glideOn=!new java.io.File(sd,"i30pd_float_noglide").exists();FloatPanel.layerOn=!new java.io.File(sd,"i30pd_float_nolayer").exists();}   // a new window with the other renderer
-        int want=VehicleDash.rearCamera()||FloatPanel.shape==FloatPanel.OFF?-1:FloatPanel.shape*100+FloatPanel.count*10+FloatPanel.size+(FloatPanel.round()?1000:0)+(FloatPanel.musicStrip?10000:0);   // the round gauge has square cells, the 음악 띠 a taller window: their own
+        int want=VehicleDash.rearCamera()||nmodeTop||FloatPanel.shape==FloatPanel.OFF?-1:FloatPanel.shape*100+FloatPanel.count*10+FloatPanel.size+(FloatPanel.round()?1000:0)+(FloatPanel.musicStrip?10000:0);   // the round gauge has square cells, the 음악 띠 a taller window: their own
         if(want!=shown){remove();if(want>=0)add(FloatPanel.shape,FloatPanel.count,FloatPanel.size);}
         boolean music=panel!=null&&FloatPanel.musicShown();if(music!=musicOn){musicOn=music;VehicleDash.floatMusic(this,music);}
         if(music)FloatPanel.music(VehicleDash.floatTrack(),VehicleDash.floatArtwork());
@@ -160,6 +160,13 @@ public final class FloatService extends Service implements Runnable {
                 startForeground(7101,n);}
             else stopForeground(true);}
         catch(RuntimeException e){android.util.Log.w("VehicleDash","Foreground service refused",e);}
+    }
+    static final String NMODE="com.hkmc.app.nmode.ui";
+    /** The app whose screen is on top (GET_TASKS, platform-signed). */
+    private boolean topIs(String pkg){
+        try{java.util.List<android.app.ActivityManager.RunningTaskInfo> t=((android.app.ActivityManager)getSystemService(ACTIVITY_SERVICE)).getRunningTasks(1);
+            return !t.isEmpty()&&t.get(0).topActivity!=null&&pkg.equals(t.get(0).topActivity.getPackageName());}
+        catch(RuntimeException e){return false;}
     }
     /** Asks 내 앱 to hide (or bring back) its edge button. Only 내 앱 receives it. */
     private void hide(boolean on){

@@ -38,6 +38,7 @@ public final class UiText {
         EN.put(", 상세 설명 없음)",", no detailed description)");
         EN.put(". 백업이 남아 있으면 원상복구하세요.",". Restore the original settings if a backup remains.");
         EN.put("1.6 터보 4기통","1.6 turbo I4");
+        EN.put("1.6 터보 4기통 (예전)","1.6 turbo I4 (classic)");
         EN.put("1단 기어비 불일치","Incorrect 1st gear ratio");
         EN.put("1단 아래 맞춤 소리","Sound: matched 1 gear down");
         EN.put("1번 실린더 실화 감지","Cylinder 1 misfire detected");
@@ -160,8 +161,11 @@ public final class UiText {
         EN.put("USB 모드 전환 실패: ","USB mode request failed: ");
         EN.put("USB 모드 전환 요청이 거부되었습니다.","The USB mode request was denied.");
         EN.put("V6 트윈터보","V6 twin-turbo");
+        EN.put("V6 트윈터보 (예전)","V6 twin-turbo (classic)");
         EN.put("V8 크로스플레인","V8 cross-plane");
+        EN.put("V8 크로스플레인 (예전)","V8 cross-plane (classic)");
         EN.put("V8 플랫플레인","V8 flat-plane");
+        EN.put("V8 플랫플레인 (예전)","V8 flat-plane (classic)");
         EN.put("Wi-Fi 끄기 실패/시간 초과. 백업을 보존했습니다. 원상복구하세요.","Wi-Fi shutdown failed or timed out. Backup retained; restore the original settings.");
         EN.put("Wi-Fi/AP 상태가 안정된 꺼짐/켜짐 상태가 아닙니다. 변경하지 않았습니다.","Wi-Fi/AP is not in a stable on/off state. No changes were made.");
         EN.put("XY · 잔상 3 s","XY · 3 s afterglow");
@@ -1187,6 +1191,7 @@ public final class UiText {
         EN.put("지우기","Clear");
         EN.put("직각","Square");
         EN.put("직렬 6기통 터보","Inline-6 turbo");
+        EN.put("직렬 6기통 터보 (예전)","Inline-6 turbo (classic)");
         EN.put("직전 코너 최대 횡가속","Last corner's peak lateral G");
         EN.put("직전 코너 최저 속도","Last corner's lowest speed");
         EN.put("직접 선택","Chosen by you");

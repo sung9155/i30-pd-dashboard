@@ -42,8 +42,12 @@ final class EngineSound implements Runnable {
     /** Engine and exhaust (EngineSynth tables), pop rate / turbo whistle / blow-off in percent of the voice's own, and
      *  the latency compensation in ms. Picked up by the audio thread on its next block. */
     private volatile EngineSynth.Voice voice=EngineSynth.voice(0,0);
+    /** Set: the "(예전)" engines, played by EngineSynthClassic instead (the sound before 2026-11-20). */
+    private volatile EngineSynthClassic.Voice classic;
     private volatile double popRate=1,turboVol=1,bovVol=1,lead=.08;
-    void voice(int engine,int exhaust){voice=EngineSynth.voice(engine,exhaust);}
+    void voice(int engine,int exhaust){
+        if(engine>=SettingsLayout.SOUND_CLASSIC){classic=EngineSynthClassic.voice(engine-SettingsLayout.SOUND_CLASSIC,exhaust);return;}
+        voice=EngineSynth.voice(engine,exhaust);classic=null;}
     /** The sound's own tuning in percent (SettingsLayout.SOUND_TONE..SOUND_LOW): brightness, flow noise, pipe reflections,
      *  intake, firing scatter (100 = as designed) and the off-load loudness (of full load). */
     private volatile double tone=1,rough=1,body=1,intake=1,uneven=1,low=EngineSynth.LOW;
@@ -77,6 +81,7 @@ final class EngineSound implements Runnable {
             track.play();
             android.util.Log.i("VehicleDash","Engine sound on: route "+r+" stream "+ROUTE_STREAM[r]+" micom 0x"+Integer.toHexString(micom)+" min buffer "+min+" block "+blk+" buffer "+bytes+" B ahead "+aheadMs+" ms");
             EngineSynth.Voice playing=voice;EngineSynth synth=new EngineSynth(EngineSynth.RATE,playing);float[] f=new float[blk];short[] pcm=new short[blk];int flames=0;
+            EngineSynthClassic old=null;EngineSynthClassic.Voice oldVoice=null;
             long cost=0;int made=0;   // the synth's own CPU time (this thread's, not the wait behind the drawing), logged every 30 s of sound: the head unit's figure, which a PC cannot give
             while(thread==Thread.currentThread()){
                 long now=SystemClock.elapsedRealtime();EngineSynth.voiced=volume>0;
@@ -85,12 +90,20 @@ final class EngineSound implements Runnable {
                 Telemetry.Sample gear=data.sample(8,now);
                 boolean reverse=selector.valid&&(int)selector.value==1||gear.valid&&(int)gear.value==14;   // DCT lever R, or 6MT reverse
                 synth.set(rpm.valid&&rpm.ageMs<=1000&&!reverse?rpm.value:Double.NaN,pedal.valid?pedal.value/100.0:0,boost.valid?boost.value:0);
-                if(voice!=playing){playing=voice;synth.use(playing);}
-                synth.tune(tone,rough,body,intake,uneven,low);   // rebuilds the wavelets only when brightness or reflections changed
-                synth.popRate=popRate;synth.turboVol=turboVol;synth.bovVol=bovVol;synth.lead=lead;
-                long t0=android.os.Debug.threadCpuTimeNanos();synth.render(f,0,blk,volume);cost+=android.os.Debug.threadCpuTimeNanos()-t0;
-                if((made+=blk)>=30*EngineSynth.RATE){android.util.Log.i("VehicleDash","Engine sound: "+cost/1000000*EngineSynth.RATE/made+" ms of CPU per s of sound, rpm "+(rpm.valid?(int)rpm.value:-1));cost=0;made=0;}
-                if(synth.flames!=flames){flames=synth.flames;if(volume>0)EngineSynth.flameAt=now+aheadMs;}
+                EngineSynthClassic.Voice cv=classic;long t0=android.os.Debug.threadCpuTimeNanos();int fl;
+                if(cv!=null){   // the old sound: its own synth, same inputs and trims (no tuning rows)
+                    if(old==null)old=new EngineSynthClassic(EngineSynth.RATE,cv);else if(cv!=oldVoice)old.use(cv);
+                    oldVoice=cv;old.set(rpm.valid&&rpm.ageMs<=1000&&!reverse?rpm.value:Double.NaN,pedal.valid?pedal.value/100.0:0,boost.valid?boost.value:0);
+                    old.popRate=popRate;old.turboVol=turboVol;old.bovVol=bovVol;old.lead=lead;old.render(f,0,blk,volume);fl=old.flames;
+                }else{
+                    if(voice!=playing){playing=voice;synth.use(playing);}
+                    synth.tune(tone,rough,body,intake,uneven,low);   // rebuilds the wavelets only when brightness or reflections changed
+                    synth.popRate=popRate;synth.turboVol=turboVol;synth.bovVol=bovVol;synth.lead=lead;
+                    synth.render(f,0,blk,volume);fl=synth.flames;
+                }
+                cost+=android.os.Debug.threadCpuTimeNanos()-t0;
+                if((made+=blk)>=30*EngineSynth.RATE){android.util.Log.i("VehicleDash","Engine sound: "+cost/1000000*EngineSynth.RATE/made+" ms of CPU per s of sound, rpm "+(rpm.valid?(int)rpm.value:-1)+(cv!=null?" (old sound)":""));cost=0;made=0;}
+                if(fl!=flames){flames=fl;if(volume>0)EngineSynth.flameAt=now+aheadMs;}
                 short[] bm=beepMix;
                 if(bm!=null){int bp=beepPos;float bg=beepGain;
                     for(int i=0;i<blk&&bp<bm.length;i++,bp++){float s=f[i]+(bm[bp]/32000f)*bg;f[i]=s>1?1:s<-1?-1:s;}

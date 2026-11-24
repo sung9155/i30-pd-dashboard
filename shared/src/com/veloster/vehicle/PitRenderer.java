@@ -322,7 +322,8 @@ public final class PitRenderer {
                     else if(i==SettingsLayout.SOUND_FAST){sel=EngineSound.fast;name="소리 반응 속도";dim=!soundOn;sub="빠름: 소리가 덜 늦음 · 화면이 느려질 때 소리가 끊기면 보통으로";value=EngineSound.fast?"빠름":"보통";}
                     else{name=SOUND_ROW_NAMES[i-SettingsLayout.SOUND_VOLUME];sub=SOUND_ROW_SUBS[i-SettingsLayout.SOUND_VOLUME];
                         boolean noTurbo=(i==SettingsLayout.SOUND_TURBO||i==SettingsLayout.SOUND_BOV)&&!SettingsLayout.SOUND_HAS_TURBO[soundEngine];
-                        dim=!soundOn||noTurbo;}
+                        boolean classicTune=i>=SettingsLayout.SOUND_TONE&&i<=SettingsLayout.SOUND_LOW&&soundEngine>=SettingsLayout.SOUND_CLASSIC;   // the old sound has none of these
+                        dim=!soundOn||noTurbo||classicTune;}
                     break;
                 case SettingsLayout.FX:   // sounds that are not the engine: each its own switch (strings kept as they were, for the translations)
                     if(i==SettingsLayout.FX_CLICK){sel=CassetteCluster.clickSound;name="카세트 찰칵 소리";sub="카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개";value=CassetteCluster.clickSound?"켬":"끔";}

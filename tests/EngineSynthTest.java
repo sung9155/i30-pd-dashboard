@@ -1,4 +1,5 @@
 import com.veloster.vehicle.EngineSynth;
+import com.veloster.vehicle.EngineSynthClassic;
 import com.veloster.vehicle.SettingsLayout;
 
 /** Virtual engine sound: silent when off, follows the firing order, louder and brighter with load, harmonics well
@@ -105,7 +106,18 @@ public final class EngineSynthTest {
         check(w1>w0*2&&w2>w1*2,"turbo whistle stands out of the engine with boost and follows its trim: "+w1/w0+" / "+w2/w0);
         for(float[] x:new float[][]{idle,coast,full,boosted})check(peak(x)<=1,"bounded");
         // Every engine through every exhaust plays, bounded.
-        check(SettingsLayout.SOUND_ENGINES.length==EngineSynth.engines()&&SettingsLayout.SOUND_EXHAUSTS.length==EngineSynth.exhausts(),"a name per engine and exhaust");
+        check(SettingsLayout.SOUND_CLASSIC==EngineSynth.engines()&&SettingsLayout.SOUND_ENGINES.length==EngineSynth.engines()+EngineSynthClassic.engines()
+            &&SettingsLayout.SOUND_EXHAUSTS.length==EngineSynth.exhausts()&&EngineSynthClassic.exhausts()==EngineSynth.exhausts(),"a name per engine (new, then 예전) and exhaust");
+        // The 예전 engines: the sound before 2026-11-20, every voice plays, bounded, turbo rows as named.
+        for(int e=0;e<EngineSynthClassic.engines();e++){
+            check(SettingsLayout.SOUND_HAS_TURBO[SettingsLayout.SOUND_CLASSIC+e]==EngineSynthClassic.voice(e,0).turbo(),"turbo rows follow 예전 engine "+e);
+            for(int x=0;x<EngineSynthClassic.exhausts();x++){
+                EngineSynthClassic c=new EngineSynthClassic(EngineSynth.RATE,EngineSynthClassic.voice(e,x));int n=2*EngineSynth.RATE;float[] all=new float[n];
+                for(int i=0;i<n;i+=512){c.set(5000,1,1);c.render(all,i,Math.min(512,n-i),1);}
+                float[] last=new float[EngineSynth.RATE];System.arraycopy(all,n-last.length,last,0,last.length);
+                check(rms(last)>.05&&peak(last)<=1,"예전 engine "+e+" exhaust "+x+": "+rms(last));
+            }
+        }
         for(int e=0;e<EngineSynth.engines();e++){
             check(SettingsLayout.SOUND_HAS_TURBO[e]==EngineSynth.voice(e,0).turbo(),"turbo rows follow engine "+e);
             for(int x=0;x<EngineSynth.exhausts();x++){

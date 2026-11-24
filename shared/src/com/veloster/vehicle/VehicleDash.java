@@ -194,7 +194,7 @@ public final class VehicleDash extends View implements Runnable {
             for(int k=0;k<3;k++)downSounds[k]=Math.max(-1,Math.min(SettingsLayout.BEEP_SOUNDS.length-1,p.getInt("downshift_sound_"+(k+1),SettingsLayout.DOWN_DEFAULT[k])));}catch(ClassCastException e){/* off, first sound */}
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);soundOn=SettingsLayout.ENGINE_SOUND&&p.getBoolean("engine_sound",false);
             soundRoute=Math.max(0,Math.min(SettingsLayout.SOUND_ROUTES.length-1,p.getInt("engine_sound_route",0)));
-            soundEngine=Math.max(0,Math.min(EngineSynth.engines()-1,p.getInt("engine_sound_engine",0)));
+            soundEngine=Math.max(0,Math.min(SettingsLayout.SOUND_ENGINES.length-1,p.getInt("engine_sound_engine",0)));
             soundExhaust=Math.max(0,Math.min(EngineSynth.exhausts()-1,p.getInt("engine_sound_exhaust",0)));EngineSound.fast=p.getBoolean("engine_sound_fast",false);SpeedChime.kmh=p.getInt("speed_chime_kmh",0);loadFloat(p);SpeedChime.sound=Math.max(0,Math.min(SpeedChime.NAMES.length-1,p.getInt("speed_chime_sound",0)));CassetteCluster.clickSound=p.getBoolean("cassette_click",true);
             for(int k=0;k<soundVals.length;k++)soundVals[k]=Math.max(SettingsLayout.SOUND_MIN[k],Math.min(SettingsLayout.SOUND_MAX[k],p.getInt(SOUND_KEYS[k],SettingsLayout.SOUND_DEFAULT[k])));}
         catch(ClassCastException e){/* Sound off for an incompatible saved value. */}
@@ -761,7 +761,7 @@ public final class VehicleDash extends View implements Runnable {
                     else if(i==SettingsLayout.SOUND_ON){boolean was=soundOn;SettingsLayout.floatSound=soundOn&&!SettingsLayout.floatSound;soundOn=!was||SettingsLayout.floatSound;   // 끔 -> 계기판 -> 항상 -> 끔, like 변속 알림음
                         e.putBoolean("float_sound",SettingsLayout.floatSound);}
                     else if(i==SettingsLayout.SOUND_ROUTE)soundRoute=(soundRoute+1)%SettingsLayout.SOUND_ROUTES.length;
-                    else if(i==SettingsLayout.SOUND_ENGINE)soundEngine=(soundEngine+1)%EngineSynth.engines();
+                    else if(i==SettingsLayout.SOUND_ENGINE)soundEngine=(soundEngine+1)%SettingsLayout.SOUND_ENGINES.length;
                     else if(i==SettingsLayout.SOUND_EXHAUST)soundExhaust=(soundExhaust+1)%EngineSynth.exhausts();
                     else{int z=SettingsLayout.screenZone(x);if(z!=SettingsLayout.screenZone(downX))break;   // − / +; the rest of the row is the default
                         int sv=i-SettingsLayout.SOUND_VOLUME;soundVals[sv]=SettingsLayout.soundStep(i,soundVals[sv],z);e.putInt(SOUND_KEYS[sv],soundVals[sv]);}

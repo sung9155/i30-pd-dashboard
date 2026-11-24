@@ -47,6 +47,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/Weather.java",
                ROOT / "shared/src/com/veloster/vehicle/ArcadeCarFrames.java",
                ROOT / "shared/src/com/veloster/vehicle/EngineSynth.java",
+               ROOT / "shared/src/com/veloster/vehicle/EngineSynthClassic.java",
                ROOT / "shared/src/com/veloster/vehicle/SpeedChime.java",
                ROOT / "shared/src/com/veloster/vehicle/ObdSchedule.java",
                ROOT / "shared/src/com/veloster/vehicle/Tiles.java",

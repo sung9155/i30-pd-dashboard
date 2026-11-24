@@ -86,8 +86,9 @@ public final class PackVoice {
             int m = Math.min(SEG, n - pos);
             double f = (pos + m * 0.5) / n, rpm = pRpm + (tRpm - pRpm) * f, load = pLoad + (tLoad - pLoad) * f;
             mix(seg, m, rpm, load);
-            // upstream EngineModel's 0.45 + 0.55 load left idle ~10 dB above EngineSynth: a lower floor and EngineSynth's rpm factor
-            double level = Math.min(1, rpm / 800) * (0.25 + 0.75 * load) * (.60 + .40 * Math.min(1, rpm / 6000));
+            // every loop is levelled to the same RMS, so loudness has to rise with rpm here: (rpm/6000)^0.7 x 1.4 on top of
+            // upstream EngineModel's 0.45 + 0.55 load puts idle, lift-off and a full pull within ~2 dB of EngineSynth's
+            double level = Math.min(1, rpm / 800) * (0.45 + 0.55 * load) * 1.4 * Math.pow(Math.min(1, rpm / 6000), 0.7);
             for (int i = 0; i < m; i++) {
                 master += (tm - master) * ke;
                 double y = seg[i] * level * master * drive;

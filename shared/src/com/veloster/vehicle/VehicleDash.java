@@ -456,6 +456,7 @@ public final class VehicleDash extends View implements Runnable {
         if(t<0||t!=SettingsLayout.floatHit(downX,downY,fw,fh,cr))return;
         if(t==SettingsLayout.F_ON){if(off)FloatPanel.shape=FloatPanel.lastShape;else{FloatPanel.lastShape=FloatPanel.shape;FloatPanel.shape=FloatPanel.OFF;}}
         else if(t==SettingsLayout.F_HIDE)FloatPanel.hideButton=!FloatPanel.hideButton;
+        else if(t==SettingsLayout.F_NMODE)FloatPanel.nmodeHide=!FloatPanel.nmodeHide;
         else if(t==SettingsLayout.F_MUSIC){if(shape==FloatPanel.MUSIC)return;FloatPanel.musicStrip=!FloatPanel.musicStrip;}
         else if(t==SettingsLayout.F_SKIN||t==SettingsLayout.F_SKIN_DAY){if(FloatPanel.skin>=0&&!FloatPanel.round(shape))floatEdit=t==SettingsLayout.F_SKIN?SettingsLayout.SKIN_SHEET:SettingsLayout.SKIN_SHEET_DAY;return;}   // dim while 계기판 따라 is on, and for round gauges
         else if(t>=SettingsLayout.F_DN&&t<SettingsLayout.F_DN+SettingsLayout.F_DN_NAMES.length){if(FloatPanel.skin<0||FloatPanel.round(shape))return;FloatPanel.dn=t-SettingsLayout.F_DN;}   // 자동 / 낮 / 밤, dim like the looks
@@ -480,7 +481,7 @@ public final class VehicleDash extends View implements Runnable {
         try{int shape=p.getInt("float_shape",-1),size=p.getInt("float_size",1);
             if(shape<0){int old=p.getInt("float_style",0);shape=old==1||old==2?FloatPanel.CARD:old==3?FloatPanel.STRIP:old==4?FloatPanel.SIDE:FloatPanel.OFF;if(old==2)size=3;}   // the first test build's single choice
             FloatPanel.shape=shape>=FloatPanel.OFF&&shape<=FloatPanel.LAST_SHAPE?shape:FloatPanel.OFF;FloatPanel.size=Math.max(0,Math.min(FloatPanel.SIZES.length-1,size));
-            int n=p.getInt("float_count",4);FloatPanel.count=n>=1&&n<=FloatPanel.MAX_CELLS?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);FloatPanel.musicStrip=p.getBoolean("float_music_strip",false);
+            int n=p.getInt("float_count",4);FloatPanel.count=n>=1&&n<=FloatPanel.MAX_CELLS?n:4;FloatPanel.hideButton=p.getBoolean("float_hide_button",true);FloatPanel.musicStrip=p.getBoolean("float_music_strip",false);FloatPanel.nmodeHide=p.getBoolean("float_nmode_hide",true);
             int last=p.getInt("float_last_shape",FloatPanel.CARD);FloatPanel.lastShape=last>=FloatPanel.CARD&&last<=FloatPanel.LAST_SHAPE?last:FloatPanel.CARD;
             {int ef=FloatPanel.shape==FloatPanel.OFF?FloatPanel.lastShape:FloatPanel.shape;if(!FloatPanel.fits(ef,FloatPanel.count))FloatPanel.count=FloatPanel.fitCount(ef,FloatPanel.count);}   // a count the shape takes (세로 띠 + RPM: 7)
             int cn=p.getInt("float_corner",0),co=p.getInt("float_color",0),al=p.getInt("float_alpha",1),skn=p.getInt("float_skin",FloatPanel.AUTO);
@@ -500,7 +501,7 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){FloatPanel.shape=FloatPanel.OFF;}
     }
     private static void saveFloat(android.content.SharedPreferences.Editor e){
-        e.putInt("float_shape",FloatPanel.shape).putInt("float_count",FloatPanel.count).putInt("float_size",FloatPanel.size).putBoolean("float_hide_button",FloatPanel.hideButton).putBoolean("float_music_strip",FloatPanel.musicStrip).remove("float_style")
+        e.putInt("float_shape",FloatPanel.shape).putInt("float_count",FloatPanel.count).putInt("float_size",FloatPanel.size).putBoolean("float_hide_button",FloatPanel.hideButton).putBoolean("float_music_strip",FloatPanel.musicStrip).putBoolean("float_nmode_hide",FloatPanel.nmodeHide).remove("float_style")
          .putInt("float_last_shape",FloatPanel.lastShape).putInt("float_corner",FloatPanel.corner).putInt("float_color",FloatPanel.color).putInt("float_alpha",FloatPanel.alpha).putInt("float_skin",FloatPanel.skin)
          .putInt("float_dn",FloatPanel.dn).putInt("float_skin_day",FloatPanel.skinDay).putInt("float_skin_night",FloatPanel.skinNight);
         for(int k=0;k<FloatPanel.MAX_CELLS;k++)e.putInt("float_cell_"+k,FloatPanel.cells[k]).putInt("float_graph_"+k,FloatPanel.graphs[k]);}

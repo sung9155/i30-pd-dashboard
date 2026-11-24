@@ -412,7 +412,8 @@ public final class PitRenderer {
         {float[] b=SettingsLayout.F_ON_BOX;String on=UiText.t("플로팅")+"  "+UiText.t(off?"끔":"켬");   // the main switch: filled while on
             if(off)chip(c,b,on,null,false,false);else{box(c,b[0],b[1],b[2],b[3],BLUE);centered(c,on,(b[0]+b[2])/2,(b[1]+b[3])/2+6,15,DARK_INK,true);}}
         boolean ms=FloatPanel.musicStrip&&shape!=FloatPanel.MUSIC;   // the 음악 shape shows the track itself: the strip is dim there
-        chip(c,SettingsLayout.F_MUSIC_BOX,UiText.t("음악 띠")+"  "+UiText.t(ms?"켬":"끔"),null,ms&&!off,shape==FloatPanel.MUSIC||off);
+        chip(c,SettingsLayout.F_MUSIC_BOX,UiText.t("음악 띠"),UiText.t(ms?"켬":"끔"),ms&&!off,shape==FloatPanel.MUSIC||off);
+        chip(c,SettingsLayout.F_NMODE_BOX,UiText.t("N 모드에서 숨김"),UiText.t(FloatPanel.nmodeHide?"켬":"끔"),FloatPanel.nmodeHide&&!off,off);
         chip(c,SettingsLayout.F_HIDE_BOX,UiText.t("내 앱 버튼 숨김")+"  "+UiText.t(FloatPanel.hideButton?"켬":"끔"),null,FloatPanel.hideButton&&!off,off);
         float[] cb=SettingsLayout.F_CELL_BOX;panel(c,cb[0],cb[1],cb[2]-cb[0],cb[3]-cb[1],0xff101315,LINE);
         int sig=FloatPanel.signal(sel,profile);

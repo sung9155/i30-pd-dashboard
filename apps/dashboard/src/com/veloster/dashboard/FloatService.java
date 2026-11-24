@@ -86,7 +86,7 @@ public final class FloatService extends Service implements Runnable {
         if(mLastTick>0)mGapMax=Math.max(mGapMax,now0-mLastTick);mLastTick=now0;
         if(now0-hwCheckedAt>=2000){hwCheckedAt=now0;nmodeTop=topIs(NMODE);java.io.File sd=android.os.Environment.getExternalStorageDirectory();boolean want=!new java.io.File(sd,SW_FLAG).exists();if(want!=hw){hw=want;remove();}
             FloatPanel.glideOn=!new java.io.File(sd,"i30pd_float_noglide").exists();FloatPanel.layerOn=!new java.io.File(sd,"i30pd_float_nolayer").exists();}   // a new window with the other renderer
-        int want=VehicleDash.rearCamera()||nmodeTop||FloatPanel.shape==FloatPanel.OFF?-1:FloatPanel.shape*100+FloatPanel.count*10+FloatPanel.size+(FloatPanel.round()?1000:0)+(FloatPanel.musicStrip?10000:0);   // the round gauge has square cells, the 음악 띠 a taller window: their own
+        int want=VehicleDash.rearCamera()||nmodeTop&&FloatPanel.nmodeHide||FloatPanel.shape==FloatPanel.OFF?-1:FloatPanel.shape*100+FloatPanel.count*10+FloatPanel.size+(FloatPanel.round()?1000:0)+(FloatPanel.musicStrip?10000:0);   // the round gauge has square cells, the 음악 띠 a taller window: their own
         if(want!=shown){remove();if(want>=0)add(FloatPanel.shape,FloatPanel.count,FloatPanel.size);}
         boolean music=panel!=null&&FloatPanel.musicShown();if(music!=musicOn){musicOn=music;VehicleDash.floatMusic(this,music);}
         if(music)FloatPanel.music(VehicleDash.floatTrack(),VehicleDash.floatArtwork());

@@ -146,6 +146,7 @@ public final class UiText {
         EN.put("KIC 상설 서킷","KIC Permanent Circuit");
         EN.put("L · 가속 페달","L · accelerator");
         EN.put("N 계기판","N Dashboard");
+        EN.put("N 모드에서 숨김","Hide in N Mode");
         EN.put("OBD 응답 없음","No OBD answer");
         EN.put("OBD 응답 있음","OBD answering");
         EN.put("R · 부스트","R · boost");

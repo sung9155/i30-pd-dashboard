@@ -71,7 +71,7 @@ def main():
                         *map(str, sources)], check=True)
         for test in tests:
             cls = {"HscanFrameDecoderTest": "com.veloster.dashboard.", "ArcadeGameTest": "com.veloster.vehicle.", "SoundYieldTest": "com.veloster.vehicle."}.get(test.stem, "") + test.stem   # tests of package-private classes
-            subprocess.run([str(java), "-ea", "-cp", temporary, cls], check=True)
+            subprocess.run([str(java), "-ea", "-cp", temporary, cls], check=True, cwd=ROOT)   # tests read repo files by relative path
     print("PASS: " + str(len(tests)) + " synthetic host test programs. Vehicle operation is outside this scope.")
 
 

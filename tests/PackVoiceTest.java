@@ -112,6 +112,13 @@ public final class PackVoiceTest {
         }finally{
             for(File d:tmp.listFiles()){for(File f:d.listFiles())f.delete();d.delete();}tmp.delete();
         }
+        // every built-in pack (res/raw/enginepack_<id>.zip, the 소리 원본 row's list) loads and plays a sweep, bounded
+        for(String id:com.veloster.vehicle.SettingsLayout.PACK_IDS){
+            java.io.InputStream in=new java.io.FileInputStream("apps/dashboard/res/raw/enginepack_"+id+".zip");SoundPack bp;try{bp=SoundPack.fromZip(in);}finally{in.close();}
+            check(bp.name.equals(id)&&bp.aligned,"built-in pack "+id+" loads");
+            PackVoice v=new PackVoice(SR,bp);double lo=rms(run(v,900,0,2),SR),hi=rms(run(v,5500,1,2),SR);
+            check(lo>.005&&hi>lo&&peak(run(v,6500,1,.5))<=1,"built-in pack "+id+" plays, louder on load at high rpm");
+        }
         System.out.println("PASS "+checks+" sound pack checks");
     }
 }

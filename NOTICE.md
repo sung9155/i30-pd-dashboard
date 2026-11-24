@@ -40,7 +40,7 @@ CAN 메시지·신호의 배치와 배율은 [commaai/opendbc](https://github.co
 
 `SoundYield`(안내·통화 양보, 속도 따라 키우기)와 `SoundPack`·`PackVoice`(소리 팩 재생)는 [jihoon-seo/de22ev-ves](https://github.com/jihoon-seo/de22ev-ves)(`0561cae`, MIT, Copyright (c) 2026 Jihoon Seo)의 `AudioPolicy`·`SharedChannel`·`GainEnvelope.speedBoost`·`Pack`·`PackLoader`·`Wav`·`PackVoice`를 옮긴 것입니다. 마이컴 리스너 번호와 스트림 종류는 우리 펌웨어(V141)에 맞게 바꿨고, 출력 필터와 EV 엔진 모델은 뺐습니다. 위 MIT 허가 문구가 이 파일들에도 적용됩니다.
 
-내장 소리 팩 `apps/dashboard/res/raw/enginepack_i4t.zip`은 같은 레포의 `tools/render`(DasEtwas/enginesound의 MIT 물리 모델 이식)로 그 레포의 `engines/i4t.txt` 설정에서 렌더한 것입니다. 실제 차를 녹음한 것이 아니며, 렌더한 팩은 CC0 1.0(퍼블릭 도메인)입니다.
+내장 소리 팩 `apps/dashboard/res/raw/enginepack_{i4t,i6,v6,v8}.zip`은 같은 레포의 `tools/render`(DasEtwas/enginesound의 MIT 물리 모델 이식)로 그 레포의 `engines/<이름>.txt` 설정에서 렌더한 것입니다. 그 레포의 `packs/`에 있는 실차 기반 팩(히릿 제작)은 그 저작자의 허락이 필요해 넣지 않았습니다. 실제 차를 녹음한 것이 아니며, 렌더한 팩은 CC0 1.0(퍼블릭 도메인)입니다.
 
 ## 이 레포에 넣지 않은 것
 

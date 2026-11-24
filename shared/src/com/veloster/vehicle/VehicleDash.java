@@ -228,12 +228,12 @@ public final class VehicleDash extends View implements Runnable {
         applyScreen();
         setVisibility(GONE); }
     /** Hands the saved sound choices to the audio thread. */
-    /** 소리 원본: "" = EngineSynth, "i4t" = the built-in recorded pack, else a folder or .zip in <storage>/i30dashboard/packs. */
+    /** 소리 원본: "" = EngineSynth, a SettingsLayout.PACK_IDS key = a built-in pack, else a folder or .zip in <storage>/i30dashboard/packs. */
     private static java.io.File packsDir(){return new java.io.File(new java.io.File(android.os.Environment.getExternalStorageDirectory(),SettingsBackup.DIR),"packs");}
     private static String[] soundSources(){
-        java.util.ArrayList<String> l=new java.util.ArrayList<String>();l.add("");l.add("i4t");
+        java.util.ArrayList<String> l=new java.util.ArrayList<String>();l.add("");l.addAll(java.util.Arrays.asList(SettingsLayout.PACK_IDS));
         java.io.File[] fs=packsDir().listFiles();
-        if(fs!=null){java.util.Arrays.sort(fs);for(java.io.File f:fs)if(f.isDirectory()&&new java.io.File(f,"pack.txt").isFile()||f.getName().toLowerCase(java.util.Locale.US).endsWith(".zip"))l.add(f.getName());}
+        if(fs!=null){java.util.Arrays.sort(fs);for(java.io.File f:fs)if(!l.contains(f.getName())&&(f.isDirectory()&&new java.io.File(f,"pack.txt").isFile()||f.getName().toLowerCase(java.util.Locale.US).endsWith(".zip")))l.add(f.getName());}
         return l.toArray(new String[0]);
     }
     /** Loads the pack off the UI and audio threads (parsing and resampling take a while on the head unit); the synth plays meanwhile. */
@@ -244,7 +244,7 @@ public final class VehicleDash extends View implements Runnable {
         new Thread(new Runnable(){public void run(){
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);long t0=android.os.SystemClock.uptimeMillis();   // behind the drawing
             try{SoundPack sp;
-                if(src.equals("i4t")){java.io.InputStream in=c.getResources().openRawResource(c.getResources().getIdentifier("enginepack_i4t","raw",c.getPackageName()));try{sp=SoundPack.fromZip(in);}finally{in.close();}}
+                if(java.util.Arrays.asList(SettingsLayout.PACK_IDS).contains(src)){java.io.InputStream in=c.getResources().openRawResource(c.getResources().getIdentifier("enginepack_"+src,"raw",c.getPackageName()));try{sp=SoundPack.fromZip(in);}finally{in.close();}}
                 else{java.io.File f=new java.io.File(packsDir(),src);
                     if(f.isDirectory())sp=SoundPack.fromDir(f);else{java.io.InputStream in=new java.io.FileInputStream(f);try{sp=SoundPack.fromZip(in);}finally{in.close();}}}
                 PackVoice v=new PackVoice(EngineSynth.RATE,sp);

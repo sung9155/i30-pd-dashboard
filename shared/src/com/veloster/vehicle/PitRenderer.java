@@ -317,7 +317,7 @@ public final class PitRenderer {
                     else if(i==SettingsLayout.SOUND_ON){sel=soundOn;name="엔진 사운드";sub="항상 = 플로팅 창에서도";value=!soundOn?"끔":SettingsLayout.floatSound?"항상":"계기판";}
                     else if(i==SettingsLayout.SOUND_ROUTE){name="출력 경로";dim=!soundOn;value=SettingsLayout.SOUND_ROUTES[soundRoute];}
                     else if(i==SettingsLayout.SOUND_SOURCE){String src=SettingsLayout.soundSource,err=SettingsLayout.soundSourceError;name="소리 원본";dim=!soundOn;
-                        value=src.length()==0?"합성":src.equals("i4t")?"소리 팩 · 4기통 터보":src;
+                        value=SettingsLayout.sourceName(src);
                         sub=err!=null?"팩을 못 읽음: "+err:"소리 팩은 엔진·배기·팝·터보 줄을 안 씀 · 내 팩: 저장공간 i30dashboard/packs";}
                     else if(i==SettingsLayout.SOUND_ENGINE){name="엔진";dim=!soundOn||packOn;value=SettingsLayout.SOUND_ENGINES[soundEngine];}
                     else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn||packOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}

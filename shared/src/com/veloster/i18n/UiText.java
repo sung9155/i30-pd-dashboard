@@ -700,6 +700,9 @@ public final class UiText {
         EN.put("소리 반응 속도","Sound response");
         EN.put("소리 원본","Sound source");
         EN.put("소리 팩 · 4기통 터보","Sound pack · turbo 4");
+        EN.put("소리 팩 · V6","Sound pack · V6");
+        EN.put("소리 팩 · V8","Sound pack · V8");
+        EN.put("소리 팩 · 직렬 6기통","Sound pack · inline 6");
         EN.put("소리 팩은 엔진·배기·팝·터보 줄을 안 씀 · 내 팩: 저장공간 i30dashboard/packs","Packs ignore the engine, exhaust, pop and turbo rows · your packs: storage i30dashboard/packs");
         EN.put("속도","Speed");
         EN.put("속도 GPS 보정 값 초기화","Reset the GPS speed correction");

@@ -43,7 +43,11 @@ public final class SettingsLayout {
     public static final boolean ENGINE_SOUND=true;
     public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_SOURCE=2,SOUND_ENGINE=3,SOUND_EXHAUST=4,SOUND_VOLUME=5,SOUND_MIX=6,SOUND_POP=7,SOUND_TURBO=8,SOUND_BOV=9,SOUND_LEAD=10,SOUND_FAST=11,SOUND_YIELD=12,SOUND_BOOST=13;
     /** 안내·통화 양보 (SoundYield.OFF, DUCK, STOP) and 속도 따라 키우기 (SoundYield.speedBoost levels 0..3). */
-    /** 소리 원본 row: the source key VehicleDash loaded ("" synth, "i4t" built-in pack, else a file name in packs/) and why a pack failed (null: fine). */
+    /** 소리 원본 row: the source key VehicleDash loaded ("" synth, a PACK_IDS built-in pack, else a file name in packs/) and why a pack failed (null: fine). */
+    /** Built-in sound packs (res/raw/enginepack_<id>.zip, rendered by de22ev-ves tools/render, CC0) and their row names. */
+    public static final String[] PACK_IDS={"i4t","i6","v6","v8"},PACK_NAMES={"소리 팩 · 4기통 터보","소리 팩 · 직렬 6기통","소리 팩 · V6","소리 팩 · V8"};
+    /** The row value for a source key. */
+    public static String sourceName(String src){if(src.length()==0)return "합성";int k=java.util.Arrays.asList(PACK_IDS).indexOf(src);return k>=0?PACK_NAMES[k]:src;}
     public static volatile String soundSource="",soundSourceError;
     public static final String[] SOUND_YIELDS={"끔","안내 때 줄이기","안내 때 멈추기"},SOUND_BOOSTS={"끔","약 (+3 dB)","중 (+6 dB)","강 (+9 dB)"};
     /** 효과음 pane rows: sounds that are not the engine (each its own switch, independent of ENGINE_SOUND). */

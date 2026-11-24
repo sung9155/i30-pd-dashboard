@@ -63,6 +63,7 @@ public final class Tiles {
         if(s==Telemetry.CLUTCH)return mt;
         if(s==CLUTCH||s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN||s>=Telemetry.DCT_LIFE_A_ODD&&s<=Telemetry.DCT_LIFE_B_EVEN)return !mt;
         if(s==Telemetry.SPARK)return !diesel;
+        if(s==Telemetry.OIL_ECU)return false;   // the oil slot (1) carries it now on the engine it was checked on; a tile picked before still shows it
         if(Telemetry.noSource(s))return false;
         return s>=0&&s<Telemetry.LABELS.length||s>=TIRES&&s<=CORNER_MAX_LAT;
     }
@@ -96,6 +97,7 @@ public final class Tiles {
         "MIL","RUN TIME","IDLE TIME","DRIVE TIME","OIL ECU"};
     public static String caption(int s){
         switch(s){case TIRES:return "TPMS";case CLUTCH:return "CLUTCH";case DPF:return "DPF";case EXHAUST:return "EXHAUST";case CORNER_MIN_SPEED:return "BTM SPEED";case CORNER_MAX_LAT:return "PREV LAT G";}
+        if(s==1&&Telemetry.oilEcu)return "OIL";
         return s>=0&&s<CAPTION.length?CAPTION[s]:"—";
     }
     public static String unit(int s){
@@ -134,8 +136,8 @@ public final class Tiles {
     /** 0 normal, 1 warm / low (amber), 2 critical (red). */
     public static int level(int s,float v){
         if(Float.isNaN(v))return 0;
-        if(s==2||s==1)return v>=110?2:v>=100?1:0;
-        if(s==Telemetry.OIL_ECU)return v>=130?2:v>=120?1:0;   // engine oil runs hotter than coolant
+        if(s==2||s==1&&!Telemetry.oilEcu)return v>=110?2:v>=100?1:0;
+        if(s==Telemetry.OIL_ECU||s==1&&Telemetry.oilEcu)return v>=130?2:v>=120?1:0;   // engine oil runs hotter than coolant
         if(s==Telemetry.INTAKE)return v>=80?2:v>=60?1:0;
         if(s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN)return Telemetry.clutchLevel(v);
         if(s>=Telemetry.TPMS_FL&&s<=Telemetry.TPMS_RR)return v<26?2:v<30?1:0;
@@ -146,7 +148,7 @@ public final class Tiles {
     /** Where the reading sits on the tile's bar, 0..1, NaN for signals without a sensible scale. */
     public static float fraction(int s,float v){
         float lo,hi;
-        if(s==0){lo=0;hi=8000;}else if(s==1||s==2){lo=40;hi=120;}else if(s==Telemetry.OIL_ECU){lo=40;hi=140;}else if(s==Telemetry.INTAKE){lo=0;hi=80;}
+        if(s==0){lo=0;hi=8000;}else if(s==Telemetry.OIL_ECU||s==1&&Telemetry.oilEcu){lo=40;hi=140;}else if(s==1||s==2){lo=40;hi=120;}else if(s==Telemetry.INTAKE){lo=0;hi=80;}
         else if(s==Telemetry.AMBIENT){lo=-20;hi=40;}else if(s==Telemetry.CAT_TEMP){lo=0;hi=900;}
         else if(s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN){lo=0;hi=250;}else if(s==Telemetry.DPF_TEMP||s==Telemetry.EGT_CAT){lo=0;hi=700;}
         else if(s==Telemetry.DPF_SOOT){lo=0;hi=20;}else if(s==Telemetry.DPF_DP){lo=0;hi=50;}

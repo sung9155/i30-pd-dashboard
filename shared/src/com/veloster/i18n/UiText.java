@@ -64,6 +64,7 @@ public final class UiText {
         EN.put("3번 인젝터 회로 높음","Injector 3 circuit high");
         EN.put("3번 인젝터 회로 이상","Injector 3 circuit malfunction");
         EN.put("4 × 3 보기","4 x 3 grid");
+        EN.put("40 km/h부터 110 km/h까지 바람·노면 소음만큼 크게","Louder from 40 to 110 km/h, to match wind and road noise");
         EN.put("4단 기어비 불일치","Incorrect 4th gear ratio");
         EN.put("4번 실린더 실화 감지","Cylinder 4 misfire detected");
         EN.put("4번 예열 플러그 회로 이상","Glow plug 4 circuit malfunction");
@@ -199,6 +200,7 @@ public final class UiText {
         EN.put("각진","Square");
         EN.put("감시 회로(워치독) 오류","Monitoring circuit (watchdog) error");
         EN.put("값·그래프 바꾸기","Change reading and graph");
+        EN.put("강 (+9 dB)","High (+9 dB)");
         EN.put("강원","Gangwon");
         EN.put("강제 재시작","Restart head unit");
         EN.put("개"," full");
@@ -322,6 +324,7 @@ public final class UiText {
         EN.put("내부 고장","Internal failure");
         EN.put("내부 전자 회로 고장","Internal electronic circuit failure");
         EN.put("내비 빌드","Head unit build");
+        EN.put("내비 안내·전화·음성인식 때 엔진 소리를 줄이거나 멈춤 · 통화는 늘 멈춤","Lower or stop the engine sound for prompts, calls and voice control · calls always stop it");
         EN.put("내비 효과음 · 차에서 무음","Navi effects · silent in car");
         EN.put("내비게이션 시스템을 재시작합니다. 화면·음악·PC 연결이 잠시 끊깁니다. 정차 중에 사용하세요.","Restart the head unit. The display, music and PC connection will be interrupted briefly. Use while parked.");
         EN.put("내비게이션 재시작","Restart head unit");
@@ -695,9 +698,13 @@ public final class UiText {
         EN.put("센서 기준 전압 B 회로 이상","Sensor reference voltage B circuit malfunction");
         EN.put("센서 전원 전압 이상 (조향: 토크 센서 전원)","Sensor supply voltage fault (steering: torque sensor supply)");
         EN.put("소리 반응 속도","Sound response");
+        EN.put("소리 원본","Sound source");
+        EN.put("소리 팩 · 4기통 터보","Sound pack · turbo 4");
+        EN.put("소리 팩은 엔진·배기·팝·터보 줄을 안 씀 · 내 팩: 저장공간 i30dashboard/packs","Packs ignore the engine, exhaust, pop and turbo rows · your packs: storage i30dashboard/packs");
         EN.put("속도","Speed");
         EN.put("속도 GPS 보정 값 초기화","Reset the GPS speed correction");
         EN.put("속도 km/h","Speed km/h");
+        EN.put("속도 따라 키우기","Louder with speed");
         EN.put("속도계가 실제보다 %.1f %% 낮게 나옴","The speedometer reads %.1f %% low");
         EN.put("속도계가 실제보다 %.1f %% 높게 나옴","The speedometer reads %.1f %% high");
         EN.put("속도계가 실제와 같음","The speedometer reads true");
@@ -770,6 +777,9 @@ public final class UiText {
         EN.put("아이언 그레이","Iron Grey");
         EN.put("아주 크게","Extra large");
         EN.put("아케이드","Arcade");
+        EN.put("안내 때 멈추기","Stop for prompts");
+        EN.put("안내 때 줄이기","Lower for prompts");
+        EN.put("안내·통화 양보","Give way to prompts and calls");
         EN.put("안드로이드 기본 · 차에서 무음","Android default · silent in car");
         EN.put("안드로이드 기본앱","Android utilities");
         EN.put("안드로이드 블루투스 어댑터가 없습니다.","No Android Bluetooth adapter is available.");
@@ -793,6 +803,7 @@ public final class UiText {
         EN.put("앱 화면을 열지 못했습니다. 알림에서 다시 시도하세요.","Could not open My Apps. Try the notification.");
         EN.put("야간","Night");
         EN.put("야간 미니멀","Night minimal");
+        EN.put("약 (+3 dB)","Low (+3 dB)");
         EN.put("얇은 띠","Thin strip");
         EN.put("언어","Language");
         EN.put("언어 설정을 저장하지 못했습니다.","Could not save the language setting.");
@@ -1151,6 +1162,7 @@ public final class UiText {
         EN.put("주행가능거리","Range");
         EN.put("주행거리","Odometer");
         EN.put("주황 LCD","Orange LCD");
+        EN.put("중 (+6 dB)","Medium (+6 dB)");
         EN.put("중통 제거","Resonator delete");
         EN.put("증발가스 누설 (주유구 캡 풀림·없음)","Evaporative emission leak (fuel filler cap loose or missing)");
         EN.put("증발가스 벤트 밸브 회로 이상","Evaporative emission vent valve circuit malfunction");
@@ -1378,6 +1390,7 @@ public final class UiText {
         EN.put("할증","Night");
         EN.put("할증 (심야·시계외)","Surcharge (night, area)");
         EN.put("합계","Total");
+        EN.put("합성","Synthesised");
         EN.put("합성 G","Combined G");
         EN.put("핫스팟 끄기 확인 실패. 백업을 보존했습니다. 다시 복구하세요.","Could not confirm hotspot shutdown. Backup retained; retry restoration.");
         EN.put("핫스팟 요청 실패/시간 초과. 성공으로 판정하지 않습니다. 원상복구하세요.","Hotspot request failed or timed out. Success is not confirmed; restore the original settings.");

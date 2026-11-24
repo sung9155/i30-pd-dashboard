@@ -57,6 +57,9 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/SpeedCal.java",
                ROOT / "shared/src/com/veloster/vehicle/SettingsBackup.java",
                ROOT / "shared/src/com/veloster/vehicle/Glide.java",
+               ROOT / "shared/src/com/veloster/vehicle/SoundPack.java",
+               ROOT / "shared/src/com/veloster/vehicle/PackVoice.java",
+               ROOT / "shared/src/com/veloster/vehicle/SoundYield.java",
                ROOT / "shared/src/com/veloster/i18n/UiText.java",
                ROOT / "shared/src/com/veloster/diagnostics/ErrorLog.java",
                ROOT / "apps/dashboard/src/com/veloster/dashboard/HscanFrameDecoder.java"]
@@ -67,7 +70,7 @@ def main():
         subprocess.run([str(javac), "-encoding", "UTF-8", "-d", temporary,
                         *map(str, sources)], check=True)
         for test in tests:
-            cls = {"HscanFrameDecoderTest": "com.veloster.dashboard.", "ArcadeGameTest": "com.veloster.vehicle."}.get(test.stem, "") + test.stem   # tests of package-private classes
+            cls = {"HscanFrameDecoderTest": "com.veloster.dashboard.", "ArcadeGameTest": "com.veloster.vehicle.", "SoundYieldTest": "com.veloster.vehicle."}.get(test.stem, "") + test.stem   # tests of package-private classes
             subprocess.run([str(java), "-ea", "-cp", temporary, cls], check=True)
     print("PASS: " + str(len(tests)) + " synthetic host test programs. Vehicle operation is outside this scope.")
 

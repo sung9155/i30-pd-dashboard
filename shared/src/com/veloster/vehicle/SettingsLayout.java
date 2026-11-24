@@ -41,7 +41,11 @@ public final class SettingsLayout {
     /** Virtual engine sound (off 2026-11-04, back 2026-11-05 at the user's word). false: the 사운드 pane shows one dimmed
      *  line and the sound never starts, whatever was saved. ponytail: a flag, not a removal. */
     public static final boolean ENGINE_SOUND=true;
-    public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_MIX=5,SOUND_POP=6,SOUND_TURBO=7,SOUND_BOV=8,SOUND_LEAD=9,SOUND_FAST=10;
+    public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_SOURCE=2,SOUND_ENGINE=3,SOUND_EXHAUST=4,SOUND_VOLUME=5,SOUND_MIX=6,SOUND_POP=7,SOUND_TURBO=8,SOUND_BOV=9,SOUND_LEAD=10,SOUND_FAST=11,SOUND_YIELD=12,SOUND_BOOST=13;
+    /** 안내·통화 양보 (SoundYield.OFF, DUCK, STOP) and 속도 따라 키우기 (SoundYield.speedBoost levels 0..3). */
+    /** 소리 원본 row: the source key VehicleDash loaded ("" synth, "i4t" built-in pack, else a file name in packs/) and why a pack failed (null: fine). */
+    public static volatile String soundSource="",soundSourceError;
+    public static final String[] SOUND_YIELDS={"끔","안내 때 줄이기","안내 때 멈추기"},SOUND_BOOSTS={"끔","약 (+3 dB)","중 (+6 dB)","강 (+9 dB)"};
     /** 효과음 pane rows: sounds that are not the engine (each its own switch, independent of ENGINE_SOUND). */
     public static final int FX_CLICK=0,FX_COIN=1,FX_CHIME=2,FX_CHIME_SOUND=3,FX_VOL=4;
     /** 효과음 volume in percent (0..200, − / + on FX_VOL): coin, cassette click and speed chime; the shift and downshift beeps keep RPM_BEEP_VOL. */
@@ -88,7 +92,7 @@ public final class SettingsLayout {
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
         switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
-            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_FAST+1:1;case FX:return FX_VOL+1;case LANG:return LANGS.length;case DIAG:return 5;case FLOAT:return FLOAT_CELL+4;
+            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_BOOST+1:1;case FX:return FX_VOL+1;case LANG:return LANGS.length;case DIAG:return 5;case FLOAT:return FLOAT_CELL+4;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
     public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME?3:cat==PAINT?2:1;}

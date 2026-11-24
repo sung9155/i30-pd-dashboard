@@ -312,17 +312,24 @@ public final class PitRenderer {
                         dim=d<0;value=d<0?"끔":SettingsLayout.BEEP_SOUNDS[d];break;}
                     name=i==SettingsLayout.RPM_SHIFT?"변속 목표":"레드라인";
                     sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
-                case SettingsLayout.SOUND:
+                case SettingsLayout.SOUND:{boolean packOn=SettingsLayout.soundSource.length()>0;
                     if(!SettingsLayout.ENGINE_SOUND){name="엔진 사운드";dim=true;value="사용 안 함";}
                     else if(i==SettingsLayout.SOUND_ON){sel=soundOn;name="엔진 사운드";sub="항상 = 플로팅 창에서도";value=!soundOn?"끔":SettingsLayout.floatSound?"항상":"계기판";}
                     else if(i==SettingsLayout.SOUND_ROUTE){name="출력 경로";dim=!soundOn;value=SettingsLayout.SOUND_ROUTES[soundRoute];}
-                    else if(i==SettingsLayout.SOUND_ENGINE){name="엔진";dim=!soundOn;value=SettingsLayout.SOUND_ENGINES[soundEngine];}
-                    else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}
+                    else if(i==SettingsLayout.SOUND_SOURCE){String src=SettingsLayout.soundSource,err=SettingsLayout.soundSourceError;name="소리 원본";dim=!soundOn;
+                        value=src.length()==0?"합성":src.equals("i4t")?"소리 팩 · 4기통 터보":src;
+                        sub=err!=null?"팩을 못 읽음: "+err:"소리 팩은 엔진·배기·팝·터보 줄을 안 씀 · 내 팩: 저장공간 i30dashboard/packs";}
+                    else if(i==SettingsLayout.SOUND_ENGINE){name="엔진";dim=!soundOn||packOn;value=SettingsLayout.SOUND_ENGINES[soundEngine];}
+                    else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn||packOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}
                     else if(i==SettingsLayout.SOUND_FAST){sel=EngineSound.fast;name="소리 반응 속도";dim=!soundOn;sub="빠름: 소리가 덜 늦음 · 화면이 느려질 때 소리가 끊기면 보통으로";value=EngineSound.fast?"빠름":"보통";}
+                    else if(i==SettingsLayout.SOUND_YIELD){int m=EngineSound.yieldMode;sel=m>0;name="안내·통화 양보";dim=!soundOn;
+                        sub="내비 안내·전화·음성인식 때 엔진 소리를 줄이거나 멈춤 · 통화는 늘 멈춤";value=SettingsLayout.SOUND_YIELDS[m];}
+                    else if(i==SettingsLayout.SOUND_BOOST){int b=EngineSound.boostLevel;sel=b>0;name="속도 따라 키우기";dim=!soundOn;
+                        sub="40 km/h부터 110 km/h까지 바람·노면 소음만큼 크게";value=SettingsLayout.SOUND_BOOSTS[b];}
                     else{name=SOUND_ROW_NAMES[i-SettingsLayout.SOUND_VOLUME];sub=SOUND_ROW_SUBS[i-SettingsLayout.SOUND_VOLUME];
                         boolean noTurbo=(i==SettingsLayout.SOUND_TURBO||i==SettingsLayout.SOUND_BOV)&&!SettingsLayout.SOUND_HAS_TURBO[soundEngine];
-                        dim=!soundOn||noTurbo;}
-                    break;
+                        dim=!soundOn||noTurbo||packOn&&i!=SettingsLayout.SOUND_VOLUME;}
+                    break;}
                 case SettingsLayout.FX:   // sounds that are not the engine: each its own switch (strings kept as they were, for the translations)
                     if(i==SettingsLayout.FX_CLICK){sel=CassetteCluster.clickSound;name="카세트 찰칵 소리";sub="카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개";value=CassetteCluster.clickSound?"켬":"끔";}
                     else if(i==SettingsLayout.FX_COIN){sel=EcoCluster.coinSound;name="에코 동전 소리";sub="에코 화면에서 동전이 떨어질 때 · 엔진 사운드와 별개";value=EcoCluster.coinSound?"켬":"끔";}

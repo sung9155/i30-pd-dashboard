@@ -117,6 +117,8 @@ public final class EngineSynth {
     private Voice p;
     /** Listener trims on the voice's own values (1 = as designed). */
     public volatile double popRate=1,turboVol=1,bovVol=1;
+    /** The engine itself (orders, pulses, flow, overrun pops) against the turbo whistle and blow-off: 0 leaves only those two. */
+    public volatile double engineVol=1;
     /** Big pops that earn a flame on screen (PixelCluster): only early in a lift and at most one per FLAME_GAP s. */
     public volatile int flames;
     /** elapsedRealtime when the latest of those pops leaves the speaker (set by EngineSound); PixelCluster shows it.
@@ -176,7 +178,7 @@ public final class EngineSynth {
      *  at or below 1 the finished sound is scaled, above 1 it is driven harder into the soft clip so it gets louder and
      *  more saturated without ever leaving -1..1 — no hard clipping). */
     public void render(float[] out,int off,int n,double volume){
-        Voice P=p;int nc=P.cyl.length,nf=bq.length;double popC=1-(1-P.popChance)*popRate,tv=turboVol,bv=bovVol;double[] pl=P.pulse;
+        Voice P=p;int nc=P.cyl.length,nf=bq.length;double popC=1-(1-P.popChance)*popRate,tv=turboVol,bv=bovVol,ev=engineVol;double[] pl=P.pulse;
         double k=1-Math.exp(-1/(.08*rate)),ka=1-Math.exp(-1/(.025*rate)),kr=lead>0?1-Math.exp(-1/(.03*rate)):k,leadN=lead*rate,ke=1-Math.exp(-1/(.15*rate)),
             pulseDecay=Math.exp(-1/(.0025*rate)),blowDecay=Math.exp(-1/(.15*rate)),dt=n/rate;
         if(!running&&master<1e-5){master=0;for(int i=0;i<n;i++)out[off+i]=0;return;}   // fully faded: silence
@@ -224,7 +226,7 @@ public final class EngineSynth {
             }
             double dc=y-hpIn+.995*hp;hpIn=y;hp=dc;
             double level=master*Math.min(1,rpm/800)*(.45+.55*pedal)*(.60+.40*Math.min(1,rpm/6000));
-            double s=dc*level;
+            double s=dc*level*ev;
             double spool=Math.max(0,Math.min(1,boost/1.2));
             if(spool>0){   // turbo whistle rises with boost, with a slow wobble
                 wobblePhase+=2*Math.PI*3.1/rate;
@@ -246,7 +248,7 @@ public final class EngineSynth {
             popSt[1]=popSt[0];popSt[0]=x;popSt[3]=popSt[2];popSt[2]=body;
             double punch=punchBq[0]*x+punchBq[1]*punchSt[0]+punchBq[2]*punchSt[1]-punchBq[3]*punchSt[2]-punchBq[4]*punchSt[3];
             punchSt[1]=punchSt[0];punchSt[0]=x;punchSt[3]=punchSt[2];punchSt[2]=punch;
-            s+=(softclip((body*1.7+punch*PUNCH)*1.3)*.85+cr)*P.popGain*master;
+            s+=(softclip((body*1.7+punch*PUNCH)*1.3)*.85+cr)*P.popGain*master*ev;
             out[off+i]=(float)(softclip(s*P.drive*(volume>1?volume:1))*(volume<1?volume:1));
         }
     }

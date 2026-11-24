@@ -37,6 +37,7 @@ public final class UiText {
         EN.put("'내 앱'이 설치돼 있지 않습니다.","'My Apps' is not installed.");
         EN.put(", 상세 설명 없음)",", no detailed description)");
         EN.put(". 백업이 남아 있으면 원상복구하세요.",". Restore the original settings if a backup remains.");
+        EN.put("0 %면 터보 휘슬 · 블로오프만","At 0 % only the turbo whistle and blow-off");
         EN.put("1.6 터보 4기통","1.6 turbo I4");
         EN.put("1단 기어비 불일치","Incorrect 1st gear ratio");
         EN.put("1단 아래 맞춤 소리","Sound: matched 1 gear down");
@@ -836,6 +837,7 @@ public final class UiText {
         EN.put("엔진 회전 주파수 = RPM ÷ 60","Crank frequency = RPM ÷ 60");
         EN.put("엔진 회전수","Engine speed");
         EN.put("엔진·변속기·제동·조향·에어백·바디 (읽기만)","Engine, transmission, brakes, steering, airbag, body (read only)");
+        EN.put("엔진음","Engine mix");
         EN.put("여러 실린더 / 무작위 실화 감지","Multiple cylinder / random misfire detected");
         EN.put("연결 점검","Connections");
         EN.put("연료","Fuel");

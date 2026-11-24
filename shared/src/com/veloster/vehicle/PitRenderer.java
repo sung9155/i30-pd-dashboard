@@ -85,7 +85,8 @@ public final class PitRenderer {
     public boolean shiftCue(){return cue!=null&&cue.shift;}
     public void setSound(boolean on,int route,int engine,int exhaust,int[] vals){soundOn=on;soundRoute=route;soundEngine=engine;soundExhaust=exhaust;soundVals=vals;}
     /** − / + sound rows from SettingsLayout.SOUND_VOLUME on (the first line is the name, the tap on it the default). */
-    private static final String[] SOUND_ROW_NAMES={"음량","팝 빈도","터보 휘슬","블로오프","지연 보정"};
+    private static final String[] SOUND_ROW_NAMES={"음량","엔진음","팝 빈도","터보 휘슬","블로오프","지연 보정"},
+        SOUND_ROW_SUBS={null,"0 %면 터보 휘슬 · 블로오프만",null,null,null,null};
     private String soundValue(int row){
         int v=soundVals[row-SettingsLayout.SOUND_VOLUME];
         return row==SettingsLayout.SOUND_LEAD?(v==0?UiText.t("끔"):v+" ms"):v+" %";
@@ -318,7 +319,7 @@ public final class PitRenderer {
                     else if(i==SettingsLayout.SOUND_ENGINE){name="엔진";dim=!soundOn;value=SettingsLayout.SOUND_ENGINES[soundEngine];}
                     else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}
                     else if(i==SettingsLayout.SOUND_FAST){sel=EngineSound.fast;name="소리 반응 속도";dim=!soundOn;sub="빠름: 소리가 덜 늦음 · 화면이 느려질 때 소리가 끊기면 보통으로";value=EngineSound.fast?"빠름":"보통";}
-                    else{name=SOUND_ROW_NAMES[i-SettingsLayout.SOUND_VOLUME];
+                    else{name=SOUND_ROW_NAMES[i-SettingsLayout.SOUND_VOLUME];sub=SOUND_ROW_SUBS[i-SettingsLayout.SOUND_VOLUME];
                         boolean noTurbo=(i==SettingsLayout.SOUND_TURBO||i==SettingsLayout.SOUND_BOV)&&!SettingsLayout.SOUND_HAS_TURBO[soundEngine];
                         dim=!soundOn||noTurbo;}
                     break;

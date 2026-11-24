@@ -575,6 +575,8 @@
   "출력 경로": "Output route",
   "음량": "Volume",
   "배기": "Exhaust",
+  "엔진음": "Engine mix",
+  "0 %면 터보 휘슬 · 블로오프만": "At 0 % only the turbo whistle and blow-off",
   "팝 빈도": "Pop rate",
   "터보 휘슬": "Turbo whistle",
   "블로오프": "Blow-off",

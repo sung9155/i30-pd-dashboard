@@ -100,7 +100,7 @@ public final class VehicleDash extends View implements Runnable {
      *  (SettingsLayout.SOUND_VOLUME on: volume, pop rate, turbo whistle, blow-off in %, latency compensation in ms). */
     private boolean soundOn;private int soundRoute,soundEngine,soundExhaust;
     private final int[] soundVals=SettingsLayout.SOUND_DEFAULT.clone();
-    private static final String[] SOUND_KEYS={"engine_sound_volume","engine_sound_pop","engine_sound_turbo","engine_sound_bov","engine_sound_lead_ms"};
+    private static final String[] SOUND_KEYS={"engine_sound_volume","engine_sound_mix","engine_sound_pop","engine_sound_turbo","engine_sound_bov","engine_sound_lead_ms"};
     /** The − / + value of a 사운드 row (SettingsLayout.SOUND_VOLUME..SOUND_LEAD). */
     private int soundVal(int row){return soundVals[row-SettingsLayout.SOUND_VOLUME];}
     private EngineSound sound;
@@ -226,7 +226,7 @@ public final class VehicleDash extends View implements Runnable {
         setVisibility(GONE); }
     /** Hands the saved sound choices to the audio thread. */
     private void applySound(){
-        sound.volume(soundVal(SettingsLayout.SOUND_VOLUME));sound.voice(soundEngine,soundExhaust);
+        sound.volume(soundVal(SettingsLayout.SOUND_VOLUME));sound.engineMix(soundVal(SettingsLayout.SOUND_MIX));sound.voice(soundEngine,soundExhaust);
         sound.trims(soundVal(SettingsLayout.SOUND_POP),soundVal(SettingsLayout.SOUND_TURBO),soundVal(SettingsLayout.SOUND_BOV),soundVal(SettingsLayout.SOUND_LEAD));
     }
     public static void attach(Activity a) {

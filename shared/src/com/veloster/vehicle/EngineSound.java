@@ -44,6 +44,9 @@ final class EngineSound implements Runnable {
     private volatile EngineSynth.Voice voice=EngineSynth.voice(0,0);
     private volatile double popRate=1,turboVol=1,bovVol=1,lead=.08;
     void voice(int engine,int exhaust){voice=EngineSynth.voice(engine,exhaust);}
+    private volatile double engineMix=1;
+    /** 엔진음 in percent: the engine itself against the turbo whistle and blow-off (0 = only those). */
+    void engineMix(int percent){engineMix=Math.max(0,Math.min(100,percent))/100.0;}
     void trims(int popPercent,int turboPercent,int bovPercent,int leadMs){popRate=popPercent/100.0;turboVol=turboPercent/100.0;bovVol=bovPercent/100.0;lead=leadMs/1000.0;}
 
     /** Idempotent. route -1 stops. A new route stops the old thread first, so its endAudio never closes the new path. */
@@ -81,7 +84,7 @@ final class EngineSound implements Runnable {
                 boolean reverse=selector.valid&&(int)selector.value==1||gear.valid&&(int)gear.value==14;   // DCT lever R, or 6MT reverse
                 synth.set(rpm.valid&&rpm.ageMs<=1000&&!reverse?rpm.value:Double.NaN,pedal.valid?pedal.value/100.0:0,boost.valid?boost.value:0);
                 if(voice!=playing){playing=voice;synth.use(playing);}
-                synth.popRate=popRate;synth.turboVol=turboVol;synth.bovVol=bovVol;synth.lead=lead;
+                synth.popRate=popRate;synth.turboVol=turboVol;synth.bovVol=bovVol;synth.lead=lead;synth.engineVol=engineMix;
                 long t0=android.os.Debug.threadCpuTimeNanos();synth.render(f,0,blk,volume);cost+=android.os.Debug.threadCpuTimeNanos()-t0;
                 if((made+=blk)>=30*EngineSynth.RATE){android.util.Log.i("VehicleDash","Engine sound: "+cost/1000000*EngineSynth.RATE/made+" ms of CPU per s of sound, rpm "+(rpm.valid?(int)rpm.value:-1));cost=0;made=0;}
                 if(synth.flames!=flames){flames=synth.flames;if(volume>0)EngineSynth.flameAt=now+aheadMs;}

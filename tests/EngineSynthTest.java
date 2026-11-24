@@ -59,6 +59,10 @@ public final class EngineSynthTest {
         check(power(boosted,4600)>power(full,4600)*10,"turbo whistle with boost");
         EngineSynth quiet=new EngineSynth();quiet.turboVol=0;
         check(power(run(quiet,4000,1,1.2,2),4600)<power(boosted,4600)/10,"turbo whistle trim 0 silences it");
+        // 엔진음 0: the turbo whistle alone, the engine silent (its firing order at 4000 rpm, order 2 = 133 Hz).
+        EngineSynth turboOnly=new EngineSynth();turboOnly.engineVol=0;float[] to=run(turboOnly,4000,1,1.2,2);
+        check(power(to,4600)>power(boosted,4600)/2&&power(to,133)<power(boosted,133)/100,"엔진음 0 keeps the whistle, drops the engine");
+        check(rms(run(turboOnly,3000,1,0,2))<1e-3,"엔진음 0 and no boost: silent");
         for(float[] x:new float[][]{idle,coast,full,boosted})check(peak(x)<=1,"bounded");
         // Every engine through every exhaust plays, bounded.
         check(SettingsLayout.SOUND_ENGINES.length==EngineSynth.engines()&&SettingsLayout.SOUND_EXHAUSTS.length==EngineSynth.exhausts(),"a name per engine and exhaust");

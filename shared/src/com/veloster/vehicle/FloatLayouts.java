@@ -283,6 +283,9 @@ final class FloatLayouts extends ClusterKit {
             if(dy){boolean has=!Float.isNaN(a.f);float f=has?Math.max(0,Math.min(1,a.f)):0;
                 if(has){float lo=Math.min(a.zero,f),hi=Math.max(a.zero,f);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(5*k);p.setColor(warn(a.lv,acc));c.drawArc(r,135+270*lo,Math.max(1,270*(hi-lo)),false,p);p.setStyle(Paint.Style.FILL);
                     double an=Math.toRadians(135+270*f);line(c,cx,cy,cx+(float)Math.cos(an)*(rad-7*k),cy+(float)Math.sin(an)*(rad-7*k),2*k,0xffff6b5b);}
+                if(a.pk!=null&&!Float.isNaN(a.pf)){double an=Math.toRadians(135+270*Math.max(0,Math.min(1,a.pf)));   // the peak (최고값): a white tick across the ring, its figure under the hub
+                    line(c,cx+(float)Math.cos(an)*(rad-4*k),cy+(float)Math.sin(an)*(rad-4*k),cx+(float)Math.cos(an)*(rad+4*k),cy+(float)Math.sin(an)*(rad+4*k),2*k,plain?0xffffffff:txt);
+                    fit(c,"▲ "+a.pk,cx,cy+16*k,8*k,40*k,mut,Paint.Align.CENTER,face);}
                 dot(c,cx,cy,3*k,0xffff6b5b);fit(c,a.val,cx,cy+30*k,14*k,44*k,warn(a.lv,txt),Paint.Align.CENTER,bold);}   // under the hub, where the needle never goes
             lane(c,C+2*k,W-8*k,top+6*k,end-6*k,k,rOk,rf,st,dy);
             float R=vcRow(n),rk=Math.min(1,R/64f)*k;

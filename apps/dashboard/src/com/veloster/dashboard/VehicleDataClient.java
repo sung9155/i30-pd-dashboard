@@ -116,10 +116,17 @@ final class VehicleDataClient implements Runnable {
     }
     /** Starts the OBD and tm_hscan pollers while the ignition is on (each start does nothing while it already runs): from run(),
      *  and when the ignition comes on, since run() is not called again once every subscriber is in place. */
+    /** The ECU's oil temperature to the stock N Mode app (its feeder, NFeed, listens for this): that app's process runs no OBD
+     *  of its own, and two pollers on the one diagnostic channel would collide. Every E001 reply, about every 5 s. */
+    static final String OIL_ACTION="com.veloster.dashboard.OIL_TEMP";
+    private void shareOil(){
+        float c=com.veloster.vehicle.VehicleDash.now(com.veloster.vehicle.Telemetry.OIL_ECU);if(Float.isNaN(c))return;
+        try{context.sendBroadcast(new android.content.Intent(OIL_ACTION).setPackage("com.hkmc.app.nmode.ui").putExtra("c",c));}catch(RuntimeException e){log("oil share",e);}
+    }
     private void pollers(final int token){
         if(!(ignition||ignitionUnknown))return;
         if(obd!=null)obd.start(
-            new com.veloster.vehicle.ObdLive.Sink(){public void value(int pid,byte[] d){if(accepts(token))VehicleDash.obd(pid,d);}},
+            new com.veloster.vehicle.ObdLive.Sink(){public void value(int pid,byte[] d){if(accepts(token)){VehicleDash.obd(pid,d);if(pid==com.veloster.vehicle.Telemetry.DID_E001)shareOil();}}},
             new com.veloster.vehicle.ObdLive.Gate(){public boolean open(){return accepts(token);}});
         if(tm!=null)tm.start(
             new com.veloster.vehicle.TmHscan.Sink(){public void value(int sig,float v,boolean ok){if(accepts(token))VehicleDash.tm(sig,v,ok);}},

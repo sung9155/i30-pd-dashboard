@@ -440,19 +440,20 @@ public final class HscanPdTelemetryTest {
         o.hscanPd(0xc7,0x1f,b(0,0,0x10,0,0,0,0,0),7150);check(o.sample(8,7150).valid,"PD gear 1 from the TCU frame");
         o.additional(new byte[41],7200);   // the N-mode app's NAdd request reply on our car (41 bytes)
         check(o.sample(8,7200).valid&&o.sample(8,7200).value==1,"PD: NAdd reply does not blank the gear (1/D flicker)");
-        // The oil slot: the ECU's oil on a 1.6 petrol (EMS12 ENG_VOL 16) while E001 comes, the coolant stand-in otherwise.
+        // The oil slot: the ECU's oil while E001 comes (every PD engine), the coolant stand-in otherwise.
         Telemetry oi=new Telemetry();byte[] e1=new byte[48];e1[34]=(byte)0xBC;
         oi.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),10000);equal(oi,1,83.25f,10000);check(!Telemetry.oilEcu,"no E001 yet: coolant stand-in");
         oi.obd(Telemetry.DID_E001,e1,10100);equal(oi,1,90.58f,10100);
-        check(Telemetry.oilEcu&&"유온".equals(Telemetry.LABELS[1])&&"OIL".equals(com.veloster.vehicle.Tiles.caption(1)),"1.6 petrol: the oil slot is the ECU's oil, labelled OIL");
+        check(Telemetry.oilEcu&&"유온".equals(Telemetry.LABELS[1])&&"OIL".equals(com.veloster.vehicle.Tiles.caption(1)),"the oil slot is the ECU's oil, labelled OIL");
         check(com.veloster.vehicle.Tiles.level(1,125)==1&&com.veloster.vehicle.Tiles.level(1,105)==0,"oil warnings at 120 / 130, not the coolant's 100 / 110");
         oi.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),12000);equal(oi,1,90.58f,12000);   // EMS12 between E001 replies does not overwrite it
         oi.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),30000);equal(oi,1,83.25f,30000);
         check(!Telemetry.oilEcu&&"유온 (냉각수 대체)".equals(Telemetry.LABELS[1]),"E001 stopped for 15 s: back to the coolant stand-in and its label");
         Telemetry k14=new Telemetry();k14.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x0e),40000);k14.obd(Telemetry.DID_E001,e1,40100);
-        equal(k14,1,83.25f,40100);check(!Telemetry.oilEcu,"a 1.4 keeps the coolant stand-in (E001 checked on the 1.6 only)");
+        equal(k14,1,90.58f,40100);check(Telemetry.oilEcu,"a 1.4 takes the ECU's oil too");
         dzb.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),50000);dzb.obd(Telemetry.DID_E001,e1,50100);
-        check(!Telemetry.oilEcu&&Math.abs(dzb.sample(1,50100).value-83.25f)<.01f,"a diesel keeps the coolant stand-in");
+        check(Telemetry.oilEcu&&Math.abs(dzb.sample(1,50100).value-90.58f)<.01f,"a diesel takes the ECU's oil too");
+        Telemetry.oilSource(false);
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
     private static byte[] hex(String h){String[] p=h.trim().split(" ");byte[] b=new byte[p.length];for(int i=0;i<p.length;i++)b[i]=(byte)Integer.parseInt(p[i],16);return b;}

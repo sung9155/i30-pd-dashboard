@@ -63,7 +63,7 @@ public final class Tiles {
         if(s==Telemetry.CLUTCH)return mt;
         if(s==CLUTCH||s==Telemetry.CLUTCH_ODD||s==Telemetry.CLUTCH_EVEN||s>=Telemetry.DCT_LIFE_A_ODD&&s<=Telemetry.DCT_LIFE_B_EVEN)return !mt;
         if(s==Telemetry.SPARK)return !diesel;
-        if(s==Telemetry.OIL_ECU)return false;   // the oil slot (1) carries it now on the engine it was checked on; a tile picked before still shows it
+        if(s==Telemetry.OIL_ECU)return false;   // the oil slot (1) carries it now; a tile picked before still shows it
         if(Telemetry.noSource(s))return false;
         return s>=0&&s<Telemetry.LABELS.length||s>=TIRES&&s<=CORNER_MAX_LAT;
     }

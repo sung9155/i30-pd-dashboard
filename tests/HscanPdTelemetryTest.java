@@ -216,9 +216,9 @@ public final class HscanPdTelemetryTest {
         t.hscanPd(0xc7,0x0b,b(0,0,0x66,0x9d,0xd4,9,0x9d,4),1001);equal(t,Telemetry.INTAKE,28.5f,1001);
         t.hscanPd(0xc7,0x0b,b(0,0,0xff,0x9d,0xd4,9,0x9d,4),1002);check(!t.sample(Telemetry.INTAKE,1002).valid,"intake sentinel withheld");
         // EMS12 slot 0x09: coolant byte1 (0x95 -> 63.75 C at warm-up start, 0xb0 -> 84 C) and pedal byte6.
-        // The oil slot (1) mirrors the same head coolant sensor: this engine has no oil temperature sensor.
+        // The oil slot (1) is not the coolant: it comes from the ECU over OBD (E001) only.
         t.hscanPd(0xc7,0x09,b(0xe3,0x95,0x80,0x8c,0x11,0x24,0x00,0x10),1000);equal(t,2,63.75f,1000);equal(t,9,0,1000);
-        t.hscanPd(0xc7,0x09,b(0xe3,0xb0,0x80,0x8c,0x11,0x24,0x94,0x10),1001);equal(t,2,84f,1001);equal(t,9,57.8125f,1001);equal(t,1,84f,1001);
+        t.hscanPd(0xc7,0x09,b(0xe3,0xb0,0x80,0x8c,0x11,0x24,0x94,0x10),1001);equal(t,2,84f,1001);equal(t,9,57.8125f,1001);check(!t.sample(1,1001).valid,"EMS12 does not fill the oil slot");
         t.hscanPd(0xc7,0x09,b(0xe3,0xff,0x80,0x8c,0x11,0x24,0xff,0x10),1002);check(!t.sample(2,1002).valid&&!t.sample(9,1002).valid&&!t.sample(1,1002).valid,"coolant/pedal sentinels withheld");
         // EMS19 slot 0x0e boost: withheld until EMS14 baro (0x0a byte0 0xd8 -> 748.7 mmHg) arrives, then gauge bar.
         Telemetry u=new Telemetry();
@@ -436,24 +436,18 @@ public final class HscanPdTelemetryTest {
         o.obd(Telemetry.DID_E001,new byte[20],5002);check(!o.sample(Telemetry.OIL_ECU,5002).valid,"short E001 reply ignored");
         o.temperatures(b(0xa0,0xa0),6000);equal(o,1,80f,6000);   // no PD coolant yet: the N-mode reply is used (Veloster N)
         o.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),7000);float cool=o.sample(2,7000).value;
-        o.temperatures(b(0x00,0xa2),7100);equal(o,2,cool,7100);check(o.sample(1,7100).value>0,"PD: N-mode oil 00 does not overwrite with -40");
+        o.temperatures(b(0x00,0xa2),7100);equal(o,2,cool,7100);check(!o.sample(1,7100).valid||o.sample(1,7100).value>0,"PD: N-mode oil 00 does not overwrite with -40");
         o.hscanPd(0xc7,0x1f,b(0,0,0x10,0,0,0,0,0),7150);check(o.sample(8,7150).valid,"PD gear 1 from the TCU frame");
         o.additional(new byte[41],7200);   // the N-mode app's NAdd request reply on our car (41 bytes)
         check(o.sample(8,7200).valid&&o.sample(8,7200).value==1,"PD: NAdd reply does not blank the gear (1/D flicker)");
-        // The oil slot: the ECU's oil while E001 comes (every PD engine), the coolant stand-in otherwise.
+        // The oil slot: the ECU's oil (E001) on every PD engine, and nothing else (no coolant under an oil name).
         Telemetry oi=new Telemetry();byte[] e1=new byte[48];e1[34]=(byte)0xBC;
-        oi.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),10000);equal(oi,1,83.25f,10000);check(!Telemetry.oilEcu,"no E001 yet: coolant stand-in");
+        oi.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),10000);check(!oi.sample(1,10000).valid,"no E001 yet: no oil reading (not the coolant)");
         oi.obd(Telemetry.DID_E001,e1,10100);equal(oi,1,90.58f,10100);
-        check(Telemetry.oilEcu&&"유온".equals(Telemetry.LABELS[1])&&"OIL".equals(com.veloster.vehicle.Tiles.caption(1)),"the oil slot is the ECU's oil, labelled OIL");
-        check(com.veloster.vehicle.Tiles.level(1,125)==1&&com.veloster.vehicle.Tiles.level(1,105)==0,"oil warnings at 120 / 130, not the coolant's 100 / 110");
-        oi.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),12000);equal(oi,1,90.58f,12000);   // EMS12 between E001 replies does not overwrite it
-        oi.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),30000);equal(oi,1,83.25f,30000);
-        check(!Telemetry.oilEcu&&"유온 (냉각수 대체)".equals(Telemetry.LABELS[1]),"E001 stopped for 15 s: back to the coolant stand-in and its label");
-        Telemetry k14=new Telemetry();k14.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x0e),40000);k14.obd(Telemetry.DID_E001,e1,40100);
-        equal(k14,1,90.58f,40100);check(Telemetry.oilEcu,"a 1.4 takes the ECU's oil too");
-        dzb.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),50000);dzb.obd(Telemetry.DID_E001,e1,50100);
-        check(Telemetry.oilEcu&&Math.abs(dzb.sample(1,50100).value-90.58f)<.01f,"a diesel takes the ECU's oil too");
-        Telemetry.oilSource(false);
+        oi.hscanPd(0xc7,0x09,b(0,0xaf,0,0x0c,0,0,0,0x10),12000);equal(oi,1,90.58f,12000);   // EMS12 never overwrites it
+        check("유온".equals(Telemetry.LABELS[1])&&"OIL".equals(com.veloster.vehicle.Tiles.caption(1)),"labelled 유온 / OIL");
+        check(com.veloster.vehicle.Tiles.level(1,125)==1&&com.veloster.vehicle.Tiles.level(1,105)==0&&com.veloster.vehicle.Tiles.level(2,105)==1,"oil warnings at 120 / 130, coolant's at 100 / 110");
+        dzb.obd(Telemetry.DID_E001,e1,50100);check(Math.abs(dzb.sample(1,50100).value-90.58f)<.01f,"a diesel takes the ECU's oil too");
         System.out.println("PASS "+checks+" i30 PD HSCAN model checks");
     }
     private static byte[] hex(String h){String[] p=h.trim().split(" ");byte[] b=new byte[p.length];for(int i=0;i<p.length;i++)b[i]=(byte)Integer.parseInt(p[i],16);return b;}

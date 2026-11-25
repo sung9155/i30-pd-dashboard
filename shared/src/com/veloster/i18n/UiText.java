@@ -95,6 +95,9 @@ public final class UiText {
         EN.put("CAN 하드웨어 이상 (센서 채널)","CAN hardware malfunction (sensor channel)");
         EN.put("CH1 횡G 0.2 g/div","CH1 lat G 0.2 g/div");
         EN.put("CH2 종G 0.2 g/div","CH2 long G 0.2 g/div");
+        EN.put("DCT 01A5 짝수단","DCT 01A5, even gears");
+        EN.put("DCT 01A5 홀수단","DCT 01A5, odd gears");
+        EN.put("DCT 값 확인용 (01A5)","DCT value to check (01A5)");
         EN.put("DCT 잔량 후보 (확인용)","DCT life candidates (to check)");
         EN.put("DCT 잔량 후보 A 짝수단","DCT clutch life candidate A, even gears");
         EN.put("DCT 잔량 후보 A 홀수단","DCT clutch life candidate A, odd gears");
@@ -1047,6 +1050,7 @@ public final class UiText {
         EN.put("작은 글씨: 지금 값 · ▲: 최고값 표시 · 이 차에 없는 값은 숨김","Small text: value now · ▲: shows the peak · values this car lacks are hidden");
         EN.put("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌","Small text is the reading now · readings this car lacks are left out");
         EN.put("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌 · ▲ 최고값은 부스트·RPM·온도 등에만","Small text is the reading now · readings this car lacks are left out · ▲ peak on boost, rpm, temperatures and the like");
+        EN.put("잔량인지 확인 중 · 주행거리와 함께 알려 주세요","Is it clutch life? Report it with your mileage");
         EN.put("잔상 3 s","3 s glow");
         EN.put("잘못된 CAN 메시지 수신","Invalid CAN message received");
         EN.put("잘못된 부품 장착","Incorrect component installed");

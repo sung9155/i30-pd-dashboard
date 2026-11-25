@@ -848,19 +848,16 @@ public final class PitRenderer {
             text(c,Float.isNaN(t[k])?"—":Telemetry.format("%.0f",t[k]),x+70,ty,22,hot?BG:lv==1?AMBER:BLUE,true);}
         text(c,"°C",x+w-28,y+88,11,hot?BG:MUTED,false);
     }
-    /** DCT clutch life candidates for the owner to compare with a scanner: two pairs (A, B) of odd / even percentages, 2 decimals. */
+    /** The TCU 22 01A5 pair for owners to check against a scanner or their mileage: odd / even, 1 decimal, not yet called the clutch life. */
     private void lifeCard(Canvas c,float x,float y,float w,float h){
         panel(c,x,y,w,h,PANEL,LINE);box(c,x+10,y,x+53,y+2,BLUE);
-        fitted(c,UiText.t("DCT 잔량 후보 (확인용)"),x+10,y+20,13,w-20,MUTED);
-        String[] n={"A","B"};
-        for(int k=0;k<2;k++){
-            float o=clutchT(Telemetry.DCT_LIFE_A_ODD+2*k),e=clutchT(Telemetry.DCT_LIFE_A_ODD+1+2*k),ty=y+48+k*28;
-            text(c,n[k],x+10,ty,13,MUTED,true);
-            text(c,Float.isNaN(o)?"—":String.format(Locale.US,"%.2f",o),x+28,ty,15,BLUE,true);
-            String es=Float.isNaN(e)?"—":String.format(Locale.US,"%.2f",e);paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(15);
-            text(c,es,x+w-12-paint.measureText(es),ty,15,BLUE,true);
-        }
-        text(c,UiText.t("홀 · 짝, % (아직 어느 쪽인지 모름)"),x+10,y+88,9,MUTED,false);
+        fitted(c,UiText.t("DCT 값 확인용 (01A5)"),x+10,y+20,13,w-20,MUTED);
+        String[] n={UiText.t("홀수단"),UiText.t("짝수단")};
+        for(int k=0;k<2;k++){float v=clutchT(Telemetry.DCT_LIFE_A_ODD+k),ty=y+48+k*26;
+            text(c,n[k],x+10,ty,12,MUTED,false);
+            String s=Float.isNaN(v)?"—":String.format(Locale.US,"%.1f",v);paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(17);
+            text(c,s,x+w-12-paint.measureText(s),ty,17,BLUE,true);}
+        text(c,UiText.t("잔량인지 확인 중 · 주행거리와 함께 알려 주세요"),x+10,y+88,9,MUTED,false);
     }
     private float clutchT(int i){Telemetry.Sample k=samples[i];return k.valid?k.value:Float.NaN;}
     /** F1 brake card: the clutch temperatures where a 6MT shows its clutch switch; filled at red, nothing before the TCU answers. */

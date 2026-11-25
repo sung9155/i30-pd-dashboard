@@ -462,7 +462,7 @@ public final class VehicleDash extends View implements Runnable {
         else if(t>=SettingsLayout.F_DN&&t<SettingsLayout.F_DN+SettingsLayout.F_DN_NAMES.length){if(FloatPanel.skin<0||FloatPanel.round(shape))return;FloatPanel.dn=t-SettingsLayout.F_DN;}   // 자동 / 낮 / 밤, dim like the looks
         else if(t==SettingsLayout.F_AUTO){if(FloatPanel.round(shape))return;if(FloatPanel.skin<0)FloatPanel.setActiveSkin(FloatPanel.skinNow());else FloatPanel.skin=FloatPanel.AUTO;}   // off keeps the look it was following, in the side in use now
         else if(t==SettingsLayout.F_FORM){floatEdit=SettingsLayout.FORM_SHEET;return;}
-        else if(t==SettingsLayout.F_EDIT||t>=SettingsLayout.F_CELL&&t<SettingsLayout.F_CELL+4){   // open the chooser for that cell
+        else if(t==SettingsLayout.F_EDIT||t>=SettingsLayout.F_CELL&&t<SettingsLayout.F_CELL+FloatPanel.MAX_CELLS){   // open the chooser for that cell (shapes with up to 7 cells)
             int u=FloatPanel.used(shape,FloatPanel.count),k=t==SettingsLayout.F_EDIT?Math.min(floatSel,u-1):t-SettingsLayout.F_CELL;if(k>=u)return;
             floatSel=k;floatEdit=k;int cur=FloatPanel.cells[k];floatEditSig=cur>=0&&FloatPanel.available(cur,prof)?cur:-1;floatEditGraph=FloatPanel.graphs[k];
             int[] gs=FloatPanel.groups(prof);int want=FloatPanel.groupOf(FloatPanel.resolve(cur,k,prof));floatEditTab=0;for(int gt=0;gt<gs.length;gt++)if(gs[gt]==want)floatEditTab=gt;   // open on the reading's group

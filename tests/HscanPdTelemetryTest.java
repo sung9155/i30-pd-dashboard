@@ -372,7 +372,9 @@ public final class HscanPdTelemetryTest {
         {Telemetry k=new Telemetry();byte[] r=hex("62 01 A4 FF FF E0 00 14 02 00 26 00 FE 94 1B 9E BD C3 14 94 08 F6 C4 10 02 03 0E 0E F0 FC C0 FF 00 31 00 44 00");
         k.obd(Telemetry.DID_CLUTCH,java.util.Arrays.copyOfRange(r,3,r.length),3430);
         check(k.sample(Telemetry.CLUTCH_ODD,3430).value==49&&k.sample(Telemetry.CLUTCH_EVEN,3430).value==68,"DCT clutch temperatures odd 49 / even 68 C");
-        k.obd(Telemetry.DID_CLUTCH,new byte[10],3431);check(k.sample(Telemetry.CLUTCH_ODD,3431).value==49,"a short reply leaves them alone");}
+        k.obd(Telemetry.DID_CLUTCH,new byte[10],3431);check(k.sample(Telemetry.CLUTCH_ODD,3431).value==49,"a short reply leaves them alone");
+        byte[] na=java.util.Arrays.copyOfRange(r,3,r.length);na[29]=na[30]=na[31]=(byte)0xFF;na[30]=(byte)0xFE;na[32]=(byte)0xFE;
+        k.obd(Telemetry.DID_CLUTCH,na,3432);check(!k.sample(Telemetry.CLUTCH_ODD,3432).valid&&!k.sample(Telemetry.CLUTCH_EVEN,3432).valid,"FF FE (no value) reads as none, not 65534 C");}
         // tyre temperatures from BCM 22 C00B (a PD, parked after a drive): four wheels of [pressure, temperature + 50, 01, 00] after FFFF0000
         {Telemetry k=new Telemetry();byte[] r=hex("62 C0 0B FF FF 00 00 AE 46 01 00 AD 46 01 00 AD 42 01 00 AD 42 01 00");
         k.obd(Telemetry.DID_TIRE,java.util.Arrays.copyOfRange(r,3,r.length),3435);

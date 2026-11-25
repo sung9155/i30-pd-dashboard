@@ -337,7 +337,9 @@ public final class Telemetry {
                 // start, over it after 10 min, up to 6 C above it on the road. The oil slot takes it on every PD engine (the 1.4
                 // and the diesel too, at the owner's word: not checked on them yet, a byte 00 / FF is withheld as before).
                 if(ok)put(1,oil,true,now);} break;
-            case DID_CLUTCH: if(n>=33){put(CLUTCH_ODD,u16(d,29),true,now);put(CLUTCH_EVEN,u16(d,31),true,now);} break;
+            // FF FE (65534) is the TCU's "no value": a PD's floating window showed 65534 C on both clutches, parked (2026-11-25).
+            // A clutch never nears 500 C (the warning is far below), so anything above is withheld and the cell reads "—".
+            case DID_CLUTCH: if(n>=33){int o=u16(d,29),e=u16(d,31);put(CLUTCH_ODD,o,o<=500,now);put(CLUTCH_EVEN,e,e<=500,now);} break;
             // Hyundai diesel DPF block 62 ED 03 (OBDb Hyundai-i30, CC BY-SA 4.0, not yet seen on our side): data byte 36
             // differential pressure x4.31373 (hPa, so x0.431373 kPa), 38 exhaust temperature upstream of the DPF x4.7098 + 99 °C,
             // 45..48 distance since the last regeneration in metres. The ECU keeps that distance, so it beats our odometer count.

@@ -285,6 +285,18 @@ public final class VehicleDash extends View implements Runnable {
     }
     // ---- 설정 백업 (SettingsBackup): a file on the head unit's storage, which 삭제 does not remove ----
     private static volatile String backupWritten;
+    // ---- on-car profiling (the head unit is not debuggable, so `am profile` cannot reach us): a file trace.go in the
+    // navi storage's i30dashboard folder starts 8 s of method tracing on the page in view; the trace lands beside it as
+    // dash-<page>-<time>.trace and the trigger is removed. Checked with the 5 s status line, so it costs one stat a 5 s.
+    private long traceUntil;
+    private void traceCheck(long now){
+        try{java.io.File dir=new java.io.File(android.os.Environment.getExternalStorageDirectory(),SettingsBackup.DIR);
+            if(traceUntil>0){if(now>=traceUntil){android.os.Debug.stopMethodTracing();traceUntil=0;android.util.Log.i("VehicleDash","trace stop");}return;}
+            java.io.File go=new java.io.File(dir,"trace.go");if(!go.exists())return;go.delete();
+            String out=new java.io.File(dir,"dash-"+(symmetric?"p"+page:"tab"+page)+"-"+(System.currentTimeMillis()/1000%100000)+".trace").getPath();
+            android.os.Debug.startMethodTracing(out.substring(0,out.length()-6),64<<20);traceUntil=now+8000;android.util.Log.i("VehicleDash","trace start "+out);
+        }catch(Throwable t){traceUntil=0;android.util.Log.w("VehicleDash","trace",t);}
+    }
     private static java.io.File backupFile(){return new java.io.File(new java.io.File(android.os.Environment.getExternalStorageDirectory(),SettingsBackup.DIR),SettingsBackup.FILE);}
     /** Writes every preference file when something changed, off the main thread. Not before the restore question is
      *  settled (ASKED): a fresh install would overwrite the backup with its defaults. */
@@ -609,7 +621,8 @@ public final class VehicleDash extends View implements Runnable {
             // every 5 s the short line; the per-signal dump (about 3 KB) once a minute: at 5 s it filled the head unit's small
             // log buffer in seconds and pushed the OBD probe rounds out of a diagnostic record (a diesel PD, 2026-11-06)
             if(now-lastDiagnostic>=5000) { lastDiagnostic=now;boolean full=now-lastFullDiagnostic>=60000;if(full)lastFullDiagnostic=now;
-                android.util.Log.i("VehicleDash",(full?DATA.diagnostics(now):"status")+drawStats()+DATA.boostFit()+DATA.egt()+ObdLive.summary()); }
+                android.util.Log.i("VehicleDash",(full?DATA.diagnostics(now):"status")+drawStats()+DATA.boostFit()+DATA.egt()+ObdLive.summary());
+                traceCheck(now); }
         }
         postDelayed(this,delay);
     }

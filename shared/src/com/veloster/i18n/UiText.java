@@ -495,7 +495,6 @@ public final class UiText {
         EN.put("목록 편집","Edit app list");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
-        EN.put("미니","Mini");
         EN.put("미드나이트 퍼플","Midnight Purple");
         EN.put("미등","Position lamps");
         EN.put("미디어 소스 · 차에서 무음","Media source · silent in car");
@@ -1240,7 +1239,6 @@ public final class UiText {
         EN.put("최근 30초","Last 30 s");
         EN.put("최근 60초","Last 60 s");
         EN.put("최대 횡G","Max lat G");
-        EN.put("추천","Presets");
         EN.put("축소","scaled down");
         EN.put("출력 (계산)","Power (calc.)");
         EN.put("출력 경로","Output route");
@@ -1409,6 +1407,7 @@ public final class UiText {
         EN.put("화면","Screens");
         EN.put("화면 잠금 상태를 추적할 수 없어 알림만 표시합니다.","Screen lock state cannot be tracked. Only the notification is shown.");
         EN.put("화이트","White");
+        EN.put("확대","scaled up");
         EN.put("확인","OK");
         EN.put("확인 불가","Unknown");
         EN.put("확정","Confirmed");

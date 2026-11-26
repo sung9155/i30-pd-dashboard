@@ -452,8 +452,6 @@ public final class VehicleDash extends View implements Runnable {
             floatSel=k;floatEdit=k;int cur=FloatPanel.cells[k];floatEditSig=cur>=0&&FloatPanel.available(cur,prof)?cur:-1;floatEditGraph=FloatPanel.graphs[k];
             int[] gs=FloatPanel.groups(prof);int want=FloatPanel.groupOf(FloatPanel.resolve(cur,k,prof));floatEditTab=0;for(int gt=0;gt<gs.length;gt++)if(gs[gt]==want)floatEditTab=gt;   // open on the reading's group
             return;}
-        else if(t>=SettingsLayout.F_PRESET&&t<SettingsLayout.F_PRESET+SettingsLayout.F_PRESETS.length){FloatPanel.applyPreset(t-SettingsLayout.F_PRESET);
-            floatSel=Math.max(0,Math.min(floatSel,FloatPanel.used(FloatPanel.shape,FloatPanel.count)-1));}
         else{int g=t/10*10,i=t-g;
             if(g==SettingsLayout.F_SHAPE){if(off)FloatPanel.lastShape=i+1;else FloatPanel.shape=i+1;}
             else if(g==SettingsLayout.F_COUNT){if(!FloatPanel.fits(shape,FloatPanel.COUNTS[i]))return;FloatPanel.count=FloatPanel.COUNTS[i];floatSel=Math.min(floatSel,FloatPanel.count-1);}

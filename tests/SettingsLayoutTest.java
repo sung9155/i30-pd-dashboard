@@ -55,8 +55,9 @@ public final class SettingsLayoutTest {
             float cx=(b[0]+b[2])/2,cy=(b[1]+b[3])/2;
             check(SettingsLayout.floatHit(cx,cy,2,2,124,64)==ft[a],"a tap in the middle of "+ft[a]+" hits it");}
         {float w=2*124,h=2*64,k=SettingsLayout.floatPreviewScale(w,h),x=SettingsLayout.floatPreviewX(w,h),y=SettingsLayout.floatPreviewY(w,h);
-            check(k==1,"a 2 x 2 card at 보통 fits the preview at full size");
-            check(SettingsLayout.floatHit(x+124+30,y+64+30,2,2,124,64)==SettingsLayout.F_CELL+3,"the bottom right preview cell is cell 4");
+            check(k>1&&x>=SettingsLayout.FW_L&&x+w*k<=SettingsLayout.FW_R&&y+h*k<=SettingsLayout.FW_B-SettingsLayout.FW_CAPTION,"a 2 x 2 card at 보통 is shown larger than real, inside the well");
+            check(SettingsLayout.floatPreviewScale(20,10)==2,"a tiny window at most twice its size");
+            check(SettingsLayout.floatHit(x+(124+30)*k,y+(64+30)*k,2,2,124,64)==SettingsLayout.F_CELL+3,"the bottom right preview cell is cell 4");
             float ws=4*124*1.5f,ks=SettingsLayout.floatPreviewScale(ws,64*1.5f);check(ks<1&&SettingsLayout.floatPreviewX(ws,96)>=SettingsLayout.FW_L,"a wide strip is scaled down to fit");}
         // the chooser sheet: tabs (자동 + 9 groups) on the left, up to 15 readings, graph buttons under them, 취소 / 완료
         for(int t=0;t<10;t++){float[] b=SettingsLayout.sheetTab(t);check(b[3]<=SettingsLayout.SH_B-10&&b[2]<SettingsLayout.S_GX,"tab "+t+" on the sheet, left of the readings");
@@ -108,13 +109,11 @@ public final class SettingsLayoutTest {
             &&SettingsLayout.dropRow(SettingsLayout.TOP+SettingsLayout.SCREEN_ROW_H*1.5f,0)==1,"drop rows clamp to the list");
         check(SettingsLayout.autoScroll(SettingsLayout.TOP+5)<0&&SettingsLayout.autoScroll(SettingsLayout.BOTTOM-5)>0&&SettingsLayout.autoScroll(260)==0,"auto-scroll near the edges only");
         check(SettingsLayout.scrolls(SettingsLayout.SCREENS)&&SettingsLayout.scrolls(SettingsLayout.SOUND)&&SettingsLayout.scrolls(SettingsLayout.RPM)&&!SettingsLayout.scrolls(SettingsLayout.THEME),"the panes that scroll");
-        // 플로팅: size / transparency bars snap to their stops, presets in a row
+        // 플로팅: size / transparency bars snap to their stops
         for(int i=0;i<4;i++)check(SettingsLayout.sliderStop(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,4,SettingsLayout.sliderX(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,4,i))==i,"size stop "+i);
         for(int i=0;i<3;i++)check(SettingsLayout.sliderStop(SettingsLayout.F_ALPHA_BAR,SettingsLayout.F_ALPHA_KNOB,3,SettingsLayout.sliderX(SettingsLayout.F_ALPHA_BAR,SettingsLayout.F_ALPHA_KNOB,3,i))==i,"alpha stop "+i);
         check(SettingsLayout.sliderStop(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,4,0)==0&&SettingsLayout.sliderStop(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,4,800)==3,"a finger off the bar ends keeps to the ends");
         check(SettingsLayout.floatHit(SettingsLayout.F_SIZE_BAR[0]+3,SettingsLayout.F_SIZE_BAR[1]+18,2,2,124,64)==SettingsLayout.F_SIZE&&SettingsLayout.floatHit(SettingsLayout.F_ALPHA_BAR[2]-3,SettingsLayout.F_ALPHA_BAR[1]+18,2,2,124,64)==SettingsLayout.F_ALPHA,"the bars hit anywhere along them");
-        check(SettingsLayout.F_PRESETS.length==4,"four presets");
-        for(int i=0;i<4;i++){float[] b=SettingsLayout.floatBox(SettingsLayout.F_PRESET+i);check(b!=null&&SettingsLayout.floatHit((b[0]+b[2])/2,(b[1]+b[3])/2,2,2,124,64)==SettingsLayout.F_PRESET+i,"preset "+i+" hits");}
         check(SettingsLayout.floatBox(SettingsLayout.F_MUSIC)[0]>=SettingsLayout.FC_L&&SettingsLayout.floatBox(SettingsLayout.F_MUSIC)[1]>=SettingsLayout.F_HIDE_BOX[3],"음악 띠 in the right column, under the button hiding");
         check(SettingsLayout.cols(SettingsLayout.THEME)==3,"themes in three columns");
         check(SettingsLayout.top(SettingsLayout.THEME,Theme.IDS.length-1)+SettingsLayout.itemH(SettingsLayout.THEME)<=SettingsLayout.BOTTOM&&SettingsLayout.itemH(SettingsLayout.THEME)>=44,"20 themes fit without scrolling, rows still tappable");

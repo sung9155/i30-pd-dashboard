@@ -404,7 +404,7 @@ public final class PitRenderer {
         if(off){box(c,px,py,px+w*k,py+h*k,0xb0040506);centered(c,UiText.t("꺼져 있음"),px+w*k/2,py+h*k/2+6,16,MUTED,true);}
         else{paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2);paint.setColor(T(BLUE));
             if(FloatPanel.round())c.drawCircle(sx+cw*k/2,sy+ch*k/2,cw*k/2,paint);else c.drawRect(sx+2,sy+2,sx+cw*k-2,sy+ch*k-2,paint);paint.setStyle(Paint.Style.FILL);}
-        text(c,UiText.t("칸을 누르면 값 바꾸기")+(k<.999f?" · "+UiText.t("축소"):""),SettingsLayout.FW_L+10,SettingsLayout.FW_B-5,11,MUTED,false);
+        text(c,UiText.t("칸을 누르면 값 바꾸기")+(k<.999f?" · "+UiText.t("축소"):k>1.001f?" · "+UiText.t("확대"):""),SettingsLayout.FW_L+10,SettingsLayout.FW_B-5,11,MUTED,false);
         // right column
         {float[] b=SettingsLayout.F_ON_BOX;String on=UiText.t("플로팅")+"  "+UiText.t(off?"끔":"켬");   // the main switch: filled while on
             if(off)chip(c,b,on,null,false,false);else{box(c,b[0],b[1],b[2],b[3],BLUE);centered(c,on,(b[0]+b[2])/2,(b[1]+b[3])/2+6,15,DARK_INK,true);}}
@@ -421,8 +421,7 @@ public final class PitRenderer {
         text(c,UiText.t("투명도"),SettingsLayout.F_ALPHA_LABEL_X,SettingsLayout.F_ROW_Y[2]+SettingsLayout.F_ROW_H/2+5,14,MUTED,true);
         slider(c,SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,SettingsLayout.F_SIZES,size,off);
         slider(c,SettingsLayout.F_ALPHA_BAR,SettingsLayout.F_ALPHA_KNOB,SettingsLayout.F_ALPHAS,FloatPanel.alpha,off);
-        for(int i=0;i<SettingsLayout.F_PRESETS.length;i++)chip(c,SettingsLayout.floatBox(SettingsLayout.F_PRESET+i),UiText.t(SettingsLayout.F_PRESETS[i]),null,FloatPanel.presetMatch(i),false);   // a preset turns the window on: never dim
-        for(int t:SettingsLayout.F_TARGETS){if(t<SettingsLayout.F_SHAPE||t==SettingsLayout.F_SIZE||t==SettingsLayout.F_ALPHA||t>=SettingsLayout.F_PRESET)continue;int g=t/10*10,i=t-g;String label;boolean on;
+        for(int t:SettingsLayout.F_TARGETS){if(t<SettingsLayout.F_SHAPE||t==SettingsLayout.F_SIZE||t==SettingsLayout.F_ALPHA)continue;int g=t/10*10,i=t-g;String label;boolean on;
             switch(g){case SettingsLayout.F_SHAPE:label=SettingsLayout.F_SHAPES[i];on=shape==i+1;break;
                 case SettingsLayout.F_COUNT:label=SettingsLayout.F_COUNTS[i];on=n==FloatPanel.COUNTS[i];break;
                 case SettingsLayout.F_SIZE:label=SettingsLayout.F_SIZES[i];on=size==i;break;

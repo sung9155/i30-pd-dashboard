@@ -9,8 +9,11 @@
   버전: 시작할 때 안정화(최신 정식 릴리스, 실차 확인) / 테스트('test' 사전 배포, 실차 검증 전) / 진단 기록 모으기 중 고른다.
   테스트 인자: -AdbPath <adb 경로>  -Channel stable|test  -Yes(확인 모두 예, 대기/프롬프트 생략, 안정화)  -Uninstall(두 앱 삭제)
               -Diag(설치하지 않고 진단 기록 파일만 만든다)
+              -BootFast(시동 안내 화면 10초 → 1초: 이 차의 순정 SystemUI를 이 PC에서 고쳐 설치) -BootFastRemove(순정으로 되돌리기)
+              시험용: -JavaPath <java.exe> -ToolDir <도구 폴더(받기 생략)>
 #>
-param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switch]$Uninstall, [switch]$Diag)
+param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switch]$Uninstall, [switch]$Diag,
+      [switch]$BootFast, [switch]$BootFastRemove, [string]$JavaPath, [string]$ToolDir)
 
 # 'Continue' (not 'Stop'): adb writes its progress to stderr, and under 'Stop' a native
 # command's stderr turns into a terminating error (NativeCommandError) that aborts the
@@ -59,7 +62,7 @@ function Write-Host {
   foreach($part in ([string]$Object -split "`r?`n")){ foreach($l in (Fit $part)){ Microsoft.PowerShell.Utility\Write-Host $l @p } }
 }
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-21'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-27'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
 # 위와 같고, 2026-10-31 실차 설치·동작 확인(다른 LOW 차 한 대는 USB "장치 설명자 요청 실패" — 그 차 포트·배선 문제로 봄).
@@ -75,6 +78,21 @@ $Apps = @(
   [pscustomobject]@{ apk='myapps-i30pd-platform.apk';   pkg='com.veloster.carplayhub'; name="'내 앱'" }
 )
 $script:adbExe = $null
+# --- 시동 안내 화면 1초 (SystemUI 패치) -------------------------------------------------------------------------
+# 순정 SystemUI는 현대 코드라 고친 APK를 배포하지 않는다. 이 PC가 이 차의 원본을 받아, 해시가 확인된 빌드일 때만 그 자리에서
+# 고쳐(우리 빌더: 공개 릴리스 i30pd-consent-fast.jar) 설치하고, 원본과 결과는 끝나면 PC에서 지운다. 도구는 해시 고정.
+$SysUiKnown = @{ 'V141' = @('9a5f71ba436c368ff98a14b6a1c978a593644e30ae5b51df2cb03e7537eb0f82','2b4a2b62d9e24993f8f8dafd4dc876520b92c25a83b51309699db97b4fab7662') }
+$SysUiBoot = 'core','core-junit','bouncycastle','ext','framework','telephony-common','mms-common','android.policy','services','apache-xml','automotive'
+$BootTools = @(
+  @{ f='baksmali.jar'; u='https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.5.2.jar'; h='d3116248cce4f82ec5a31eb7f95ee75daff42ddf6eed0ab573973dc53fbad2e5' },
+  @{ f='smali.jar'; u='https://bitbucket.org/JesusFreke/smali/downloads/smali-2.5.2.jar'; h='9544299578b16f771d8aa8eaefe0d3718ca03478c16f3c356f2fcf1366bfb116' },
+  @{ f='apksig.jar'; u='https://dl.google.com/dl/android/maven2/com/android/tools/build/apksig/8.3.0/apksig-8.3.0.jar'; h='468ee1852fa12461c6629608fe47be70e50f60be7c4744bb7f62ca48e85c0a6c' },
+  # 공개 AOSP 4.2.2 테스트 키: 이 차의 SystemUI가 이 키로 서명돼 있어 업데이트로 설치된다(googlesource는 base64 텍스트로 준다)
+  @{ f='platform.pk8'; u='https://android.googlesource.com/platform/build/+/android-4.2.2_r1/target/product/security/platform.pk8?format=TEXT'; h='1ad8ef556870edb70f69a9d3c112544c07de5162ba440d84d33f8bb0c5962875'; b64=$true },
+  @{ f='platform.x509.pem'; u='https://android.googlesource.com/platform/build/+/android-4.2.2_r1/target/product/security/platform.x509.pem?format=TEXT'; h='9837de028f460c35cc8d3fa45f14eecce30f6fbfe4b93d399aef1acb80c20d14'; b64=$true })
+$JreUrl = 'https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.21.1%2B2/OpenJDK17U-jre_x64_windows_hotspot_17.0.21.1_2.zip'
+$JreSha = '739d8f2fd286dc2736d55cc8c9260980baefd275ad48cda242335bb0f08e0795'
+$BuilderJar = 'i30pd-consent-fast.jar'
 # 차에 깔린 두 앱의 버전 한 줄. 1.5-i18n = 릴리스 이름을 넣기 전(v1.16.0까지)의 대시보드.
 function Versions {
   ($Apps | ForEach-Object {
@@ -221,7 +239,7 @@ function ShowNotes($rel,[string]$url){
 }
 
 # --- 버전 고르기 (-ApkBase 를 주면 그 주소를 그대로 쓴다) ---------------------
-if(-not $Uninstall -and -not $Diag -and -not $ApkBase){
+if(-not $Uninstall -and -not $Diag -and -not $BootFast -and -not $BootFastRemove -and -not $ApkBase){
   $Rel = @{ stable = (ReleaseInfo 'latest' $false); test = (ReleaseInfo 'tags/test' $true) }
   if($Channel -ne 'stable' -and $Channel -ne 'test'){
     if($Yes){ $Channel = 'stable' } else {
@@ -229,11 +247,14 @@ if(-not $Uninstall -and -not $Diag -and -not $ApkBase){
       Note ('  1) 안정화 (권장)' + $(if($Rel.stable){ " $($Rel.stable.title)" }) + ' — 실차에서 확인된 버전') Gray
       Note ('  2) 테스트' + $(if($Rel.test){ " $($Rel.test.title)" }) + ' — 새 기능, 아직 실차 검증 전. 문제가 있으면 안정화로 다시 설치하면 됩니다') Gray
       Note '  3) 진단 기록 모으기 — 설치하지 않고, 문제를 알릴 때 보낼 파일만 만듭니다' Gray
+      Note '  4) 시동 안내 화면 10초 → 1초 — 순정 시스템 화면(SystemUI)을 이 PC에서 고쳐 설치합니다 (내비 업데이트 전엔 5번으로 되돌리기)' Gray
+      Note '  5) 시동 안내 화면 원래대로 — 4번을 되돌립니다' Gray
       $r = (Read-Host '번호를 입력하고 Enter [1]').Trim()
-      if($r -eq '3'){ $Diag = $true } else { $Channel = $(if($r -eq '2'){ 'test' } else { 'stable' }) }
+      if($r -eq '3'){ $Diag = $true } elseif($r -eq '4'){ $BootFast = $true } elseif($r -eq '5'){ $BootFastRemove = $true }
+      else { $Channel = $(if($r -eq '2'){ 'test' } else { 'stable' }) }
     }
   }
-  if(-not $Diag){
+  if(-not $Diag -and -not $BootFast -and -not $BootFastRemove){
     $ApkBase = $(if($Channel -eq 'test'){ "$Releases/download/test" } else { "$Releases/latest/download" })
     if($Channel -eq 'test'){ Note '버전: 테스트 (실차 검증 전)' Yellow } else { Note '버전: 안정화' Green }
     ShowNotes $Rel[$Channel] $(if($Channel -eq 'test'){ "$Releases/tag/test" } else { "$Releases/latest" })
@@ -254,8 +275,9 @@ foreach($b in $(if($Channel -eq 'test'){ @('main','beta') } else { @('main') }))
 }
 
 # --- APK 준비 (폴더에 있으면 쓰고, 없으면 공개 레포에서 받기) -----------------
-if(-not $Uninstall -and -not $Diag){ Head '0) 앱 파일 준비' }
-foreach($app in $(if($Uninstall -or $Diag){ @() } else { $Apps })){
+$NoApps = $Uninstall -or $Diag -or $BootFast -or $BootFastRemove   # these modes install no app
+if(-not $NoApps){ Head '0) 앱 파일 준비' }
+foreach($app in $(if($NoApps){ @() } else { $Apps })){
   $local = Join-Path $ROOT $app.apk
   # 브라우저로 받은 GitHub 페이지(HTML)가 .apk 이름으로 저장된 경우가 있어, 'PK'로 시작할 때만 폴더 것을 쓴다.
   $ok=$false; if(Test-Path $local){ $fs=[IO.File]::OpenRead($local); $mg=New-Object byte[] 2; [void]$fs.Read($mg,0,2); $fs.Close(); $ok=($mg[0] -eq 0x50 -and $mg[1] -eq 0x4B) }
@@ -408,7 +430,7 @@ Note "내비: $board / 빌드 $build / USB $($pv['sys.usb.state'])" DarkGray
 $cur = Versions
 Note "차에 깔린 버전: $cur" DarkGray
 # 받을 버전을 바로 아래에: 안정화는 차의 대시보드와 이름이 같으면 그 사실을 알린다(테스트 빌드 이름은 릴리스 정보에 없다).
-if(-not $Uninstall -and -not $Diag -and $Rel -and $Rel[$Channel]){
+if(-not $NoApps -and $Rel -and $Channel -and $Rel[$Channel]){
   $tag = ($Rel[$Channel].title -split ' ')[0]
   if($Channel -eq 'test'){ Note "받을 버전: 테스트 ($($Rel.test.title))" DarkGray }
   elseif((" $cur ").Contains(" $tag ")){ Note "받을 버전: $tag — 차에 이미 같은 버전이 있습니다. 그대로 다시 설치합니다." DarkGray }
@@ -441,11 +463,121 @@ if($Diag){
   if(-not $Yes){ Start-Process explorer.exe "/select,`"$out`"" }
   UsbOffNote; exit 0
 }
+# --- 시동 안내 화면 1초: 되돌리기 · 설치 (위 $SysUiKnown 설명 참고) -----------------------------------------
+function SysUiPath(){ ((Adb '-s' $serial 'shell' 'pm' 'path' 'com.android.systemui') -replace '\s','') -replace '^package:','' }
+function SysUiCode(){ if([string](Adb '-s' $serial 'shell' 'dumpsys' 'package' 'com.android.systemui') -match 'versionCode=(\d+)'){ $Matches[1] } else { '?' } }
+$BootHint = '내비가 응답하지 않습니다. 차 화면에 확인 창이 떠 있으면 누르고, 없으면 시동을 껐다 켠 뒤 다시 실행하세요.'
+if($BootFastRemove){
+  Head '시동 안내 화면 원래대로'
+  $p = SysUiPath
+  if($p -notmatch '^/data/app/'){ Note "이미 순정입니다 ($p)." Green; UsbOffNote; exit 0 }
+  $o = AdbWait 90 '되돌리는 중' @('-s',$serial,'uninstall','com.android.systemui')
+  if($null -eq $o){ Stuck '시동 안내 되돌리기' $BootHint }
+  $p = SysUiPath
+  if($p -match '^/system/'){
+    Note '되돌림 완료: 다음 시동부터 순정(10초 뒤 닫힘)입니다. 화면 위 상태 표시줄이 잠깐 다시 그려질 수 있습니다.' Green
+    UsbOffNote; exit 0 }
+  Die "되돌리지 못했습니다 (지금: $p):`n$("$o".Trim())" 1
+}
+if($BootFast){
+  Head '시동 안내 화면 10초 → 1초'
+  Note '시동 때 뜨는 순정 안내 화면("실제 교통 법규를 준수하여…")이 10초 대신 약 1초 뒤 스스로 닫히게 합니다.' Gray
+  Note '순정 시스템 화면(SystemUI)을 이 차에서 받아 이 PC에서 고쳐 설치합니다. 고친 파일은 어디에도 올리지 않고 끝나면 이 PC에서도 지웁니다.' Gray
+  Note '내비 소프트웨어 업데이트 전에는 반드시 설치기 5번(원래대로)을 먼저 하세요. 업데이트 뒤 고친 화면이 남아 있으면 내비가 이상해질 수 있습니다.' Yellow
+  $p = SysUiPath
+  if($p -match '^/data/app/'){
+    $vc = SysUiCode
+    if($vc -eq '18'){ Note '이미 설치돼 있습니다(시동 안내 1초). 되돌리려면 설치기 5번.' Green; UsbOffNote; exit 0 }
+    Die "SystemUI에 이미 다른 업데이트가 깔려 있습니다($p, versionCode $vc). 손대지 않고 멈춥니다." 1
+  }
+  if($p -notmatch '^/system/app/HKMC_SystemUI\.apk$'){ Die "순정 SystemUI 위치가 예상과 다릅니다($p). 손대지 않고 멈춥니다." 1 }
+  if(-not (Ask '진행할까요?')){ Note '사용자 취소.' Yellow; exit 1 }
+  try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072 } catch {}   # TLS 1.2 on older Windows
+  $cf = Join-Path $LogDir 'bootfast'; $cap = Join-Path $cf 'cap'; $outApk = Join-Path $cf 'SystemUI-1s.apk'
+  function BootClean(){ Remove-Item -Recurse -Force -LiteralPath $cap,$outApk -ErrorAction SilentlyContinue }   # Hyundai code: never left on this PC
+  function BDie($m,$c){ BootClean; Die $m $c }
+  function Sha($f){ (Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash.ToLower() }
+  BootClean; New-Item -ItemType Directory -Force -Path (Join-Path $cap 'framework') | Out-Null
+
+  Note '① 이 차의 SystemUI 받기' White
+  foreach($f in 'HKMC_SystemUI.apk','HKMC_SystemUI.odex'){
+    $o = AdbWait 120 $f @('-s',$serial,'pull',"/system/app/$f",(Join-Path $cap $f))
+    if($null -eq $o){ BootClean; Stuck "$f 받기" $BootHint }
+    if(-not (Test-Path (Join-Path $cap $f))){ BDie "차에서 $f 를 받지 못했습니다.`n$("$o".Trim())" 1 }
+  }
+  $ha = Sha (Join-Path $cap 'HKMC_SystemUI.apk'); $ho = Sha (Join-Path $cap 'HKMC_SystemUI.odex')
+  $known = @($SysUiKnown.Keys | Where-Object { $SysUiKnown[$_][0] -eq $ha -and $SysUiKnown[$_][1] -eq $ho })
+  Log "SystemUI apk $ha odex $ho -> $($known -join ',')"
+  if($known.Count -eq 0){ BDie ("이 내비의 SystemUI는 아직 확인되지 않은 빌드라 멈춥니다. 차에는 아무것도 바꾸지 않았습니다.`n" +
+                        "이 기능을 원하시면 이 기록 파일을 보내 주세요(내비 빌드 $build).") 3 }
+  Note "  확인된 빌드: $($known[0])" DarkGray
+  foreach($b in $SysUiBoot){
+    $o = AdbWait 120 "$b.odex" @('-s',$serial,'pull',"/system/framework/$b.odex",(Join-Path $cap "framework\$b.odex"))
+    if($null -eq $o){ BootClean; Stuck "$b.odex 받기" $BootHint }
+    if(-not (Test-Path (Join-Path $cap "framework\$b.odex"))){ BDie "차에서 $b.odex 를 받지 못했습니다.`n$("$o".Trim())" 1 }
+  }
+
+  Note '② 도구 준비 (처음 한 번만 받습니다)' White
+  $java = $JavaPath
+  if(-not $java){ $j = Get-ChildItem -Path (Join-Path $LogDir 'jre17') -Recurse -Filter java.exe -ErrorAction SilentlyContinue | Select-Object -First 1; if($j){ $java = $j.FullName } }
+  if(-not $java){ try { $c = (Get-Command java -ErrorAction Stop).Source; if((& $c -version 2>&1 | Out-String) -match 'version "(\d+)' -and [int]$Matches[1] -ge 11){ $java = $c } } catch {} }
+  if(-not $java){
+    Note '  Java(Eclipse Temurin 17, 약 44 MB) 받는 중...' Gray
+    $z = Join-Path $LogDir 'jre17.zip'
+    try { Invoke-WebRequest -Uri $JreUrl -OutFile $z -UseBasicParsing -ErrorAction Stop } catch { BDie "Java를 받지 못했습니다(인터넷 확인).`n$JreUrl`n$($_.Exception.Message)" 2 }
+    if((Sha $z) -ne $JreSha){ Remove-Item -Force $z; BDie 'Java 파일 해시가 맞지 않아 쓰지 않습니다. 다시 실행해 보세요.' 2 }
+    Expand-Archive -LiteralPath $z -DestinationPath (Join-Path $LogDir 'jre17') -Force; Remove-Item -Force $z
+    $java = (Get-ChildItem -Path (Join-Path $LogDir 'jre17') -Recurse -Filter java.exe | Select-Object -First 1).FullName
+  }
+  Log "java: $java"
+  $td = if($ToolDir){ $ToolDir } else { Join-Path $cf 'tools' }
+  New-Item -ItemType Directory -Force -Path $td | Out-Null
+  foreach($t in $BootTools){
+    $f = Join-Path $td $t.f
+    if((Test-Path $f) -and (Sha $f) -eq $t.h){ continue }
+    Note "  $($t.f) 받는 중..." Gray
+    try { Invoke-WebRequest -Uri $t.u -OutFile "$f.part" -UseBasicParsing -ErrorAction Stop } catch { BDie "$($t.f) 를 받지 못했습니다(인터넷 확인).`n$($t.u)`n$($_.Exception.Message)" 2 }
+    if($t.b64){ [IO.File]::WriteAllBytes($f, [Convert]::FromBase64String([IO.File]::ReadAllText("$f.part").Trim())); Remove-Item -Force "$f.part" }
+    else { Move-Item -Force "$f.part" $f }
+    if((Sha $f) -ne $t.h){ Remove-Item -Force $f; BDie "$($t.f) 해시가 맞지 않아 쓰지 않습니다." 2 }
+  }
+  $bj = Join-Path $td $BuilderJar
+  if(-not $ToolDir){   # our builder: from the public release (stable first, then the test pre-release)
+    Remove-Item -Force -LiteralPath $bj -ErrorAction SilentlyContinue
+    foreach($u in "$Releases/latest/download/$BuilderJar","$Releases/download/test/$BuilderJar"){
+      try { Invoke-WebRequest -Uri $u -OutFile $bj -UseBasicParsing -ErrorAction Stop; break } catch { Log "빌더 받기 실패: $u $($_.Exception.Message)" } }
+  }
+  $ok = $false; if(Test-Path $bj){ $fs=[IO.File]::OpenRead($bj); $mg=New-Object byte[] 2; [void]$fs.Read($mg,0,2); $fs.Close(); $ok=($mg[0] -eq 0x50 -and $mg[1] -eq 0x4B) }
+  if(-not $ok){ BDie "빌더($BuilderJar)를 받지 못했습니다. $Releases" 2 }
+
+  Note '③ 고치기 (1~2분)' White
+  $bo = (& $java -jar $bj $cap $td $outApk 2>&1 | Out-String); $rc = $LASTEXITCODE; Log $bo
+  if($rc -eq 3){ BDie "확인되지 않은 SystemUI 빌드라 멈춥니다. 차에는 아무것도 바꾸지 않았습니다.`n$($bo.Trim())" 3 }
+  if($rc -ne 0 -or -not (Test-Path $outApk)){ BDie "고치는 중 멈췄습니다(코드 $rc). 차에는 아무것도 바꾸지 않았습니다.`n$($bo.Trim())" 1 }
+  Note "  $(($bo.Trim() -split "`r?`n")[-1])" DarkGray
+
+  Note '④ 설치' White
+  $remote = '/data/local/tmp/SystemUI-1s.apk'
+  $o = AdbWait 60 '전송 (USB)' @('-s',$serial,'push',$outApk,$remote)
+  if($null -eq $o){ BootClean; Stuck '시동 안내 전송' 'USB로 파일을 보내다 멈췄습니다. 케이블·포트를 바꾸고 Factory Test부터 다시 한 뒤 실행하세요.' }
+  $o = AdbWait 120 '설치 (내비)' @('-s',$serial,'shell','pm','install','-r',$remote)
+  AdbWait 15 '정리' @('-s',$serial,'shell','rm','-f',$remote) | Out-Null
+  BootClean
+  if($null -eq $o){ Stuck '시동 안내 설치' $BootHint }
+  $p = SysUiPath; $vc = SysUiCode
+  if($o -notmatch 'Success' -or $p -notmatch '^/data/app/' -or $vc -ne '18'){ Die "설치되지 않았습니다 (지금: $p, versionCode $vc):`n$("$o".Trim())" 1 }
+  Note '설치 완료.' Green
+  Note '시동을 완전히 끄고(문을 잠가 내비가 꺼질 때까지) 다시 켜면 그때부터 안내 화면이 약 1초 뒤 닫힙니다.' Green
+  Note '후방 카메라·검은 화면이 먼저 떠 있으면 그게 끝난 뒤 1초입니다(순정 동작).' Gray
+  Note '되돌리기: 설치기 5번(시동 안내 화면 원래대로). 내비 소프트웨어 업데이트 전에 꼭 되돌리세요.' Yellow
+  UsbOffNote; exit 0
+}
+
 if($build -eq $LowBuild){
   Note '블루링크 없는 내비(LOW 보드) — 설치가 확인된 빌드입니다.' DarkGray
 } elseif($build -eq $OldBuild){
   Note '블루링크 내비 2024-02 빌드 — 설치와 값이 확인된 빌드입니다.' DarkGray
-} elseif($build -and $build -ne $VerifiedBuild -and -not $Uninstall){   # removing needs no "values may be wrong" question
+} elseif($build -and $build -ne $VerifiedBuild -and -not $Uninstall -and -not $BootFast -and -not $BootFastRemove){   # BootFast checks the SystemUI files themselves   # removing needs no "values may be wrong" question
   Note "주의: 검증된 빌드($VerifiedBuild)와 다릅니다. 값이 틀릴 수 있습니다." Yellow
   if(-not (Ask '그래도 계속할까요?')){ Note '사용자 취소.' Yellow; exit 1 }
 }
@@ -461,6 +593,14 @@ if($Uninstall){
       Note '☆ 버튼: 되돌리지 못했습니다. 삭제 뒤 ☆를 길게 눌러 설정 화면에서 기능을 다시 고르세요.' Yellow
     } else { Note '☆ 버튼: 원래대로(없음) 되돌림' Green }
   }
+  # 시동 안내 1초(설치기 4번)가 깔려 있으면 함께 되돌릴지 묻는다(-Yes면 되돌림: 삭제는 순정으로 돌아가는 것).
+  $sysUiKept = $false
+  if((SysUiPath) -match '^/data/app/' -and (SysUiCode) -eq '18'){
+    if(Ask '시동 안내 화면 1초(설치기 4번)도 순정으로 되돌릴까요?'){
+      $o = AdbWait 90 '시동 안내 화면 되돌리기' @('-s',$serial,'uninstall','com.android.systemui')
+      if((SysUiPath) -match '^/system/'){ Note '시동 안내 화면: 순정으로 되돌림' Green } else { Note "시동 안내 화면: 되돌리지 못했습니다. 설치기 5번으로 다시 해 보세요. $("$o".Trim())" Yellow; $sysUiKept = $true }
+    } else { Note '시동 안내 화면 1초는 그대로 둡니다(되돌리기: 설치기 5번).' Gray; $sysUiKept = $true }
+  }
   foreach($app in $Apps){
     $o = AdbWait 60 "$($app.name) 삭제" @('-s',$serial,'uninstall',$app.pkg)
     if($null -eq $o){ Stuck "$($app.name) 삭제(내비)" '차 화면에 확인 창이 떠 있으면 누르고, 없으면 시동을 껐다 켠 뒤 다시 실행하세요.' }
@@ -472,7 +612,9 @@ if($Uninstall){
     if($null -eq $p -or $p.Trim() -ne ''){ Die "차와 연결이 끊긴 것 같습니다. $($app.name) 삭제를 확인하지 못했습니다.`n케이블을 확인하고 다시 실행하세요.`n$("$p".Trim())" 1 }
     Note "$($app.name): 설치돼 있지 않음" Gray
   }
-  Note '삭제 완료. 순정 상태로 돌아갔습니다(순정 시스템은 원래 건드리지 않습니다).' Green; UsbOffNote; exit 0
+  if($sysUiKept){ Note '앱 삭제 완료. 시동 안내 화면 1초만 남아 있습니다(설치기 5번으로 되돌리기).' Green }
+  else { Note '삭제 완료. 순정 상태로 돌아갔습니다.' Green }
+  UsbOffNote; exit 0
 }
 
 # --- 설치 -------------------------------------------------------------------

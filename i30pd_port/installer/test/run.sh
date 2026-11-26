@@ -23,7 +23,7 @@ run "${A[@]}"; [ "$(cat $F/rc)" = 0 ] && [ "$(grep -c 'pm install' $F/calls.log)
 run "${A[@]}"; [ "$(cat $F/rc)" = 0 ] && ! grep -q 'pm install' $F/calls.log && [ "$(grep -c '건너뜀' $F/out.txt)" = 2 ] || fail "2 same install skipped"
 apks; run "${A[@]}"; [ "$(cat $F/rc)" = 0 ] && [ "$(grep -c 'pm install' $F/calls.log)" = 2 ] || fail "3 new release installs"
 if [ $WHO = win ]; then run -Diag; else run --diag; fi
-D="$(sed -n 's/.*만든 파일: //p' $F/out.txt | sed 's/\x1b\[[0-9;]*m//g' | tr -d '\r')"; [ $WHO = win ] && D="$(cygpath -u "$D")"
+D="$(python -X utf8 "$F/madepath.py" "$F/out.txt")"; [ $WHO = win ] && D="$(cygpath -u "$D")"   # the line can wrap at a space (long OneDrive desktop path)
 [ "$(cat $F/rc)" = 0 ] && [ -f "$D" ] || fail "4 diag file ($D)"
 ! grep -qE 'pm install|uninstall|service call|push' $F/calls.log || fail "4 diag must not change the car"
 grep -q 'persist.sys.key.custom: com.veloster.carplayhub.STAR_KEY' "$D" && grep -q 'versionName=1.9' "$D" && grep -q 'draw avg' "$D" && grep -q '이 PC 설치기 기록' "$D" || fail "4 diag content"
@@ -35,6 +35,26 @@ if [ $WHO = win ]; then FAKE_GONE=1 run -Uninstall; else FAKE_GONE=1 run --unins
 echo com.veloster.carplayhub.STAR_KEY > "$F/star.txt"
 if [ $WHO = win ]; then run -Uninstall; else run --uninstall; fi
 [ "$(cat $F/rc)" = 0 ] && grep -q '원래대로' $F/out.txt && [ -z "$(ls $F/inst)" ] || fail "5 uninstall + ☆"
+# 시동 안내 1초 (BootFast): needs a real SystemUI capture, tools and a Java 11+ (BOOT_CAP, BOOT_TOOLS with
+# i30pd-consent-fast.jar, BOOT_JAVA); skipped without them (the capture is Hyundai code: never in the repo).
+if [ -n "$BOOT_CAP" ] && [ -d "$BOOT_CAP" ]; then
+  SUI="$F/inst/com.android.systemui.apk"; BW=(); BS=()
+  if [ $WHO = win ]; then BW=(-JavaPath "$(cygpath -w "$BOOT_JAVA")" -ToolDir "$(cygpath -w "$BOOT_TOOLS")"); BF=-BootFast; BR=-BootFastRemove; UN=-Uninstall
+  else BW=(--java "$BOOT_JAVA" --tool-dir "$BOOT_TOOLS"); BF=--boot-fast; BR=--boot-fast-remove; UN=--uninstall; fi
+  CAPDIR="$([ $WHO = win ] && cygpath -u "$LOCALAPPDATA" || echo "$F/home/.i30pd")/i30pd-installer/bootfast/cap"
+  rm -f "$SUI"
+  FAKE_CAP="$BOOT_CAP" run $BF "${BW[@]}"
+  [ "$(cat $F/rc)" = 0 ] && [ -f "$SUI" ] && grep -q '설치 완료' $F/out.txt && python -c "import zipfile,sys;z=zipfile.ZipFile(sys.argv[1]);assert 'classes.dex' in z.namelist() and 'META-INF/CERT.RSA' in z.namelist()" "$SUI" || fail "7 boot fast install"
+  [ ! -e "$CAPDIR" ] || fail "7 the car's SystemUI copy must not stay on the PC ($CAPDIR)"
+  FAKE_CAP="$BOOT_CAP" run $BF "${BW[@]}"; [ "$(cat $F/rc)" = 0 ] && grep -q '이미 설치돼' $F/out.txt && ! grep -q 'pm install' $F/calls.log || fail "8 boot fast already there"
+  run $UN; [ "$(cat $F/rc)" = 0 ] && grep -q '시동 안내 화면: 순정으로 되돌림' $F/out.txt && [ ! -f "$SUI" ] || fail "9 uninstall reverts the boot fast"
+  mkdir -p "$F/badcap"; cp -r "$BOOT_CAP"/. "$F/badcap/"; printf x >> "$F/badcap/HKMC_SystemUI.apk"
+  FAKE_CAP="$F/badcap" run $BF "${BW[@]}"; rm -rf "$F/badcap"
+  [ "$(cat $F/rc)" = 3 ] && [ ! -f "$SUI" ] && ! grep -q 'pm install' $F/calls.log && [ ! -e "$CAPDIR" ] || fail "10 unknown SystemUI stops"
+  run $BR; [ "$(cat $F/rc)" = 0 ] && grep -q '이미 순정' $F/out.txt || fail "11 remove when stock"
+  FAKE_CAP="$BOOT_CAP" run $BF "${BW[@]}"; run $BR; [ "$(cat $F/rc)" = 0 ] && grep -q '되돌림 완료' $F/out.txt && [ ! -f "$SUI" ] || fail "12 remove"
+  echo "OK[$WHO]: boot fast install, already there, uninstall reverts, unknown build stops, remove"
+fi
 # an old installer must hear about the published one (network: raw.githubusercontent.com main)
 if [ $WHO = win ]; then sed "s/^\(\$InstallerVersion = \)'[^']*'/\1'2026-01-01'/" "$I/install.ps1" > "$I/old.ps1"
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$I/old.ps1")" -AdbPath "$FW\\adb.cmd" -Yes -Uninstall > "$F/out.txt" 2>&1; rm -f "$I/old.ps1"

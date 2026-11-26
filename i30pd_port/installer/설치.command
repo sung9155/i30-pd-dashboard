@@ -8,11 +8,13 @@
 # 버전: 시작할 때 안정화(최신 정식 릴리스, 실차 확인) / 테스트('test' 사전 배포, 실차 검증 전) / 진단 기록 모으기 중 고른다.
 # 테스트 인자: --adb <adb 경로>  --apk-base <URL>  --channel stable|test  --yes(확인 모두 예, 대기/프롬프트 생략, 안정화)  --uninstall(두 앱 삭제)
 #              --diag(설치하지 않고 진단 기록 파일만 만든다)
+#              --boot-fast(시동 안내 화면 10초 → 1초: 이 차의 순정 SystemUI를 이 PC에서 고쳐 설치) --boot-fast-remove(순정으로 되돌리기)
+#              시험용: --java <java> --tool-dir <도구 폴더(받기 생략)>
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"; ME="$(basename "$0")"
 # OS: Darwin(맥) / Linux. I30PD_OS로 바꿀 수 있다(시험 도구가 Windows Git Bash에서 리눅스 경로를 돌릴 때).
 OS="${I30PD_OS:-$(uname -s)}"; [ "$OS" = Darwin ] || OS=Linux
-INSTALLER_VERSION='2026-11-21'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+INSTALLER_VERSION='2026-11-27'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 VERIFIED_BUILD='eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 LOW_BUILD='eng.vmadmin.20260114.084725'        # 블루링크 없는 D-Audio Plus LOW — 2026-10-31 실차 설치·동작 확인
 OLD_BUILD='eng.vmadmin.20240205.105401'        # 블루링크 D-Audio Plus 2024-02 빌드 — 2026-11-03 같은 차종 실차에서 설치·값 확인
@@ -25,7 +27,7 @@ RELEASES='https://github.com/sung9155/i30-pd-dashboard/releases'
 RAW='https://raw.githubusercontent.com/sung9155/i30-pd-dashboard'   # 새 설치기 확인용(main = 안정화, beta = 테스트)
 APK_BASE=''
 APKS='dashboard-i30pd-platform.apk myapps-i30pd-platform.apk'
-ADB=''; YES=''; UNINSTALL=''; CHANNEL=''; DIAG=''
+ADB=''; YES=''; UNINSTALL=''; CHANNEL=''; DIAG=''; BOOT_FAST=''; BOOT_REMOVE=''; JAVA_PATH=''; TOOL_DIR=''
 while [ $# -gt 0 ]; do
   case "$1" in
     --adb) ADB="$2"; shift ;;
@@ -34,10 +36,33 @@ while [ $# -gt 0 ]; do
     --yes) YES=1 ;;
     --uninstall) UNINSTALL=1 ;;
     --diag) DIAG=1 ;;
+    --boot-fast) BOOT_FAST=1 ;;
+    --boot-fast-remove) BOOT_REMOVE=1 ;;
+    --java) JAVA_PATH="$2"; shift ;;
+    --tool-dir) TOOL_DIR="$2"; shift ;;
   esac
   shift
 done
 
+# --- 시동 안내 화면 1초 (SystemUI 패치) -------------------------------------------------------------------------
+# 순정 SystemUI는 현대 코드라 고친 APK를 배포하지 않는다. 이 PC가 이 차의 원본을 받아, 해시가 확인된 빌드일 때만 그 자리에서
+# 고쳐(우리 빌더: 공개 릴리스 i30pd-consent-fast.jar) 설치하고, 원본과 결과는 끝나면 PC에서 지운다. 도구는 해시 고정(install.ps1과 같은 표).
+SYSUI_KNOWN='V141 9a5f71ba436c368ff98a14b6a1c978a593644e30ae5b51df2cb03e7537eb0f82 2b4a2b62d9e24993f8f8dafd4dc876520b92c25a83b51309699db97b4fab7662'
+SYSUI_BOOT='core core-junit bouncycastle ext framework telephony-common mms-common android.policy services apache-xml automotive'
+BOOT_TOOLS='baksmali.jar https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.5.2.jar d3116248cce4f82ec5a31eb7f95ee75daff42ddf6eed0ab573973dc53fbad2e5 -
+smali.jar https://bitbucket.org/JesusFreke/smali/downloads/smali-2.5.2.jar 9544299578b16f771d8aa8eaefe0d3718ca03478c16f3c356f2fcf1366bfb116 -
+apksig.jar https://dl.google.com/dl/android/maven2/com/android/tools/build/apksig/8.3.0/apksig-8.3.0.jar 468ee1852fa12461c6629608fe47be70e50f60be7c4744bb7f62ca48e85c0a6c -
+platform.pk8 https://android.googlesource.com/platform/build/+/android-4.2.2_r1/target/product/security/platform.pk8?format=TEXT 1ad8ef556870edb70f69a9d3c112544c07de5162ba440d84d33f8bb0c5962875 b64
+platform.x509.pem https://android.googlesource.com/platform/build/+/android-4.2.2_r1/target/product/security/platform.x509.pem?format=TEXT 9837de028f460c35cc8d3fa45f14eecce30f6fbfe4b93d399aef1acb80c20d14 b64'
+JRE_BASE='https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.21.1%2B2'
+case "$OS-$(uname -m)" in   # Eclipse Temurin 17 JRE, hash-pinned per platform (only when no Java 11+ is there)
+  Darwin-x86_64) JRE="OpenJDK17U-jre_x64_mac_hotspot_17.0.21.1_2.tar.gz 5b92ba9954ca63470e896cb50acd17c94dc95d03208803617d04dc53ea2c845b" ;;
+  Darwin-arm64) JRE="OpenJDK17U-jre_aarch64_mac_hotspot_17.0.21.1_2.tar.gz 398046289ca1acef2d3800d74c55a31f08b2fee32a17ee7c1c4e4ad7489f8311" ;;
+  Linux-x86_64|Linux-amd64) JRE="OpenJDK17U-jre_x64_linux_hotspot_17.0.21.1_2.tar.gz 5a092a0bc21de4c3d855480edd7945be9cfe157b38cdb84dac280511893bb009" ;;
+  Linux-aarch64|Linux-arm64) JRE="OpenJDK17U-jre_aarch64_linux_hotspot_17.0.21.1_2.tar.gz ed968eb2cde06ba38c3d957956cab7faced9181aaeebed4904f89e2e6efa8d11" ;;
+  *) JRE='' ;;
+esac
+BUILDER_JAR='i30pd-consent-fast.jar'
 pkg_of()  { case "$1" in dashboard-*) echo com.veloster.dashboard ;; *) echo com.veloster.carplayhub ;; esac; }
 name_of() { case "$1" in dashboard-*) echo '대시보드' ;; *) echo "'내 앱'" ;; esac; }
 
@@ -202,7 +227,7 @@ show_notes() {   # $1 = rel_info 결과, $2 = 전체 노트 주소
 }
 
 # --- 버전 고르기 --------------------------------------------------------------
-if [ -z "$UNINSTALL" ] && [ -z "$DIAG" ] && [ -z "$APK_BASE" ]; then
+if [ -z "$UNINSTALL$DIAG$BOOT_FAST$BOOT_REMOVE" ] && [ -z "$APK_BASE" ]; then
   REL_S="$(rel_info latest 0)"; REL_T="$(rel_info tags/test 1)"
   if [ "$CHANNEL" != stable ] && [ "$CHANNEL" != test ]; then
     if [ -n "$YES" ]; then CHANNEL=stable; else
@@ -210,11 +235,13 @@ if [ -z "$UNINSTALL" ] && [ -z "$DIAG" ] && [ -z "$APK_BASE" ]; then
       note "  1) 안정화 (권장)${REL_S:+ $(printf '%s\n' "$REL_S" | head -1)} — 실차에서 확인된 버전"
       note "  2) 테스트${REL_T:+ $(printf '%s\n' "$REL_T" | head -1)} — 새 기능, 아직 실차 검증 전. 문제가 있으면 안정화로 다시 설치하면 됩니다"
       note '  3) 진단 기록 모으기 — 설치하지 않고, 문제를 알릴 때 보낼 파일만 만듭니다'
+      note '  4) 시동 안내 화면 10초 → 1초 — 순정 시스템 화면(SystemUI)을 이 PC에서 고쳐 설치합니다 (내비 업데이트 전엔 5번으로 되돌리기)'
+      note '  5) 시동 안내 화면 원래대로 — 4번을 되돌립니다'
       read -r -p '번호를 입력하고 Enter [1] ' r
-      case "$(printf '%s' "$r" | tr -d ' ')" in 2) CHANNEL=test ;; 3) DIAG=1 ;; *) CHANNEL=stable ;; esac
+      case "$(printf '%s' "$r" | tr -d ' ')" in 2) CHANNEL=test ;; 3) DIAG=1 ;; 4) BOOT_FAST=1 ;; 5) BOOT_REMOVE=1 ;; *) CHANNEL=stable ;; esac
     fi
   fi
-  if [ -z "$DIAG" ]; then
+  if [ -z "$DIAG$BOOT_FAST$BOOT_REMOVE" ]; then
     if [ "$CHANNEL" = test ]; then APK_BASE="$RELEASES/download/test"; note '버전: 테스트 (실차 검증 전)'; show_notes "$REL_T" "$RELEASES/tag/test"
     else APK_BASE="$RELEASES/latest/download"; note '버전: 안정화'; show_notes "$REL_S" "$RELEASES/latest"; fi
   fi
@@ -231,8 +258,9 @@ for b in main $([ "$CHANNEL" = test ] && echo beta); do
 done
 
 # --- APK 준비 (폴더에 있으면 쓰고, 없으면 공개 레포에서 받기) -----------------
-[ -z "$UNINSTALL$DIAG" ] && head_ '0) 앱 파일 준비'
-for apk in $([ -z "$UNINSTALL$DIAG" ] && echo $APKS); do
+NO_APPS="$UNINSTALL$DIAG$BOOT_FAST$BOOT_REMOVE"   # these modes install no app
+[ -z "$NO_APPS" ] && head_ '0) 앱 파일 준비'
+for apk in $([ -z "$NO_APPS" ] && echo $APKS); do
   # 브라우저로 받은 GitHub 페이지(HTML)가 .apk 이름으로 저장된 경우가 있어, 'PK'로 시작할 때만 폴더 것을 쓴다.
   if [ -f "$ROOT/$apk" ] && [ "$(head -c 2 "$ROOT/$apk")" = 'PK' ]; then warn "$apk: 설치기 폴더에 있는 파일을 씁니다 (위에서 고른 버전과 상관없이 이 파일이 설치됩니다)"; continue; fi
   [ -f "$ROOT/$apk" ] && warn "$apk: 폴더 파일이 APK가 아니라 무시하고 내려받습니다."
@@ -328,7 +356,7 @@ versions() {
 cur="$(versions)"
 note "차에 깔린 버전: $cur"
 # 받을 버전을 바로 아래에: 안정화는 차의 대시보드와 이름이 같으면 그 사실을 알린다(테스트 빌드 이름은 릴리스 정보에 없다).
-if [ -z "$UNINSTALL" ] && [ -z "$DIAG" ]; then
+if [ -z "$NO_APPS" ]; then
   if [ "$CHANNEL" = test ] && [ -n "${REL_T:-}" ]; then note "받을 버전: 테스트 ($(printf '%s\n' "$REL_T" | head -1))"
   elif [ "$CHANNEL" = stable ] && [ -n "${REL_S:-}" ]; then
     tag="$(printf '%s\n' "$REL_S" | head -1 | cut -d' ' -f1)"
@@ -365,11 +393,126 @@ if [ -n "$DIAG" ]; then
   [ -z "$YES" ] && reveal "$out"
   usb_off; finish 0
 fi
+# --- 시동 안내 화면 1초: 되돌리기 · 설치 (위 SYSUI_KNOWN 설명 참고) -----------------------------------------
+sysui_path() { adb_ -s "$SERIAL" shell pm path com.android.systemui | tr -d '\r\n ' | sed 's/^package://'; }
+sysui_code() { adb_ -s "$SERIAL" shell dumpsys package com.android.systemui | tr -d '\r' | sed -n 's/.*versionCode=\([0-9]*\).*/\1/p' | head -1; }
+sha_() { if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -d' ' -f1; }
+BOOT_HINT='내비가 응답하지 않습니다. 차 화면에 확인 창이 떠 있으면 누르고, 없으면 시동을 껐다 켠 뒤 다시 실행하세요.'
+if [ -n "$BOOT_REMOVE" ]; then
+  head_ '시동 안내 화면 원래대로'
+  p="$(sysui_path)"
+  case "$p" in /data/app/*) ;; *) ok "이미 순정입니다 ($p)."; usb_off; finish 0 ;; esac
+  adb_wait 90 '되돌리는 중' -s "$SERIAL" uninstall com.android.systemui || stuck '시동 안내 되돌리기' "$BOOT_HINT"
+  p="$(sysui_path)"
+  case "$p" in /system/*) ok '되돌림 완료: 다음 시동부터 순정(10초 뒤 닫힘)입니다. 화면 위 상태 표시줄이 잠깐 다시 그려질 수 있습니다.'; usb_off; finish 0 ;; esac
+  die "되돌리지 못했습니다 (지금: $p):
+$OUT" 1
+fi
+if [ -n "$BOOT_FAST" ]; then
+  head_ '시동 안내 화면 10초 → 1초'
+  note '시동 때 뜨는 순정 안내 화면("실제 교통 법규를 준수하여…")이 10초 대신 약 1초 뒤 스스로 닫히게 합니다.'
+  note '순정 시스템 화면(SystemUI)을 이 차에서 받아 이 PC에서 고쳐 설치합니다. 고친 파일은 어디에도 올리지 않고 끝나면 이 PC에서도 지웁니다.'
+  warn '내비 소프트웨어 업데이트 전에는 반드시 설치기 5번(원래대로)을 먼저 하세요. 업데이트 뒤 고친 화면이 남아 있으면 내비가 이상해질 수 있습니다.'
+  p="$(sysui_path)"
+  case "$p" in
+    /data/app/*) vc="$(sysui_code)"
+      [ "$vc" = 18 ] && { ok '이미 설치돼 있습니다(시동 안내 1초). 되돌리려면 설치기 5번.'; usb_off; finish 0; }
+      die "SystemUI에 이미 다른 업데이트가 깔려 있습니다($p, versionCode $vc). 손대지 않고 멈춥니다." 1 ;;
+    /system/app/HKMC_SystemUI.apk) ;;
+    *) die "순정 SystemUI 위치가 예상과 다릅니다($p). 손대지 않고 멈춥니다." 1 ;;
+  esac
+  ask '진행할까요?' || { warn '사용자 취소.'; finish 1; }
+  CF="$LOGDIR/bootfast"; CAP="$CF/cap"; OUT_APK="$CF/SystemUI-1s.apk"
+  boot_clean() { rm -rf "$CAP" "$OUT_APK"; }   # Hyundai code: never left on this PC
+  bdie() { boot_clean; die "$1" "$2"; }
+  boot_clean; mkdir -p "$CAP/framework"
+
+  note '① 이 차의 SystemUI 받기'
+  for f in HKMC_SystemUI.apk HKMC_SystemUI.odex; do
+    adb_wait 120 "$f" -s "$SERIAL" pull "/system/app/$f" "$CAP/$f" || { boot_clean; stuck "$f 받기" "$BOOT_HINT"; }
+    [ -f "$CAP/$f" ] || bdie "차에서 $f 를 받지 못했습니다.
+$OUT" 1
+  done
+  ha="$(sha_ "$CAP/HKMC_SystemUI.apk")"; ho="$(sha_ "$CAP/HKMC_SystemUI.odex")"; known=''
+  while read -r n a o; do [ "$a" = "$ha" ] && [ "$o" = "$ho" ] && known="$n"; done <<EOF_KNOWN
+$SYSUI_KNOWN
+EOF_KNOWN
+  log "SystemUI apk $ha odex $ho -> $known"
+  [ -n "$known" ] || bdie "이 내비의 SystemUI는 아직 확인되지 않은 빌드라 멈춥니다. 차에는 아무것도 바꾸지 않았습니다.
+이 기능을 원하시면 이 기록 파일을 보내 주세요(내비 빌드 $build)." 3
+  note "  확인된 빌드: $known"
+  for b in $SYSUI_BOOT; do
+    adb_wait 120 "$b.odex" -s "$SERIAL" pull "/system/framework/$b.odex" "$CAP/framework/$b.odex" || { boot_clean; stuck "$b.odex 받기" "$BOOT_HINT"; }
+    [ -f "$CAP/framework/$b.odex" ] || bdie "차에서 $b.odex 를 받지 못했습니다.
+$OUT" 1
+  done
+
+  note '② 도구 준비 (처음 한 번만 받습니다)'
+  JAVA="$JAVA_PATH"
+  [ -z "$JAVA" ] && JAVA="$(find "$LOGDIR/jre17" -path '*/bin/java' -type f 2>/dev/null | head -1)"
+  if [ -z "$JAVA" ] && command -v java >/dev/null; then
+    v="$(java -version 2>&1 | sed -n 's/.*version "\([0-9]*\).*/\1/p' | head -1)"; [ "${v:-0}" -ge 11 ] 2>/dev/null && JAVA="$(command -v java)"
+  fi
+  if [ -z "$JAVA" ]; then
+    [ -n "$JRE" ] || bdie "이 컴퓨터 종류($(uname -s) $(uname -m))는 Java를 자동으로 받을 수 없습니다. Java 11 이상을 설치한 뒤 다시 실행하세요." 2
+    set -- $JRE; note '  Java(Eclipse Temurin 17, 약 45 MB) 받는 중...'
+    curl -fsSL -o "$LOGDIR/jre17.tar.gz" "$JRE_BASE/$1" || bdie "Java를 받지 못했습니다(인터넷 확인).
+$JRE_BASE/$1" 2
+    [ "$(sha_ "$LOGDIR/jre17.tar.gz")" = "$2" ] || { rm -f "$LOGDIR/jre17.tar.gz"; bdie 'Java 파일 해시가 맞지 않아 쓰지 않습니다. 다시 실행해 보세요.' 2; }
+    mkdir -p "$LOGDIR/jre17" && tar -xzf "$LOGDIR/jre17.tar.gz" -C "$LOGDIR/jre17" && rm -f "$LOGDIR/jre17.tar.gz"
+    JAVA="$(find "$LOGDIR/jre17" -path '*/bin/java' -type f | head -1)"
+  fi
+  log "java: $JAVA"
+  TD="${TOOL_DIR:-$CF/tools}"; mkdir -p "$TD"
+  while read -r f u h enc; do
+    [ -f "$TD/$f" ] && [ "$(sha_ "$TD/$f")" = "$h" ] && continue
+    note "  $f 받는 중..."
+    curl -fsSL -o "$TD/$f.part" "$u" || bdie "$f 를 받지 못했습니다(인터넷 확인).
+$u" 2
+    if [ "$enc" = b64 ]; then { base64 -d < "$TD/$f.part" > "$TD/$f" 2>/dev/null || base64 -D -i "$TD/$f.part" -o "$TD/$f"; } && rm -f "$TD/$f.part"
+    else mv -f "$TD/$f.part" "$TD/$f"; fi
+    [ "$(sha_ "$TD/$f")" = "$h" ] || { rm -f "$TD/$f"; bdie "$f 해시가 맞지 않아 쓰지 않습니다." 2; }
+  done <<EOF_TOOLS
+$BOOT_TOOLS
+EOF_TOOLS
+  BJ="$TD/$BUILDER_JAR"
+  if [ -z "$TOOL_DIR" ]; then   # our builder: from the public release (stable first, then the test pre-release)
+    rm -f "$BJ"
+    curl -fsSL -o "$BJ" "$RELEASES/latest/download/$BUILDER_JAR" 2>>"$LOG" || curl -fsSL -o "$BJ" "$RELEASES/download/test/$BUILDER_JAR" 2>>"$LOG" || rm -f "$BJ"
+  fi
+  [ "$(head -c 2 "$BJ" 2>/dev/null)" = 'PK' ] || bdie "빌더($BUILDER_JAR)를 받지 못했습니다. $RELEASES" 2
+
+  note '③ 고치기 (1~2분)'
+  bo="$("$JAVA" -jar "$BJ" "$CAP" "$TD" "$OUT_APK" 2>&1)"; rc=$?; log "$bo"
+  [ $rc -eq 3 ] && bdie "확인되지 않은 SystemUI 빌드라 멈춥니다. 차에는 아무것도 바꾸지 않았습니다.
+$bo" 3
+  { [ $rc -eq 0 ] && [ -f "$OUT_APK" ]; } || bdie "고치는 중 멈췄습니다(코드 $rc). 차에는 아무것도 바꾸지 않았습니다.
+$bo" 1
+  note "  $(printf '%s\n' "$bo" | tail -1)"
+
+  note '④ 설치'
+  remote=/data/local/tmp/SystemUI-1s.apk
+  adb_wait 60 '전송 (USB)' -s "$SERIAL" push "$OUT_APK" "$remote" || { boot_clean; stuck '시동 안내 전송' 'USB로 파일을 보내다 멈췄습니다. 케이블·포트를 바꾸고 Factory Test부터 다시 한 뒤 실행하세요.'; }
+  adb_wait 120 '설치 (내비)' -s "$SERIAL" shell pm install -r "$remote"; irc=$?; io="$OUT"
+  adb_wait 15 '정리' -s "$SERIAL" shell rm -f "$remote" >/dev/null
+  boot_clean
+  [ $irc -eq 0 ] || stuck '시동 안내 설치' "$BOOT_HINT"
+  p="$(sysui_path)"; vc="$(sysui_code)"
+  case "$p" in /data/app/*) ;; *) vc="($p)" ;; esac
+  { printf '%s' "$io" | grep -q Success && [ "$vc" = 18 ]; } || die "설치되지 않았습니다 (지금: $p, versionCode $vc):
+$io" 1
+  ok '설치 완료.'
+  ok '시동을 완전히 끄고(문을 잠가 내비가 꺼질 때까지) 다시 켜면 그때부터 안내 화면이 약 1초 뒤 닫힙니다.'
+  note '후방 카메라·검은 화면이 먼저 떠 있으면 그게 끝난 뒤 1초입니다(순정 동작).'
+  warn '되돌리기: 설치기 5번(시동 안내 화면 원래대로). 내비 소프트웨어 업데이트 전에 꼭 되돌리세요.'
+  usb_off; finish 0
+fi
+
 if [ "$build" = "$LOW_BUILD" ]; then
   note '블루링크 없는 내비(LOW 보드) — 설치가 확인된 빌드입니다.'
 elif [ "$build" = "$OLD_BUILD" ]; then
   note '블루링크 내비 2024-02 빌드 — 설치와 값이 확인된 빌드입니다.'
-elif [ -n "$build" ] && [ "$build" != "$VERIFIED_BUILD" ] && [ -z "$UNINSTALL" ]; then   # removing needs no "values may be wrong" question
+elif [ -n "$build" ] && [ "$build" != "$VERIFIED_BUILD" ] && [ -z "$UNINSTALL$BOOT_FAST$BOOT_REMOVE" ]; then   # removing needs no "values may be wrong" question; boot fast checks the SystemUI files
   warn "주의: 검증된 빌드($VERIFIED_BUILD)와 다릅니다. 값이 틀릴 수 있습니다."
   ask '그래도 계속할까요?' || { warn '사용자 취소.'; finish 1; }
 fi
@@ -385,6 +528,14 @@ if [ -n "$UNINSTALL" ]; then
       warn '☆ 버튼: 되돌리지 못했습니다. 삭제 뒤 ☆를 길게 눌러 설정 화면에서 기능을 다시 고르세요.'
     else ok '☆ 버튼: 원래대로(없음) 되돌림'; fi
   fi
+  # 시동 안내 1초(설치기 4번)가 깔려 있으면 함께 되돌릴지 묻는다(--yes면 되돌림: 삭제는 순정으로 돌아가는 것).
+  SYSUI_KEPT=''
+  case "$(sysui_path)" in /data/app/*) if [ "$(sysui_code)" = 18 ]; then
+    if ask '시동 안내 화면 1초(설치기 4번)도 순정으로 되돌릴까요?'; then
+      adb_wait 90 '시동 안내 화면 되돌리기' -s "$SERIAL" uninstall com.android.systemui
+      case "$(sysui_path)" in /system/*) ok '시동 안내 화면: 순정으로 되돌림' ;; *) warn "시동 안내 화면: 되돌리지 못했습니다. 설치기 5번으로 다시 해 보세요. $OUT"; SYSUI_KEPT=1 ;; esac
+    else note '시동 안내 화면 1초는 그대로 둡니다(되돌리기: 설치기 5번).'; SYSUI_KEPT=1; fi
+  fi ;; esac
   for apk in $APKS; do
     adb_wait 60 "$(name_of $apk) 삭제" -s "$SERIAL" uninstall "$(pkg_of $apk)" || stuck "$(name_of $apk) 삭제(내비)" "$PM_HINT"
     if printf '%s' "$OUT" | grep -q Success; then ok "$(name_of $apk): 삭제됨"; continue; fi
@@ -402,7 +553,9 @@ $u" 1
     fi
     note "$(name_of $apk): 설치돼 있지 않음"
   done
-  ok '삭제 완료. 순정 상태로 돌아갔습니다(순정 시스템은 원래 건드리지 않습니다).'; usb_off; finish 0
+  if [ -n "$SYSUI_KEPT" ]; then ok '앱 삭제 완료. 시동 안내 화면 1초만 남아 있습니다(설치기 5번으로 되돌리기).'
+  else ok '삭제 완료. 순정 상태로 돌아갔습니다.'; fi
+  usb_off; finish 0
 fi
 
 # --- 설치 -------------------------------------------------------------------

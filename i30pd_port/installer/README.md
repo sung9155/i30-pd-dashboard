@@ -84,6 +84,18 @@
 
 > **한글 깨짐 주의 (유지보수용):** `install.ps1` 은 **UTF-8 BOM** 으로 저장해야 한다. Windows PowerShell 5.1 은 BOM 없는 UTF-8 을 ANSI 로 읽어 한글이 깨지고 파싱이 깨진다. 편집 후 첫 3바이트가 `EF BB BF` 인지 확인(`설치.cmd` 는 ASCII 라 BOM 불필요).
 
+## 시동 안내 화면 1초 (4·5번, `-BootFast` / `-BootFastRemove`, 맥·리눅스 `--boot-fast` / `--boot-fast-remove`)
+
+순정 SystemUI를 그 차의 원본으로 그 PC에서 고쳐 설치한다(현대 코드라 완성본은 배포하지 않음, [`../consent_fast/README.md`](../consent_fast/README.md)).
+1. `pm path com.android.systemui`: 이미 `/data/app`(versionCode 18)이면 "이미 설치", 다른 업데이트면 멈춤.
+2. `/system/app/HKMC_SystemUI.apk`·`.odex`를 받아 SHA-256이 확인된 빌드(V141)인지 본다. 아니면 지우고 종료 코드 3(차는 그대로).
+3. `/system/framework`의 odex 11개를 받는다.
+4. Java 11+를 찾고(설치기 폴더의 `jre17` → PATH) 없으면 Eclipse Temurin 17 JRE를 해시 확인 후 받는다(Windows x64, macOS x64·arm64, 리눅스 x64·aarch64).
+   도구(baksmali·smali·apksig·AOSP 테스트 키)는 해시 고정, 빌더 `i30pd-consent-fast.jar`는 공개 릴리스(안정화, 없으면 test)에서 받는다.
+5. 빌더 실행 → push → `pm install -r` → `/data/app`·versionCode 18 확인. 받은 원본과 결과 APK는 성공·실패 모두 PC에서 지운다.
+- 되돌리기는 `adb uninstall com.android.systemui`(업데이트만 지움). `삭제`도 깔려 있으면 함께 되돌릴지 묻는다(`-Yes`면 되돌림).
+- 시험 인자: `-JavaPath <java>` `-ToolDir <도구 폴더>`(맥·리눅스 `--java` `--tool-dir`). `test/run.sh`는 `BOOT_CAP`(실제 원본 캡처)·`BOOT_TOOLS`·`BOOT_JAVA`가 있으면 설치·이미 설치·삭제 시 되돌림·모르는 빌드·되돌리기를 시험한다.
+
 ## 배포 (관리자)
 
 exe 가 아니므로 빌드 단계가 없다. APK 는 **공개 배포 레포 [`sung9155/i30-pd-dashboard`](https://github.com/sung9155/i30-pd-dashboard) 의 릴리스**로 나간다(소스 레포는 비공개라도 됨).

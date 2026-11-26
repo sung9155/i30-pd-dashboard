@@ -542,7 +542,7 @@ public final class TabsPreview {
           ImageIO.write(img,"png",new File(out,"9s_wrc_corner.png"));}
          // WRC while the stock navi guides (a domestic code, 600 m): the card shows the guidance
          {Tbt.set(Tbt.parse(String.join(String.valueOf((char)10),"Navigation Cluster:","  TBT SubInfo:","    distance      = 2.9 METER","    minutes       = 1","  TBT Info:","    Display Type  = Unknown display type(0x5b)","    Direction     = 0.0","    Distance      = 600.0 METER","")),now);
-          rec.setPage(PitRenderer.PAGE_TACHO+1);save(out,"9s_wrc_navi",rec,model,now,false,false);Tbt.set(Tbt.NONE,now);}
+          rec.setPage(PitRenderer.PAGE_TACHO+1);save(out,"9s_wrc_navi",rec,model,now,false,false);Tbt.set(Tbt.parse(String.join(String.valueOf((char)10),"Navigation Cluster:","  TBT Info:","    Display Type  = U TURN","    Direction     = 270.0","    Distance      = 300.0 METER","")),now);save(out,"9s_wrc_navi_u",rec,model,now,false,false);Tbt.set(Tbt.NONE,now);}
          // 네온: 300 rpm before the shift target (the glitch), and overheating at the target
          for(int n=0;n<2;n++){NeonCluster k=new NeonCluster();k.shiftTarget=6000;
               Telemetry.Sample[] q=with(model,now,ix,new float[]{118,n==0?5700:6050,3,100,0,0.1f,0.4f,4,n==0?96:116,1.3f,104});

@@ -82,7 +82,7 @@ final class WrcCluster extends ClusterKit {
         Tbt.State nav=Tbt.current(now);
         if(nav.maneuver){   // the stock navi is guiding: its next point takes the card (the corner list stays below)
             float deg=Tbt.arrow(nav);int note=Math.abs(deg)<20?0:Math.abs(deg)>160?(deg<0?-1:1):(deg<0?-3:3);
-            if(note==0)straight(c,cx);else bend(c,cx,note);
+            if(nav.type.contains("U TURN"))uturn(c,cx);else if(note==0)straight(c,cx);else bend(c,cx,note);
             String d=Tbt.distance(nav.metres);text(c,d.length()>0?d:"—",cx,216,50,INK,Paint.Align.CENTER,num());
             bold(c,t(nav.label),cx,248,20,INK_MUT,Paint.Align.CENTER);
         }
@@ -101,6 +101,15 @@ final class WrcCluster extends ClusterKit {
         r.set(right?x0:x0-2*rr,y-rr,right?x0+2*rr:x0,y+rr);c.drawArc(r,right?180:0,right?90:-90,false,p);p.setStyle(Paint.Style.FILL);
         float ex=right?x0+rr:x0-rr,ey=y-rr,d=right?1:-1;
         path.reset();path.moveTo(ex+d*16,ey);path.lineTo(ex-d*4,ey-13);path.lineTo(ex-d*4,ey+13);path.close();poly(c,INK);
+    }
+    /** A U-turn as driven here (keep right, turn back over the left): up, over the top, back down to the arrowhead. */
+    private void uturn(Canvas c,float cx){
+        float rr=22,x0=cx+rr,y=118;
+        line(c,x0,166,x0,y,9,INK);
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(9);p.setColor(col(INK));
+        r.set(cx-rr,y-rr,cx+rr,y+rr);c.drawArc(r,0,-180,false,p);p.setStyle(Paint.Style.FILL);
+        line(c,cx-rr,y,cx-rr,140,9,INK);
+        path.reset();path.moveTo(cx-rr,160);path.lineTo(cx-rr-13,138);path.lineTo(cx-rr+13,138);path.close();poly(c,INK);
     }
     private void straight(Canvas c,float cx){
         line(c,cx,166,cx,106,9,INK);

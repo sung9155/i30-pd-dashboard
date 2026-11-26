@@ -104,7 +104,7 @@ $LogDir = Join-Path $env:LOCALAPPDATA 'i30pd-installer'
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 $Log = Join-Path $LogDir ("install_{0}.log" -f (Get-Date -Format yyyyMMdd_HHmmss))
 
-function Log($m){ Add-Content -LiteralPath $Log -Value $m }   # 기록 파일에만 (문제 제보용)
+function Log($m){ Add-Content -LiteralPath $Log -Value $m -Encoding UTF8 }   # 기록 파일에만 (문제 제보용)
 function Note($m,[string]$c='Gray'){ Write-Host $m -ForegroundColor $c; Log $m }
 function Head($m){ $t = Get-Date -Format HH:mm:ss; Write-Host ''; Write-Host "$m   [$t]" -ForegroundColor Cyan; Log "== $m == $t" }
 function Die($m,$code){
@@ -130,7 +130,7 @@ function Mask([string]$t){
 function Ask($m){ if($Yes){ return $true }; $r = Read-Host "$m [Y/n]"; return ($r -eq '' -or $r -match '^[Yy]') }
 function Adb([Parameter(ValueFromRemainingArguments=$true)]$a){
   $o = & $script:adbExe @a 2>&1 | Out-String
-  Add-Content -LiteralPath $Log -Value ("> adb " + ($a -join ' ') + "`n" + $o)
+  Add-Content -LiteralPath $Log -Value ("> adb " + ($a -join ' ') + "`n" + $o) -Encoding UTF8
   return $o
 }
 # 오래 걸릴 수 있는 adb(전송·설치)는 제한 시간 안에서 돌리고, 기다리는 동안 경과 초를 같은 줄에 찍는다:
@@ -357,7 +357,7 @@ function Wait($m,[string]$c='Gray'){
 function WaitEnd(){ if($script:waitMsg){ Write-Host ''; $script:waitMsg = $null } }
 while(-not $serial){
   $dl = & $script:adbExe devices -l 2>&1 | Out-String
-  Add-Content -LiteralPath $Log -Value $dl
+  Add-Content -LiteralPath $Log -Value $dl -Encoding UTF8
   $pd = @(); $others = @()
   foreach($line in ($dl -split "`r?`n")){
     if($line -match '^(\S+)\s+device\b'){
@@ -454,7 +454,7 @@ if($Diag){
   $tags = @('VehicleDash:V','VNCarPlayHub:V','VNQuickEntry:V','NDashboard:V','DtcDialog:V','AndroidRuntime:E','PackageManager:I')
   $lc = & $script:adbExe -s $serial shell logcat -d -v time -s @tags 2>&1 | Out-String   # 설치기 기록에는 안 남긴다(아래에 그 기록을 붙임)
   [void]$sb.AppendLine().AppendLine("[기록: $($tags -join ' ')]").AppendLine(((($lc -split "`r?`n") | Select-Object -Last 3000) -join "`r`n"))
-  [void]$sb.AppendLine().AppendLine('[이 PC 설치기 기록]').Append((Get-Content -Raw -LiteralPath $Log))
+  [void]$sb.AppendLine().AppendLine('[이 PC 설치기 기록]').Append((Get-Content -Raw -LiteralPath $Log -Encoding UTF8))
   $desk = [Environment]::GetFolderPath('Desktop'); if(-not $desk -or -not (Test-Path $desk)){ $desk = $LogDir }
   $out = Join-Path $desk ("i30pd_진단기록_{0}.txt" -f (Get-Date -Format yyyyMMdd_HHmmss))
   [IO.File]::WriteAllText($out, (Mask $sb.ToString()), (New-Object Text.UTF8Encoding $true))

@@ -57,6 +57,20 @@ public final class ObdScheduleTest {
         y.done(tc,0,true);tc.bad="none";y.done(tc,1000,false);y.done(tc,2000,false);y.done(tc,3000,false);
         check(!tc.active()&&y.untilNext(3000)==3000&&y.next(6000)==tc,"an ECU that answered before: retried in 3 s, not a minute");
         y.done(tc,6000,true);check(tc.active()&&y.untilNext(6000)==1000,"and back to every second on its answer");
+        // the oil block (E001) is asked again after a drop even when the ECU refused it (7F); the other requests stay off on a 7F
+        ObdSchedule.Poll oilP=null,oilN=null,sootP=null;
+        for(ObdSchedule.Poll p:ObdSchedule.standard().polls()){if(p.key==Telemetry.DID_E001)oilP=p;if(p.key==Telemetry.DID_SOOT)sootP=p;}
+        for(ObdSchedule.Poll p:ObdSchedule.standard().polls())if(p.key==Telemetry.DID_E001)oilN=p;
+        ObdSchedule so=new ObdSchedule(oilP);   // the standard table's own entries, each alone so next() is about it
+        so.done(oilP,0,true);oilP.bad="7F 22 21";so.done(oilP,5000,false);so.done(oilP,10000,false);so.done(oilP,15000,false);
+        check(!oilP.active()&&oilP.retrying()&&so.summary().equals("E001 1/4 7F 22 21 retry"),"oil refused three times: dropped, but retrying ("+so.summary()+")");
+        check(oilP.misses()==3&&so.next(29999)==null&&so.next(30000)==oilP,"oil that answered before: asked again three periods on (15 s)");
+        so.done(oilP,30000,false);check(oilP.retrying()&&so.next(44999)==null&&so.next(45000)==oilP,"a refusal on the retry does not stop it either");
+        so.done(oilP,45000,true);check(oilP.active()&&oilP.misses()==0&&so.untilNext(45000)==5000,"and an answer brings it back to its period");
+        ObdSchedule sn=new ObdSchedule(oilN);oilN.bad="7F 22 31";sn.done(oilN,0,false);sn.done(oilN,5000,false);sn.done(oilN,10000,false);
+        check(oilN.retrying()&&sn.next(10000+ObdSchedule.RETRY_MS-1)==null&&sn.next(10000+ObdSchedule.RETRY_MS)==oilN,"oil never answered (an engine without it): once a minute, not every 5 s");
+        ObdSchedule ss=new ObdSchedule(sootP);sootP.bad="7F 22 31";ss.done(sootP,0,false);ss.done(sootP,2000,false);ss.done(sootP,4000,false);
+        check(!sootP.active()&&!sootP.retrying()&&ss.next(4000+10*ObdSchedule.RETRY_MS)==null&&ss.summary().endsWith("off"),"another request refused three times stays off, as before");
         // replies another tester asked for (an OBD dongle on a diesel PD, 2026-11-06): used when they answer one of our requests
         ObdSchedule m=ObdSchedule.standard();
         ObdSchedule.Poll cl=m.match(0x26,new byte[]{0x62,0x01,(byte)0xA4,1,2,3});

@@ -27,7 +27,13 @@ public final class ObdSchedule {
         public boolean active(){return dropAfter==0||misses<dropAfter;}
         /** Dropped on timeouts alone (no reply, "none"): another tester (a DAG3) may hold the ECU, so it is tried again
          *  once a RETRY_MS; a refusal (7F) means the ECU lacks it and it stays dropped. */
-        public boolean retrying(){return !active()&&"none".equals(bad);}
+        public boolean retrying(){return !active()&&(keepAsking||"none".equals(bad));}
+        /** A dropped request that is asked again whatever the last bad reply was, a refusal (7F) included. The oil block
+         *  (E001) only: it is the oil slot's one source, and once dropped on a 7F it was never asked again, so the oil
+         *  showed "—" until the app restarted. Still dropped after dropAfter misses, so an engine that lacks it is asked
+         *  once a RETRY_MS (three periods if it has answered before), not every period. */
+        boolean keepAsking;
+        public Poll keepAsking(){keepAsking=true;return this;}
         public int dropAfter(){return dropAfter;}
         public int misses(){return misses;}
     }
@@ -46,7 +52,7 @@ public final class ObdSchedule {
             new Poll(EMS,new byte[]{0x22,(byte)0xED,0x1D},Telemetry.DID_SOOT,2000,3),         // soot load g (Kia Ceed 2018 in OBDb); a petrol drops it       // Hyundai diesel DPF block (the PD diesel ignores the standard PIDs); a petrol EMS says 7F 31
             new Poll(TCU,new byte[]{0x22,0x01,(byte)0xA5},Telemetry.DID_TCU_LIFE,30000,3),     // DCT clutch life candidates (a slow value; a 6MT has no TCU). 30 s: at 60 s (= STALE_MS) the card blanked between answers
             new Poll(BCM,new byte[]{0x22,(byte)0xC0,0x0B},Telemetry.DID_TIRE,30000,3),         // tyre temperatures every 30 s (was 10 s; the sensors report every few tens of seconds, and STALE_MS is 60 s); an ECU that lacks it drops it
-            new Poll(EMS,new byte[]{0x22,(byte)0xE0,0x01},Telemetry.DID_E001,5000,3),        // engine oil temperature (data byte 34), 51 B
+            new Poll(EMS,new byte[]{0x22,(byte)0xE0,0x01},Telemetry.DID_E001,5000,3).keepAsking(),   // engine oil temperature (data byte 34), 51 B; retried after a drop even on a 7F
             pid(0x46,30000,0),pid(0x2f,30000,0),                                           // ambient, fuel level
             pid(0x0b,2000,3));                                                             // intake manifold pressure: checks the diesel boost scale (VehicleDash logs it beside the hscan byte)
     }

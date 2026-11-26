@@ -68,7 +68,9 @@ public final class TabsPreview {
         race(out,"4c_race_diesel_dpf",rec,model,now/6000*6000,VehicleProfile.DIESEL_DCT,-1);race(out,"4c_race_diesel_dpf_avg",rec,model,now/6000*6000+3000,VehicleProfile.DIESEL_DCT,-1);
         rec.setPage(PitRenderer.PAGE_RECORDS);save(out,"4d_records",rec,model,now,false,false);
         {DriveStats d=rec.stats();float[] keep={d.maxLat,d.maxDecel,d.maxBoost,d.maxRpm,d.maxSpeed,d.maxClutchOdd,d.maxClutchEven};   // the car photo 2026-11-04: six cells, 6242 rpm ran into the next one
-         d.maxLat=1.12f;d.maxDecel=1.08f;d.maxBoost=1.52f;d.maxRpm=6742;d.maxSpeed=236;d.maxClutchOdd=196;d.maxClutchEven=102;save(out,"4d_records_full",rec,model,now,false,false);
+         d.maxLat=1.12f;d.maxDecel=1.08f;d.maxBoost=1.52f;d.maxRpm=6742;d.maxSpeed=236;d.maxClutchOdd=196;d.maxClutchEven=102;
+         d.brakeLastM=d.brakeBestM=36.4f;d.brakeLastS=2.71f;d.quarterLastS=d.quarterBestS=14.86f;d.quarterTrap=158;save(out,"4d_records_full",rec,model,now,false,false);
+         d.quarterRunning=true;d.quarterStart=now-6200;d.quarterDist=168;save(out,"4d_records_quarter_live",rec,model,now,false,false);d.quarterRunning=false;
          d.maxLat=keep[0];d.maxDecel=keep[1];d.maxBoost=keep[2];d.maxRpm=keep[3];d.maxSpeed=keep[4];d.maxClutchOdd=keep[5];d.maxClutchEven=keep[6];}
         model.obd(0x46,new byte[]{(byte)58},now);model.obd(0x2f,new byte[]{(byte)158},now);   // ambient 18 C, fuel 62 % (the replayed log has neither; the classic tiles show them)
         String[] layouts={"9a_cluster_classic","9b_cluster_retro","9c_cluster_rally","9d_cluster_taxi","9e_cluster_80s","9f_cluster_hud","9g_cluster_8bit","9g_cluster_8bit_chase",

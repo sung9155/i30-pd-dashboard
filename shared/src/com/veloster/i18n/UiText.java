@@ -739,6 +739,7 @@ public final class UiText {
         EN.put("스킨·레이아웃마다 정해진 막대를 씁니다 (그래프 고르기 없음)","Skins and layouts have their own bars (no graph choice)");
         EN.put("스타게이징 블루","Stargazing Blue");
         EN.put("스포츠 머플러","Sport muffler");
+        EN.put("시간","time");
         EN.put("시간  ","Time  ");
         EN.put("시간 %d초 × ","Time %d s × ");
         EN.put("시간 그래프","Values over time");

@@ -9,7 +9,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import java.util.Locale;
 
-/** 기록실: the kept records (Records) as a list — the three acceleration runs, then each circuit that has a lap. */
+/** 기록실: the kept records (Records) as a list — the three acceleration runs, 100-0 braking, 400 m, then each circuit that has a lap. */
 public final class RecordsDialog {
     private RecordsDialog() {}
 
@@ -17,6 +17,9 @@ public final class RecordsDialog {
         StringBuilder b=new StringBuilder();
         for(int i=0;i<DriveStats.RUNS.length;i++)
             section(b,String.format(Locale.US,"%.0f-%.0f km/h",DriveStats.RUNS[i][0],DriveStats.RUNS[i][1]),Records.entries(Records.runKey(i)),false);
+        section(b,"100-0 km/h",Records.entries(Records.BRAKE),"%.1f m");
+        section(b,"100-0 km/h ("+UiText.t("시간")+")",Records.entries(Records.BRAKE_TIME),"%.2f s");
+        section(b,"400 m",Records.entries(Records.QUARTER),"%.2f s");
         for(int i=0;i<Circuits.count();i++){
             String[] laps=Records.entries(Records.lapKey(Circuits.name(i)));
             if(laps.length>0)section(b,UiText.t(Circuits.name(i)),laps,true);
@@ -32,6 +35,18 @@ public final class RecordsDialog {
                     .setPositiveButton(UiText.t("지우기"),new DialogInterface.OnClickListener(){public void onClick(DialogInterface d2,int w2){Records.clear();}})
                     .setNegativeButton(UiText.t("취소"),null).show();
             }}).show();
+    }
+    /** A list shown with its own unit (format of the value). */
+    private static void section(StringBuilder b,String title,String[] entries,String format){
+        b.append(title).append('
+');
+        if(entries.length==0)b.append("   —
+");
+        for(int i=0;i<entries.length;i++)
+            b.append(String.format(Locale.US," %d. %8s   %s
+",i+1,String.format(Locale.US,format,Records.value(entries[i])),Records.date(entries[i])));
+        b.append('
+');
     }
     private static void section(StringBuilder b,String title,String[] entries,boolean lap){
         b.append(title).append('\n');

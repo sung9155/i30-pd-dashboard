@@ -23,6 +23,37 @@ public final class DriveStatsTest {
         check(Math.abs(d.last[2]-3.2f)<0.05f,"80-120 time "+d.last[2]);
         check(d.best[0]==d.last[0],"first run is the best");
         check(Math.abs(d.maxSpeed-130)<0.01f&&Math.abs(d.maxRpm-3000)<0.01f&&Math.abs(d.maxBoost-0.3f)<0.01f,"peaks");
+        // 100-0 at a steady 1 g from 110 km/h (-2.825 km/h per 80 ms step): v^2/2a = 39.3 m in 2.83 s from 100 km/h.
+        DriveStats bk=new DriveStats();long tb=0;
+        for(int i=0;i<20;i++){tb+=80;step(bk,tb,110,3000,0,0);}
+        for(float vb=110;vb>-1;vb-=9.81f*3.6f*0.08f){tb+=80;step(bk,tb,Math.max(0,vb),1500,0,-1f);}
+        for(int i=0;i<5;i++){tb+=80;step(bk,tb,0,800,0,0);}
+        check(Math.abs(bk.brakeLastM-39.3f)<0.8f&&Math.abs(bk.brakeLastS-2.83f)<0.1f,"100-0: "+bk.brakeLastM+" m "+bk.brakeLastS+" s");
+        check(bk.brakeBestM==bk.brakeLastM&&!bk.brakeRunning,"first stop is the best");
+        // A gentle 0.2 g slow-down takes 14 s from 100: not a braking test.
+        DriveStats gb=new DriveStats();tb=0;
+        for(int i=0;i<20;i++){tb+=80;step(gb,tb,110,3000,0,0);}
+        for(float vb=110;vb>-1;vb-=0.2f*9.81f*3.6f*0.08f){tb+=80;step(gb,tb,Math.max(0,vb),1500,0,-0.2f);}
+        check(Float.isNaN(gb.brakeLastM),"gentle slow-down is not a 100-0");
+        // Braking that eases off and speeds up again counts nothing either.
+        DriveStats eb=new DriveStats();tb=0;
+        for(int i=0;i<20;i++){tb+=80;step(eb,tb,110,3000,0,0);}
+        for(float vb=110;vb>60;vb-=2.8f){tb+=80;step(eb,tb,vb,1500,0,-1f);}
+        for(float vb=60;vb<80;vb+=1){tb+=80;step(eb,tb,vb,3000,0,.3f);}
+        for(float vb=80;vb>-1;vb-=2.8f){tb+=80;step(eb,tb,Math.max(0,vb),1500,0,-1f);}
+        check(Float.isNaN(eb.brakeLastM),"a 100-0 broken by speeding up");
+        // 400 m at a steady 0.3 g from a stop: t = sqrt(2*400/a) = 16.5 s, trap a*t = 175 km/h.
+        DriveStats qm=new DriveStats();long tq0=0;
+        for(int i=0;i<10;i++){tq0+=80;step(qm,tq0,0,800,0,0);}
+        for(int i=1;i<=300;i++){tq0+=80;step(qm,tq0,0.3f*9.81f*3.6f*0.08f*i,4000,0.8f,.3f);}
+        check(Math.abs(qm.quarterLastS-16.5f)<0.15f&&Math.abs(qm.quarterTrap-174.7f)<2,"400 m: "+qm.quarterLastS+" s at "+qm.quarterTrap+" km/h");
+        check(qm.quarterBestS==qm.quarterLastS&&!qm.quarterRunning,"400 m done once");
+        // A stop before 400 m counts nothing.
+        DriveStats qs=new DriveStats();tq0=0;
+        for(int i=0;i<10;i++){tq0+=80;step(qs,tq0,0,800,0,0);}
+        for(int i=1;i<=50;i++){tq0+=80;step(qs,tq0,i*0.5f,3000,0,.2f);}
+        for(int i=50;i>=0;i--){tq0+=80;step(qs,tq0,i*0.5f,1500,0,-.2f);}
+        check(Float.isNaN(qs.quarterLastS)&&!qs.quarterRunning,"stopping before 400 m counts nothing");
         // A rolling run aborted by backing off below the start speed records nothing.
         DriveStats r=new DriveStats();t=0;
         for(v=50;v<70;v+=1){t+=80;step(r,t,v,3000,0,0.2f);}

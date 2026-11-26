@@ -382,6 +382,14 @@ public final class RaceRenderer {
         float w=(R-L)/4,left=(L+R)/2;
         for(int i=0;i<3;i++)if(st.running[i]){
             text(c,run(i)+" km/h   "+String.format(Locale.US,"%.1f s",(now-st.runStart[i])/1000f)+"   MEASURING",left,469,14,AMBER,Paint.Align.CENTER);return;}
+        if(st.brakeRunning){text(c,"100→0 km/h   "+String.format(Locale.US,"%.1f s",(now-st.brakeStart)/1000f)+"   MEASURING",left,469,14,AMBER,Paint.Align.CENTER);return;}
+        if(st.quarterRunning){text(c,"400 m   "+String.format(Locale.US,"%.1f s   %.0f m",(now-st.quarterStart)/1000f,st.quarterDist)+"   MEASURING",left,469,14,AMBER,Paint.Align.CENTER);return;}
+        if(st.brakeFinishedAt!=0&&now-st.brakeFinishedAt<8000){boolean record=st.brakeLastM==st.brakeBestM;
+            text(c,"100→0 km/h   "+String.format(Locale.US,"%.1f m  %.2f s",st.brakeLastM,st.brakeLastS)+"   BEST "+String.format(Locale.US,"%.1f m",st.brakeBestM)+(record?"   ★":""),
+                left,469,14,record?GREEN:WHITE,Paint.Align.CENTER);return;}
+        if(st.quarterFinishedAt!=0&&now-st.quarterFinishedAt<8000){boolean record=st.quarterLastS==st.quarterBestS;
+            text(c,"400 m   "+String.format(Locale.US,"%.2f s  %.0f km/h",st.quarterLastS,st.quarterTrap)+"   BEST "+String.format(Locale.US,"%.2f",st.quarterBestS)+(record?"   ★":""),
+                left,469,14,record?GREEN:WHITE,Paint.Align.CENTER);return;}
         for(int i=0;i<3;i++)if(st.finishedAt[i]!=0&&now-st.finishedAt[i]<8000){boolean record=st.last[i]==st.best[i];
             text(c,run(i)+" km/h   "+String.format(Locale.US,"%.2f s",st.last[i])+"   BEST "+String.format(Locale.US,"%.2f",st.best[i])+(record?"   ★":""),
                 left,469,14,record?GREEN:WHITE,Paint.Align.CENTER);return;}
@@ -392,17 +400,27 @@ public final class RaceRenderer {
     /** Records page: the three acceleration runs on top, session peaks below. */
     public void drawRecords(Canvas c,DriveStats stats,long frameTime){
         st=stats;now=frameTime;
-        float w=(R-L-16)/3;
-        for(int i=0;i<3;i++){
-            float l=L+i*(w+8),rr=l+w;boolean live=st.running[i];
+        // Five runs in a row: the three acceleration runs, 100-0 braking (metres) and 400 m from a stop.
+        float w=(R-L-32)/5;
+        for(int i=0;i<5;i++){
+            float l=L+i*(w+8),rr=l+w;boolean live;String title,best,all,big,unit,sub,hint;
+            if(i<3){live=st.running[i];title=run(i);best=fmt("%.2f",st.best[i]);all=fmt("%.2f",Records.best(Records.runKey(i)));
+                big=fmt(live?"%.1f":"%.2f",live?(now-st.runStart[i])/1000f:st.last[i]);unit="s";sub="";hint=i==0?"Launch from a stop":"Accelerate";}
+            else if(i==3){live=st.brakeRunning;title="100→0";best=fmt("%.1f",st.brakeBestM);all=fmt("%.1f",Records.best(Records.BRAKE));
+                big=live?fmt("%.1f",(now-st.brakeStart)/1000f):fmt("%.1f",st.brakeLastM);unit=live?"s":"m";
+                sub=live||Float.isNaN(st.brakeLastS)?"":fmt("%.2f",st.brakeLastS)+" s";hint="Brake hard from 100";}
+            else{live=st.quarterRunning;title="400 m";best=fmt("%.2f",st.quarterBestS);all=fmt("%.2f",Records.best(Records.QUARTER));
+                big=fmt(live?"%.1f":"%.2f",live?(now-st.quarterStart)/1000f:st.quarterLastS);unit="s";
+                sub=live?fmt("%.0f",st.quarterDist)+" m":Float.isNaN(st.quarterTrap)?"":fmt("%.0f",st.quarterTrap)+" km/h";hint="Launch from a stop";}
+            boolean has=!best.equals("—");
             box(c,l,60,rr,250,PANEL);
-            text(c,run(i)+" km/h",l+12,84,16,MUTED,Paint.Align.LEFT);
-            text(c,"BEST "+fmt("%.2f",st.best[i]),rr-12,84,16,!Float.isNaN(st.best[i])?GREEN:MUTED,Paint.Align.RIGHT);
-            text(c,"ALL-TIME "+fmt("%.2f",Records.best(Records.runKey(i))),rr-12,106,13,MUTED,Paint.Align.RIGHT);   // 기록실: kept across drives
-            float shown=live?(now-st.runStart[i])/1000f:st.last[i];
-            text(c,"s",rr-12,206,16,MUTED,Paint.Align.RIGHT);
-            text(c,fmt(live?"%.1f":"%.2f",shown),rr-30,206,72,live?AMBER:WHITE,Paint.Align.RIGHT);
-            text(c,live?"MEASURING":i==0?"Launch from a stop":"Accelerate to log a run",l+12,238,13,live?AMBER:MUTED,Paint.Align.LEFT);
+            text(c,title+(i<4?" km/h":""),l+10,82,14,MUTED,Paint.Align.LEFT);
+            text(c,"BEST "+best,rr-10,104,13,has?GREEN:MUTED,Paint.Align.RIGHT);
+            text(c,"ALL-TIME "+all,rr-10,122,11,MUTED,Paint.Align.RIGHT);   // 기록실: kept across drives
+            text(c,unit,rr-10,200,14,MUTED,Paint.Align.RIGHT);
+            text(c,big,rr-26,200,fit(big,50,w-46),live?AMBER:WHITE,Paint.Align.RIGHT);
+            if(!sub.isEmpty())text(c,sub,rr-10,222,13,live?AMBER:MUTED,Paint.Align.RIGHT);
+            text(c,live?"MEASURING":hint,l+10,242,11,live?AMBER:MUTED,Paint.Align.LEFT);
         }
         String[] name={"MAX LAT G","MAX DECEL","MAX BOOST","MAX RPM","MAX SPEED"};
         String[] val={fmt("%.2f",st.maxLat),fmt("%.2f",st.maxDecel),fmt("%+.2f",st.maxBoost),fmt("%.0f",st.maxRpm),fmt("%.0f",st.maxSpeed)};

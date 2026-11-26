@@ -17,6 +17,8 @@ public final class Records {
 
     public static void store(Store s){synchronized(CACHE){store=s;CACHE.clear();}}
     public static String runKey(int run){return "run_"+run;}
+    /** 100-0 braking distance (m) and its time (s), and the 400 m time (s): each a list of its own, smaller is better. */
+    public static final String BRAKE="brake_100",BRAKE_TIME="brake_100_s",QUARTER="quarter_400";
     /** By the circuit's name, not its index: the list of circuits can grow or be reordered. */
     public static String lapKey(String circuit){return "lap_"+circuit;}
 

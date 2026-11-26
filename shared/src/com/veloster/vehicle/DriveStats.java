@@ -18,6 +18,14 @@ public final class DriveStats {
     public final boolean[] running=new boolean[3];
     public final long[] runStart=new long[3],finishedAt=new long[3];
     private final boolean[] armed=new boolean[3];
+    /** 100-0 braking: from the downward crossing of 100 km/h to a stop. Distance (m) and time (s), last and best this
+     *  drive; NaN until one is done. A run that speeds up again, or takes longer than BRAKE_LIMIT_MS (under ~0.35 g on
+     *  average), is not a braking test and counts nothing. */
+    public float brakeLastM=Float.NaN,brakeLastS=Float.NaN,brakeBestM=Float.NaN;public boolean brakeRunning;public long brakeStart,brakeFinishedAt;
+    /** 400 m from a standstill: time (s) and trap speed (km/h) at 400 m, last and best this drive. */
+    public float quarterLastS=Float.NaN,quarterTrap=Float.NaN,quarterBestS=Float.NaN,quarterDist;public boolean quarterRunning;public long quarterStart,quarterFinishedAt;
+    static final float BRAKE_FROM=100,QUARTER_M=400;static final long BRAKE_LIMIT_MS=8000,QUARTER_LIMIT_MS=40000;
+    private boolean brakeArmed,quarterArmed;private float brakeDist,brakeMin;
     // Peaks.
     public float maxG=Float.NaN,maxLat=Float.NaN,maxDecel=Float.NaN,maxBoost=Float.NaN,maxRpm=Float.NaN,maxSpeed=Float.NaN;
     /** 7DCT clutch temperatures, hottest this session (the TCU is asked every 2 s, so a sample up to 5 s old counts). */
@@ -74,9 +82,10 @@ public final class DriveStats {
         if((!Float.isNaN(boost)&&boost>=HARD_BOOST)||(!Float.isNaN(rpm)&&rpm>=HARD_RPM)){lastHardAt=now;if(frame>0)hard.addLast(new long[]{now,frame});}
         while(!hard.isEmpty()&&now-hard.peekFirst()[0]>HARD_WINDOW_MS)hard.removeFirst();
         for(int i=0;i<3;i++)if(running[i]&&now-prevSpeedAt>GAP_MS)running[i]=false;   // speed stopped arriving
+        if(now-prevSpeedAt>GAP_MS){brakeRunning=false;quarterRunning=false;}
         if(!Float.isNaN(speed)&&speedAt!=prevSpeedAt){
-            if(!Float.isNaN(prevSpeed)&&speedAt-prevSpeedAt>GAP_MS){for(int i=0;i<3;i++)running[i]=false;prevSpeed=Float.NaN;}   // no crossing inside a hole
-            runs(speed,speedAt);
+            if(!Float.isNaN(prevSpeed)&&speedAt-prevSpeedAt>GAP_MS){for(int i=0;i<3;i++)running[i]=false;brakeRunning=quarterRunning=false;prevSpeed=Float.NaN;}   // no crossing inside a hole
+            runs(speed,speedAt);brake(speed,speedAt);quarter(speed,speedAt);
             if(speed<STOP_KMH&&stoppedAt<0){stoppedAt=speedAt;long sum=0;for(long[] h:hard)sum+=h[1];coolNeeded=sum>=HARD_SUM_MS;}   // decided once, at the stop
             else if(speed>=STOP_KMH)stoppedAt=-1;
             prevSpeed=speed;prevSpeedAt=speedAt;}
@@ -128,6 +137,41 @@ public final class DriveStats {
             }
             armed[i]=RUNS[i][0]==0?speed<STOP_KMH||(armed[i]&&speed<from):speed<from;
         }
+    }
+    /** Metres covered between two speed samples (km/h, linear in between). */
+    private static float metres(float v0,long t0,float v1,long t1){return (v0+v1)/2/3.6f*(t1-t0)/1000f;}
+    private void brake(float speed,long t){
+        if(brakeRunning){
+            if(speed>brakeMin+1||t-brakeStart>BRAKE_LIMIT_MS){brakeRunning=false;return;}   // sped up again, or a gentle slow-down
+            brakeMin=Math.min(brakeMin,speed);
+            if(speed<STOP_KMH){
+                long end=cross(prevSpeed,prevSpeedAt,speed,t,STOP_KMH);
+                brakeDist+=metres(prevSpeed,prevSpeedAt,STOP_KMH,end);
+                brakeLastM=brakeDist;brakeLastS=(end-brakeStart)/1000f;brakeFinishedAt=end;brakeRunning=false;
+                if(Float.isNaN(brakeBestM)||brakeLastM<brakeBestM)brakeBestM=brakeLastM;
+                Records.add(Records.BRAKE,brakeLastM);Records.add(Records.BRAKE_TIME,brakeLastS);
+            }else brakeDist+=metres(prevSpeed,prevSpeedAt,speed,t);
+        }else if(brakeArmed&&!Float.isNaN(prevSpeed)&&prevSpeed>=BRAKE_FROM&&speed<BRAKE_FROM){
+            brakeRunning=true;brakeStart=cross(prevSpeed,prevSpeedAt,speed,t,BRAKE_FROM);brakeMin=speed;
+            brakeDist=metres(BRAKE_FROM,brakeStart,speed,t);
+        }
+        brakeArmed=speed>=BRAKE_FROM;
+    }
+    private void quarter(float speed,long t){
+        if(quarterRunning){
+            if(speed<STOP_KMH||t-quarterStart>QUARTER_LIMIT_MS){quarterRunning=false;return;}   // stopped again, or gave up
+            float d=metres(prevSpeed,prevSpeedAt,speed,t);
+            if(quarterDist+d>=QUARTER_M){   // the 400 m mark falls in this step: place it by the distance left
+                double f=(QUARTER_M-quarterDist)/d;long end=prevSpeedAt+Math.round((t-prevSpeedAt)*f);
+                quarterLastS=(end-quarterStart)/1000f;quarterTrap=(float)(prevSpeed+(speed-prevSpeed)*f);quarterFinishedAt=end;
+                quarterDist=QUARTER_M;quarterRunning=false;
+                if(Float.isNaN(quarterBestS)||quarterLastS<quarterBestS)quarterBestS=quarterLastS;
+                Records.add(Records.QUARTER,quarterLastS);
+            }else quarterDist+=d;
+        }else if(quarterArmed&&!Float.isNaN(prevSpeed)&&prevSpeed<STOP_KMH&&speed>=STOP_KMH){
+            quarterRunning=true;quarterStart=cross(prevSpeed,prevSpeedAt,speed,t,STOP_KMH);quarterDist=metres(STOP_KMH,quarterStart,speed,t);
+        }
+        quarterArmed=speed<STOP_KMH;
     }
     /** Time where speed crossed v between two samples (linear). */
     private static long cross(float v0,long t0,float v1,long t1,float v){

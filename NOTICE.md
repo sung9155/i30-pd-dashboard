@@ -40,6 +40,12 @@ CAN 메시지·신호의 배치와 배율은 [commaai/opendbc](https://github.co
 
 `SoundYield`(안내·통화 양보, 속도 따라 키우기)는 [jihoon-seo/de22ev-ves](https://github.com/jihoon-seo/de22ev-ves)(`0561cae`, MIT, Copyright (c) 2026 Jihoon Seo)의 `AudioPolicy`·`SharedChannel`·`GainEnvelope.speedBoost`를 옮긴 것입니다. 마이컴 리스너 번호와 스트림 종류는 우리 펌웨어(V141)에 맞게 바꿨고, 출력 필터와 EV 엔진 모델은 뺐습니다. 위 MIT 허가 문구가 이 파일들에도 적용됩니다.
 
+## 설정 → 글꼴
+
+글꼴 관리(`FontFile`·`SystemFonts`·`BundledFonts`·`FontManager`, `tests/SystemFontsTest.java`, [`docs/FONTS.md`](docs/FONTS.md))는 원작 [reikop/veloster-n-dashboard](https://github.com/reikop/veloster-n-dashboard)(`3e86fea`·`abccbd4`, MIT)의 것을 옮겼습니다. 화면은 이 레포의 설정 모양으로 다시 그렸고, i30 PD에서만·확인한 amossu와 system_fonts.xml에서만 바꾸도록 막는 검사를 더했습니다.
+
+앱 포함 글꼴(`apps/dashboard/assets/fonts/`, 글꼴 데이터는 고치지 않음, 원작과 같은 파일): SIL Open Font License 1.1(전문은 같은 폴더의 `OFL-*.txt`) — Asta Sans, Copyright 2024 The Asta Sans Project Authors([42dot/Asta-Sans](https://github.com/42dot/Asta-Sans) `fonts/ttf/`, 커밋 `69ecccd`); 프리텐다드, Copyright (c) 2021 Kil Hyung-jin, Reserved Font Name Pretendard([orioncactus/pretendard](https://github.com/orioncactus/pretendard), npm 1.3.9); 나눔스퀘어 네오, Copyright 2022 NAVER Corp.([네이버 글꼴 모음](https://hangeul.naver.com/font) 배포 zip); 나눔손글씨 펜·붓, Copyright (c) 2010 NHN Corporation, Reserved Font Name Nanum 외([google/fonts](https://github.com/google/fonts) `ofl/`); 서툰이야기(Poor Story), Copyright (c) YoonDesign Inc.(google/fonts `ofl/poorstory`). 그 밖의 조건(원문은 `LICENSE-*.txt`) — 부산단디고딕·명조·손글씨, Copyright © Busan Metropolitan City([부산시 누리집](https://www.busan.go.kr/bhbusan), 부산시 전용서체 조건: 무료 사용, 판매·배포 대가 청구 금지); 이서윤체, Copyright (c) 2021 Heungkuk Life Insurance Co., Ltd.([산돌구름](https://www.sandollcloud.com/free-font/17229/LeeSeoyun), 무료·상업 사용 가능, 판매·수정 재배포 금지). 이 두 조건은 앱에 함께 넣는 무료 배포를 명시적으로 다루지 않으며, 파일은 이름만 영문으로 바꿨습니다. 권리자가 요청하면 그 글꼴을 빼겠습니다.
+
 
 ## 이 레포에 넣지 않은 것
 

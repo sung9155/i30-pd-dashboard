@@ -64,7 +64,102 @@ public final class VehicleDash extends View implements Runnable {
         float to=Math.max(0,Math.min(SettingsLayout.maxScreenScroll(),settingsScroll+d));if(to!=settingsScroll){settingsScroll=to;invalidate();}   // at either end: nothing to redraw
         postDelayed(this,30);}};
     /** Closes settings (완료, 돌아가기, the back key). Every choice is already saved. */
-    private void closeSettingsNow(){picker=false;editing=false;pickSlot=-1;floatEdit=-1;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);invalidate();}
+    private void closeSettingsNow(){picker=false;editing=false;pickSlot=-1;floatEdit=-1;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);fontDrop();invalidate();}
+    // ---- 글꼴 (FontManager, from reikop/veloster-n-dashboard): read when the pane shows, applied as root off the UI thread ----
+    private FontManager fontManager;private FontManager.Snapshot fontSnap;private int fontPick=-1,fontTop;
+    /** fontBusy: a scan or an apply is running; fontTried: this opening of the pane scanned once (a failed scan waits for 새로고침). */
+    private boolean fontBusy,fontLoading,fontTried;
+    private FontManager fonts(){if(fontManager==null)fontManager=new FontManager(activity);return fontManager;}
+    /** The settings closed: the list and the preview typeface go (a bundled font is a few MB), the next opening reads again. */
+    private void fontDrop(){if(!fontBusy){fontSnap=null;fontTried=false;}}
+    private PitRenderer.FontView fontView(){
+        PitRenderer.FontView v=new PitRenderer.FontView();FontManager.Snapshot s=fontSnap;
+        v.busy=fontBusy;v.top=fontTop;v.pick=fontPick;
+        if(s==null)return v;
+        int n=s.entries.size();v.scanned=true;v.names=new String[n];v.details=new String[n];v.usable=new boolean[n];v.faces=new android.graphics.Typeface[n];
+        for(int i=0;i<n;i++){FontManager.Entry e=s.entries.get(i);v.names[i]=e.name;v.details[i]=e.detail;v.usable[i]=e.usable;v.faces[i]=e.regular;}
+        v.current=s.current;v.currentName=s.currentName;v.pending=s.pending;v.root=s.root;v.free=s.free;v.refusal=s.refusal;
+        if(fontPick>=0&&fontPick<n){FontManager.Entry e=s.entries.get(fontPick);v.regular=e.regular;v.bold=e.bold;v.loading=e.needsLoad();}
+        return v;
+    }
+    private void fontScan(){
+        if(fontBusy)return;fontBusy=true;fontTried=true;invalidate();
+        FontManager.Entry was=fontSnap!=null&&fontPick>=0&&fontPick<fontSnap.entries.size()?fontSnap.entries.get(fontPick):null;
+        final String wasKey=was==null?null:was.key();
+        new Thread(new Runnable(){public void run(){FontManager.Snapshot r=null;
+            try{r=fonts().scan();}catch(RuntimeException e){android.util.Log.w("VehicleDash","font scan",e);}
+            final FontManager.Snapshot result=r;
+            activity.runOnUiThread(new Runnable(){public void run(){fontBusy=false;
+                if(!(picker&&editing)){fontDrop();return;}   // closed meanwhile: keep nothing
+                if(result!=null){
+                    int pick=result.current>=0?result.current:0;
+                    for(int i=0;i<result.entries.size();i++)if(result.entries.get(i).key().equals(wasKey))pick=i;
+                    fontSnap=result;fontPick=result.entries.isEmpty()?-1:pick;fontReveal();fontLoadPicked();
+                }else if(!activity.isFinishing())Toast.makeText(activity,UiText.t("글꼴 목록을 읽지 못했습니다"),Toast.LENGTH_SHORT).show();
+                invalidate();}});
+        }},"vn-font-scan").start();
+    }
+    /** A font inside the app loads (from the APK) when its row is picked; one at a time. */
+    private void fontLoadPicked(){
+        final FontManager.Snapshot snap=fontSnap;
+        if(fontLoading||snap==null||fontPick<0||fontPick>=snap.entries.size())return;
+        final FontManager.Entry e=snap.entries.get(fontPick);if(!e.needsLoad())return;
+        fontLoading=true;
+        new Thread(new Runnable(){public void run(){
+            try{fonts().load(snap,e);}catch(RuntimeException x){android.util.Log.w("VehicleDash","font load",x);}
+            activity.runOnUiThread(new Runnable(){public void run(){fontLoading=false;invalidate();fontLoadPicked();}});
+        }},"vn-font-load").start();
+    }
+    private void fontReveal(){int n=fontSnap==null?0:fontSnap.entries.size();
+        if(fontPick>=0&&fontPick<fontTop)fontTop=fontPick;
+        if(fontPick>=fontTop+SettingsLayout.FONT_ROWS)fontTop=fontPick-SettingsLayout.FONT_ROWS+1;
+        fontTop=Math.max(0,Math.min(fontTop,Math.max(0,n-SettingsLayout.FONT_ROWS)));}
+    private void fontAction(int a){
+        int n=fontSnap==null?0:fontSnap.entries.size();
+        if(a==SettingsLayout.FONT_SCAN){fontScan();return;}
+        if(a==SettingsLayout.FONT_UP){fontTop=Math.max(0,fontTop-SettingsLayout.FONT_ROWS);return;}
+        if(a==SettingsLayout.FONT_DOWN){if(fontTop+SettingsLayout.FONT_ROWS<n)fontTop+=SettingsLayout.FONT_ROWS;return;}
+        if(a>=SettingsLayout.FONT_PICK){int k=fontTop+a-SettingsLayout.FONT_PICK;if(k<n){fontPick=k;fontLoadPicked();}return;}
+        if(fontBusy){Toast.makeText(activity,UiText.t("작업 중…"),Toast.LENGTH_SHORT).show();return;}
+        if(a==SettingsLayout.FONT_REBOOT){fontRebootAsk(UiText.t("내비를 재부팅할까요? 화면·음악·PC 연결이 잠시 끊깁니다."));return;}
+        if(a!=SettingsLayout.FONT_APPLY)return;
+        if(fontPick<0||fontPick>=n){Toast.makeText(activity,UiText.t("왼쪽에서 글꼴을 고르세요"),Toast.LENGTH_SHORT).show();return;}
+        if(fontSnap.refusal!=null){new android.app.AlertDialog.Builder(activity).setMessage(UiText.t("이 내비에서는 글꼴을 바꾸지 않습니다")+"\n\n"+fontSnap.refusal).setPositiveButton(UiText.t("확인"),null).show();return;}
+        final FontManager.Entry e=fontSnap.entries.get(fontPick);
+        if(!e.usable){Toast.makeText(activity,UiText.t("이 글꼴은 적용할 수 없습니다"),Toast.LENGTH_SHORT).show();return;}
+        if(fontPick==fontSnap.current){Toast.makeText(activity,UiText.t("이미 설정된 글꼴입니다"),Toast.LENGTH_SHORT).show();return;}
+        StringBuilder m=new StringBuilder(e.name).append(UiText.t(" 글꼴을 내비 기본 글꼴로 바꿉니다."))
+            .append("\n\n").append(UiText.t("루트 권한으로 시스템 글꼴 설정(/system/etc/system_fonts.xml)을 바꾸며, 재부팅해야 반영됩니다. 처음 바꾸기 전 설정은 /data/local/tmp/vn-fonts에 보관됩니다."));
+        if(!e.stock()&&!e.hangul())m.append("\n\n").append(UiText.t("이 글꼴은 한글이 모자라 빠진 글자는 기존 대체 글꼴로 보입니다."));
+        if(e.variable())m.append("\n\n").append(UiText.t("가변 글꼴은 기본 굵기 하나만 쓰입니다."));
+        new android.app.AlertDialog.Builder(activity).setTitle(UiText.t("글꼴 적용")).setMessage(m.toString())
+            .setPositiveButton(UiText.t("적용"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int w){fontApply(e);}})
+            .setNegativeButton(UiText.t("취소"),null).show();
+    }
+    private void fontApply(final FontManager.Entry e){
+        fontBusy=true;invalidate();
+        new Thread(new Runnable(){public void run(){String r;boolean ok=false;
+            try{r=fonts().apply(e);ok=true;}
+            catch(Exception x){android.util.Log.w("VehicleDash","font apply",x);r=UiText.t("글꼴을 바꾸지 못했습니다: ")+(x.getMessage()!=null?x.getMessage():x.getClass().getSimpleName());}
+            final String answer=r;final boolean done=ok;
+            activity.runOnUiThread(new Runnable(){public void run(){fontBusy=false;fontScan();
+                if(activity.isFinishing())return;
+                if(done)fontRebootAsk(answer);
+                else new android.app.AlertDialog.Builder(activity).setMessage(answer).setPositiveButton(UiText.t("확인"),null).show();}});
+        }},"vn-font-apply").start();
+    }
+    private void fontRebootAsk(String message){
+        new android.app.AlertDialog.Builder(activity).setMessage(message)
+            .setPositiveButton(UiText.t("지금 재부팅"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int w){
+                new Thread(new Runnable(){public void run(){
+                    try{fonts().reboot();}
+                    catch(final RuntimeException x){android.util.Log.w("VehicleDash","reboot",x);
+                        activity.runOnUiThread(new Runnable(){public void run(){if(!activity.isFinishing())new android.app.AlertDialog.Builder(activity)
+                            .setMessage(UiText.t("재부팅하지 못했습니다: ")+x.getClass().getSimpleName()+"\n"+UiText.t("'내 앱' → 강제 재시작으로 재부팅하세요."))
+                            .setPositiveButton(UiText.t("확인"),null).show();}});}
+                }},"vn-reboot").start();}})
+            .setNegativeButton(UiText.t("나중에"),null).show();
+    }
     /** The back key: true when it closed the open settings (the activity stays), false to let it go back as usual. */
     public static boolean closeSettings(Activity a){VehicleDash d=current.get();if(d==null||d.activity!=a||!(d.picker&&d.editing))return false;d.closeSettingsNow();return true;}
     private void setSlider(int which,float x){
@@ -345,7 +440,7 @@ public final class VehicleDash extends View implements Runnable {
         d.floatEdit=-1;d.gaugeEditor.dismiss();d.graphEditor.dismiss();if(d.tilePicker!=null)d.tilePicker.dismiss();d.dismissList();d.mediaReceiver.stop();d.artwork.close();
     }
     /** Close the screen list and anything it opened (language chooser). */
-    private void dismissList(){picker=false;editing=false;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);}   // every close path: a drag cut off by the lock-out must not leave dragTick running
+    private void dismissList(){picker=false;editing=false;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);fontDrop();}   // every close path: a drag cut off by the lock-out must not leave dragTick running
     private void showDashboard(){setVisibility(VISIBLE);if(entry!=null)entry.setVisibility(GONE);bringToFront();}
     private void close() { entryRequestUntil=0;removeCallbacks(editHold);removeCallbacks(tileHold);touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();dismissList();setVisibility(GONE); if(entry!=null) entry.setVisibility(blocked?GONE:VISIBLE); }
     public static void consumeEntryIntent(Activity a){entryIntent(a,a.getIntent());}
@@ -626,7 +721,8 @@ public final class VehicleDash extends View implements Runnable {
         }
         renderer.setPicker(picker,editing,hidden);renderer.setOrder(order,settingsScroll);renderer.setScreenDrag(dragRow,dragY);
         renderer.setModeOptions(modeColor,modeScreen);
-        if(picker&&editing){renderer.setFloatEdit(floatEdit,floatSel,floatEditSig,floatEditGraph,floatEditTab);renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);renderer.setSound(soundOn,soundRoute,soundEngine,soundExhaust,soundVals);renderer.setBeep(beepOn,beepSound,beepVol,downSounds,downScope);}
+        if(picker&&editing){renderer.setFloatEdit(floatEdit,floatSel,floatEditSig,floatEditGraph,floatEditTab);renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);renderer.setSound(soundOn,soundRoute,soundEngine,soundExhaust,soundVals);renderer.setBeep(beepOn,beepSound,beepVol,downSounds,downScope);
+            if(settingsCat==SettingsLayout.FONT&&pickSlot<0){if(fontSnap==null&&!fontBusy&&!fontTried)fontScan();renderer.setFonts(fontView());}}
         renderer.setLap(lap);
         renderer.setOverviewLayout(overviewLayout);
         long drawStart=System.nanoTime();
@@ -734,6 +830,7 @@ public final class VehicleDash extends View implements Runnable {
                 return true;
             }
             if(settingsCat==SettingsLayout.FLOAT&&pickSlot<0){floatTap(x,y);invalidate();return true;}
+            if(settingsCat==SettingsLayout.FONT&&pickSlot<0){int t=SettingsLayout.fontHit(x,y);if(t>=0&&t==SettingsLayout.fontHit(downX,downY))fontAction(t);invalidate();return true;}
             int pane=pickSlot>=0?SettingsLayout.PICK:settingsCat;float paneSc=SettingsLayout.rowScroll(pane)?settingsScroll:0;
             int i=SettingsLayout.item(pane,x,y,paneSc);
             if(i<0||i!=SettingsLayout.item(pane,downX,downY,paneSc))return true;

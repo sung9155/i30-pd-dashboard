@@ -61,6 +61,9 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/Commute.java",
                ROOT / "shared/src/com/veloster/vehicle/Tbt.java",
                ROOT / "shared/src/com/veloster/vehicle/PaceNote.java",
+               ROOT / "shared/src/com/veloster/vehicle/FontFile.java",
+               ROOT / "shared/src/com/veloster/vehicle/SystemFonts.java",
+               ROOT / "shared/src/com/veloster/vehicle/BundledFonts.java",
                ROOT / "shared/src/com/veloster/i18n/UiText.java",
                ROOT / "shared/src/com/veloster/diagnostics/ErrorLog.java",
                ROOT / "apps/dashboard/src/com/veloster/dashboard/HscanFrameDecoder.java"]

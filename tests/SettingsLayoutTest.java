@@ -91,12 +91,21 @@ public final class SettingsLayoutTest {
         check(SettingsLayout.CATS[SettingsLayout.SCREENS].equals("화면")&&SettingsLayout.CATS[SettingsLayout.MODE].equals("주행 모드")&&SettingsLayout.CATS[SettingsLayout.FLOAT].equals("플로팅")
             &&SettingsLayout.CATS[SettingsLayout.THEME].equals("테마")&&SettingsLayout.CATS[SettingsLayout.PAINT].equals("차량 색")&&SettingsLayout.CATS[SettingsLayout.LANG].equals("언어")
             &&SettingsLayout.CATS[SettingsLayout.RPM].equals("RPM")&&SettingsLayout.CATS[SettingsLayout.SOUND].equals("엔진 사운드")&&SettingsLayout.CATS[SettingsLayout.FX].equals("효과음")
-            &&SettingsLayout.CATS[SettingsLayout.DIAG].equals("진단"),"categories in their groups");
+            &&SettingsLayout.CATS[SettingsLayout.DIAG].equals("진단")&&SettingsLayout.CATS[SettingsLayout.FONT].equals("글꼴"),"categories in their groups");
+        // 글꼴 pane: every target inside the pane, tall enough, apart from the others, and hit by its own centre
+        for(int t=SettingsLayout.FONT_UP;t<SettingsLayout.FONT_PICK+SettingsLayout.FONT_ROWS;t++){float[] b=SettingsLayout.fontBox(t);if(b==null)continue;
+            check(b[0]>=SettingsLayout.PANE_L&&b[2]<=SettingsLayout.PANE_R&&b[1]>=SettingsLayout.TOP&&b[3]<=SettingsLayout.BOTTOM&&b[3]-b[1]>=40,"font target "+t+" inside the pane, tappable");
+            check(SettingsLayout.fontHit((b[0]+b[2])/2,(b[1]+b[3])/2)==t,"font target "+t+" hits itself");
+            for(int u=t+1;u<SettingsLayout.FONT_PICK+SettingsLayout.FONT_ROWS;u++){float[] o=SettingsLayout.fontBox(u);if(o==null)continue;
+                check(b[2]<=o[0]||o[2]<=b[0]||b[3]<=o[1]||o[3]<=b[1],"font targets "+t+" and "+u+" apart");}}
+        check(SettingsLayout.fontBox(SettingsLayout.FONT_PICK+SettingsLayout.FONT_ROWS-1)[3]<SettingsLayout.FB_T&&SettingsLayout.FS_B<SettingsLayout.FA_T&&SettingsLayout.FP_B<SettingsLayout.FS_T,"font list above its buttons, preview above the state, state above apply");
+        check(SettingsLayout.fontHit(SettingsLayout.CAT_L+10,SettingsLayout.TOP+10)==-1&&SettingsLayout.count(SettingsLayout.FONT)==0,"the font pane is its own layout");
         check(SettingsLayout.PICK>SettingsLayout.DONE,"the chooser is not a category");
         float step=SettingsLayout.CAT_H+SettingsLayout.CAT_GAP;
         check(SettingsLayout.catTop(1)-SettingsLayout.catTop(0)==step&&SettingsLayout.catTop(3)-SettingsLayout.catTop(2)==step+SettingsLayout.GROUP_GAP
-            &&SettingsLayout.catTop(6)-SettingsLayout.catTop(5)==step+SettingsLayout.GROUP_GAP&&SettingsLayout.catTop(10)-SettingsLayout.catTop(9)==step+SettingsLayout.GROUP_GAP,"a gap before each group");
-        check(SettingsLayout.CAT_H>=33,"categories tall enough to tap");
+            &&SettingsLayout.catTop(SettingsLayout.RPM)-SettingsLayout.catTop(SettingsLayout.RPM-1)==step+SettingsLayout.GROUP_GAP&&SettingsLayout.catTop(SettingsLayout.DIAG)-SettingsLayout.catTop(SettingsLayout.DIAG-1)==step+SettingsLayout.GROUP_GAP
+            &&SettingsLayout.catTop(SettingsLayout.FONT)-SettingsLayout.catTop(SettingsLayout.LANG)==step,"a gap before each group; 글꼴 in the 테마 group");
+        check(SettingsLayout.CAT_H>=31,"categories tall enough to tap (31 since 글꼴 made twelve rows)");
         // 효과음: the four sounds that are not the engine
         check(SettingsLayout.count(SettingsLayout.FX)==5&&SettingsLayout.count(SettingsLayout.SOUND)==(SettingsLayout.ENGINE_SOUND?SettingsLayout.SOUND_BOOST+1:1)&&SettingsLayout.SOUND_FAST==SettingsLayout.SOUND_LEAD+1&&SettingsLayout.SOUND_BOOST==SettingsLayout.SOUND_YIELD+1&&SettingsLayout.SOUND_YIELD==SettingsLayout.SOUND_FAST+1,"effects pane, engine sound pane ends at 양보 and 속도 따라 키우기");
         // 차량 색 shown by colour family: every paint once

@@ -86,6 +86,8 @@ def main():
     if (app / "res").is_dir():
         run("resources", [aapt2, "compile", "--dir", app / "res", "-o", out / "resources.zip"])
         resources = ["--auto-add-overlay", "-R", out / "resources.zip"]
+    if (app / "assets").is_dir():   # dashboard: the fonts offered in 설정 → 글꼴 (BundledFonts)
+        resources += ["-A", app / "assets"]
     # --version-name: the release's own name (v1.16.1, test-1120-abc1234) in place of the manifest's, so the installers and
     # the diagnostics can tell which build is on the car. versionCode stays: the head unit refuses a lower one on reinstall.
     named = ["--version-name", args.version_name, "--replace-version"] if args.version_name else []

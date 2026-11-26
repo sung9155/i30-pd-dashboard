@@ -74,7 +74,7 @@ public final class SettingsLayout {
      *  red, orange, copper, brown | khaki, purple. Values are CarPaint indexes (its order stays: saved ids and the Arcade cars use it). */
     public static final int[] PAINT_ORDER={1,10,4,3, 0,9,7,5, 2,8,11,6, 13,12};
     /** Display names for Theme.IDS, in that order. */
-    public static final String[] THEME_NAMES={"N","레드","와인","코퍼","앰버","샴페인","네이비","람보","그린","세이지","에메랄드","틸","아이스","그라파이트","BMW","나이트","퍼플","마젠타","로즈","모노"};
+    public static final String[] THEME_NAMES={"N","레드","와인","코퍼","앰버","샴페인","네이비","람보","그린","세이지","에메랄드","틸","네온","아이스","그라파이트","BMW","나이트","퍼플","마젠타","로즈","모노"};
     /** Language choices (LanguageSettings ids) and their names. */
     public static final String[] LANGS={"auto","ko","en"},LANG_NAMES={"시스템","한국어","English"};
     public static final float TOP=60,BOTTOM=472,CAT_L=12,CAT_W=152,CAT_H=33,CAT_GAP=2,GROUP_GAP=6,GAP=6,PANE_L=178,PANE_R=788,MAX_ITEM_H=72;

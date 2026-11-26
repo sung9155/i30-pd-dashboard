@@ -27,7 +27,7 @@ public final class ThemeTest {
         Theme.select("n");check(Theme.current().shape==Theme.SHAPE_CUT&&!Theme.current().mStripe,"N keeps today's cut corner");
         // Red and green: true black; red warns in yellow with the ring (its accent is red), green's lime stays apart from
         // the shared semantic green and the ECO accent.
-        String[] order={"n","red","wine","copper","amber","champagne","navy","lambo","green","sage","emerald","teal","ice","graphite","bmw","night","purple","magenta","rose","mono"};check(java.util.Arrays.equals(Theme.IDS,order),"themes in colour order: N, then by hue, mono last");
+        String[] order={"n","red","wine","copper","amber","champagne","navy","lambo","green","sage","emerald","teal","neon","ice","graphite","bmw","night","purple","magenta","rose","mono"};check(java.util.Arrays.equals(Theme.IDS,order),"themes in colour order: N, then by hue, mono last");
         for(String id:new String[]{"graphite","champagne","sage"}){Theme.select(id);
             check(Theme.current().map(0xff040506)==0xff000000,id+": true black background");}
         Theme.select("navy");check(Theme.current().map(0xff040506)==0xff03060c,"navy: navy background");

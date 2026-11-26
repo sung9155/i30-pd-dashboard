@@ -8,7 +8,7 @@ import java.util.Arrays;
  * remap table. Semantic green / amber (ok / caution) are never remapped. No Android imports: host-tested.
  */
 public final class Theme {
-    public static final String[] IDS={"n","red","wine","copper","amber","champagne","navy","lambo","green","sage","emerald","teal","ice","graphite","bmw","night","purple","magenta","rose","mono"};   // the settings list order: N, then by the swatch's hue (navy's swatch is its gold accent), mono last
+    public static final String[] IDS={"n","red","wine","copper","amber","champagne","navy","lambo","green","sage","emerald","teal","neon","ice","graphite","bmw","night","purple","magenta","rose","mono"};   // the settings list order: N, then by the swatch's hue (navy's swatch is its gold accent), mono last
     public static final int SHAPE_CUT=0,SHAPE_HEX=1,SHAPE_ROUND=2;
 
     // N palette literals grouped by role (RGB only; alpha is kept from the caller).
@@ -73,6 +73,8 @@ public final class Theme {
         new Theme("graphite","GP",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x060607,0x0d0e10,0x2c2f33,0x1b1d20,0xf2f3f5,0x8a8f96,0x9fb4c8,0x1a222b,0xd98a5a}),
         new Theme("champagne","CH",SHAPE_ROUND,0,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x070605,0x0e0c0a,0x38322a,0x221e19,0xfaf4ea,0xa39a8a,0xd9c08f,0x2e2616,0xc98a5a}),
         new Theme("navy","NV",SHAPE_ROUND,0,false,false,0xffff3b30,0xff000000,new int[]{0x03060c,0x060a12,0x0b111c,0x25324a,0x162033,0xeef2f8,0x8793a8,0xd4b56a,0x16233c,0x6f9be8}),
+        // Neon: the 신스웨이브 screen's colours for every screen - a deep violet night, cyan accent, magenta for the red decoration.
+        new Theme("neon","NE",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x07020f,0x0c0518,0x130a24,0x3a2160,0x24153d,0xf2f6ff,0x9a88bd,0x19f0ff,0x0a2c3c,0xff2bd6}),
         new Theme("sage","SG",SHAPE_CUT,1,false,false,0xffff3b30,0xff000000,new int[]{0x000000,0x040605,0x0a0d0b,0x2a332d,0x18201b,0xf0f5f1,0x8b978f,0x9dbfa6,0x18281e,0xd9b36a}),
     };
     private static volatile Theme current=ALL[0];

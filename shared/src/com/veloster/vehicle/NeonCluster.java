@@ -7,9 +7,10 @@ import android.graphics.Typeface;
 import java.util.Locale;
 
 /**
- * 네온 screen: a night drive HUD in neon colours. A slim segmented rpm bar (cyan, magenta past the shift target, the target
+ * 신스웨이브 screen (was 네온 until 2026-11-27; the class keeps the old name): a night drive HUD in neon colours. A slim segmented rpm bar (cyan, magenta past the shift target, the target
  * marked in yellow), the speed in plain white in the middle, the gear in corner brackets, boost / water / oil / throttle
- * on the right, and below a faint perspective grid running to a magenta horizon with dark towers. Near the shift target
+ * on the right, and below a faint perspective grid running to a magenta horizon with dark towers; on the grid a row of
+ * five more readouts (G, brake, intake, battery, range). Near the shift target
  * the speed shows a small glitch and SHIFT blinks; at the target the speed turns yellow. Own palette in every theme; an
  * overheat warning is a solid chip in the theme's danger colour.
  *
@@ -59,9 +60,17 @@ final class NeonCluster extends ClusterKit {
         row(c,194,fmt("%.0f",cool),Float.isNaN(cool)?Float.NaN:(cool-40)/90,hot?danger():CYAN);
         row(c,242,fmt("%.0f",oil),Float.isNaN(oil)?Float.NaN:(oil-40)/110,CYAN);
         row(c,290,fmt("%.0f",pedal),Float.isNaN(pedal)?Float.NaN:pedal/100,MAG);
-        if(hot){round(c,612,332,776,360,5,danger());bold(c,t("과열")+" "+fmt("%.0f",cool)+"°C",694,353,18,0xffffffff,Paint.Align.CENTER);}
+        if(hot){round(c,612,68,776,96,5,danger());bold(c,t("과열")+" "+fmt("%.0f",cool)+"°C",694,89,18,0xffffffff,Paint.Align.CENTER);}
+        // the row on the grid: combined G, brake pressure, intake, battery, range
+        float lat=v(11),lon=v(12),gs=Float.isNaN(lat)||Float.isNaN(lon)?Float.NaN:(float)Math.hypot(lat,lon);
+        tile(c,0,fmt("%.2f",gs));tile(c,1,fmt("%.0f",v(10)));tile(c,2,fmt("%.0f",v(Telemetry.INTAKE)));
+        tile(c,3,fmt("%.1f",v(Telemetry.BAT_VOLTAGE)));tile(c,4,fmt("%.0f",v(Telemetry.RANGE)));
         c.restore();
     }
+    private static final float TILE_T=332,TILE_B=414,TILE_W=144,TILE_GAP=8;
+    private static final String[] TILE_LABEL={"G","BRAKE  bar","INTAKE  °C","BATTERY  V","RANGE  km"};
+    private static float tileL(int i){return BAR_L+i*(TILE_W+TILE_GAP);}
+    private void tile(Canvas c,int i,String val){text(c,val,tileL(i)+TILE_W-12,TILE_B-14,30,FG,Paint.Align.RIGHT,num());}
     private void row(Canvas c,float y,String val,float frac,int color){
         text(c,val,776,y,26,FG,Paint.Align.RIGHT,num());
         fill(c,618,y+8,776,y+9,DIM);
@@ -109,6 +118,9 @@ final class NeonCluster extends ClusterKit {
         // gear and speed in corner brackets
         brackets(c,40,128,190,290,18,MAG);mono(c,"GEAR",115,310,13,MUT,Paint.Align.CENTER);
         brackets(c,236,118,564,290,22,CYAN);mono(c,"KM/H",400,310,14,CYAN,Paint.Align.CENTER);
+        // the bottom row's boxes: dark glass over the grid, a thin cyan top edge
+        for(int i=0;i<TILE_LABEL.length;i++){float l=tileL(i);fill(c,l,TILE_T,l+TILE_W,TILE_B,0xd80a0318);neon(c,l,TILE_T,l+TILE_W,TILE_T,i==1?MAG:CYAN);
+            mono(c,TILE_LABEL[i],l+12,TILE_T+22,12,MUT,Paint.Align.LEFT);}
         // readout labels
         String[] lab={"BOOST  bar","WATER  °C","OIL  °C","THROTTLE  %"};
         for(int i=0;i<4;i++)mono(c,lab[i],618,120+i*48,12,MUT,Paint.Align.LEFT);

@@ -359,7 +359,6 @@ public final class UiText {
         EN.put("냉각수온 센서 범위·성능 이상","Coolant temperature sensor range/performance");
         EN.put("냉각수온 센서 회로 낮음","Coolant temperature sensor circuit low");
         EN.put("냉각수온 센서 회로 높음","Coolant temperature sensor circuit high");
-        EN.put("네온","Neon");
         EN.put("네이비","Navy");
         EN.put("네트워크 통신","Network communication");
         EN.put("노크 센서 감지 시스템(KSDS) 경고 — 엔진 베어링 손상 의심, 즉시 점검 권장","Knock sensor detection system (KSDS) warning — engine bearing damage suspected, immediate inspection recommended");
@@ -781,6 +780,7 @@ public final class UiText {
         EN.put("시스템","System");
         EN.put("시험 접속정보 보기","Show test credentials");
         EN.put("시험 핫스팟 켜기","Test hotspot");
+        EN.put("신스웨이브","Synthwave");
         EN.put("신호 계산 오류","Signal calculation error");
         EN.put("신호 낮게 고착","Signal stuck low");
         EN.put("신호 높게 고착","Signal stuck high");

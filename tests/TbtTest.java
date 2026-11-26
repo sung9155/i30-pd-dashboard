@@ -25,6 +25,9 @@ public final class TbtTest {
         check(exit.label.equals("오른쪽 출구")&&Tbt.arrow(exit)==45&&Tbt.distance(exit.metres).equals("1.5 km"),"exit right");
         Tbt.State u=Tbt.parse(dump("U TURN","180.0","200.0","1.0","3",company));
         check(u.label.equals("유턴")&&Tbt.arrow(u)==180,"u-turn");
+        Tbt.State kr=Tbt.parse(dump("Unknown display type(0x5b)","0.0","600.0","2.9","1",company));   // the domestic navi, 2026-11-27
+        check(kr.active&&kr.maneuver&&kr.metres==600&&Tbt.arrow(kr)==0&&kr.label.equals("다음 안내"),"domestic code with a distance: guidance");
+        check(!Tbt.parse(dump("Unknown display type(0x5b)","0.0","0.0","0.0","0","")).active,"domestic code without a distance: none");
         check(Tbt.parse("garbage").active==false&&Tbt.parse(null)==Tbt.NONE,"unreadable text");
         Tbt.set(left,1000);check(Tbt.current(2000)==left&&Tbt.current(1000+7000)==Tbt.NONE,"a stale reading drops");
         System.out.println("PASS "+checks+" guidance checks");

@@ -191,7 +191,7 @@ public final class PitRenderer {
             paint.setStyle(Paint.Style.FILL);
         }
         if(picker)drawPicker(c,screen(cluster));
-        else if(graphLayout==null&&gaugeLayout==null)drawTbt(c,Tbt.current(frameTime));   // the navigation's next turn, over every page
+        else if(graphLayout==null&&gaugeLayout==null){if(page!=ClusterPicker.WRC-ClusterPicker.F1||tbtBig)drawTbt(c,Tbt.current(frameTime));else tbtShown=false;}   // the navigation's next turn, over every page (WRC: in its pace-note card)
         else if(graphLayout==null&&!mediaPage && music!=null && music.notice && !showsMusic())drawMedia(c,true);
         if(cluster&&!picker&&gaugeLayout==null&&graphLayout==null&&mediaToggleShown())drawArtworkToggle(c);
         c.restore();

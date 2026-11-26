@@ -540,6 +540,9 @@ public final class TabsPreview {
               img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
               new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);}
           ImageIO.write(img,"png",new File(out,"9s_wrc_corner.png"));}
+         // WRC while the stock navi guides (a domestic code, 600 m): the card shows the guidance
+         {Tbt.set(Tbt.parse(String.join(String.valueOf((char)10),"Navigation Cluster:","  TBT SubInfo:","    distance      = 2.9 METER","    minutes       = 1","  TBT Info:","    Display Type  = Unknown display type(0x5b)","    Direction     = 0.0","    Distance      = 600.0 METER","")),now);
+          rec.setPage(PitRenderer.PAGE_TACHO+1);save(out,"9s_wrc_navi",rec,model,now,false,false);Tbt.set(Tbt.NONE,now);}
          // 네온: 300 rpm before the shift target (the glitch), and overheating at the target
          for(int n=0;n<2;n++){NeonCluster k=new NeonCluster();k.shiftTarget=6000;
               Telemetry.Sample[] q=with(model,now,ix,new float[]{118,n==0?5700:6050,3,100,0,0.1f,0.4f,4,n==0?96:116,1.3f,104});

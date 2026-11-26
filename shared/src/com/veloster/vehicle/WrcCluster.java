@@ -79,7 +79,14 @@ final class WrcCluster extends ClusterKit {
             shown=cand;
         }
         float cx=158;
-        if(Float.isNaN(steer)&&(Float.isNaN(lat)||Float.isNaN(kmh)))text(c,"—",cx,232,96,INK_MUT,Paint.Align.CENTER,num());
+        Tbt.State nav=Tbt.current(now);
+        if(nav.maneuver){   // the stock navi is guiding: its next point takes the card (the corner list stays below)
+            float deg=Tbt.arrow(nav);int note=Math.abs(deg)<20?0:Math.abs(deg)>160?(deg<0?-1:1):(deg<0?-3:3);
+            if(note==0)straight(c,cx);else bend(c,cx,note);
+            String d=Tbt.distance(nav.metres);text(c,d.length()>0?d:"—",cx,216,50,INK,Paint.Align.CENTER,num());
+            bold(c,t(nav.label),cx,248,20,INK_MUT,Paint.Align.CENTER);
+        }
+        else if(Float.isNaN(steer)&&(Float.isNaN(lat)||Float.isNaN(kmh)))text(c,"—",cx,232,96,INK_MUT,Paint.Align.CENTER,num());
         else if(shown==0){straight(c,cx);bold(c,t("직진"),cx,232,48,INK,Paint.Align.CENTER);}
         else{bend(c,cx,shown);text(c,PaceNote.text(shown),cx,250,84,INK,Paint.Align.CENTER,num());
             if(!Float.isNaN(lat)&&Math.abs(lat)>=PaceNote.CAUTION_G){dot(c,262,96,20,danger());bold(c,"!",262,106,30,0xffffffff,Paint.Align.CENTER);}}

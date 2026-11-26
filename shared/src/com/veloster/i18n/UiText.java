@@ -391,6 +391,7 @@ public final class UiText {
         EN.put("다운시프트 맞춤 소리가 나는 화면 · 누르면 바뀜","Where the downshift match sounds play · tap to change");
         EN.put("다음","Next");
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
+        EN.put("다음 안내","Next guidance");
         EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
         EN.put("다이아 커팅","Diamond cut");
         EN.put("다이얼","Dial");

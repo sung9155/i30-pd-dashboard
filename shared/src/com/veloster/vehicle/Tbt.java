@@ -34,10 +34,14 @@ public final class Tbt {
         String nav=section(dump,"Navigation Cluster:");if(nav==null)return NONE;
         String info=section(nav,"TBT Info:"),sub=section(nav,"TBT SubInfo:");
         String type=field(info,"Display Type");if(type==null)return NONE;
-        boolean active=!(type.startsWith("NO ROUTE")||type.equals("NO INFO")||type.equals("NO SYMBOL")||type.startsWith("Unknown")||type.equals("OFF MAP")||type.equals("OFF ROAD"));
         float dir=num(field(info,"Direction")),dist=num(field(info,"Distance")),dkm=num(field(sub,"distance"));int min=(int)num(field(sub,"minutes"));
         if(!Float.isNaN(dist)&&dist<100&&dist!=Math.floor(dist))dist*=1000;   // a fraction below 100: km, like the SubInfo
-        String label=label(type,dir);
+        // The domestic navi sends its own codes, which the firmware's table lacks: "Unknown display type(0x5b)" while
+        // guiding on the car (2026-11-27, Distance in metres: 600 / 800 m, matching the SCC NextTurnDist). Until the
+        // codes are matched to turns, a code with a distance counts as guidance, shown as the next guidance point.
+        boolean kr=type.startsWith("Unknown display type")&&!Float.isNaN(dist)&&dist>0;
+        boolean active=kr||!(type.startsWith("NO ROUTE")||type.equals("NO INFO")||type.equals("NO SYMBOL")||type.startsWith("Unknown")||type.equals("OFF MAP")||type.equals("OFF ROAD"));
+        String label=kr?"다음 안내":label(type,dir);
         boolean maneuver=active&&label.length()>0&&!type.startsWith("DIRECTION")&&!type.startsWith("CALC")&&!type.startsWith("RECALC");
         return new State(active,maneuver,type,label,dir,dist,dkm,min,utf16(field(nav,"DestName")));
     }
@@ -68,6 +72,7 @@ public final class Tbt {
     /** Arrow angle for the screen: degrees clockwise from straight up. */
     public static float arrow(State s){
         String t=s.type;
+        if(t.startsWith("Unknown"))return 0;   // a domestic code: not matched to a turn yet (see parse)
         if(t.contains("U TURN"))return 180;
         if(t.equals("FOLLOW STREET")||t.equals("CHANGE LANE"))return 0;
         if(!t.startsWith("TURN")&&!t.startsWith("PREPARE TURN")&&!t.contains("ROUNDABOUT")&&!t.contains("ROUNABOUT")&&!t.startsWith("DIRECTION")){

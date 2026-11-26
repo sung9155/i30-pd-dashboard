@@ -702,15 +702,6 @@ public final class UiText {
         EN.put("센서 기준 전압 B 회로 이상","Sensor reference voltage B circuit malfunction");
         EN.put("센서 전원 전압 이상 (조향: 토크 센서 전원)","Sensor supply voltage fault (steering: torque sensor supply)");
         EN.put("소리 반응 속도","Sound response");
-        EN.put("소리 원본","Sound source");
-        EN.put("소리 팩 · 4기통 터보","Sound pack · turbo 4");
-        EN.put("소리 팩 · EV 스포츠","Sound pack · EV sport");
-        EN.put("소리 팩 · EV 제트","Sound pack · EV jet");
-        EN.put("소리 팩 · V6","Sound pack · V6");
-        EN.put("소리 팩 · V8","Sound pack · V8");
-        EN.put("소리 팩 · 슈퍼차저 V8","Sound pack · Supercharged V8");
-        EN.put("소리 팩 · 직렬 6기통","Sound pack · inline 6");
-        EN.put("소리 팩은 엔진·배기·팝·터보 줄을 안 씀 · 내 팩: 저장공간 i30dashboard/packs","Packs ignore the engine, exhaust, pop and turbo rows · your packs: storage i30dashboard/packs");
         EN.put("속도","Speed");
         EN.put("속도 GPS 보정 값 초기화","Reset the GPS speed correction");
         EN.put("속도 km/h","Speed km/h");
@@ -1401,7 +1392,6 @@ public final class UiText {
         EN.put("할증","Night");
         EN.put("할증 (심야·시계외)","Surcharge (night, area)");
         EN.put("합계","Total");
-        EN.put("합성","Synthesised");
         EN.put("합성 G","Combined G");
         EN.put("핫스팟 끄기 확인 실패. 백업을 보존했습니다. 다시 복구하세요.","Could not confirm hotspot shutdown. Backup retained; retry restoration.");
         EN.put("핫스팟 요청 실패/시간 초과. 성공으로 판정하지 않습니다. 원상복구하세요.","Hotspot request failed or timed out. Success is not confirmed; restore the original settings.");

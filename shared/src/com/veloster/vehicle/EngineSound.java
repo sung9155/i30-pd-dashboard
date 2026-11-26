@@ -27,9 +27,6 @@ final class EngineSound implements Runnable {
     /** 안내·통화 양보 (SoundYield.OFF / DUCK / STOP) and 속도 따라 키우기 level (0..3). The mode is read when the thread
      *  starts (OFF keeps the old path: startAudio once, endAudio at the end), so changing it restarts the thread. */
     static volatile int yieldMode,boostLevel;
-    /** A sound pack (SoundPack, rendered loops) playing instead of EngineSynth (null: the synth). Built off the audio thread (resampling takes a while). */
-    private volatile PackVoice pack;
-    void pack(PackVoice p){pack=p;}
     private final Context context;
     private final Telemetry data;
     private volatile Thread thread;
@@ -94,10 +91,8 @@ final class EngineSound implements Runnable {
                 boolean live=rpm.valid&&rpm.ageMs<=1000&&!reverse;
                 Telemetry.Sample speed=data.sample(7,now);
                 float vol=volume*(float)SoundYield.speedBoost(boostLevel,speed.valid?speed.value:Double.NaN);
-                PackVoice pv=pack;
                 long t0=android.os.Debug.threadCpuTimeNanos();
-                if(pv!=null){pv.set(pv.pack().input(live?rpm.value:Double.NaN,speed.valid&&speed.ageMs<=1000?speed.value:Double.NaN),pedal.valid?pedal.value/100.0:0);pv.render(f,0,blk,vol);}
-                else{synth.set(live?rpm.value:Double.NaN,pedal.valid?pedal.value/100.0:0,boost.valid?boost.value:0);
+                {synth.set(live?rpm.value:Double.NaN,pedal.valid?pedal.value/100.0:0,boost.valid?boost.value:0);
                     if(voice!=playing){playing=voice;synth.use(playing);}
                     synth.popRate=popRate;synth.turboVol=turboVol;synth.bovVol=bovVol;synth.lead=lead;synth.engineVol=engineMix;
                     synth.render(f,0,blk,vol);}

@@ -197,7 +197,7 @@ public final class VehicleDash extends View implements Runnable {
             soundExhaust=Math.max(0,Math.min(EngineSynth.exhausts()-1,p.getInt("engine_sound_exhaust",0)));EngineSound.fast=p.getBoolean("engine_sound_fast",false);
             EngineSound.yieldMode=Math.max(0,Math.min(SettingsLayout.SOUND_YIELDS.length-1,p.getInt("engine_sound_yield",0)));
             EngineSound.boostLevel=Math.max(0,Math.min(SettingsLayout.SOUND_BOOSTS.length-1,p.getInt("engine_sound_boost",0)));
-            loadPack(p.getString("engine_sound_source",""));SpeedChime.kmh=p.getInt("speed_chime_kmh",0);loadFloat(p);SpeedChime.sound=Math.max(0,Math.min(SpeedChime.NAMES.length-1,p.getInt("speed_chime_sound",0)));CassetteCluster.clickSound=p.getBoolean("cassette_click",true);
+            SpeedChime.kmh=p.getInt("speed_chime_kmh",0);loadFloat(p);SpeedChime.sound=Math.max(0,Math.min(SpeedChime.NAMES.length-1,p.getInt("speed_chime_sound",0)));CassetteCluster.clickSound=p.getBoolean("cassette_click",true);
             for(int k=0;k<soundVals.length;k++)soundVals[k]=Math.max(SettingsLayout.SOUND_MIN[k],Math.min(SettingsLayout.SOUND_MAX[k],p.getInt(SOUND_KEYS[k],SettingsLayout.SOUND_DEFAULT[k])));}
         catch(ClassCastException e){/* Sound off for an incompatible saved value. */}
         applySound();
@@ -228,32 +228,6 @@ public final class VehicleDash extends View implements Runnable {
         applyScreen();
         setVisibility(GONE); }
     /** Hands the saved sound choices to the audio thread. */
-    /** 소리 원본: "" = EngineSynth, a SettingsLayout.PACK_IDS key = a built-in pack, else a folder or .zip in <storage>/i30dashboard/packs. */
-    private static java.io.File packsDir(){return new java.io.File(new java.io.File(android.os.Environment.getExternalStorageDirectory(),SettingsBackup.DIR),"packs");}
-    private static String[] soundSources(){
-        java.util.ArrayList<String> l=new java.util.ArrayList<String>();l.add("");l.addAll(java.util.Arrays.asList(SettingsLayout.PACK_IDS));
-        java.io.File[] fs=packsDir().listFiles();
-        if(fs!=null){java.util.Arrays.sort(fs);for(java.io.File f:fs)if(!l.contains(f.getName())&&(f.isDirectory()&&new java.io.File(f,"pack.txt").isFile()||f.getName().toLowerCase(java.util.Locale.US).endsWith(".zip")))l.add(f.getName());}
-        return l.toArray(new String[0]);
-    }
-    /** Loads the pack off the UI and audio threads (parsing and resampling take a while on the head unit); the synth plays meanwhile. */
-    private void loadPack(final String src){
-        SettingsLayout.soundSource=src;SettingsLayout.soundSourceError=null;
-        if(src.length()==0){sound.pack(null);return;}
-        final android.content.Context c=getContext().getApplicationContext();
-        new Thread(new Runnable(){public void run(){
-            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);long t0=android.os.SystemClock.uptimeMillis();   // behind the drawing
-            try{SoundPack sp;
-                if(java.util.Arrays.asList(SettingsLayout.PACK_IDS).contains(src)){java.io.InputStream in=c.getResources().openRawResource(c.getResources().getIdentifier("enginepack_"+src,"raw",c.getPackageName()));try{sp=SoundPack.fromZip(in);}finally{in.close();}}
-                else{java.io.File f=new java.io.File(packsDir(),src);
-                    if(f.isDirectory())sp=SoundPack.fromDir(f);else{java.io.InputStream in=new java.io.FileInputStream(f);try{sp=SoundPack.fromZip(in);}finally{in.close();}}}
-                PackVoice v=new PackVoice(EngineSynth.RATE,sp);
-                if(src.equals(SettingsLayout.soundSource)){sound.pack(v);android.util.Log.i("VehicleDash","Engine sound: pack "+src+" ("+sp.name+") loaded in "+(android.os.SystemClock.uptimeMillis()-t0)+" ms");}
-            }catch(Exception e){   // a bad pack: say why on the row, keep the synth
-                if(src.equals(SettingsLayout.soundSource)){SettingsLayout.soundSourceError=String.valueOf(e.getMessage());sound.pack(null);}
-                android.util.Log.w("VehicleDash","Engine sound: pack "+src+" not loaded",e);}
-        }},"engine-pack").start();
-    }
     private void applySound(){
         sound.volume(soundVal(SettingsLayout.SOUND_VOLUME));sound.engineMix(soundVal(SettingsLayout.SOUND_MIX));sound.voice(soundEngine,soundExhaust);
         sound.trims(soundVal(SettingsLayout.SOUND_POP),soundVal(SettingsLayout.SOUND_TURBO),soundVal(SettingsLayout.SOUND_BOV),soundVal(SettingsLayout.SOUND_LEAD));
@@ -802,8 +776,6 @@ public final class VehicleDash extends View implements Runnable {
                     else if(i==SettingsLayout.SOUND_ON){boolean was=soundOn;SettingsLayout.floatSound=soundOn&&!SettingsLayout.floatSound;soundOn=!was||SettingsLayout.floatSound;   // 끔 -> 계기판 -> 항상 -> 끔, like 변속 알림음
                         e.putBoolean("float_sound",SettingsLayout.floatSound);}
                     else if(i==SettingsLayout.SOUND_ROUTE)soundRoute=(soundRoute+1)%SettingsLayout.SOUND_ROUTES.length;
-                    else if(i==SettingsLayout.SOUND_SOURCE){String[] all=soundSources();int at=java.util.Arrays.asList(all).indexOf(SettingsLayout.soundSource);
-                        String next=all[(at+1)%all.length];e.putString("engine_sound_source",next);loadPack(next);}
                     else if(i==SettingsLayout.SOUND_YIELD){EngineSound.yieldMode=(EngineSound.yieldMode+1)%SettingsLayout.SOUND_YIELDS.length;e.putInt("engine_sound_yield",EngineSound.yieldMode);sound.play(-1);}   // read when the thread starts: restarted below
                     else if(i==SettingsLayout.SOUND_BOOST){EngineSound.boostLevel=(EngineSound.boostLevel+1)%SettingsLayout.SOUND_BOOSTS.length;e.putInt("engine_sound_boost",EngineSound.boostLevel);}
                     else if(i==SettingsLayout.SOUND_ENGINE)soundEngine=(soundEngine+1)%EngineSynth.engines();

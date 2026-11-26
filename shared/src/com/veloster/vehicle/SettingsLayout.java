@@ -103,9 +103,10 @@ public final class SettingsLayout {
     private static float paneTop(int cat){return cat==PICK?TOP+TITLE_H:TOP;}
     private static int rows(int cat){return (count(cat)+cols(cat)-1)/cols(cat);}
     public static float itemW(int cat){int n=cols(cat);return (PANE_R-PANE_L-GAP*(n-1))/n;}
-    /** The 사운드 pane keeps a fixed, comfortably tappable row and scrolls when the rows overflow; every other pane fits its rows to the height. */
-    public static final float SOUND_ROW_H=46;
-    public static float itemH(int cat){if(cat==SOUND)return SOUND_ROW_H;int r=Math.max(1,rows(cat));return Math.min(MAX_ITEM_H,(BOTTOM-paneTop(cat)-GAP*(r-1))/r);}
+    /** The 사운드 and RPM panes (the − / + rows) keep a fixed, comfortably tappable row and scroll when the rows overflow; every other pane fits its rows to the height. */
+    public static final float SOUND_ROW_H=56;
+    public static boolean rowScroll(int cat){return cat==SOUND||cat==RPM;}
+    public static float itemH(int cat){if(rowScroll(cat))return SOUND_ROW_H;int r=Math.max(1,rows(cat));return Math.min(MAX_ITEM_H,(BOTTOM-paneTop(cat)-GAP*(r-1))/r);}
     public static float left(int cat,int i){return PANE_L+(i%cols(cat))*(itemW(cat)+GAP);}
     public static float top(int cat,int i){return paneTop(cat)+(i/cols(cat))*(itemH(cat)+GAP);}
     /** How far a pane can scroll (0 = it fits). The 화면 list and the 사운드 pane overflow; the rest fit. */
@@ -118,7 +119,7 @@ public final class SettingsLayout {
     // --- SCREENS as a reorderable, scrollable list (one row per screen, in display order) ---
     public static final float SCREEN_ROW_H=62,THUMB_W=104,SBTN_W=46;
     /** The panes whose rows can overflow (they draw the scroll bar and the "more below" hint). */
-    public static boolean scrolls(int cat){return cat==SCREENS||cat==SOUND;}
+    public static boolean scrolls(int cat){return cat==SCREENS||rowScroll(cat);}
     /** Rows are dragged by the grip column (the grip and the thumbnail); the rest of the row scrolls or taps. */
     public static boolean onGrip(float x){return x>=PANE_L&&x<PANE_L+THUMB_W;}
     /** The display position a dragged row lands on for a finger at y, clamped to the list. */
@@ -133,6 +134,19 @@ public final class SettingsLayout {
         if(y<TOP||y>BOTTOM)return -1;
         int p=(int)((y-TOP+scroll)/SCREEN_ROW_H);
         return p>=0&&p<ClusterPicker.COUNT?p:-1;
+    }
+    /** − / + rows (RPM, 엔진 사운드, 효과음): two wide buttons STEP_W x STEP_H at the right. A finger that lands between them
+     *  goes to the nearer one, a little left of − still counts as −; the label half of the row puts the default back (0);
+     *  anywhere else (the value) does nothing (-1), so a near miss never resets a volume (2026-11-26: the 46 px squares
+     *  sat edge to edge with the next row's, and a miss reset the value). */
+    public static final float STEP_W=70,STEP_H=44;
+    public static float stepMinusL(){return PANE_R-2*STEP_W-12;}
+    public static float stepPlusL(){return PANE_R-STEP_W-4;}
+    public static int stepZone(float x){
+        float mid=(stepMinusL()+STEP_W+stepPlusL())/2;
+        if(x>=stepMinusL()-12&&x<mid)return 1;
+        if(x>=mid&&x<=PANE_R)return 2;
+        return x<PANE_L+(PANE_R-PANE_L)*0.45f?0:-1;
     }
     /** For an x inside a screen row: 1 = move up, 2 = move down, 0 = toggle (the row body). */
     public static int screenZone(float x){

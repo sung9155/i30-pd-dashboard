@@ -19,7 +19,7 @@ public final class SettingsLayoutTest {
         check(SettingsLayout.count(SettingsLayout.MODE)==SettingsLayout.MODE_FIRST+ClusterPicker.MODES.length,"a row per mode after the two switches");
         check(SettingsLayout.count(SettingsLayout.PICK)==ClusterPicker.COUNT+1&&SettingsLayout.top(SettingsLayout.PICK,0)>=SettingsLayout.TOP+SettingsLayout.TITLE_H,"chooser: every screen and 원래 화면, under its title");
         for(int cat=0;cat<=SettingsLayout.PICK;cat++){
-            if(cat==SettingsLayout.SOUND)continue;   // scrollable pane: checked below
+            if(SettingsLayout.rowScroll(cat))continue;   // scrollable panes (사운드, RPM): checked below
             for(int i=0;i<SettingsLayout.count(cat);i++){
                 float l=SettingsLayout.left(cat,i),t=SettingsLayout.top(cat,i),w=SettingsLayout.itemW(cat),h=SettingsLayout.itemH(cat);
                 check(l>=SettingsLayout.PANE_L&&l+w<=SettingsLayout.PANE_R+0.01f&&t>=SettingsLayout.TOP&&t+h<=SettingsLayout.BOTTOM+0.01f,"cat "+cat+" item "+i+" inside the pane");
@@ -27,18 +27,20 @@ public final class SettingsLayoutTest {
                 check(h>=40,"cat "+cat+" items tall enough to tap");
             }
         }
+        for(int pc:new int[]{SettingsLayout.SOUND,SettingsLayout.RPM}){   // the − / + panes keep a tappable row and scroll: every row reachable
         // The 사운드 pane keeps a tappable row and scrolls: every row is reachable when scrolled into the viewport.
-        check(SettingsLayout.itemH(SettingsLayout.SOUND)>=40,"sound rows tall enough to tap");
-        check(SettingsLayout.maxPaneScroll(SettingsLayout.SOUND)>0,"the sound pane scrolls (its rows overflow)");
-        float mid=SettingsLayout.TOP+(SettingsLayout.BOTTOM-SettingsLayout.TOP)/2,max=SettingsLayout.maxPaneScroll(SettingsLayout.SOUND);
-        for(int i=0;i<SettingsLayout.count(SettingsLayout.SOUND);i++){
-            float ih=SettingsLayout.itemH(SettingsLayout.SOUND),t=SettingsLayout.top(SettingsLayout.SOUND,i);
+        check(SettingsLayout.itemH(pc)>=40,"pane "+pc+" rows tall enough to tap");
+        check(SettingsLayout.maxPaneScroll(pc)>0,"the sound pane scrolls (its rows overflow)");
+        {float mid=SettingsLayout.TOP+(SettingsLayout.BOTTOM-SettingsLayout.TOP)/2,max=SettingsLayout.maxPaneScroll(pc);
+        for(int i=0;i<SettingsLayout.count(pc);i++){
+            float ih=SettingsLayout.itemH(pc),t=SettingsLayout.top(pc,i);
             float scroll=Math.max(0,Math.min(max,t+ih/2-mid));   // bring this row's centre into the viewport
-            float cx=SettingsLayout.left(SettingsLayout.SOUND,i)+SettingsLayout.itemW(SettingsLayout.SOUND)/2,cy=t-scroll+ih/2;
-            check(cy>=SettingsLayout.TOP&&cy<=SettingsLayout.BOTTOM,"sound item "+i+" scrolls into view");
-            check(SettingsLayout.item(SettingsLayout.SOUND,cx,cy,scroll)==i,"sound item "+i+" hits itself when scrolled in");
-            check(SettingsLayout.left(SettingsLayout.SOUND,i)>=SettingsLayout.PANE_L&&SettingsLayout.left(SettingsLayout.SOUND,i)+SettingsLayout.itemW(SettingsLayout.SOUND)<=SettingsLayout.PANE_R+0.01f,"sound item "+i+" inside the pane width");
+            float cx=SettingsLayout.left(pc,i)+SettingsLayout.itemW(pc)/2,cy=t-scroll+ih/2;
+            check(cy>=SettingsLayout.TOP&&cy<=SettingsLayout.BOTTOM,"pane "+pc+" item "+i+" scrolls into view");
+            check(SettingsLayout.item(pc,cx,cy,scroll)==i,"pane "+pc+" item "+i+" hits itself when scrolled in");
+            check(SettingsLayout.left(pc,i)>=SettingsLayout.PANE_L&&SettingsLayout.left(pc,i)+SettingsLayout.itemW(pc)<=SettingsLayout.PANE_R+0.01f,"pane "+pc+" item "+i+" inside the pane width");
         }
+        }}
         check(SettingsLayout.item(SettingsLayout.THEME,SettingsLayout.CAT_L+10,SettingsLayout.TOP+10)==-1,"the category column is not a choice");
         check(SettingsLayout.downScreen(0,ClusterPicker.MANUAL)&&SettingsLayout.downScreen(0,ClusterPicker.TACHO)&&!SettingsLayout.downScreen(0,ClusterPicker.F1)&&SettingsLayout.downScreen(1,ClusterPicker.F1+2)&&!SettingsLayout.downScreen(1,ClusterPicker.CLASSIC)&&SettingsLayout.downScreen(2,ClusterPicker.CLASSIC),"downshift-sound screens: 람다 and RPM, then +F1/퍼포먼스/레이스, then all");
         // 플로팅 pane: every button is big enough to hit in a car, inside the pane, clear of the others and of the preview
@@ -105,7 +107,7 @@ public final class SettingsLayoutTest {
         check(SettingsLayout.dropRow(SettingsLayout.TOP+1,0)==0&&SettingsLayout.dropRow(SettingsLayout.TOP-50,0)==0&&SettingsLayout.dropRow(SettingsLayout.BOTTOM+50,SettingsLayout.maxScreenScroll())==ClusterPicker.COUNT-1
             &&SettingsLayout.dropRow(SettingsLayout.TOP+SettingsLayout.SCREEN_ROW_H*1.5f,0)==1,"drop rows clamp to the list");
         check(SettingsLayout.autoScroll(SettingsLayout.TOP+5)<0&&SettingsLayout.autoScroll(SettingsLayout.BOTTOM-5)>0&&SettingsLayout.autoScroll(260)==0,"auto-scroll near the edges only");
-        check(SettingsLayout.scrolls(SettingsLayout.SCREENS)&&SettingsLayout.scrolls(SettingsLayout.SOUND)&&!SettingsLayout.scrolls(SettingsLayout.THEME),"the panes that scroll");
+        check(SettingsLayout.scrolls(SettingsLayout.SCREENS)&&SettingsLayout.scrolls(SettingsLayout.SOUND)&&SettingsLayout.scrolls(SettingsLayout.RPM)&&!SettingsLayout.scrolls(SettingsLayout.THEME),"the panes that scroll");
         // 플로팅: size / transparency bars snap to their stops, presets in a row
         for(int i=0;i<4;i++)check(SettingsLayout.sliderStop(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,4,SettingsLayout.sliderX(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,4,i))==i,"size stop "+i);
         for(int i=0;i<3;i++)check(SettingsLayout.sliderStop(SettingsLayout.F_ALPHA_BAR,SettingsLayout.F_ALPHA_KNOB,3,SettingsLayout.sliderX(SettingsLayout.F_ALPHA_BAR,SettingsLayout.F_ALPHA_KNOB,3,i))==i,"alpha stop "+i);
@@ -118,6 +120,12 @@ public final class SettingsLayoutTest {
             &&SettingsLayout.floatHit((nb[0]+nb[2])/2,(nb[1]+nb[3])/2,2,2,124,64)==SettingsLayout.F_NMODE,"N 모드에서 숨김 beside 음악 띠, tappable");}
         check(SettingsLayout.cols(SettingsLayout.THEME)==3,"themes in three columns");
         check(SettingsLayout.top(SettingsLayout.THEME,Theme.IDS.length-1)+SettingsLayout.itemH(SettingsLayout.THEME)<=SettingsLayout.BOTTOM&&SettingsLayout.itemH(SettingsLayout.THEME)>=44,"20 themes fit without scrolling, rows still tappable");
+        // − / + rows: wide buttons, a gap goes to the nearer one, the value does nothing, the label resets
+        {float m=SettingsLayout.stepMinusL(),p=SettingsLayout.stepPlusL(),w=SettingsLayout.STEP_W;
+            check(SettingsLayout.stepZone(m+w/2)==1&&SettingsLayout.stepZone(p+w/2)==2&&SettingsLayout.stepZone(m-6)==1,"− and + by their centres, a little left of − is −");
+            check(SettingsLayout.stepZone((m+w+p)/2-1)==1&&SettingsLayout.stepZone((m+w+p)/2+1)==2,"the gap between goes to the nearer button");
+            check(SettingsLayout.stepZone(m-60)==-1&&SettingsLayout.stepZone(SettingsLayout.PANE_L+30)==0,"the value does nothing, the label resets");
+            check(w>=64&&SettingsLayout.STEP_H>=40&&SettingsLayout.STEP_H<=SettingsLayout.SOUND_ROW_H-8,"buttons at least 64 x 40, with room above and below in a sound row");}
         System.out.println("PASS "+checks+" settings layout checks");
     }
 }

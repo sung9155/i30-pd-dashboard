@@ -22,5 +22,7 @@ i30pd_port/hscandump.jar
 i30pd_port/logs/split/
 i30pd_port/**/*.apk
 i30pd_port/**/*.exe
+# adb for the Windows installer, fetched once so 로컬설치.cmd works with no internet (Google's platform-tools, not ours to ship)
+i30pd_port/installer/platform-tools/
 i30pd_port/app/preview/fonts/
 i30pd_port/installer/android/build/

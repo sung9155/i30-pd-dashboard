@@ -9,8 +9,10 @@
   버전: 시작할 때 안정화(최신 정식 릴리스, 실차 확인) / 테스트('test' 사전 배포, 실차 검증 전) / 진단 기록 모으기 중 고른다.
   테스트 인자: -AdbPath <adb 경로>  -Channel stable|test  -Yes(확인 모두 예, 대기/프롬프트 생략, 안정화)  -Uninstall(두 앱 삭제)
               -Diag(설치하지 않고 진단 기록 파일만 만든다)
+  로컬 빌드: -LocalBuild(이 저장소의 build\apk — docker\build.ps1이 만든 APK를 설치)  -ApkDir <폴더>(그 폴더의 APK를 설치)
+              둘 다 인터넷을 쓰지 않는다: 릴리스 정보·새 설치기 확인·APK 내려받기를 하지 않고, 폴더에 있는 APK만 설치한다.
 #>
-param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switch]$Uninstall, [switch]$Diag)
+param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switch]$Uninstall, [switch]$Diag, [switch]$LocalBuild, [string]$ApkDir)
 
 # 'Continue' (not 'Stop'): adb writes its progress to stderr, and under 'Stop' a native
 # command's stderr turns into a terminating error (NativeCommandError) that aborts the
@@ -59,7 +61,7 @@ function Write-Host {
   foreach($part in ([string]$Object -split "`r?`n")){ foreach($l in (Fit $part)){ Microsoft.PowerShell.Utility\Write-Host $l @p } }
 }
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-21'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-26'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
 # 위와 같고, 2026-10-31 실차 설치·동작 확인(다른 LOW 차 한 대는 USB "장치 설명자 요청 실패" — 그 차 포트·배선 문제로 봄).
@@ -75,6 +77,10 @@ $Apps = @(
   [pscustomobject]@{ apk='myapps-i30pd-platform.apk';   pkg='com.veloster.carplayhub'; name="'내 앱'" }
 )
 $script:adbExe = $null
+# 로컬 빌드 설치(-LocalBuild / -ApkDir): APK는 그 폴더에서만 가져오고 인터넷은 쓰지 않는다. -LocalBuild의 폴더는 저장소의 build\apk
+# (이 파일은 <저장소>\i30pd_port\installer 에 있다). 릴리스 ZIP처럼 저장소 밖에서 실행하면 그 폴더가 없어 안내하고 끝낸다.
+# (스위치 이름이 -Local이면 안 된다: 아래 APK 준비의 $local 변수와 같은 이름이 되어 대입이 실패한다.)
+if($LocalBuild -and -not $ApkDir){ $ApkDir = Join-Path (Split-Path -Parent (Split-Path -Parent $ROOT)) 'build\apk' }
 # 차에 깔린 두 앱의 버전 한 줄. 1.5-i18n = 릴리스 이름을 넣기 전(v1.16.0까지)의 대시보드.
 function Versions {
   ($Apps | ForEach-Object {
@@ -169,6 +175,7 @@ if(-not $script:adbExe){
 }
 if(-not $script:adbExe){
   Note 'adb(platform-tools)가 없습니다.' Gray
+  if($ApkDir){ Note "  인터넷 없이 쓰려면 미리 받아 둔 platform-tools 폴더를 설치.cmd 옆($ROOT)에 두세요. 지금 받으려면 인터넷이 필요합니다." Yellow }
   if(-not (Ask 'Google 공식 주소에서 받을까요?')){ Die 'adb가 없어 중단합니다.' 2 }
   $zip = Join-Path $LogDir 'platform-tools.zip'
   Note '내려받는 중...' Gray
@@ -221,7 +228,8 @@ function ShowNotes($rel,[string]$url){
 }
 
 # --- 버전 고르기 (-ApkBase 를 주면 그 주소를 그대로 쓴다) ---------------------
-if(-not $Uninstall -and -not $Diag -and -not $ApkBase){
+if($ApkDir -and -not $Uninstall -and -not $Diag){ Note "버전: 로컬 빌드 — $ApkDir 의 APK를 설치합니다 (인터넷을 쓰지 않습니다)" Green }
+if(-not $Uninstall -and -not $Diag -and -not $ApkBase -and -not $ApkDir){
   $Rel = @{ stable = (ReleaseInfo 'latest' $false); test = (ReleaseInfo 'tags/test' $true) }
   if($Channel -ne 'stable' -and $Channel -ne 'test'){
     if($Yes){ $Channel = 'stable' } else {
@@ -242,7 +250,7 @@ if(-not $Uninstall -and -not $Diag -and -not $ApkBase){
 
 # --- 새 설치기 확인 (막지는 않는다) ---------------------------------------------
 # 레포에 올라간 install.ps1의 $InstallerVersion과 비교한다. 테스트를 고른 사람에게만 beta(테스트) 설치기도 알린다.
-foreach($b in $(if($Channel -eq 'test'){ @('main','beta') } else { @('main') })){
+foreach($b in $(if($ApkDir){ @() } elseif($Channel -eq 'test'){ @('main','beta') } else { @('main') })){   # 로컬 빌드: 인터넷을 쓰지 않는다
   try {
     $c = (Invoke-WebRequest -Uri "$Raw/$b/i30pd_port/installer/install.ps1" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop).Content
     if($c -is [byte[]]){ $c = [Text.Encoding]::UTF8.GetString($c) }
@@ -255,7 +263,23 @@ foreach($b in $(if($Channel -eq 'test'){ @('main','beta') } else { @('main') }))
 
 # --- APK 준비 (폴더에 있으면 쓰고, 없으면 공개 레포에서 받기) -----------------
 if(-not $Uninstall -and -not $Diag){ Head '0) 앱 파일 준비' }
-foreach($app in $(if($Uninstall -or $Diag){ @() } else { $Apps })){
+# 로컬 빌드: 폴더에 있는 APK만 설치한다(대시보드만 빌드했으면 대시보드만). 내려받지 않는다. 파일마다 빌드 시각을 보여 준다:
+# build\apk에는 지난 빌드의 파일이 남아 있을 수 있다.
+if($ApkDir -and -not $Uninstall -and -not $Diag){
+  foreach($app in $Apps){
+    $local = Join-Path $ApkDir $app.apk
+    $ok=$false; if(Test-Path -LiteralPath $local -PathType Leaf){ $fs=[IO.File]::OpenRead($local); $mg=New-Object byte[] 2; [void]$fs.Read($mg,0,2); $fs.Close(); $ok=($mg[0] -eq 0x50 -and $mg[1] -eq 0x4B) }
+    if(-not $ok){ Note "$($app.apk): $(if(Test-Path -LiteralPath $local){ 'APK가 아닌 파일' } else { '폴더에 없음' }) — 이 앱은 설치하지 않습니다." Yellow; continue }
+    $f = Get-Item -LiteralPath $local
+    $app | Add-Member -NotePropertyName path -NotePropertyValue $local -Force
+    Note ("{0}: 이 PC에서 빌드한 파일을 씁니다 ({1} KB, {2:yyyy-MM-dd HH:mm} 빌드)" -f $app.apk, [math]::Round($f.Length/1KB), $f.LastWriteTime) Yellow
+  }
+  if(-not @($Apps | Where-Object { $_.path }).Count){
+    Die ("설치할 APK가 없습니다: $ApkDir`n" +
+         "먼저 저장소 폴더에서  .\docker\build.ps1  로 빌드하세요(build\apk 에 APK 두 개가 생깁니다). 다른 폴더의 APK는  -ApkDir <폴더>  로 지정합니다.") 2
+  }
+}
+foreach($app in $(if($Uninstall -or $Diag -or $ApkDir){ @() } else { $Apps })){
   $local = Join-Path $ROOT $app.apk
   # 브라우저로 받은 GitHub 페이지(HTML)가 .apk 이름으로 저장된 경우가 있어, 'PK'로 시작할 때만 폴더 것을 쓴다.
   $ok=$false; if(Test-Path $local){ $fs=[IO.File]::OpenRead($local); $mg=New-Object byte[] 2; [void]$fs.Read($mg,0,2); $fs.Close(); $ok=($mg[0] -eq 0x50 -and $mg[1] -eq 0x4B) }
@@ -480,7 +504,7 @@ Head '4) 앱 설치'
 # adb install 대신 ① 전송(push) ② 설치(pm install) 두 단계로 나눠, 멈추면 USB 쪽인지 내비 쪽인지 바로 갈린다.
 $pushHint = 'USB로 파일을 보내다 멈췄습니다. 케이블·노트북 포트(USB 2.0 권장)를 바꾸고 Factory Test부터 다시 한 뒤 실행하세요.'
 $pmHint = '내비가 설치를 끝내지 않았습니다. 차 화면에 확인 창이 떠 있으면 누르고, 없으면 시동을 껐다 켠 뒤 다시 실행하세요.'
-foreach($app in $Apps){
+foreach($app in @($Apps | Where-Object { $_.path })){   # 로컬 빌드는 폴더에 있던 APK만
   $apk = $app.path; $remote = "/data/local/tmp/$($app.apk)"
   # 내비는 설치한 APK를 바이트 그대로 보관한다: 받아 와서 같으면 같은 버전이니 건너뛴다.
   $pp = ((Adb '-s' $serial 'shell' 'pm' 'path' $app.pkg) -replace '\s','') -replace '^package:',''

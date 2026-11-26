@@ -42,4 +42,15 @@ else sed "s/^INSTALLER_VERSION='[^']*'/INSTALLER_VERSION='2026-01-01'/" "$I/설�
   HOME="$F/home" I30PD_OS=$OSV bash "$I/old.command" --adb "$F/adb" --yes --uninstall > "$F/out.txt" 2>&1; rm -f "$I/old.command"; fi
 grep -q '새 설치기가 있습니다(안정화' $F/out.txt || fail "6 old installer notice"
 grep -q '새 설치기가 있습니다' <(run "${A[@]}"; cat $F/out.txt) && fail "6 current installer must not be told" || true
-echo "OK[$WHO]: install, skip identical, new release, diag (masked, read only), uninstall + ☆, installer notice"
+# a local build (docker/build.ps1 -> build/apk; here -ApkDir): only the APKs in that folder are installed, nothing is fetched
+# (-ApkBase is not given, so a download would go to GitHub and show '내려받'); an empty folder ends with the build hint
+if [ $WHO = win ]; then
+  reset; apks; L="$F/local"; rm -rf "$L"; mkdir -p "$L"; cp "$SRV/dashboard-i30pd-platform.apk" "$L/"
+  run -ApkDir "$(cygpath -w "$L")"
+  [ "$(cat $F/rc)" = 0 ] && [ "$(grep -c 'pm install' $F/calls.log)" = 1 ] && grep -q 'dashboard-i30pd-platform.apk: 이 PC에서 빌드한 파일' $F/out.txt \
+    && grep -q 'myapps-i30pd-platform.apk: 폴더에 없음' $F/out.txt && ! grep -qE '내려받|새 설치기|버전 정보를 받지' $F/out.txt || fail "7 local build"
+  rm -f "$L"/*.apk; run -ApkDir "$(cygpath -w "$L")"
+  [ "$(cat $F/rc)" != 0 ] && ! grep -qE 'pm install|push' $F/calls.log && grep -q 'build.ps1' $F/out.txt || fail "7 local build with no APK"
+  rm -rf "$L"
+fi
+echo "OK[$WHO]: install, skip identical, new release, diag (masked, read only), uninstall + ☆, installer notice$([ $WHO = win ] && echo ', local build')"

@@ -2,6 +2,7 @@ inst/
 tmp/
 home/
 server/
+local/
 star.txt
 calls.log
 out.txt

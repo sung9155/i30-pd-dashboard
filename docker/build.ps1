@@ -6,6 +6,9 @@
 #   .\docker\build.ps1 dashboard --version-name v1.17.13
 #   .\docker\build.ps1 -Rebuild                       # build the image again (new tool versions in the Dockerfile)
 #   .\docker\build.ps1 -Save i30pd-build.tar          # the image as a file (docker load -i brings it back, offline)
+#
+# Onto the car, with no internet: i30pd_port\installer\install.ps1 -LocalBuild (its own .cmd launcher sits beside it)
+# installs what is in build\apk. This file stays ASCII: Windows PowerShell 5.1 reads a BOM-less script as ANSI.
 param(
   [switch]$Rebuild,
   [string]$Save,

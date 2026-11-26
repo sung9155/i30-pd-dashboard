@@ -394,6 +394,8 @@ public final class VehicleDash extends View implements Runnable {
         VehicleDash d=current.get();if(d!=null)regulation(d.activity,blocked);
     }
     public static void ignition(boolean on) { DATA.clear(); }
+    /** Road speed now in km/h, NaN when not received (DtcDialog clears codes only when the car is seen standing). */
+    static float speedNow(){Telemetry.Sample s=DATA.sample(7,SystemClock.elapsedRealtime());return s.valid?s.value*Telemetry.speedScale:Float.NaN;}
     public static void rpm(byte[] data) { DATA.rpm(data,SystemClock.elapsedRealtime()); }
     public static void beginComputed(float rpm,float tqi,float acor,float standard,float boost,float ambient) { DATA.beginComputed(rpm,tqi,acor,standard,boost,ambient); }
     public static void computed(float power,float torque,float boostKpa) { DATA.computed(power,torque,boostKpa); }

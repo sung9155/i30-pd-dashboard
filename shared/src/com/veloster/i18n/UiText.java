@@ -261,6 +261,7 @@ public final class UiText {
         EN.put("고장코드","Trouble codes");
         EN.put("고장코드 읽기","Read trouble codes");
         EN.put("고장코드 조회","Trouble codes");
+        EN.put("고장코드 지우기","Clear trouble codes");
         EN.put("곡이 나오면 라벨에 적힙니다","The playing track shows on the label");
         EN.put("곧 출발","Get ready");
         EN.put("공기유량센서(MAF) 범위·성능 이상","Mass air flow (MAF) sensor range/performance");
@@ -875,6 +876,7 @@ public final class UiText {
         EN.put("엔진 제어기(ECM)에서 잘못된 데이터 수신","Invalid data received from engine control module (ECM)");
         EN.put("엔진 제어기(ECM)와 통신 끊김","Lost communication with engine control module (ECM)");
         EN.put("엔진 제어기(EMS) CAN 신호 끊김","Engine control unit (EMS) CAN signal lost");
+        EN.put("엔진 코드를 지우면 배출가스 점검 준비 상태도 초기화돼, 몇 번 주행하기 전까지 정기검사 전산 점검에서 '미완료'로 나옵니다.","Clearing engine codes also resets the emissions readiness monitors: an inspection reads them as incomplete until the car has been driven a few times.");
         EN.put("엔진 회전 주파수 = RPM ÷ 60","Crank frequency = RPM ÷ 60");
         EN.put("엔진 회전수","Engine speed");
         EN.put("엔진·변속기·제동·조향·에어백·바디 (읽기만)","Engine, transmission, brakes, steering, airbag, body (read only)");
@@ -1036,11 +1038,13 @@ public final class UiText {
         EN.put("음악 띠","Music strip");
         EN.put("음악 제어 요청을 보낼 수 없습니다","Could not send the playback command");
         EN.put("응답 없음 (미장착일 수 있음)","no reply (may not be fitted)");
+        EN.put("응답이 없습니다.","No answer.");
         EN.put("응답한 제어기가 없습니다. 시동을 켠 상태에서 다시 조회하세요.","No control unit answered. Turn the ignition on and read again.");
         EN.put("이 기기는 페어링을 진행 중입니다.","This device is already pairing.");
         EN.put("이 기기에서 재시작 기능을 사용할 수 없습니다.","Restart is unavailable on this device.");
         EN.put("이 내비에서는 앱이 스스로 삭제할 수 없습니다. PC 설치기나 휴대폰 설치 앱의 [삭제]를 쓰세요.","This head unit does not let the app remove itself. Use [Remove] in the PC installer or the phone installer.");
         EN.put("이 시스템에서 바로가기 서비스를 시작할 수 없습니다.","This system cannot start the shortcut service.");
+        EN.put("이 제어기 고장코드 지우기","Clear this unit's trouble codes");
         EN.put("이 화면에서 시작한 검색을 종료했습니다.","Stopped discovery started from this screen.");
         EN.put("이름 없는 기기","Unnamed device");
         EN.put("이모빌라이저 — 엔진 제어기 메모리 오류","Immobiliser — engine control unit memory error");
@@ -1103,6 +1107,7 @@ public final class UiText {
         EN.put("저장 / Save","Save");
         EN.put("저장공간","Storage");
         EN.put("저장된 고장코드가 없습니다.","No stored trouble codes.");
+        EN.put("저장된 고장코드를 모두 지웁니다.","Clears all stored trouble codes.");
         EN.put("저장된 기록을 모두 지울까요?","Clear all kept records?");
         EN.put("저장해 둔 설정을 읽지 못했습니다.","Could not read the saved settings.");
         EN.put("저장해 둔 설정이 있습니다","Saved settings found");
@@ -1158,6 +1163,7 @@ public final class UiText {
         EN.put("제어기 · 출력 회로","Control module · output circuits");
         EN.put("제어기 간 통신 링크 이상","Communication link fault between control modules");
         EN.put("제어기 내부(하드웨어) 고장","Control unit internal (hardware) failure");
+        EN.put("제어기가 거부했습니다.","The unit refused.");
         EN.put("제주","Jeju");
         EN.put("조수석","Passenger");
         EN.put("조수석 문","Passenger door");
@@ -1239,6 +1245,8 @@ public final class UiText {
         EN.put("지령 위치 도달 불가","Commanded position not reachable");
         EN.put("지연 보정","Latency compensation");
         EN.put("지우기","Clear");
+        EN.put("지우기는 차가 멈춰 있을 때만 됩니다. 고장이 그대로면 코드는 다시 생깁니다. 에어백 코드는 정비소에서 지우세요.","Clearing works only while the car is standing. A fault that is still there sets its code again. Have airbag codes cleared at a workshop.");
+        EN.put("지웠습니다. 다시 조회합니다.","Cleared. Reading again.");
         EN.put("직각","Square");
         EN.put("직렬 6기통 터보","Inline-6 turbo");
         EN.put("직전 코너 최대 횡가속","Last corner's peak lateral G");
@@ -1251,6 +1259,7 @@ public final class UiText {
         EN.put("짝수단","Even");
         EN.put("짧은 캡슐","Short pill");
         EN.put("짧은 펄스 · 낮게","Short pulse · low");
+        EN.put("차가 멈춘 것을 확인하지 못했습니다. 정차한 뒤 다시 누르세요.","Could not see the car standing. Stop, then tap again.");
         EN.put("차량 계산값","From the car");
         EN.put("차량 색","Car colour");
         EN.put("차량 속도","Vehicle speed");

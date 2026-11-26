@@ -42,6 +42,8 @@ CAN 메시지·신호의 배치와 배율은 [commaai/opendbc](https://github.co
 
 내장 소리 팩 `apps/dashboard/res/raw/enginepack_{i4t,i6,v6,v8}.zip`은 같은 레포의 `tools/render`(DasEtwas/enginesound의 MIT 물리 모델 이식)로 그 레포의 `engines/<이름>.txt` 설정에서 렌더한 것입니다. 그 레포의 `packs/`에 있는 실차 기반 팩(히릿 제작)은 그 저작자의 허락이 필요해 넣지 않았습니다. 실제 차를 녹음한 것이 아니며, 렌더한 팩은 CC0 1.0(퍼블릭 도메인)입니다.
 
+`enginepack_sc8.zip`(슈퍼차저 V8), `enginepack_evs.zip`(EV 스포츠), `enginepack_evj.zip`(EV 제트)은 이 레포의 `scripts/make_extra_packs.py`가 만듭니다. sc8은 위 v8 팩(CC0)에 사인파 휘인을 더한 것이고, evs·evj는 사인파 합성입니다. 어떤 차의 녹음도 쓰지 않았으며 CC0 1.0으로 공개합니다.
+
 ## 이 레포에 넣지 않은 것
 
 - 현대자동차 순정 펌웨어, 순정 앱, 그 디컴파일 결과. 문서의 "PD 펌웨어 대조"는 공개된 펌웨어를 받아 확인한 사실(클래스·액티비티 이름 등)만 적은 것입니다.

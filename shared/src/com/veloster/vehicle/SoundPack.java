@@ -32,6 +32,8 @@ import java.util.zip.ZipInputStream;
  * redline 6500
  * aligned yes          (optional: loops start at the same crank angle and hold whole cycles)
  * level -4.5           (optional: level trim in dB, -24..12, at most 2 decimals)
+ * follow speed         (optional: the pack follows road speed, 0 km/h = idle .. topspeed = redline, not engine rpm)
+ * topspeed 220         (optional with follow speed: km/h at the redline loop, 60..400, default 220)
  * loop v8_0800_on.wav rpm=800 load=on [start=0] [end=17640]
  * loop v8_0800_off.wav rpm=800 load=off
  * loop v8_0800_mid.wav rpm=800 load=0.45   (a load layer between off (0) and on (1), up to 3 decimals)
@@ -63,6 +65,17 @@ public final class SoundPack {
     public final int cylinders, idleRpm, redlineRpm;
     /** every loop starts at the same crank angle and holds whole engine cycles: PackVoice keeps them on one phase */
     public final boolean aligned;
+    /** "follow speed": the pack is driven by road speed (an EV voice), idle at 0 km/h, redline at topSpeed */
+    public final boolean followSpeed;
+    public final int topSpeed;
+
+    /** What drives the player: engine rpm, or for a "follow speed" pack road speed mapped idle (0 km/h) .. redline
+     *  (topSpeed). NaN (no fresh rpm: engine off, reverse) stays NaN, so an EV voice is quiet when the engine is. */
+    public double input(double rpm, double kmh) {
+        if (!followSpeed || Double.isNaN(rpm)) return rpm;
+        if (Double.isNaN(kmh)) return Double.NaN;
+        return idleRpm + (redlineRpm - idleRpm) * Math.max(0, Math.min(topSpeed, kmh)) / topSpeed;
+    }
     /** the pack's level trim as a gain (1 without a "level" line) */
     public final double level;
     /** the load of each layer, rising, the first 0; without a load-0 layer layers[0] is the same array as layers[1] */
@@ -70,8 +83,9 @@ public final class SoundPack {
     /** the loops of each layer by rising rpm */
     public final Loop[][] layers;
 
-    private SoundPack(String name, int cylinders, int idleRpm, int redlineRpm, boolean aligned, double level, double[] loads, Loop[][] layers) {
+    private SoundPack(String name, int cylinders, int idleRpm, int redlineRpm, boolean aligned, double level, double[] loads, Loop[][] layers, boolean followSpeed, int topSpeed) {
         this.name = name; this.cylinders = cylinders; this.idleRpm = idleRpm; this.redlineRpm = redlineRpm;
+        this.followSpeed = followSpeed; this.topSpeed = topSpeed;
         this.aligned = aligned; this.level = level; this.loads = loads; this.layers = layers;
     }
 
@@ -138,7 +152,8 @@ public final class SoundPack {
         String text = new String(src.read("pack.txt", MAX_TXT_BYTES), "UTF-8");
         String name = null;
         int cyl = 4, idle = 800, redline = 6500;
-        boolean aligned = false;
+        boolean aligned = false, follow = false;
+        int top = 220;
         double level = 1;
         TreeMap<Integer, List<Loop>> byLoad = new TreeMap<Integer, List<Loop>>(); // load in thousandths
         int lineNo = 0, total = 0, loops = 0;
@@ -154,6 +169,8 @@ public final class SoundPack {
             else if (k.equals("redline")) redline = num(f, 1, 2000, 12000, lineNo);
             else if (k.equals("aligned")) aligned = f.length > 1 && f[1].equals("yes");
             else if (k.equals("level")) level = levelDb(f, lineNo);
+            else if (k.equals("follow")) follow = f.length > 1 && f[1].equals("speed");
+            else if (k.equals("topspeed")) top = num(f, 1, 60, 400, lineNo);
             else if (k.equals("event") || k.equals("pop_rpm")) continue; // ponytail: one-shot events not played here
             else if (k.equals("loop")) {
                 if (loops++ >= MAX_LOOPS) throw new IOException("more than " + MAX_LOOPS + " loops");
@@ -203,7 +220,7 @@ public final class SoundPack {
         if (a[0].rpm > 1200 || a[a.length - 1].rpm < 4000) throw new IOException("on-load loops must reach from <=1200 to >=4000 rpm");
         for (int k = base; k < layers.length - 1; k++)
             if (layers[k].length == 1) throw new IOException("needs 0 or at least 2 loops at load " + loads[k]);
-        return new SoundPack(name, cyl, idle, redline, aligned, level, loads, layers);
+        return new SoundPack(name, cyl, idle, redline, aligned, level, loads, layers, follow, top);
     }
 
     private static Loop[] sorted(List<Loop> l) {

@@ -45,7 +45,7 @@ public final class SettingsLayout {
     /** 안내·통화 양보 (SoundYield.OFF, DUCK, STOP) and 속도 따라 키우기 (SoundYield.speedBoost levels 0..3). */
     /** 소리 원본 row: the source key VehicleDash loaded ("" synth, a PACK_IDS built-in pack, else a file name in packs/) and why a pack failed (null: fine). */
     /** Built-in sound packs (res/raw/enginepack_<id>.zip, rendered by de22ev-ves tools/render, CC0) and their row names. */
-    public static final String[] PACK_IDS={"i4t","i6","v6","v8"},PACK_NAMES={"소리 팩 · 4기통 터보","소리 팩 · 직렬 6기통","소리 팩 · V6","소리 팩 · V8"};
+    public static final String[] PACK_IDS={"i4t","i6","v6","v8","sc8","evs","evj"},PACK_NAMES={"소리 팩 · 4기통 터보","소리 팩 · 직렬 6기통","소리 팩 · V6","소리 팩 · V8","소리 팩 · 슈퍼차저 V8","소리 팩 · EV 스포츠","소리 팩 · EV 제트"};
     /** The row value for a source key. */
     public static String sourceName(String src){if(src.length()==0)return "합성";int k=java.util.Arrays.asList(PACK_IDS).indexOf(src);return k>=0?PACK_NAMES[k]:src;}
     public static volatile String soundSource="",soundSourceError;

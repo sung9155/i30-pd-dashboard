@@ -5,16 +5,20 @@ public final class ClusterPickerTest {
     private static int checks;
     private static void check(boolean b,String s){checks++;if(!b)throw new AssertionError(s);}
     public static void main(String[] args){
-        check(ClusterPicker.COUNT==26&&ClusterPicker.NAMES.length==26&&ClusterPicker.DESC.length==26,"26 screens, one name and line each");
-        check(ClusterPicker.NAMES[ClusterPicker.ECO].equals("에코")&&ClusterPicker.NAMES[ClusterPicker.TACHO].equals("RPM")&&ClusterPicker.TACHO==ClusterPicker.COUNT-1,"에코, then the RPM screen last");
+        check(ClusterPicker.COUNT==30&&ClusterPicker.NAMES.length==30&&ClusterPicker.DESC.length==30,"30 screens, one name and line each");
+        check(ClusterPicker.NAMES[ClusterPicker.ECO].equals("에코")&&ClusterPicker.NAMES[ClusterPicker.TACHO].equals("RPM")&&ClusterPicker.TACHO==25,"에코, then the RPM screen");
+        check(ClusterPicker.WRC==26&&ClusterPicker.ANALOG==27&&ClusterPicker.NEON==28&&ClusterPicker.PASSENGER==ClusterPicker.COUNT-1&&ClusterPicker.NAMES[ClusterPicker.PASSENGER].equals("동승자"),"WRC, 아날로그, 네온 and 동승자 after it, 동승자 last");
+        check(ClusterPicker.COUNT<=ClusterPicker.SLOTS&&ClusterPicker.COUNT<31,"every screen has a tile, and the hidden mask (bit per screen) fits an int");
         check(ClusterPicker.NAMES[ClusterPicker.MANUAL].equals("람다"),"the 람다 (twin Λ) screen before it");
         {int[] old=new int[23];for(int i=0;i<23;i++)old[i]=22-i;int[] o=ClusterPicker.validOrder(old);
-         check(o.length==26&&o[0]==22&&o[22]==0&&o[23]==23&&o[24]==24&&o[25]==25,"an order saved with 23 screens keeps its arrangement, 수동 and 에코 last");}
+         check(o.length==30&&o[0]==22&&o[22]==0&&o[23]==23&&o[24]==24&&o[25]==25&&o[29]==29,"an order saved with 23 screens keeps its arrangement, the newer screens last");}
         {int[] old=new int[22];for(int i=0;i<22;i++)old[i]=21-i;int[] o=ClusterPicker.validOrder(old);
-         check(o.length==26&&o[0]==21&&o[21]==0&&o[22]==22&&o[23]==23&&o[24]==24&&o[25]==25,"an order saved with 22 screens keeps its arrangement, the new screens last");}
+         check(o.length==30&&o[0]==21&&o[21]==0&&o[22]==22&&o[23]==23&&o[24]==24&&o[25]==25,"an order saved with 22 screens keeps its arrangement, the new screens last");}
+        {int[] old=new int[26];for(int i=0;i<26;i++)old[i]=25-i;int[] o=ClusterPicker.validOrder(old);
+         check(o.length==30&&o[0]==25&&o[25]==0&&o[26]==26&&o[27]==27&&o[28]==28&&o[29]==29,"an order saved with 26 screens keeps its arrangement, WRC to 동승자 after it");}
         check(ClusterPicker.NAMES[ClusterPicker.OVERVIEW].equals("전체 조망")&&ClusterPicker.NAMES[ClusterPicker.GAUGES].equals("게이지")&&ClusterPicker.NAMES[ClusterPicker.GRAPHS].equals("그래프"),"overview, gauges, graphs first");
         check(ClusterPicker.NAMES[ClusterPicker.F1].equals("F1")&&ClusterPicker.NAMES[ClusterPicker.CLASSIC].equals("클래식"),"then F1, the symmetric pages, the drawn layouts");
-        check(ClusterPicker.page(ClusterPicker.F1+1)==1&&ClusterPicker.page(ClusterPicker.CLASSIC)==5&&ClusterPicker.page(ClusterPicker.MANUAL-1)==19&&ClusterPicker.page(ClusterPicker.MANUAL)==20&&ClusterPicker.page(ClusterPicker.ECO)==21&&ClusterPicker.page(ClusterPicker.TACHO)==22,"screen after F1 maps to its PitRenderer page (서킷 19, 수동 20)");
+        check(ClusterPicker.page(ClusterPicker.F1+1)==1&&ClusterPicker.page(ClusterPicker.CLASSIC)==5&&ClusterPicker.page(ClusterPicker.MANUAL-1)==19&&ClusterPicker.page(ClusterPicker.MANUAL)==20&&ClusterPicker.page(ClusterPicker.ECO)==21&&ClusterPicker.page(ClusterPicker.TACHO)==22&&ClusterPicker.page(ClusterPicker.PASSENGER)==26,"screen after F1 maps to its PitRenderer page (서킷 19, 수동 20)");
         for(int i=0;i<ClusterPicker.SLOTS;i++){
             float x=ClusterPicker.left(i)+10,y=ClusterPicker.top(i)+10;
             check(ClusterPicker.hit(x,y)==i,"tile "+i+" hits itself");

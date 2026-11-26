@@ -42,6 +42,10 @@ public final class PitRenderer {
     private final LambdaCluster mtSport=new LambdaCluster();
     private final EcoCluster eco=new EcoCluster();
     private final TachoCluster tacho=new TachoCluster();
+    private final WrcCluster wrc=new WrcCluster();private final NeonCluster neon=new NeonCluster();
+    /** The screens after RPM, in ClusterPicker order (WRC, 아날로그, 네온, 동승자): drawn here like 에코 and RPM. */
+    private final ClusterKit[] more={wrc,new AnalogCluster(),neon,new PassengerCluster()};
+    private ClusterKit more(int pg){int i=pg-PAGE_TACHO-1;return i>=0&&i<more.length?more[i]:null;}
     private final ShowRenderer showRenderer=new ShowRenderer();
     private final ClusterRenderer clusterRenderer=new ClusterRenderer();
     public static final int PAGE_PERFORMANCE=1,PAGE_RACE=2,PAGE_RECORDS=3,PAGE_SHOW=4,PAGE_CLASSIC=5,PAGE_RETRO=6,PAGE_RALLY=7;
@@ -158,6 +162,7 @@ public final class PitRenderer {
         frameTime=now;samples=model.snapshot(now);profile=model.profile();thModel=model;
         clusterRenderer.tick(samples,now);   // trip totals of the layouts count on every page
         eco.prof=profile;eco.background(samples,now);   // the 에코 trip too
+        wrc.background(samples,now);   // the WRC stage timer
         Glide.rpm(samples,now);   // what is drawn from here on: the trip counts above take the samples as they came
         // The profile's range, so the "목표" label shows the target the cue really uses (a diesel's is 2100-4700).
         shiftTarget=ShiftGuide.target(target,profile);
@@ -175,6 +180,7 @@ public final class PitRenderer {
         else if(symmetric&&page==PAGE_MANUAL){mtSport.shiftTarget=shiftTarget;mtSport.frame(c,samples,model,stats,profile,frameTime,null);}
         else if(symmetric&&page==PAGE_ECO)eco.frame(c,samples,model,stats,profile,frameTime,null);
         else if(symmetric&&page==PAGE_TACHO){tacho.shiftTarget=shiftTarget;tacho.frame(c,samples,model,stats,profile,frameTime,null);}
+        else if(symmetric&&more(page)!=null){wrc.shiftTarget=neon.shiftTarget=shiftTarget;more(page).frame(c,samples,model,stats,profile,frameTime,null);}
         else if(symmetric&&isCluster(page))clusterRenderer.draw(c,page-PAGE_CLASSIC,samples,frameTime,stats,profile,model,music);
         else if(mediaPage)drawCombined(c);else if(cluster)drawCluster(c);else drawDashboard(c);
         // Pages without their own shift light (performance, show, every cluster layout) get the race tab's cue from the same
@@ -198,7 +204,7 @@ public final class PitRenderer {
     private Bitmap body,head;private int bodyKey,headKey;
     /** The dashboard went out of sight: the page and header bitmaps, the screen list's previews and every screen's kept
      *  bitmaps go (about 9 MB after a visit to 에코, RPM and 서킷), and come back as each is drawn again. UI thread. */
-    public void trim(){body=ClusterKit.recycle(body);head=ClusterKit.recycle(head);ClusterKit.recycle(thumbs);eco.trim();tacho.trim();clusterRenderer.trim();}
+    public void trim(){body=ClusterKit.recycle(body);head=ClusterKit.recycle(head);ClusterKit.recycle(thumbs);eco.trim();tacho.trim();for(ClusterKit k:more)k.trim();clusterRenderer.trim();}
     private static Bitmap canvasBitmap(Bitmap old,int w,int h){
         if(old!=null&&old.getWidth()==w&&old.getHeight()==h){old.eraseColor(0);return old;}
         return Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);
@@ -625,6 +631,7 @@ public final class PitRenderer {
             else if(pg==PAGE_MANUAL)mtSport.frame(c,samples,thModel,stats,profile,frameTime,null);
             else if(pg==PAGE_ECO)eco.frame(c,samples,thModel,stats,profile,frameTime,null);
             else if(pg==PAGE_TACHO){tacho.shiftTarget=shiftTarget;tacho.frame(c,samples,thModel,stats,profile,frameTime,null);}
+            else if(more(pg)!=null){wrc.shiftTarget=neon.shiftTarget=shiftTarget;more(pg).frame(c,samples,thModel,stats,profile,frameTime,null);}
             else if(isCluster(pg))clusterRenderer.draw(c,pg-PAGE_CLASSIC,samples,frameTime,stats,profile,thModel,null);
         }
     }

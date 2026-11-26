@@ -84,7 +84,7 @@ public final class TabsPreview {
         for(int i=0;i<layouts.length;i++){rec.setPage(PitRenderer.PAGE_CLASSIC+i);save(out,layouts[i],rec,model,now,false,false);}
         rec.setPicker(true,false,0);save(out,"9_cluster_list",rec,model,now,false,false);rec.setPicker(false,false,0);
         {   // trim (the dashboard out of sight): every screen with kept bitmaps draws the same after letting go of them
-            int[] pages=new int[layouts.length+3];for(int i=0;i<layouts.length;i++)pages[i]=PitRenderer.PAGE_CLASSIC+i;pages[layouts.length]=PitRenderer.PAGE_ECO;pages[layouts.length+1]=PitRenderer.PAGE_TACHO;pages[layouts.length+2]=PitRenderer.PAGE_CLASSIC;
+            int[] pages=new int[layouts.length+7];for(int i=0;i<layouts.length;i++)pages[i]=PitRenderer.PAGE_CLASSIC+i;pages[layouts.length]=PitRenderer.PAGE_ECO;pages[layouts.length+1]=PitRenderer.PAGE_TACHO;for(int i=0;i<4;i++)pages[layouts.length+2+i]=PitRenderer.PAGE_TACHO+1+i;pages[layouts.length+6]=PitRenderer.PAGE_CLASSIC;
             int bad=0;StringBuilder why=new StringBuilder();
             for(int pg:pages){BufferedImage[] im=new BufferedImage[2];
                 for(int m=0;m<2;m++){if(m==1)rec.trim();rec.setPage(pg);BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
@@ -526,6 +526,36 @@ public final class TabsPreview {
              new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),pf,now+i*1000,null);
              ImageIO.write(img,"png",new File(out,tcn[i]+".png"));}
         }
+        {   // WRC, 아날로그, 네온, 동승자 (the screens after RPM): the replay through PitRenderer, set moments, and no data at all
+         String[] mn={"9s_cluster_wrc","9t_cluster_analog","9u_cluster_neon","9v_cluster_passenger"};
+         for(int i=0;i<4;i++){rec.setPage(PitRenderer.PAGE_TACHO+1+i);for(int f=0;f<6;f++)save(out,mn[i],rec,model,now+f*50L,false,false);}   // a few frames: the needles ease in
+         for(int i=0;i<4;i++){PitRenderer e=new PitRenderer();e.setSymmetric(true);e.setPage(PitRenderer.PAGE_TACHO+1+i);save(out,mn[i]+"_nodata",e,new Telemetry(),now,false,false);}
+         int[] ix={7,0,8,9,10,11,12,Telemetry.STEERING,2,Telemetry.BOOST,Telemetry.OIL_ECU};
+         // WRC: a stage four minutes in, three corners behind (3 R, 5 L, 2 R), now in a 4 L at 0.7 G
+         {WrcCluster k=new WrcCluster();k.shiftTarget=6000;long t0=now-240000;float[][] seq={{-100,0},{40,0},{0,0},{-170,0},{0,0},{70,0.7f}};   // raw wheel angles: + is a left turn of the wheel
+          BufferedImage img=null;
+          k.background(with(model,now,ix,new float[]{40,3000,2,30,0,0,0,0,92,0.2f,98}),t0);   // moved off four minutes ago
+          for(int f=0;f<=96;f++){long t=now-4800+f*50L;float[] st=seq[Math.min(seq.length-1,f/16)];
+              Telemetry.Sample[] q=with(model,now,ix,new float[]{72,5200,3,64,0,st[1],0.05f,st[0],92,0.9f,98});k.background(q,t);
+              img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+              new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);}
+          ImageIO.write(img,"png",new File(out,"9s_wrc_corner.png"));}
+         // 네온: 300 rpm before the shift target (the glitch), and overheating at the target
+         for(int n=0;n<2;n++){NeonCluster k=new NeonCluster();k.shiftTarget=6000;
+              Telemetry.Sample[] q=with(model,now,ix,new float[]{118,n==0?5700:6050,3,100,0,0.1f,0.4f,4,n==0?96:116,1.3f,104});
+              BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+              new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,now+n*70,null);
+              ImageIO.write(img,"png",new File(out,n==0?"9u_neon_glitch.png":"9u_neon_hot.png"));}
+         // 동승자: a right-hand bend at 0.5 G with this drive's records behind it
+         {PassengerCluster k=new PassengerCluster();DriveStats d=new DriveStats();long t0=now-20000;
+          for(int f=0;f<400;f++){float la=-0.5f*Math.min(1,f/400f),lo=f<300?0.15f:-0.1f;d.update(t0+f*50L,90,t0+f*50L,4200,0.6f,la,lo,t0+f*50L,90,40);}
+          d.best[0]=7.84f;d.best[2]=6.12f;d.maxSpeed=163;
+          Telemetry.Sample[] q=with(model,now,ix,new float[]{88,4200,4,40,0,-0.5f,-0.1f,60,90,0.6f,96});
+          BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+          new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,d,VehicleProfile.PETROL_DCT,t0+20000,null);
+          ImageIO.write(img,"png",new File(out,"9v_passenger_corner.png"));}
+         rec.setPage(PitRenderer.PAGE_CLASSIC);
+        }
         // 수동 screen (the Λ layout, 6MT): {gear, km/h, rpm, clutch, brake bar}; the race and performance pages turn the rpm green on a match
         float[][] ds={{4,80,1500,1,22},{5,100,2800,0,0},{3,60,2800,0,25},{6,96,2200,0,0},{4,80,3720,1,22},{3,122,5750,0,0}};String[] dsn={"a_4th80_clutch","b_5th100_cruise","c_3rd60_brake","d_6th96","e_4th80_match","f_3rd122_upshift"};
         for(int k=0;k<ds.length;k++){Telemetry.Sample[] q=model.snapshot(now);float[] d=ds[k];
@@ -544,6 +574,8 @@ public final class TabsPreview {
                 img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);c=new android.graphics.Canvas(img.createGraphics());bgR.draw(c,800,480,false,model,now,0,false,null);c.drawRect(0,53,800,480,bg);
                 new PerformanceRenderer().draw(c,q,null,now,VehicleProfile.PETROL_MT);ImageIO.write(img,"png",new File(out,"x_perf_mt_match.png"));}}
     }
+    /** The snapshot with some signals set (received, fresh). */
+    private static Telemetry.Sample[] with(Telemetry m,long now,int[] idx,float[] val){Telemetry.Sample[] q=m.snapshot(now);for(int i=0;i<idx.length;i++)q[idx[i]]=new Telemetry.Sample(val[i],true,false,true,false,0);return q;}
     private static void feed(Telemetry model,String hex,long now){
         byte[] b=new byte[hex.length()/2];
         for(int i=0;i<b.length;i++)b[i]=(byte)Integer.parseInt(hex.substring(i*2,i*2+2),16);

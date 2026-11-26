@@ -60,6 +60,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/SoundYield.java",
                ROOT / "shared/src/com/veloster/vehicle/Commute.java",
                ROOT / "shared/src/com/veloster/vehicle/Tbt.java",
+               ROOT / "shared/src/com/veloster/vehicle/PaceNote.java",
                ROOT / "shared/src/com/veloster/i18n/UiText.java",
                ROOT / "shared/src/com/veloster/diagnostics/ErrorLog.java",
                ROOT / "apps/dashboard/src/com/veloster/dashboard/HscanFrameDecoder.java"]

@@ -36,12 +36,10 @@ done
 [ -f "$SRC/scripts/build.py" ] || { echo "No checkout at $SRC: run with  -v <checkout>:/src" >&2; exit 2; }
 cd "$SRC"
 
-# The dashboard's versionName tells the builds apart on the car (설정 → 진단, the installers): local-<MMDD>-<commit>,
-# with -dirty when the checkout has uncommitted changes. versionCode stays the manifest's.
-if [ -z "$name" ]; then
-  name=local-$(git log -1 --format=%cd-%h --date=format:%m%d 2>/dev/null || echo nogit)
-  [ -z "$(git status --porcelain 2>/dev/null)" ] || name+=-dirty
-fi
+# The versionName the car shows (설정 → 진단, the installers) is each app's own, from its AndroidManifest.xml: this
+# fork's version lives there (dashboard v1.17.13 = the upstream's v1.17.12, where the fork began, + 1). --version-name
+# (or VERSION_NAME) puts another name on the dashboard for one build. versionCode stays the manifest's either way.
+manifest_name(){ sed -n 's/.*android:versionName="\([^"]*\)".*/\1/p' "apps/$1/AndroidManifest.xml" | head -n 1; }
 
 if [ $tests = 1 ]; then
   echo "== host tests"
@@ -55,9 +53,10 @@ fi
 WORK=$(mktemp -d)
 mkdir -p "$OUT"
 for app in "${apps[@]}"; do
-  if [ "$app" = dashboard ]; then final=dashboard-i30pd-platform.apk; named=(--version-name "$name")
-  else final=myapps-i30pd-platform.apk; named=(); fi
-  echo "== build $app${named[1]:+ ($name)}"
+  named=()
+  if [ "$app" = dashboard ]; then final=dashboard-i30pd-platform.apk; [ -z "$name" ] || named=(--version-name "$name")
+  else final=myapps-i30pd-platform.apk; fi
+  echo "== build $app (${named[1]:-$(manifest_name "$app")})"
   python3 scripts/build.py "$app" --java "$JAVA" \
     --android-jar "$ANDROID_SDK/platforms/$PLATFORM/android.jar" \
     --aapt2 "$BT/aapt2" --r8-jar "$BT/lib/d8.jar" \

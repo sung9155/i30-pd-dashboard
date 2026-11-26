@@ -3,7 +3,7 @@
 #
 #   .\docker\build.ps1                                # host tests, dashboard + My Apps
 #   .\docker\build.ps1 dashboard --no-tests
-#   .\docker\build.ps1 dashboard --version-name v1.17.13
+#   .\docker\build.ps1 dashboard --version-name v1.17.13-try2   # another name for one build (default: the manifest's)
 #   .\docker\build.ps1 -Rebuild                       # build the image again (new tool versions in the Dockerfile)
 #   .\docker\build.ps1 -Save i30pd-build.tar          # the image as a file (docker load -i brings it back, offline)
 #

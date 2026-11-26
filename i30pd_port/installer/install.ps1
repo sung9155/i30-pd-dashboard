@@ -11,6 +11,8 @@
               -Diag(설치하지 않고 진단 기록 파일만 만든다)
               -BootFast(시동 안내 화면 10초 → 1초: 이 차의 순정 SystemUI를 이 PC에서 고쳐 설치) -BootFastRemove(순정으로 되돌리기)
               시험용: -JavaPath <java.exe> -ToolDir <도구 폴더(받기 생략)>
+  새 설치기: 시작할 때 이 설치기가 나온 릴리스($InstallerChannel: 안정화 = 최신 정식, 테스트 = 'test')의 설치기 ZIP이 더 새것이면
+             묻고 이 폴더의 파일을 바꾼 뒤 같은 인자로 다시 시작한다. 시험용: I30PD_API(릴리스 API 주소, 가짜 서버)
 #>
 param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switch]$Uninstall, [switch]$Diag,
       [switch]$BootFast, [switch]$BootFastRemove, [string]$JavaPath, [string]$ToolDir)
@@ -19,6 +21,7 @@ param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switc
 # command's stderr turns into a terminating error (NativeCommandError) that aborts the
 # script mid-install. Cmdlets that need try/catch get -ErrorAction Stop explicitly.
 $ErrorActionPreference = 'Continue'
+$Bound = @{} + $PSBoundParameters   # 새 설치기로 다시 시작할 때 같은 인자를 넘긴다
 # 한글이 두 번씩 찍히던 문제(2026-11-04 사진, Windows 터미널): Invoke-WebRequest의 진행률 상자가 창 위쪽을 덮었다가
 # 원래 글자를 다시 써 넣을 때, 2칸 글자(한글)의 오른쪽 반 칸이 글자로 한 번 더 그려진다. 진행률 상자를 띄우지 않는다
 # (받는 중 안내는 이 스크립트가 직접 찍고, PowerShell 5.1에서는 받기도 훨씬 빨라진다).
@@ -62,7 +65,8 @@ function Write-Host {
   foreach($part in ([string]$Object -split "`r?`n")){ foreach($l in (Fit $part)){ Microsoft.PowerShell.Utility\Write-Host $l @p } }
 }
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-27'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-27b'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerChannel = 'stable'   # 이 설치기가 나온 곳: stable = 최신 정식 릴리스, test = 'test' 사전 배포. ZIP을 만들 때 scripts/release.py installers가 적는다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
 # 위와 같고, 2026-10-31 실차 설치·동작 확인(다른 LOW 차 한 대는 USB "장치 설명자 요청 실패" — 그 차 포트·배선 문제로 봄).
@@ -72,7 +76,7 @@ $PT_URL = 'https://dl.google.com/android/repository/platform-tools-latest-window
 $USB_URL = 'https://dl.google.com/android/repository/usb_driver_r13-windows.zip'
 # APK를 폴더에서 못 찾으면 공개 배포 레포에서 받는다: 안정화 = 최신 정식 릴리스, 테스트 = 'test' 사전 배포(덮어쓰며 갱신).
 $Releases = 'https://github.com/sung9155/i30-pd-dashboard/releases'
-$Raw = 'https://raw.githubusercontent.com/sung9155/i30-pd-dashboard'   # 새 설치기 확인용(main = 안정화, beta = 테스트)
+$Api = $(if($env:I30PD_API){ $env:I30PD_API.TrimEnd('/') } else { 'https://api.github.com/repos/sung9155/i30-pd-dashboard/releases' })   # I30PD_API: 시험용
 $Apps = @(
   [pscustomobject]@{ apk='dashboard-i30pd-platform.apk'; pkg='com.veloster.dashboard'; name='대시보드' },
   [pscustomobject]@{ apk='myapps-i30pd-platform.apk';   pkg='com.veloster.carplayhub'; name="'내 앱'" }
@@ -173,6 +177,58 @@ Note '현대자동차 공식 앱이 아닙니다. 순정 시스템에 앱을 설
 Note '책임은 본인에게 있습니다. 모든 작업은 정차 · 시동 켠 상태에서 하세요.' Yellow
 Note "기록: $Log" DarkGray
 
+# --- 새 설치기 (막지는 않는다) ------------------------------------------------------
+# 이 설치기가 나온 릴리스(안정화 = 최신 정식, 테스트 = 'test')의 Windows ZIP을 받아, 릴리스 정보의 크기·SHA-256과 맞고 풀어서
+# install.ps1·설치.cmd가 있을 때만 그 안의 $InstallerVersion과 비교한다. 더 새것이면 묻고, 예면 이 폴더의 파일을 바꾸고 같은 인자로
+# 다시 시작한다. 인터넷이 없거나 무엇이든 틀리면 지금 설치기로 계속한다(platform-tools·APK 등 다른 파일은 건드리지 않는다).
+function SelfUpdate(){
+  if($env:I30PD_UPDATED){ return }   # 방금 바꿔 다시 시작한 것
+  $ch = $(if($InstallerChannel -eq 'test'){ '테스트' } else { '안정화' })
+  $up = Join-Path $LogDir 'update'; $zip = Join-Path $up 'installer.zip'; $dir = Join-Path $up 'new'
+  try {
+    try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072 } catch {}   # TLS 1.2 on older Windows
+    $which = $(if($InstallerChannel -eq 'test'){ 'tags/test' } else { 'latest' })
+    $r = Invoke-WebRequest -Uri "$Api/$which" -UseBasicParsing -TimeoutSec 8 -Headers @{ 'User-Agent' = 'i30pd-installer' } -ErrorAction Stop
+    $a = @(([Text.Encoding]::UTF8.GetString($r.RawContentStream.ToArray()) | ConvertFrom-Json).assets | Where-Object { $_.name -eq 'i30pd-installer-windows.zip' })[0]
+    if(-not $a){ Log "새 설치기 확인: 릴리스($which)에 Windows 설치기 ZIP 없음"; return }
+    Remove-Item -Recurse -Force -LiteralPath $up -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Force -Path $up | Out-Null
+    Invoke-WebRequest -Uri $a.browser_download_url -OutFile $zip -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop
+  } catch { Log "새 설치기 확인 못 함: $($_.Exception.Message)"; return }
+  $v = $null; $bad = $null
+  try {
+    $len = (Get-Item -LiteralPath $zip).Length; $sha = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLower()
+    if($len -ne [long]$a.size){ $bad = "크기가 릴리스 정보와 다름($len B)" }
+    elseif($a.digest -and $a.digest -ne "sha256:$sha"){ $bad = "SHA-256이 릴리스 정보와 다름($sha)" }
+    else {
+      Expand-Archive -LiteralPath $zip -DestinationPath $dir -Force -ErrorAction Stop
+      $new = Join-Path $dir 'install.ps1'
+      if(-not (Test-Path -LiteralPath $new) -or -not (Test-Path -LiteralPath (Join-Path $dir '설치.cmd'))){ $bad = 'ZIP에 install.ps1·설치.cmd가 없음' }
+      elseif([IO.File]::ReadAllText($new) -match "InstallerVersion = '(\d{4}-\d\d-\d\d[^']*)'"){ $v = $Matches[1] }
+      else { $bad = 'install.ps1에서 버전을 읽지 못함' }
+    }
+  } catch { $bad = "ZIP을 풀지 못함($($_.Exception.Message))" }
+  if($bad){ Note "새 설치기($ch)를 받았지만 확인이 맞지 않아 쓰지 않습니다: $bad. 지금 설치기로 계속합니다." Yellow; return }
+  Log "새 설치기 확인($which): $v, 지금 $InstallerVersion"
+  if([string]::CompareOrdinal($v, $InstallerVersion) -le 0){ return }
+  Note "새 설치기가 나왔습니다: $v ($ch, 지금 쓰는 것 $InstallerVersion)" Yellow
+  if(-not (Ask '새 설치기로 바꾸고 다시 시작할까요? (아니오: 지금 설치기로 계속)')){ Log '새 설치기: 바꾸지 않음'; return }
+  try {
+    # 내용이 같은 파일은 건드리지 않는다: 설치.cmd는 cmd가 실행 중에도 다음 줄을 다시 읽는다. install.ps1은 이미 다 읽어 둔 상태라 바꿔도 된다.
+    foreach($f in (Get-ChildItem -LiteralPath $dir -File)){
+      $dst = Join-Path $ROOT $f.Name
+      if((Test-Path -LiteralPath $dst) -and (Get-FileHash -LiteralPath $dst).Hash -eq (Get-FileHash -LiteralPath $f.FullName).Hash){ continue }
+      Copy-Item -LiteralPath $f.FullName -Destination $dst -Force -ErrorAction Stop
+    }
+  } catch { Note "새 설치기로 바꾸지 못했습니다($($_.Exception.Message)). 지금 설치기로 계속합니다." Yellow; return }
+  Note "새 설치기($v)로 바꿨습니다. 다시 시작합니다." Green
+  $env:I30PD_UPDATED = '1'
+  $argv = @(); foreach($k in $Bound.Keys){ if($Bound[$k] -is [switch]){ if($Bound[$k]){ $argv += "-$k" } } else { $argv += "-$k"; $argv += [string]$Bound[$k] } }
+  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $ROOT 'install.ps1') @argv
+  exit $LASTEXITCODE
+}
+SelfUpdate
+
 # --- adb 찾기/받기 ------------------------------------------------------------
 Head '1) adb 준비'
 if($AdbPath){ $script:adbExe = $AdbPath }
@@ -199,7 +255,6 @@ Note "adb: $script:adbExe" DarkGray
 Log ("환경: Windows $([Environment]::OSVersion.Version) / PowerShell $($PSVersionTable.PSVersion) / " + ((& $script:adbExe version 2>&1 | Select-Object -First 1) -join ''))
 
 # --- 릴리스 정보: 고를 버전의 번호·날짜와 노트 요약 (휴대폰 앱 Flow.describe/summary, 설치.command와 같은 규칙) ---
-$Api = 'https://api.github.com/repos/sung9155/i30-pd-dashboard/releases'
 function CleanMd([string]$t){ $t = [regex]::Replace($t, '\[([^\]]+)\]\([^)]+\)', '$1'); return $t.Replace('**','').Replace('`','') }
 function ShortLine([string]$t){
   $i = $t.IndexOf('다. '); if($i -lt 0){ $i = $t.IndexOf('. ') }
@@ -259,19 +314,6 @@ if(-not $Uninstall -and -not $Diag -and -not $BootFast -and -not $BootFastRemove
     if($Channel -eq 'test'){ Note '버전: 테스트 (실차 검증 전)' Yellow } else { Note '버전: 안정화' Green }
     ShowNotes $Rel[$Channel] $(if($Channel -eq 'test'){ "$Releases/tag/test" } else { "$Releases/latest" })
   }
-}
-
-# --- 새 설치기 확인 (막지는 않는다) ---------------------------------------------
-# 레포에 올라간 install.ps1의 $InstallerVersion과 비교한다. 테스트를 고른 사람에게만 beta(테스트) 설치기도 알린다.
-foreach($b in $(if($Channel -eq 'test'){ @('main','beta') } else { @('main') })){
-  try {
-    $c = (Invoke-WebRequest -Uri "$Raw/$b/i30pd_port/installer/install.ps1" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop).Content
-    if($c -is [byte[]]){ $c = [Text.Encoding]::UTF8.GetString($c) }
-    if($c -match "InstallerVersion = '([^']+)'" -and [string]::CompareOrdinal($Matches[1], $InstallerVersion) -gt 0){
-      $where = $(if($b -eq 'main'){ "안정화 $($Matches[1]) — $Releases/latest" } else { "테스트 $($Matches[1]) — $Releases/tag/test" })
-      Note "새 설치기가 있습니다($where). 그 ZIP을 다시 받아 쓰세요. 이번에는 그대로 계속합니다." Yellow
-    }
-  } catch { Log "설치기 버전 확인 실패($b): $($_.Exception.Message)" }
 }
 
 # --- APK 준비 (폴더에 있으면 쓰고, 없으면 공개 레포에서 받기) -----------------

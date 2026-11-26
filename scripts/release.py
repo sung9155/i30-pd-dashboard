@@ -14,8 +14,14 @@ test: HEAD must be origin/beta. Replaces the dashboard APK of the `test` release
 the notes from the CURRENT GitHub text (other sessions edit them too): title and the stable version in the header.
 Nothing outward-facing happens without --publish. Needs git, gh (logged in), JDK 17, Android build-tools.
 Overrides: JAVA_HOME, ANDROID_SDK, KEY_DIR (platform.pk8 + platform.x509.pem), RELEASE_ROOT (the checkout to release).
+
+  python scripts/release.py installers stable|test --out DIR   # the three PC installer ZIPs, nothing published
+
+installers: builds i30pd-installer-windows/mac/linux.zip from i30pd_port/installer with the channel written into
+install.ps1 / 설치.command (the installer checks that same release for a newer installer of itself). Upload them to
+the stable release or to `test` with  gh release upload <tag> DIR/*.zip --clobber.
 """
-import argparse, hashlib, json, os, re, shutil, subprocess, sys, tempfile, urllib.request
+import argparse, hashlib, json, os, re, shutil, subprocess, sys, tempfile, time, urllib.request, zipfile
 from pathlib import Path
 
 ROOT = Path(os.environ.get("RELEASE_ROOT") or Path(__file__).resolve().parents[1])   # RELEASE_ROOT: run it against another checkout
@@ -189,6 +195,46 @@ def test(a):
             print("The `test` tag is behind beta; to move it:  git tag -f test HEAD && git push -f origin refs/tags/test   (or pass --move-tag)")
 
 
+INST = ROOT / "i30pd_port/installer"
+ZIPS = {   # asset: (name in the ZIP, file in i30pd_port/installer, mode) — the layout of the ZIPs released so far
+    "i30pd-installer-windows.zip": [("설치.cmd", "설치.cmd", 0o777), ("삭제.cmd", "삭제.cmd", 0o777), ("진단기록.cmd", "진단기록.cmd", 0o777),
+                                    ("install.ps1", "install.ps1", 0o666), ("알수없는장치_해결.pdf", "알수없는장치_해결.pdf", 0o666)],
+    "i30pd-installer-mac.zip": [("설치.command", "설치.command", 0o755), ("삭제.command", "삭제.command", 0o755),
+                                ("진단기록.command", "진단기록.command", 0o755)],
+    "i30pd-installer-linux.zip": [("install.sh", "설치.command", 0o755), ("uninstall.sh", "linux/uninstall.sh", 0o755),
+                                  ("diag.sh", "linux/diag.sh", 0o755)],
+}
+
+
+def stamp(data, src, channel, label):
+    """Write the channel (and, for tests, a version) into install.ps1 / 설치.command; refuse a file with the wrong line endings."""
+    if src == "install.ps1" and not (data.startswith(b"\xef\xbb\xbf") and b"\r\n" in data):
+        sys.exit("install.ps1 must be UTF-8 with BOM and CRLF (Windows PowerShell 5.1 reads Korean only then).")
+    if src.endswith(".command") or src.endswith(".sh"):
+        if b"\r" in data:
+            sys.exit(src + " has CR line endings; bash would fail on it.")
+    if src not in ("install.ps1", "설치.command"):
+        return data
+    for key, val in (("InstallerChannel|INSTALLER_CHANNEL", channel), ("InstallerVersion|INSTALLER_VERSION", label)):
+        if val:
+            data, n = re.subn(rb"^(\$?(?:" + key.encode() + rb")\s*=\s*)'[^']*'", lambda m: m[1] + b"'" + val.encode() + b"'", data, count=1, flags=re.M)
+            if n != 1:
+                sys.exit(f"{src}: no {key} line to stamp")
+    return data
+
+
+def installers(a):
+    out = Path(a.out)
+    out.mkdir(parents=True, exist_ok=True)
+    for asset, files in ZIPS.items():
+        with zipfile.ZipFile(out / asset, "w", zipfile.ZIP_DEFLATED) as z:
+            for name, src, mode in files:
+                zi = zipfile.ZipInfo(name, time.localtime()[:6])
+                zi.create_system, zi.external_attr, zi.compress_type = 3, (0o100000 | mode) << 16, zipfile.ZIP_DEFLATED   # unix mode: unzip keeps +x
+                z.writestr(zi, stamp((INST / src).read_bytes(), src, a.channel, a.label))
+        print(f"{asset}: {(out / asset).stat().st_size:,} B  sha256 {sha(out / asset)}  ({a.channel})")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     s = p.add_subparsers(dest="cmd", required=True)
@@ -201,8 +247,12 @@ def main():
     te = s.add_parser("test")
     te.add_argument("--publish", action="store_true")
     te.add_argument("--move-tag", action="store_true")
+    ins = s.add_parser("installers")
+    ins.add_argument("channel", choices=("stable", "test"))
+    ins.add_argument("--out", required=True)
+    ins.add_argument("--label", help=argparse.SUPPRESS)   # tests: a different installer version in the ZIP
     a = p.parse_args()
-    {"stable": stable, "test": test}[a.cmd](a)
+    {"stable": stable, "test": test, "installers": installers}[a.cmd](a)
 
 
 if __name__ == "__main__":

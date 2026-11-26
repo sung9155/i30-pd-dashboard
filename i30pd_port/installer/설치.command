@@ -10,11 +10,14 @@
 #              --diag(설치하지 않고 진단 기록 파일만 만든다)
 #              --boot-fast(시동 안내 화면 10초 → 1초: 이 차의 순정 SystemUI를 이 PC에서 고쳐 설치) --boot-fast-remove(순정으로 되돌리기)
 #              시험용: --java <java> --tool-dir <도구 폴더(받기 생략)>
+# 새 설치기: 시작할 때 이 설치기가 나온 릴리스(INSTALLER_CHANNEL: 안정화 = 최신 정식, 테스트 = 'test')의 설치기 ZIP이 더 새것이면
+#            묻고 이 폴더의 파일을 바꾼 뒤 같은 인자로 다시 시작한다. 시험용: I30PD_API(릴리스 API 주소, 가짜 서버)
 
-ROOT="$(cd "$(dirname "$0")" && pwd)"; ME="$(basename "$0")"
+ROOT="$(cd "$(dirname "$0")" && pwd)"; ME="$(basename "$0")"; ARGS=("$@")   # ARGS: 새 설치기로 다시 시작할 때 그대로 넘긴다
 # OS: Darwin(맥) / Linux. I30PD_OS로 바꿀 수 있다(시험 도구가 Windows Git Bash에서 리눅스 경로를 돌릴 때).
 OS="${I30PD_OS:-$(uname -s)}"; [ "$OS" = Darwin ] || OS=Linux
-INSTALLER_VERSION='2026-11-27'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+INSTALLER_VERSION='2026-11-27b'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+INSTALLER_CHANNEL='stable'   # 이 설치기가 나온 곳: stable = 최신 정식 릴리스, test = 'test' 사전 배포. ZIP을 만들 때 scripts/release.py installers가 적는다.
 VERIFIED_BUILD='eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 LOW_BUILD='eng.vmadmin.20260114.084725'        # 블루링크 없는 D-Audio Plus LOW — 2026-10-31 실차 설치·동작 확인
 OLD_BUILD='eng.vmadmin.20240205.105401'        # 블루링크 D-Audio Plus 2024-02 빌드 — 2026-11-03 같은 차종 실차에서 설치·값 확인
@@ -24,7 +27,7 @@ if [ "$OS" = Darwin ]; then PT_URL='https://dl.google.com/android/repository/pla
 else case "$(uname -m)" in x86_64|amd64) PT_URL='https://dl.google.com/android/repository/platform-tools-latest-linux.zip' ;; esac; fi
 # 안정화 = 최신 정식 릴리스, 테스트 = 'test' 사전 배포(덮어쓰며 갱신). --apk-base 를 주면 그 주소를 그대로 쓴다.
 RELEASES='https://github.com/sung9155/i30-pd-dashboard/releases'
-RAW='https://raw.githubusercontent.com/sung9155/i30-pd-dashboard'   # 새 설치기 확인용(main = 안정화, beta = 테스트)
+API="${I30PD_API:-https://api.github.com/repos/sung9155/i30-pd-dashboard/releases}"; API="${API%/}"   # I30PD_API: 시험용
 APK_BASE=''
 APKS='dashboard-i30pd-platform.apk myapps-i30pd-platform.apk'
 ADB=''; YES=''; UNINSTALL=''; CHANNEL=''; DIAG=''; BOOT_FAST=''; BOOT_REMOVE=''; JAVA_PATH=''; TOOL_DIR=''
@@ -127,6 +130,52 @@ warn '현대자동차 공식 앱이 아닙니다. 순정 시스템에 앱을 설
 warn '책임은 본인에게 있습니다. 모든 작업은 정차 · 시동 켠 상태에서 하세요.'
 note "기록: $LOG"
 
+# --- 새 설치기 (막지는 않는다) ------------------------------------------------------
+# 이 설치기가 나온 릴리스(안정화 = 최신 정식, 테스트 = 'test')의 ZIP(맥 -mac, 리눅스 -linux)을 받아, 릴리스 정보의 크기·SHA-256과 맞고
+# 풀어서 이 스크립트가 있을 때만 그 안의 INSTALLER_VERSION과 비교한다. 더 새것이면 묻고, 예면 이 폴더의 파일을 바꾸고 같은 인자로
+# 다시 시작한다. 인터넷이 없거나 무엇이든 틀리면 지금 설치기로 계속한다(platform-tools·APK 등 다른 파일은 건드리지 않는다).
+sha_() { if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -d' ' -f1; }
+asset_meta() {   # $1 = 릴리스 JSON, $2 = 자산 이름 → "크기 digest 주소" (맥은 기본 JavaScript, 그 밖은 python3; 못 읽으면 빈 줄)
+  if command -v osascript >/dev/null; then osascript -l JavaScript - "$1" "$2" 2>>"$LOG" <<'JXA'
+function run(argv){ObjC.import('Foundation');var r=JSON.parse($.NSString.stringWithContentsOfFileEncodingError(argv[0],$.NSUTF8StringEncoding,null).js);
+  var a=(r.assets||[]).filter(function(x){return x.name===argv[1];})[0];return a?[a.size,a.digest||'-',a.browser_download_url].join(' '):'';}
+JXA
+  elif command -v python3 >/dev/null; then python3 -I -c 'import json,sys
+a=[x for x in json.load(open(sys.argv[1],encoding="utf-8")).get("assets") or [] if x.get("name")==sys.argv[2]]
+a and print(a[0]["size"], a[0].get("digest") or "-", a[0]["browser_download_url"])' "$1" "$2" 2>>"$LOG"; fi
+}
+self_update() {
+  [ -n "$I30PD_UPDATED" ] && return 0   # 방금 바꿔 다시 시작한 것
+  command -v curl >/dev/null || return 0
+  local ch=안정화 which=latest main=install.sh asset=i30pd-installer-linux.zip up="$LOGDIR/update" meta v='' bad='' f n
+  [ "$INSTALLER_CHANNEL" = test ] && { ch=테스트; which=tags/test; }
+  [ "$OS" = Darwin ] && { main=설치.command; asset=i30pd-installer-mac.zip; }
+  rm -rf "$up"; mkdir -p "$up/new"
+  curl -fsS --max-time 8 -H 'User-Agent: i30pd-installer' -o "$up/release.json" "$API/$which" 2>>"$LOG" || { log "새 설치기 확인 못 함($which)"; return 0; }
+  meta="$(asset_meta "$up/release.json" "$asset")"; [ -n "$meta" ] || { log "새 설치기 확인: 릴리스($which)에 $asset 없음(또는 읽지 못함)"; return 0; }
+  set -- $meta   # 크기 digest 주소
+  curl -fsSL --connect-timeout 15 --max-time 60 -o "$up/installer.zip" "$3" 2>>"$LOG" || { log "새 설치기 받기 실패: $3"; return 0; }
+  if [ "$(wc -c < "$up/installer.zip" | tr -d ' ')" != "$1" ]; then bad='크기가 릴리스 정보와 다름'
+  elif [ "$2" != - ] && [ "$2" != "sha256:$(sha_ "$up/installer.zip")" ]; then bad='SHA-256이 릴리스 정보와 다름'
+  elif ! { if command -v unzip >/dev/null; then unzip -qo "$up/installer.zip" -d "$up/new"; else python3 -I -m zipfile -e "$up/installer.zip" "$up/new"; fi; } >>"$LOG" 2>&1; then bad='ZIP을 풀지 못함'
+  elif [ ! -f "$up/new/$main" ]; then bad="ZIP에 $main 이 없음"
+  else v="$(sed -n "s/^INSTALLER_VERSION='\([0-9]\{4\}-[0-9][0-9]-[0-9][0-9][^']*\)'.*/\1/p" "$up/new/$main" | head -1)"; [ -n "$v" ] || bad="$main 에서 버전을 읽지 못함"; fi
+  if [ -n "$bad" ]; then warn "새 설치기($ch)를 받았지만 확인이 맞지 않아 쓰지 않습니다: $bad. 지금 설치기로 계속합니다."; return 0; fi
+  log "새 설치기 확인($which): $v, 지금 $INSTALLER_VERSION"
+  { [ "$v" != "$INSTALLER_VERSION" ] && [ "$(printf '%s\n%s\n' "$v" "$INSTALLER_VERSION" | LC_ALL=C sort | tail -1)" = "$v" ]; } || return 0
+  warn "새 설치기가 나왔습니다: $v ($ch, 지금 쓰는 것 $INSTALLER_VERSION)"
+  ask '새 설치기로 바꾸고 다시 시작할까요? (아니오: 지금 설치기로 계속)' || { log '새 설치기: 바꾸지 않음'; return 0; }
+  # bash는 실행 중인 스크립트를 읽어 가며 돌아서 덮어쓰면 안 된다: 옆에 쓴 뒤 mv로 이름만 바꾼다(지금 도는 옛 파일은 끝까지 그대로).
+  for f in "$up/new"/*; do
+    n="$(basename "$f")"
+    { cp "$f" "$ROOT/.$n.new" && chmod +x "$ROOT/.$n.new" && mv -f "$ROOT/.$n.new" "$ROOT/$n"; } 2>>"$LOG" \
+      || { rm -f "$ROOT/.$n.new"; warn "새 설치기로 바꾸지 못했습니다($ROOT). 지금 설치기로 계속합니다."; return 0; }
+  done
+  ok "새 설치기($v)로 바꿨습니다. 다시 시작합니다."
+  I30PD_UPDATED=1 exec bash "$ROOT/$main" "${ARGS[@]}"
+}
+self_update
+
 # --- adb 찾기/받기 ------------------------------------------------------------
 head_ '1) adb 준비'
 if [ -z "$ADB" ]; then
@@ -159,7 +208,6 @@ note "adb: $ADB"
 log "환경: $(os_name) / $(uname -m) / $("$ADB" version 2>&1 | head -1)"
 
 # --- 릴리스 정보: 고를 버전의 번호·날짜와 노트 요약 (install.ps1 NotesSummary, 휴대폰 앱 Flow.summary와 같은 규칙) ---
-API='https://api.github.com/repos/sung9155/i30-pd-dashboard/releases'
 # 첫 줄 = 화면용 제목, 나머지 = 노트 요약. 받지 못하면 아무것도 내지 않는다. JSON은 macOS 기본 JavaScript(osascript)로 읽는다.
 rel_info() {   # $1 = latest | tags/test, $2 = 1 이면 테스트
   local f="$LOGDIR/release_$2.json"
@@ -246,16 +294,6 @@ if [ -z "$UNINSTALL$DIAG$BOOT_FAST$BOOT_REMOVE" ] && [ -z "$APK_BASE" ]; then
     else APK_BASE="$RELEASES/latest/download"; note '버전: 안정화'; show_notes "$REL_S" "$RELEASES/latest"; fi
   fi
 fi
-
-# --- 새 설치기 확인 (막지는 않는다) ---------------------------------------------
-# 레포에 올라간 설치.command의 INSTALLER_VERSION과 비교한다. 테스트를 고른 사람에게만 beta(테스트) 설치기도 알린다.
-for b in main $([ "$CHANNEL" = test ] && echo beta); do
-  v="$(curl -fsS --max-time 5 "$RAW/$b/i30pd_port/installer/%EC%84%A4%EC%B9%98.command" 2>>"$LOG" | sed -n "s/^INSTALLER_VERSION='\([^']*\)'.*/\1/p" | head -1)"
-  if [ -n "$v" ] && [ "$(printf '%s\n%s\n' "$v" "$INSTALLER_VERSION" | LC_ALL=C sort | tail -1)" != "$INSTALLER_VERSION" ]; then
-    [ $b = main ] && where="안정화 $v — $RELEASES/latest" || where="테스트 $v — $RELEASES/tag/test"
-    warn "새 설치기가 있습니다($where). 그 ZIP을 다시 받아 쓰세요. 이번에는 그대로 계속합니다."
-  fi
-done
 
 # --- APK 준비 (폴더에 있으면 쓰고, 없으면 공개 레포에서 받기) -----------------
 NO_APPS="$UNINSTALL$DIAG$BOOT_FAST$BOOT_REMOVE"   # these modes install no app
@@ -396,7 +434,6 @@ fi
 # --- 시동 안내 화면 1초: 되돌리기 · 설치 (위 SYSUI_KNOWN 설명 참고) -----------------------------------------
 sysui_path() { adb_ -s "$SERIAL" shell pm path com.android.systemui | tr -d '\r\n ' | sed 's/^package://'; }
 sysui_code() { adb_ -s "$SERIAL" shell dumpsys package com.android.systemui | tr -d '\r' | sed -n 's/.*versionCode=\([0-9]*\).*/\1/p' | head -1; }
-sha_() { if command -v sha256sum >/dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -d' ' -f1; }
 BOOT_HINT='내비가 응답하지 않습니다. 차 화면에 확인 창이 떠 있으면 누르고, 없으면 시동을 껐다 켠 뒤 다시 실행하세요.'
 if [ -n "$BOOT_REMOVE" ]; then
   head_ '시동 안내 화면 원래대로'

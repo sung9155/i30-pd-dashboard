@@ -67,7 +67,7 @@
 - **기록.** `%LOCALAPPDATA%\i30pd-installer\install_<시각>.log`(맥 `~/Library/Logs/i30pd-installer/`)에 adb 명령과 출력을 남긴다. 실패하면 문제를 알릴 때 이 파일을 함께 보내 달라고 안내하고 기록 폴더를 열어 준다.
 - **진단 기록.** `진단기록.cmd`(= `설치.cmd -Diag`, 맥 `진단기록.command` = `--diag`) 또는 버전 메뉴의 `3)`. 차에 연결해 **읽기만** 한다: 정해 둔 속성, 두 앱의 `dumpsys package` 중 버전·경로·설치 시각 줄, `logcat -d -v time -s VehicleDash VNCarPlayHub VNQuickEntry NDashboard DtcDialog AndroidRuntime:E PackageManager:I`의 마지막 3000줄, 이번 실행 기록. MAC·휴대폰 번호·메일 주소·adb 기기 번호를 가린 뒤 바탕화면 `i30pd_진단기록_<시각>.txt`(UTF-8)로 저장하고 그 파일을 탐색기/Finder에서 보여 준다. 전체 logcat은 블루투스 폰 이름·번호·연락처가 섞여 넣지 않는다.
 - **같은 버전 건너뛰기.** 설치 전에 `pm path`로 차의 APK를 `adb pull`해 받은 파일과 해시(맥 `cmp`)를 비교하고, 같으면 그 앱은 설치하지 않는다(내비는 설치한 APK를 바이트 그대로 보관한다). 비교에 실패하면 그냥 설치한다.
-- **새 설치기 알림.** 시작할 때 `raw.githubusercontent.com`의 `main`(테스트를 고르면 `beta`도) `install.ps1`/`설치.command`에서 설치기 버전을 읽어, 더 새것이면 알리고 그대로 계속한다(5초 제한, 실패는 기록에만).
+- **새 설치기 (스스로 업데이트).** 시작할 때 이 설치기가 나온 릴리스(`InstallerChannel`/`INSTALLER_CHANNEL`: `stable` = 최신 정식 릴리스, `test` = `test` 사전 배포)의 설치기 ZIP(`i30pd-installer-windows/mac/linux.zip`)을 받는다. GitHub 릴리스 정보의 크기·SHA-256과 맞고, 풀어서 설치기 스크립트가 있을 때만 그 안의 설치기 버전과 비교한다. 더 새것이면 "새 설치기가 나왔습니다"라고 묻고, 예면 이 폴더의 같은 이름 파일만 바꾼 뒤(platform-tools·APK는 그대로) 같은 인자로 다시 시작한다. 아니오·인터넷 없음·확인 실패면 지금 설치기로 계속한다(설치를 막지 않음). 토큰 없이 공개 주소만 쓴다.
 - **디버깅용 기록.** 원격으로 원인을 가를 수 있게 기록 파일에 더 남긴다.
   - 환경: Windows·PowerShell(맥은 macOS·CPU), adb 버전.
   - Windows는 USB 장치 목록 전체를 바뀔 때마다 시각과 함께 남긴다(케이블을 꽂는 순간 무엇이 나타났는지 보이게).
@@ -102,6 +102,8 @@ exe 가 아니므로 빌드 단계가 없다. APK 는 **공개 배포 레포 [`s
 
 **릴리스 낼 때** — `i30pd_port/app/` 의 `dashboard-i30pd-platform.apk` · `myapps-i30pd-platform.apk` 를 릴리스 에셋으로 올린다. 파일명을 그대로 두면 안정화는 `releases/latest/download/...`(최신 정식 릴리스), 테스트는 `releases/download/test/...`(`test` 사전 배포)를 받는다. (예전 `i30pd-installer.exe` 에셋은 더 안 쓰니 새 릴리스엔 빼도 된다.)
 
+**설치기 ZIP** — `python scripts/release.py installers stable --out DIR`(테스트 배포는 `test`)이 ZIP 3개를 만들고 채널을 스크립트에 적는다. 정식은 그 릴리스에, 테스트는 `gh release upload test DIR/*.zip --clobber`로 올린다. 손으로 묶으면 채널이 `stable`로 남아, 테스트 ZIP 사용자도 정식 릴리스만 보게 된다. 설치기를 고칠 때마다 설치기 버전(날짜)을 올려야 업데이트가 뜬다.
+
 **차주에게 주는 것** — 두 가지:
 
 - **스크립트 2개만 (추천).** `설치.cmd` + `install.ps1` 만 ZIP 으로 주면, 실행 때 APK 를 위 공개 릴리스에서 자동으로 받는다. 릴리스가 갱신돼도 ZIP 은 그대로.
@@ -133,5 +135,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1 -AdbPath <가짜
 - `-Uninstall`: 두 앱 삭제.
 - `-Diag`: 진단 기록 파일만 만든다(차에는 쓰지 않음).
 - 종료 코드: 0 = 성공, 1 = 취소/설치 실패, 2 = ADB/APK 없음.
+- `I30PD_API`(환경 변수): 릴리스 API 주소를 바꾼다. `test/run.sh`는 `test/fakerelease.py`(가짜 릴리스 서버)에 붙여 업데이트를 시험한다: 같은 버전이면 조용함, 인터넷 없음이면 계속, 다른 채널의 새 설치기는 안 봄, SHA-256이 다르면 쓰지 않고 계속, 새 설치기면 바꾸고 다시 시작.
 
 가짜 adb 는 `devices -l`(pd_kr 한 줄), `getprop`, `install`(`Success`), `uninstall` 에 정해진 출력을 내는 `.cmd` 면 된다. 정상 설치 · 삭제 · 서명 충돌 재설치, **그리고 `file://` 서버에서 APK 받아 설치하는 흐름** 과 비공개 레포 404 시 안내 메시지를 이 방식으로 확인했다(실차 설치는 아직 이 스크립트로 해 보지 않았다).

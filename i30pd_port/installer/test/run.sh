@@ -1,10 +1,22 @@
 #!/bin/bash
 # PC installers without a car: install.ps1 / 설치.command against fakeadb.py, in Windows Git Bash (powershell.exe, cygpath).
 # Covers install, the same install again (skipped), a new release (installed), diagnostics (masked, read only),
-# uninstall (☆ put back), and the new-installer notice (reads raw.githubusercontent.com, so it needs the network).
+# uninstall (☆ put back), and the self-update against fakerelease.py (same version: quiet, tampered: refused, newer: replaced
+# and restarted, the other channel's newer one: ignored, offline: carries on). No network needed.
 # usage: bash run.sh win|mac|linux   (mac and linux both run 설치.command, with I30PD_OS set: this is Git Bash, neither)
 F="$(cd "$(dirname "$0")" && pwd)"; I="$(dirname "$F")"; WHO="$1"; [ "$WHO" = linux ] && OSV=Linux || OSV=Darwin
 SRV="$F/server"; FW="$(cygpath -w "$F")"
+# fake GitHub releases for every run (never the real one: a newer real installer would replace these files under -Yes).
+# Both channels start with ZIPs of this very installer, so no update is offered until a scenario puts a newer one there.
+R="$F/rel"; rm -rf "$R" "$F/kit"; mkdir -p "$R"
+for c in stable test; do python -X utf8 "$I/../../scripts/release.py" installers $c --out "$(cygpath -m "$R/$c")" > /dev/null || { echo "FAIL[$WHO]: zips"; exit 1; }; done
+cp -r "$R/stable" "$R/orig"   # kit orig = a user folder unzipped from the current stable ZIP
+python -X utf8 "$I/../../scripts/release.py" installers stable --label 2099-01-01 --out "$(cygpath -m "$R/new")" > /dev/null
+python "$F/fakerelease.py" "$(cygpath -m "$R")" & RPID=$!; trap 'kill $RPID 2>/dev/null' EXIT
+for _ in $(seq 50); do [ -s "$R/port" ] && break; sleep 0.1; done
+export I30PD_API="http://127.0.0.1:$(cat "$R/port")"
+case $WHO in win) ZIP=i30pd-installer-windows.zip; MAIN=install.ps1 ;; mac) ZIP=i30pd-installer-mac.zip; MAIN=설치.command ;; *) ZIP=i30pd-installer-linux.zip; MAIN=install.sh ;; esac
+kit(){ rm -rf "$F/kit"; python -c "import sys,zipfile; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" "$(cygpath -m "$R/$1/$ZIP")" "$(cygpath -m "$F/kit")"; SCRIPT="$F/kit/$MAIN"; }
 apks(){ mkdir -p "$SRV"; python -c "
 import os,sys
 for n,k in (('dashboard-i30pd-platform.apk',170000),('myapps-i30pd-platform.apk',9000)):
@@ -12,8 +24,8 @@ for n,k in (('dashboard-i30pd-platform.apk',170000),('myapps-i30pd-platform.apk'
 reset(){ rm -rf "$F/inst" "$F/tmp" "$F/calls.log" "$F/home"; echo com.veloster.carplayhub.STAR_KEY > "$F/star.txt"; }
 run(){ # args after mode
   rm -f "$F/calls.log"
-  if [ $WHO = win ]; then powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$I/install.ps1")" -AdbPath "$FW\\adb.cmd" -Yes "$@"
-  else HOME="$F/home" I30PD_OS=$OSV bash "$I/설치.command" --adb "$F/adb" --yes "$@"; fi > "$F/out.txt" 2>&1; echo $? > "$F/rc"
+  if [ $WHO = win ]; then powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "${SCRIPT:-$I/install.ps1}")" -AdbPath "$FW\\adb.cmd" -Yes "$@"
+  else HOME="$F/home" I30PD_OS=$OSV bash "${SCRIPT:-$I/설치.command}" --adb "$F/adb" --yes "$@"; fi > "$F/out.txt" 2>&1; echo $? > "$F/rc"
 }
 fail(){ echo "FAIL[$WHO]: $1"; cat "$F/out.txt"; exit 1; }
 BASE="file:///$(cygpath -m "$SRV")"
@@ -55,11 +67,19 @@ if [ -n "$BOOT_CAP" ] && [ -d "$BOOT_CAP" ]; then
   FAKE_CAP="$BOOT_CAP" run $BF "${BW[@]}"; run $BR; [ "$(cat $F/rc)" = 0 ] && grep -q '되돌림 완료' $F/out.txt && [ ! -f "$SUI" ] || fail "12 remove"
   echo "OK[$WHO]: boot fast install, already there, uninstall reverts, unknown build stops, remove"
 fi
-# an old installer must hear about the published one (network: raw.githubusercontent.com main)
-if [ $WHO = win ]; then sed "s/^\(\$InstallerVersion = \)'[^']*'/\1'2026-01-01'/" "$I/install.ps1" > "$I/old.ps1"
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w "$I/old.ps1")" -AdbPath "$FW\\adb.cmd" -Yes -Uninstall > "$F/out.txt" 2>&1; rm -f "$I/old.ps1"
-else sed "s/^INSTALLER_VERSION='[^']*'/INSTALLER_VERSION='2026-01-01'/" "$I/설치.command" > "$I/old.command"
-  HOME="$F/home" I30PD_OS=$OSV bash "$I/old.command" --adb "$F/adb" --yes --uninstall > "$F/out.txt" 2>&1; rm -f "$I/old.command"; fi
-grep -q '새 설치기가 있습니다(안정화' $F/out.txt || fail "6 old installer notice"
-grep -q '새 설치기가 있습니다' <(run "${A[@]}"; cat $F/out.txt) && fail "6 current installer must not be told" || true
-echo "OK[$WHO]: install, skip identical, new release, diag (masked, read only), uninstall + ☆, installer notice"
+# self-update, on an unzipped release ZIP (a user's installer folder), in uninstall mode (quick, nothing installed)
+if [ $WHO = win ]; then U=-Uninstall; else U=--uninstall; fi
+ver(){ grep -aE "^.?(InstallerVersion|INSTALLER_VERSION) *= *'" "$SCRIPT" | head -1 | cut -d"'" -f2; }
+kit orig; CUR="$(ver)"; echo keep > "$F/kit/platform-tools.txt"
+run $U; [ "$(cat $F/rc)" = 0 ] && ! grep -q '새 설치기' $F/out.txt || fail "6 same version: no prompt"
+I30PD_API=http://127.0.0.1:9 run $U; [ "$(cat $F/rc)" = 0 ] && ! grep -q '새 설치기' $F/out.txt && grep -q '삭제 완료' $F/out.txt || fail "7 offline carries on"
+kit test; cp "$R/new/$ZIP" "$R/stable/$ZIP"   # newer stable only: a test-channel installer looks at 'test'
+run $U; [ "$(cat $F/rc)" = 0 ] && ! grep -q '새 설치기' $F/out.txt && [ "$(ver)" = "$CUR" ] || fail "8 the other channel's newer installer is not offered"
+kit orig; echo keep > "$F/kit/platform-tools.txt"; touch "$R/stable/$ZIP.bad"
+run $U; [ "$(cat $F/rc)" = 0 ] && grep -q '확인이 맞지 않아 쓰지 않습니다: SHA-256' $F/out.txt && [ "$(ver)" = "$CUR" ] && grep -q '삭제 완료' $F/out.txt || fail "9 tampered download refused"
+rm -f "$R/stable/$ZIP.bad"
+run $U; [ "$(cat $F/rc)" = 0 ] && grep -q '새 설치기가 나왔습니다: 2099-01-01' $F/out.txt && grep -q '다시 시작합니다' $F/out.txt && [ "$(ver)" = 2099-01-01 ] \
+  && grep -q '설치기 2099-01-01)' $F/out.txt && grep -q '삭제 완료' $F/out.txt && [ -f "$F/kit/platform-tools.txt" ] || fail "10 newer installer replaces itself and restarts"
+run $U; [ "$(cat $F/rc)" = 0 ] && ! grep -q '새 설치기' $F/out.txt || fail "11 after the update: no prompt"
+SCRIPT=; rm -rf "$F/kit" "$R"
+echo "OK[$WHO]: install, skip identical, new release, diag (masked, read only), uninstall + ☆, self-update (same, offline, other channel, tampered, newer)"

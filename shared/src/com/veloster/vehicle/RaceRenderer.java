@@ -435,17 +435,21 @@ public final class RaceRenderer {
         float total=0;for(int k=0;k<s.length();k++){char ch=s.charAt(k);total+=ch>='0'&&ch<='9'?d[10]:p.measureText(String.valueOf(ch));}
         return total;
     }
-    // Digit widths per text size: each number measured its ten digits three times a frame (~270 measureText a frame on
-    // the race page, 2026-11-26 car trace). ponytail: 16 sizes round-robin; the cells use a handful, shrunk ones evict.
-    private final float[] dSize=new float[16];private final boolean[] dBold=new boolean[16];
-    private final float[][] dW=new float[16][];private int dNext;
-    /** Sets p to the digit typeface at size; the ten digit widths, then the widest at [10]. */
-    private float[] digits(float size){
-        boolean bold=Theme.current().digitWeight==2;
-        p.setTypeface(bold?Typeface.DEFAULT_BOLD:Typeface.DEFAULT);p.setTextSize(size);
-        for(int i=0;i<dW.length;i++)if(dW[i]!=null&&dSize[i]==size&&dBold[i]==bold)return dW[i];
-        float[] w=new float[11];for(int i=0;i<10;i++){w[i]=p.measureText(String.valueOf((char)('0'+i)));w[10]=Math.max(w[10],w[i]);}
-        int i=dNext;dNext=(dNext+1)%dW.length;dSize[i]=size;dBold[i]=bold;dW[i]=w;return w;
+    private final Digits digitW=new Digits();
+    private float[] digits(float size){return digitW.of(p,size,Theme.current().digitWeight==2);}
+    /** Digit widths per text size: each number measured its ten digits up to three times a frame (~270 measureText a
+     *  frame on the race page, ~250 on 전체 조망, 2026-11-26 car trace). One per Paint (PitRenderer uses it too).
+     *  ponytail: 16 sizes round-robin; the cells use a handful, shrunk ones evict. */
+    static final class Digits{
+        private final float[] size=new float[16];private final boolean[] bold=new boolean[16];
+        private final float[][] w=new float[16][];private int next;
+        /** Sets p to the digit typeface at sz; the ten digit widths, then the widest at [10]. */
+        float[] of(Paint p,float sz,boolean b){
+            p.setTypeface(b?Typeface.DEFAULT_BOLD:Typeface.DEFAULT);p.setTextSize(sz);
+            for(int i=0;i<w.length;i++)if(w[i]!=null&&size[i]==sz&&bold[i]==b)return w[i];
+            float[] d=new float[11];for(int i=0;i<10;i++){d[i]=p.measureText(String.valueOf((char)('0'+i)));d[10]=Math.max(d[10],d[i]);}
+            int i=next;next=(next+1)%w.length;size[i]=sz;bold[i]=b;w[i]=d;return d;
+        }
     }
     private void rnumber(Canvas c,String s,float rightX,float y,float size,int color){
         float total=rwidth(s,size);float[] d=digits(size);

@@ -38,6 +38,7 @@ public final class PitRenderer {
     private final GraphRenderer graphRenderer=new GraphRenderer();
     private final PerformanceRenderer performanceRenderer=new PerformanceRenderer();
     private final RaceRenderer raceRenderer=new RaceRenderer();
+    private final RaceRenderer.Digits digitW=new RaceRenderer.Digits();   // fittedNumber: digit widths per size
     private final LambdaCluster mtSport=new LambdaCluster();
     private final EcoCluster eco=new EcoCluster();
     private final TachoCluster tacho=new TachoCluster();
@@ -657,13 +658,12 @@ public final class PitRenderer {
     }
     /** Left-aligned numeric readout with a fixed digit cell, so a narrow 1 in the middle does not shift the other digits (no jitter). */
     private void fittedNumber(Canvas c,String s,float x,float y,float size,float width,int color){
-        paint.setTypeface(Typeface.DEFAULT);paint.setTextSize(size);
-        float dw=0;for(char d='0';d<='9';d++)dw=Math.max(dw,paint.measureText(String.valueOf(d)));
+        float[] d=digitW.of(paint,size,false);float dw=d[10];
         float total=0;for(int k=0;k<s.length();k++){char ch=s.charAt(k);total+=ch>='0'&&ch<='9'?dw:paint.measureText(String.valueOf(ch));}
-        if(total>width&&total>0){paint.setTextSize(size*width/total);dw*=width/total;}
+        if(total>width&&total>0){d=digitW.of(paint,size*width/total,false);dw=d[10];}
         paint.setColor(T(color));float cx=x;
-        for(int k=0;k<s.length();k++){char ch=s.charAt(k);String g=String.valueOf(ch);float gw=paint.measureText(g);
-            if(ch>='0'&&ch<='9'){c.drawText(g,cx+(dw-gw)/2,y,paint);cx+=dw;}else{c.drawText(g,cx,y,paint);cx+=gw;}}
+        for(int k=0;k<s.length();k++){char ch=s.charAt(k);String g=String.valueOf(ch);
+            if(ch>='0'&&ch<='9'){c.drawText(g,cx+(dw-d[ch-'0'])/2,y,paint);cx+=dw;}else{float gw=paint.measureText(g);c.drawText(g,cx,y,paint);cx+=gw;}}
     }
     private void ellipsis(Canvas c,String s,float x,float y,float size,float width,int color){
         paint.setTypeface(Typeface.DEFAULT);paint.setTextSize(size);

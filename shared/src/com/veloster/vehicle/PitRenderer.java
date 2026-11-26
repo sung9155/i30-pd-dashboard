@@ -727,7 +727,9 @@ public final class PitRenderer {
         box(c,30,124,470,127,LINE);if(rpm>0)box(c,30,124,30+440*rpm/profile.maxRpm,127,BLUE);
         box(c,180,143,316,340,BLUE);
         centered(c,"EMS GEAR",248,164,11,BG,true);
-        centered(c,value("현재 기어"),248,290,130,BG,true);
+        {String g=value("현재 기어");paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(130);float gw=paint.measureText(g);
+            float sz=gw>116?130*116/gw:130;   // "M7" in the manual gate ran past the 136-wide box: two characters shrink to fit, one stays 130
+            centered(c,g,248,290-(130-sz)*0.36f,sz,BG,true);}
         centered(c,"HYUNDAI i30",248,324,10,BG,true);
         centered(c,"SPEED",98,177,12,MUTED,true);
         centeredNumber(c,value("속도 km/h"),98,253,57,WHITE,true);
@@ -900,7 +902,8 @@ public final class PitRenderer {
         box(c,294,120,506,367,BLUE);
         centered(c,"E M S  G E A R",400,148,15,BG,true);
         String gear=value("현재 기어");
-        centered(c,gear,400,321,184,BG,true);
+        {paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(184);float gw=paint.measureText(gear),sz=gw>190?184*190/gw:184;   // "M7" ran past the 212-wide box
+            centered(c,gear,400,321-(184-sz)*0.36f,sz,BG,true);}
         centered(c,"i 3 0  P D",400,350,11,BG,true);
         text(c,"SPEED",22,148,14,MUTED,true);
         text(c,"km/h",229,148,12,MUTED,false);

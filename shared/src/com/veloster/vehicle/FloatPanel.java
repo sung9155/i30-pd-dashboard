@@ -69,8 +69,6 @@ public final class FloatPanel {
     /** The shape the 켬 switch brings back (the window was switched off from it). */
     public static volatile int lastShape=CARD;
     public static volatile boolean hideButton=true;
-    /** Hide the window while the stock N Mode app (i30 PD port) is on screen, so it does not cover the app's gauges. */
-    public static volatile boolean nmodeHide=true;
     public static final int[] cells={-1,-1,-1,-1,-1,-1,-1};
     /** Each cell's graph: a bar under the value, the last 30 s as a line, a row of lit segments (LED), or the number alone. */
     public static final int BAR=0,LINE=1,LED=2,NUM=3;

@@ -153,14 +153,14 @@ public final class SettingsLayout {
     public static final float FW_L=PANE_L,FW_T=TOP+2,FW_R=566,FW_B=252,FW_CAPTION=16;
     /** The right column: the on switch, the button-hiding switch, and the chosen cell's box with its change button. */
     public static final float FC_L=576,FC_R=PANE_R;
-    public static final float[] F_ON_BOX={FC_L,FW_T,FC_R,FW_T+38},F_HIDE_BOX={FC_L,FW_T+42,FC_R,FW_T+78},F_MUSIC_BOX={FC_L,FW_T+82,(FC_L+FC_R)/2-3,FW_T+118},F_NMODE_BOX={(FC_L+FC_R)/2+3,FW_T+82,FC_R,FW_T+118},
+    public static final float[] F_ON_BOX={FC_L,FW_T,FC_R,FW_T+38},F_HIDE_BOX={FC_L,FW_T+42,FC_R,FW_T+78},F_MUSIC_BOX={FC_L,FW_T+82,FC_R,FW_T+118},
         F_CELL_BOX={FC_L,FW_T+124,FC_R,FW_B},F_EDIT_BOX={FC_L+12,FW_B-42,FC_R-12,FW_B-6};
     /** Button rows under the preview: label at PANE_L+6, buttons from F_ROW_X; ROW_H tall, F_GAP apart. */
     public static final float F_ROW_X=PANE_L+70,F_ROW_H=36,F_GAP=8;
     public static final float[] F_ROW_Y={262,306,350,394};
     public static final String[] F_ROW_LABELS={"모양","색감","크기","추천"};
     /** Tap targets: on, hide, edit (the chosen cell), a preview cell (+ k), then each row's buttons (+ index). */
-    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_MUSIC=7,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60,F_ALPHA=70,F_SKIN=4,F_SKIN_DAY=8,F_DN=90,SKIN_SHEET=100,SKIN_SHEET_DAY=102,F_FORM=5,FORM_SHEET=101,F_AUTO=6,F_PRESET=80,F_NMODE=9;
+    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_MUSIC=7,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60,F_ALPHA=70,F_SKIN=4,F_SKIN_DAY=8,F_DN=90,SKIN_SHEET=100,SKIN_SHEET_DAY=102,F_FORM=5,FORM_SHEET=101,F_AUTO=6,F_PRESET=80;
     /** 크기 and 투명도 as two bars on one row, each snapping to its stops; the knob is a chip with the value's name. */
     public static final float[] F_SIZE_BAR={248,F_ROW_Y[2],500,F_ROW_Y[2]+F_ROW_H},F_ALPHA_BAR={566,F_ROW_Y[2],788,F_ROW_Y[2]+F_ROW_H};
     public static final float F_SIZE_KNOB=78,F_ALPHA_KNOB=66,F_ALPHA_LABEL_X=512;
@@ -188,7 +188,7 @@ public final class SettingsLayout {
         if(t==F_SIZE)return F_SIZE_BAR;if(t==F_ALPHA)return F_ALPHA_BAR;
         if(t>=F_PRESET&&t<F_PRESET+F_PRESETS.length){float x=F_PRESET_X+(t-F_PRESET)*(F_PRESET_W+F_GAP);return new float[]{x,F_ROW_Y[3],x+F_PRESET_W,F_ROW_Y[3]+F_ROW_H};}
         if(t>=F_DN&&t<F_DN+F_DN_NAMES.length){float x=388+(t-F_DN)*56;return new float[]{x,306,x+52,342};}if(t==F_SKIN_DAY)return F_SKIN_DAY_BOX;   // 자동 / 낮 / 밤 52 wide: the car tap minimum
-        if(t==F_FORM)return F_FORM_BOX;if(t==F_MUSIC)return F_MUSIC_BOX;if(t==F_NMODE)return F_NMODE_BOX;if(t==F_SKIN)return F_SKIN_BOX;if(t==F_AUTO)return F_AUTO_BOX;if(t==F_ON)return F_ON_BOX;if(t==F_HIDE)return F_HIDE_BOX;if(t==F_EDIT)return F_EDIT_BOX;
+        if(t==F_FORM)return F_FORM_BOX;if(t==F_MUSIC)return F_MUSIC_BOX;if(t==F_SKIN)return F_SKIN_BOX;if(t==F_AUTO)return F_AUTO_BOX;if(t==F_ON)return F_ON_BOX;if(t==F_HIDE)return F_HIDE_BOX;if(t==F_EDIT)return F_EDIT_BOX;
         int g=t/10*10,i=t-g;float[] w;float x,y;
         switch(g){case F_SHAPE:w=W_SHAPE;x=F_ROW_X;y=F_ROW_Y[0];break;case F_COUNT:w=W_COUNT;x=F_COUNT_X;y=F_ROW_Y[0];break;
             case F_CORNER:w=W_CORNER;x=F_ROW_X;y=F_ROW_Y[2];break;
@@ -198,7 +198,7 @@ public final class SettingsLayout {
         return new float[]{x,y,x+w[i],y+F_ROW_H};
     }
     /** Every button target in drawing order. */
-    public static final int[] F_TARGETS={F_ON,F_HIDE,F_EDIT,F_SKIN,F_FORM,F_AUTO,F_DN,F_DN+1,F_DN+2,F_SKIN_DAY,F_MUSIC,F_NMODE,F_COUNT,F_COUNT+1,F_COUNT+2,F_SIZE,F_ALPHA,
+    public static final int[] F_TARGETS={F_ON,F_HIDE,F_EDIT,F_SKIN,F_FORM,F_AUTO,F_DN,F_DN+1,F_DN+2,F_SKIN_DAY,F_MUSIC,F_COUNT,F_COUNT+1,F_COUNT+2,F_SIZE,F_ALPHA,
         F_PRESET,F_PRESET+1,F_PRESET+2,F_PRESET+3};
     /** The preview's scale for a window w x h: 1, or less so it fits the well with an 8 px margin. */
     public static float floatPreviewScale(float w,float h){return Math.min(1,Math.min((FW_R-FW_L-16)/w,(FW_B-FW_CAPTION-FW_T-12)/h));}

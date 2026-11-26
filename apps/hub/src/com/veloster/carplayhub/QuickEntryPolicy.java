@@ -21,7 +21,19 @@ public final class QuickEntryPolicy {
     /** ☆ button action that opens the dashboard; the OEM sends unlisted actions as a broadcast. */
     public static final String STAR_ACTION="com.veloster.carplayhub.STAR_KEY";
     /** What ☆ goes back to when switched off: the remembered action, or the stock "none". */
+    public static final String STAR_NONE="com.mobis.intent.action.CUSTOM_SHORTCUT";
     public static String starRestore(String saved){
-        return saved==null||saved.length()==0||STAR_ACTION.equals(saved)?"com.mobis.intent.action.CUSTOM_SHORTCUT":saved;
+        return saved==null||saved.length()==0||STAR_ACTION.equals(saved)?STAR_NONE:saved;
+    }
+    /** A stock function ☆ had before us (not ours, not the stock "none"): the one the toggle hands ☆ back to. */
+    public static boolean starLendable(String saved){return saved!=null&&saved.length()>0&&!STAR_ACTION.equals(saved)&&!STAR_NONE.equals(saved);}
+    /** ☆ toggle (계기판에서는 ☆ 원래 기능): what to set ☆ to when the dashboard comes on screen or leaves it, or null to leave
+     *  it alone. On screen: ours becomes the remembered stock function, so the stock mode service runs it itself (we never
+     *  run a stock function for it). Gone: only what we lent, and only while ☆ is still that function, becomes ours again;
+     *  a function the user picked meanwhile in the stock settings stays. Without a stock function to lend, nothing moves. */
+    public static String starToggle(boolean on,boolean shown,String now,String saved,boolean lent){
+        if(!starLendable(saved))return null;
+        if(shown)return on&&STAR_ACTION.equals(now)?saved:null;
+        return lent&&saved.equals(now)?STAR_ACTION:null;
     }
 }

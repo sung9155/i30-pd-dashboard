@@ -180,6 +180,7 @@ public final class UiText {
         EN.put("−5분","-5 min");
         EN.put("▼ 아래에 더 있음","▼ More below");
         EN.put("☆ 버튼 → 계기판","☆ button → Dashboard");
+        EN.put("☆ 버튼 → 계기판을 켜야 동작합니다","Needs ☆ button → Dashboard on");
         EN.put("☆ 버튼 설정 실패: ","☆ button setting failed: ");
         EN.put("☆ 버튼 설정이 적용되지 않았습니다. 이 내비는 지원하지 않을 수 있습니다.","The ☆ button setting did not apply. This head unit may not support it.");
         EN.put("☆ 버튼: ","☆ button: ");
@@ -236,6 +237,7 @@ public final class UiText {
         EN.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","Open dashboard; long-press for My Apps; drag to move");
         EN.put("계기판과 통신 끊김","Lost communication with instrument cluster");
         EN.put("계기판에서 숨김","Hide on the dashboard");
+        EN.put("계기판에서는 ☆ 원래 기능","☆ own function on the dashboard");
         EN.put("계기판이 보이는 동안 바로가기 버튼을 숨깁니다.","Hides the shortcut button while the dashboard is on screen.");
         EN.put("계기판이 아닌 화면 위에 값을 작게 띄움 · 끌어서 옮김 · 누르면 계기판","Readings in a small window over every other screen · drag to move · tap for the dashboard");
         EN.put("계단 회전 곡선","Stepped rev curve");
@@ -1269,6 +1271,7 @@ public final class UiText {
         EN.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","When enabled, reboot restores only the shortcut, not the full app screen. Drag the edge button to move it.\n\nIf overlays are denied, the notification remains. If the factory UI also hides notifications, use another entry point. Force-stop may prevent restoration until My Apps is opened again.");
         EN.put("켜짐 (짧게 누르면 계기판)","On (short press opens the dashboard)");
         EN.put("켬","On");
+        EN.put("켬 (☆에 지정해 둔 원래 기능이 없습니다)","On (☆ had no function of its own)");
         EN.put("코리아 인터내셔널 서킷","Korea International Circuit");
         EN.put("코치","Coach");
         EN.put("코퍼","Copper");

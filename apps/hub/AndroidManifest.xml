@@ -27,9 +27,10 @@
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
             </intent-filter>
         </receiver>
-        <!-- ☆ button broadcast from the OEM mode service (no permission on its side); only opens the dashboard. -->
+        <!-- ☆ button broadcast from the OEM mode service (no permission on its side); only opens the dashboard.
+             QUICK_ENTRY_HIDE: the dashboard's "on screen / gone" signal, for the ☆ toggle (계기판에서는 ☆ 원래 기능). -->
         <receiver android:name="com.veloster.carplayhub.StarKey" android:exported="true">
-            <intent-filter><action android:name="com.veloster.carplayhub.STAR_KEY" /></intent-filter>
+            <intent-filter><action android:name="com.veloster.carplayhub.STAR_KEY" /><action android:name="com.veloster.carplayhub.QUICK_ENTRY_HIDE" /></intent-filter>
         </receiver>
     </application>
 </manifest>

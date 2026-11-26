@@ -79,7 +79,7 @@ public final class HubActivity extends Activity {
         showIntent(getIntent());
     }
     protected void onNewIntent(Intent intent) { super.onNewIntent(intent); setIntent(intent); showIntent(intent); }
-    protected void onResume() { super.onResume(); LanguageSettings.init(this); QuickEntryService.observe(quickEntryStatus); if(prefs!=null && !busy)render(); }
+    protected void onResume() { super.onResume(); LanguageSettings.init(this); QuickEntryService.observe(quickEntryStatus); StarKey.dashboard(this,false); if(prefs!=null && !busy)render(); }   // StarKey: My Apps in front = the dashboard is not on screen
     protected void onPause(){
         QuickEntryService.unobserve(quickEntryStatus);
         if(bluetoothPanel!=null)bluetoothPanel.stop();
@@ -209,7 +209,11 @@ public final class HubActivity extends Activity {
         final boolean hod=QuickEntryService.hideOnDash(this),button=mode==QuickEntryPolicy.FLOATING;   // only the edge button can step aside
         settingRow(right,UiText.t("계기판에서 숨김"),UiText.t(!button?"바로가기 버튼을 켜야 동작합니다":hod?"켬":"끔"),hod&&button,new Runnable(){public void run(){hideOnDash();}});
         String star=StarKey.status(this);
-        settingRow(right,UiText.t("☆ 버튼 → 계기판"),star,!star.equals(UiText.t("꺼짐"))&&!star.equals(UiText.t("확인 불가")),new Runnable(){public void run(){starKey();}});
+        final boolean starOn=!star.equals(UiText.t("꺼짐"))&&!star.equals(UiText.t("확인 불가")),starToggle=StarKey.toggle(this);
+        settingRow(right,UiText.t("☆ 버튼 → 계기판"),star,starOn,new Runnable(){public void run(){starKey();}});
+        // ☆ toggle: with the dashboard on screen ☆ does the stock function it had before; one tap, like 계기판에서 숨김
+        settingRow(right,UiText.t("계기판에서는 ☆ 원래 기능"),UiText.t(!starOn?"☆ 버튼 → 계기판을 켜야 동작합니다":!starToggle?"끔":StarKey.lendable(this)?"켬":"켬 (☆에 지정해 둔 원래 기능이 없습니다)"),starOn&&starToggle,
+            new Runnable(){public void run(){StarKey.toggle(HubActivity.this,!StarKey.toggle(HubActivity.this));render();}});
         TextView help=label(UiText.t("바로가기 버튼은 화면 가장자리에 늘 떠 있는 작은 버튼입니다. 짧게 누르면 계기판, 길게 누르면 내 앱이 열리고, 부팅 뒤에도 다시 나타납니다. 순정 홈에는 이 앱들이 나오지 않으니 처음 설치했다면 켜 두세요."),14,MUT,false);
         help.setLineSpacing(6,1);help.setPadding(18,14,18,14);help.setBackgroundDrawable(shape(0,LINE,12));
         LinearLayout.LayoutParams hp=new LinearLayout.LayoutParams(-1,-2);hp.topMargin=12;right.addView(help,hp);

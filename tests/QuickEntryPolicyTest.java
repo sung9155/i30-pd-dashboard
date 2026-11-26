@@ -33,6 +33,23 @@ public final class QuickEntryPolicyTest {
         check(QuickEntryPolicy.starRestore("com.hkmc.intent.action.MYMENU_SHORTCUT").equals("com.hkmc.intent.action.MYMENU_SHORTCUT"),"star key restores the remembered action");
         for(String lost:new String[]{null,"",QuickEntryPolicy.STAR_ACTION})
             check(QuickEntryPolicy.starRestore(lost).equals("com.mobis.intent.action.CUSTOM_SHORTCUT"),"star key never restores itself or nothing");
-        System.out.println("PASS: quick-entry opt-in restore, lock/screen visibility, drag bounds, rotation position and star key restore");
+        // ☆ toggle: on the dashboard ☆ is the stock function it had before us, and ours again when the dashboard leaves
+        String ours=QuickEntryPolicy.STAR_ACTION,stock="com.hkmc.intent.action.MYMENU_SHORTCUT",other="com.hkmc.intent.action.OTHER_SHORTCUT";
+        check(QuickEntryPolicy.starLendable(stock),"a remembered stock function can be handed back");
+        for(String none:new String[]{null,"",ours,QuickEntryPolicy.STAR_NONE})
+            check(!QuickEntryPolicy.starLendable(none)&&QuickEntryPolicy.starToggle(true,true,ours,none,false)==null&&QuickEntryPolicy.starToggle(true,false,none,none,true)==null,
+                "no stock function before us: the toggle moves nothing");
+        check(stock.equals(QuickEntryPolicy.starToggle(true,true,ours,stock,false)),"dashboard on screen: ours becomes the stock function");
+        check(QuickEntryPolicy.starToggle(false,true,ours,stock,false)==null,"toggle off: ☆ stays ours on the dashboard");
+        check(QuickEntryPolicy.starToggle(true,true,stock,stock,true)==null,"the 20 s repeat while on screen changes nothing");
+        check(QuickEntryPolicy.starToggle(true,true,other,stock,false)==null&&QuickEntryPolicy.starToggle(true,true,QuickEntryPolicy.STAR_NONE,stock,false)==null,
+            "☆ not ours (switched off, or released by the stock settings): never taken on the dashboard");
+        check(ours.equals(QuickEntryPolicy.starToggle(true,false,stock,stock,true)),"dashboard gone: what we lent is ours again");
+        check(ours.equals(QuickEntryPolicy.starToggle(false,false,stock,stock,true)),"lent, then the toggle switched off: still handed back");
+        check(QuickEntryPolicy.starToggle(true,false,stock,stock,false)==null,"not lent by us: a stock function stays (☆ switched off by the user)");
+        check(QuickEntryPolicy.starToggle(true,false,other,stock,true)==null&&QuickEntryPolicy.starToggle(true,false,QuickEntryPolicy.STAR_NONE,stock,true)==null,
+            "the user picked another function meanwhile: left alone");
+        check(QuickEntryPolicy.starToggle(true,false,ours,stock,true)==null,"already ours: nothing to do");
+        System.out.println("PASS: quick-entry opt-in restore, lock/screen visibility, drag bounds, rotation position, star key restore and toggle");
     }
 }

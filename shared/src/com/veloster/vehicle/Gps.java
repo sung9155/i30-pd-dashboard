@@ -51,6 +51,7 @@ final class Gps implements LocationListener {
         long now=SystemClock.elapsedRealtime();
         if(!GpsFix.any())android.util.Log.i("VehicleDash","GPS first fix after "+(now-startAt)/1000+" s");
         GpsFix.set(l.getLatitude(),l.getLongitude(),l.hasAccuracy()?l.getAccuracy():Float.NaN,l.hasSpeed()?l.getSpeed()*3.6f:Float.NaN);fixes++;
+        Commute.fix(GpsFix.lat,GpsFix.lon,GpsFix.accuracy,GpsFix.speedKmh,System.currentTimeMillis(),now);   // 출퇴근 비교
         if(!extrasLogged){extrasLogged=true;logExtras(l);}
         if(now-logAt>=60000){
             int z=TaxiZones.ready()?TaxiZones.at(GpsFix.lat,GpsFix.lon):-1;   // not decoded again just for this line while the dashboard is away

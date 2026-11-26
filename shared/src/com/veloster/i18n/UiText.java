@@ -1040,6 +1040,7 @@ public final class UiText {
         EN.put("자동 · 가장 가까운 서킷","Auto · nearest circuit");
         EN.put("자동 확인","confirmed automatically");
         EN.put("자동: 와이퍼·외기온·낮 전조등","Auto: wipers, outside temp, daytime lamps");
+        EN.put("자주 다니는 길 (자동)","Routes you drive (found automatically)");
         EN.put("작게","Small");
         EN.put("작동","Active");
         EN.put("작동 방해·막힘","Operation obstructed or blocked");
@@ -1242,6 +1243,7 @@ public final class UiText {
         EN.put("최고 부스트 순간","At peak boost");
         EN.put("최고 속도","Top speed");
         EN.put("최고 횡G","Peak lat G");
+        EN.put("최근","last");
         EN.put("최근 2분","Last 2 min");
         EN.put("최근 30초","Last 30 s");
         EN.put("최근 60초","Last 60 s");
@@ -1422,6 +1424,7 @@ public final class UiText {
         EN.put("활성화 안 됨","Not activated");
         EN.put("회"," times");
         EN.put("회로 간헐 불량","Circuit intermittent");
+        EN.put("횟수","drives");
         EN.put("횡가속","Lateral G");
         EN.put("효과음","Effects");
         EN.put("효과음 음량","Effects volume");

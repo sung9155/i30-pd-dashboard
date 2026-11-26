@@ -20,6 +20,12 @@ public final class RecordsDialog {
         section(b,"100-0 km/h",Records.entries(Records.BRAKE),"%.1f m");
         section(b,"100-0 km/h ("+UiText.t("시간")+")",Records.entries(Records.BRAKE_TIME),"%.2f s");
         section(b,"400 m",Records.entries(Records.QUARTER),"%.2f s");
+        java.util.ArrayList<long[]> routes=Commute.routes();   // 출퇴근 비교: routes driven at least twice
+        if(!routes.isEmpty()){b.append(UiText.t("자주 다니는 길 (자동)")).append('\n');
+            for(int i=0;i<routes.size();i++){long[] r=routes.get(i);
+                b.append(String.format(Locale.US," %d. %s %2d · %s %s · %s %s · %s %s\n",i+1,UiText.t("횟수"),r[0],UiText.t("최고"),Commute.clock(r[1]),
+                    UiText.t("평균"),Commute.clock(r[2]),UiText.t("최근"),Commute.clock(r[3])));}
+            b.append('\n');}
         for(int i=0;i<Circuits.count();i++){
             String[] laps=Records.entries(Records.lapKey(Circuits.name(i)));
             if(laps.length>0)section(b,UiText.t(Circuits.name(i)),laps,true);
@@ -38,15 +44,11 @@ public final class RecordsDialog {
     }
     /** A list shown with its own unit (format of the value). */
     private static void section(StringBuilder b,String title,String[] entries,String format){
-        b.append(title).append('
-');
-        if(entries.length==0)b.append("   —
-");
+        b.append(title).append('\n');
+        if(entries.length==0)b.append("   —\n");
         for(int i=0;i<entries.length;i++)
-            b.append(String.format(Locale.US," %d. %8s   %s
-",i+1,String.format(Locale.US,format,Records.value(entries[i])),Records.date(entries[i])));
-        b.append('
-');
+            b.append(String.format(Locale.US," %d. %8s   %s\n",i+1,String.format(Locale.US,format,Records.value(entries[i])),Records.date(entries[i])));
+        b.append('\n');
     }
     private static void section(StringBuilder b,String title,String[] entries,boolean lap){
         b.append(title).append('\n');

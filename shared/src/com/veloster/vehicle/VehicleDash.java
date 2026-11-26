@@ -172,7 +172,9 @@ public final class VehicleDash extends View implements Runnable {
         tilePicker=new TilePicker(a);
         {final SharedPreferences rp=a.getApplicationContext().getSharedPreferences("pit_vehicle_records",0);   // 기록실
          Records.store(new Records.Store(){public String get(String k){return rp.getString(k,"");}
-             public void put(String k,String l){rp.edit().putString(k,l).apply();}public void clear(){rp.edit().clear().apply();}});}
+             public void put(String k,String l){rp.edit().putString(k,l).apply();}public void clear(){rp.edit().clear().apply();}});
+         final SharedPreferences cp=a.getApplicationContext().getSharedPreferences("pit_vehicle_commute",0);   // 출퇴근 비교
+         Commute.attach(new Commute.Store(){public String get(String k){return cp.getString(k,"");}public void put(String k,String v){cp.edit().putString(k,v).apply();}});}
         try{renderer.appVersion=a.getPackageManager().getPackageInfo(a.getPackageName(),0).versionName;}catch(Exception e){/* the status row shows no name */}
         {SharedPreferences tp=a.getSharedPreferences("pit_vehicle_ui",0);   // the tiles' picks (Tiles), -1 = default
          for(int l=0;l<Tiles.KEYS.length;l++)for(int i=0;i<Tiles.picked[l].length;i++)

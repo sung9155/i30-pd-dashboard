@@ -395,6 +395,11 @@ public final class RaceRenderer {
                 left,469,14,record?GREEN:WHITE,Paint.Align.CENTER);return;}
         String[] item={"BATT "+fmt("%.1f",v(Telemetry.BAT_VOLTAGE))+"V","RANGE "+fmt("%.0f",v(Telemetry.RANGE))+"km",
             "AVG "+fmt("%.1f",v(Telemetry.AVG_FUEL))+"km/L","ODO "+fmt("%.0f",v(Telemetry.ODOMETER))+"km"};
+        float cd=Commute.delta(android.os.SystemClock.elapsedRealtime());
+        if(!Float.isNaN(cd)){   // 출퇴근 비교: against the fastest earlier drive from here, at this point of the road
+            float w5=(R-L)/5;text(c,"ROUTE "+Commute.format(cd),L+w5/2,469,13,cd<=0?GREEN:AMBER,Paint.Align.CENTER);
+            for(int i=0;i<item.length;i++)text(c,item[i],L+w5*(i+1)+w5/2,469,13,i==0&&v(Telemetry.BAT_VOLTAGE)<12?AMBER:WHITE,Paint.Align.CENTER);
+            return;}
         for(int i=0;i<item.length;i++)text(c,item[i],L+w*i+w/2,469,13,i==0&&v(Telemetry.BAT_VOLTAGE)<12?AMBER:WHITE,Paint.Align.CENTER);
     }
     /** Records page: the three acceleration runs on top, session peaks below. */

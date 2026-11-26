@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Entry point of the build image (docker/Dockerfile): host tests, scripts/build.py, zipalign, V1 signing with the AOSP
+# platform test key, and a check of the result. The checkout is mounted at /src; the build runs in the container's
+# own /tmp (fast, and nothing but the APKs lands in the checkout) and the signed APKs go to /src/build/apk/.
+#
+#   i30pd-build [all|dashboard|hub] [--no-tests] [--py-tests] [--version-name NAME]
+#   i30pd-build shell
+#
+# Tests: scripts/test.py (the Java host tests), as scripts/release.py runs before a release. --py-tests adds the
+# Python suite (tests/test_*.py); three of its checks fail on this port as it stands (the upstream's app name and
+# boot actions), on a PC as well as here, so it is not part of the default.
+set -euo pipefail
+
+SRC=${SRC:-/src}
+OUT=${OUT:-$SRC/build/apk}
+BT=$ANDROID_SDK/build-tools/$BUILD_TOOLS
+JAVA=$(command -v java)
+CERT8=c8a2e9bc   # the platform test certificate's SHA-256, as scripts/release.py checks it
+
+apps=() tests=1 pytests=0 name=${VERSION_NAME:-}
+while [ $# -gt 0 ]; do
+  case $1 in
+    all) apps=(dashboard hub) ;;
+    dashboard|hub) apps+=("$1") ;;
+    --no-tests) tests=0 ;;
+    --py-tests) pytests=1 ;;
+    --version-name) name=$2; shift ;;
+    shell) shift; export PATH="$BT:$PATH"; exec bash "$@" ;;
+    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    *) echo "unknown argument: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
+[ ${#apps[@]} -gt 0 ] || apps=(dashboard hub)
+
+[ -f "$SRC/scripts/build.py" ] || { echo "No checkout at $SRC: run with  -v <checkout>:/src" >&2; exit 2; }
+cd "$SRC"
+
+# The dashboard's versionName tells the builds apart on the car (설정 → 진단, the installers): local-<MMDD>-<commit>,
+# with -dirty when the checkout has uncommitted changes. versionCode stays the manifest's.
+if [ -z "$name" ]; then
+  name=local-$(git log -1 --format=%cd-%h --date=format:%m%d 2>/dev/null || echo nogit)
+  [ -z "$(git status --porcelain 2>/dev/null)" ] || name+=-dirty
+fi
+
+if [ $tests = 1 ]; then
+  echo "== host tests"
+  python3 scripts/test.py --java "$JAVA"
+fi
+if [ $pytests = 1 ]; then
+  echo "== python tests"
+  python3 -m unittest discover -s tests -p 'test_*.py'
+fi
+
+WORK=$(mktemp -d)
+mkdir -p "$OUT"
+for app in "${apps[@]}"; do
+  if [ "$app" = dashboard ]; then final=dashboard-i30pd-platform.apk; named=(--version-name "$name")
+  else final=myapps-i30pd-platform.apk; named=(); fi
+  echo "== build $app${named[1]:+ ($name)}"
+  python3 scripts/build.py "$app" --java "$JAVA" \
+    --android-jar "$ANDROID_SDK/platforms/$PLATFORM/android.jar" \
+    --aapt2 "$BT/aapt2" --r8-jar "$BT/lib/d8.jar" \
+    --out "$WORK/$app" "${named[@]}" \
+    || { tail -n 40 "$WORK/$app"/*.log >&2 2>/dev/null; exit 1; }   # build.py keeps each step's output in a log there
+  "$BT/zipalign" -f -p 4 "$WORK/$app/$app-UNSIGNED.apk" "$WORK/$app/aligned.apk"
+  # V1 (JAR) only: Android 4.2 knows no other scheme
+  "$BT/apksigner" sign --key "$KEY_DIR/platform.pk8" --cert "$KEY_DIR/platform.x509.pem" \
+    --v1-signing-enabled true --v2-signing-enabled false --v3-signing-enabled false --min-sdk-version 17 \
+    --out "$WORK/$app/$final" "$WORK/$app/aligned.apk"
+  "$BT/apksigner" verify --min-sdk-version 17 --max-sdk-version 17 "$WORK/$app/$final"
+  "$BT/apksigner" verify --min-sdk-version 17 --max-sdk-version 17 --print-certs "$WORK/$app/$final" \
+    | tr -d ': ' | grep -qi "$CERT8" || { echo "$final: not signed with the platform test certificate" >&2; exit 1; }
+  cp "$WORK/$app/$final" "$OUT/$final"
+  echo "$final: $(stat -c %s "$OUT/$final") B  sha256 $(sha256sum "$OUT/$final" | cut -d' ' -f1)"
+done
+echo "Signed APKs in build/apk/ (AOSP platform test key, V1). Not checked on a car."

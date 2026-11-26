@@ -207,6 +207,7 @@ public final class UiText {
         EN.put("가장자리 버튼 + 알림 / Floating + notification","Floating + notification");
         EN.put("가장자리 버튼을 표시할 수 없어 알림 바로가기를 유지합니다. 시스템의 다른 앱 위 표시 권한을 확인하세요.","The floating button could not be shown. The notification remains. Check permission to display over other apps.");
         EN.put("각진","Square");
+        EN.put("갈림길","Fork");
         EN.put("감시 회로(워치독) 오류","Monitoring circuit (watchdog) error");
         EN.put("값·그래프 바꾸기","Change reading and graph");
         EN.put("강 (+9 dB)","High (+9 dB)");
@@ -232,6 +233,8 @@ public final class UiText {
         EN.put("경과 초","seconds");
         EN.put("경기","Gyeonggi");
         EN.put("경남","Gyeongnam");
+        EN.put("경로 계산 중","Calculating route");
+        EN.put("경로 다시 찾는 중","Rerouting");
         EN.put("경북","Gyeongbuk");
         EN.put("경유","Diesel");
         EN.put("계기 + 목록","Dial + list");
@@ -273,6 +276,7 @@ public final class UiText {
         EN.put("과속 차임","Speed chime");
         EN.put("과열","Overheated");
         EN.put("관성","Inertia");
+        EN.put("광장","Square");
         EN.put("광주","Gwangju");
         EN.put("구간 아래에서 가속하면 측정","starts when you accelerate through the range");
         EN.put("구성(코딩) 안 됨","Not configured (coded)");
@@ -320,6 +324,7 @@ public final class UiText {
         EN.put("끄기","Disable");
         EN.put("끔","Off");
         EN.put("나이트","Night");
+        EN.put("남은 거리","Remaining");
         EN.put("낮","Day");
         EN.put("낮 색감 고르기","Choose the day look");
         EN.put("낮은 차임","Low chime");
@@ -356,6 +361,7 @@ public final class UiText {
         EN.put("노크 센서 회로 이상","Knock sensor circuit malfunction");
         EN.put("노킹","Knock");
         EN.put("노킹 센서 값은 버스에 없어","No knock-sensor value on the bus:");
+        EN.put("누르면 닫기 · 순정 내비 안내","Tap to close · stock navigation guidance");
         EN.put("누르면 바로 바뀝니다 · 칸 값·스킨은 그대로","Applies at once · cells and skin stay");
         EN.put("누르면 바로 바뀝니다 · 칸 값·크기·투명도는 그대로","Applies at once · cells, size and opacity stay");
         EN.put("누르면 바로 적용","Applies at once");
@@ -394,6 +400,7 @@ public final class UiText {
         EN.put("데미타스 브라운","Demitasse Brown");
         EN.put("데이터 메모리 오류","Data memory error");
         EN.put("도구","Tools");
+        EN.put("도착","Arrived");
         EN.put("돌아가기","Back");
         EN.put("동승석 벨트 버클 스위치 고장","Passenger seat belt buckle switch failure");
         EN.put("동승석 벨트 버클 스위치 단선·전원 단락","Passenger seat belt buckle switch open circuit or short to power");
@@ -499,6 +506,9 @@ public final class UiText {
         EN.put("모양","Shape");
         EN.put("모양 고르기","Choose a layout");
         EN.put("목록 편집","Edit app list");
+        EN.put("목적지","Destination");
+        EN.put("목적지 근처","Near destination");
+        EN.put("목적지 방향","Towards destination");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
         EN.put("미드나이트 퍼플","Midnight Purple");
@@ -600,6 +610,7 @@ public final class UiText {
         EN.put("부하","Load");
         EN.put("부하 %","Load %");
         EN.put("부하율","LOAD");
+        EN.put("분","min");
         EN.put("브레이크","Brake");
         EN.put("브레이크 디스크 과열","Brake disc overheated");
         EN.put("브레이크 스위치","Brake switch");
@@ -893,6 +904,7 @@ public final class UiText {
         EN.put("예열 플러그 회로 이상","Glow plug circuit malfunction");
         EN.put("오른쪽","Right");
         EN.put("오른쪽 ","Right ");
+        EN.put("오른쪽 고가","Overpass right");
         EN.put("오른쪽 뒤 바퀴속도 센서 단선·단락","Right rear wheel speed sensor open or short circuit");
         EN.put("오른쪽 뒤 바퀴속도 센서 범위·성능 이상 (간헐)","Right rear wheel speed sensor range/performance (intermittent)");
         EN.put("오른쪽 뒤 바퀴속도 센서 신호 없음·무효","Right rear wheel speed sensor no signal or invalid signal");
@@ -901,6 +913,8 @@ public final class UiText {
         EN.put("오른쪽 앞 바퀴속도 센서 범위·성능 이상 (간헐)","Right front wheel speed sensor range/performance (intermittent)");
         EN.put("오른쪽 앞 바퀴속도 센서 신호 없음·무효","Right front wheel speed sensor no signal or invalid signal");
         EN.put("오른쪽 앞 바퀴속도 센서 회로 이상","Right front wheel speed sensor circuit malfunction");
+        EN.put("오른쪽 지하차도","Underpass right");
+        EN.put("오른쪽 출구","Exit right");
         EN.put("오실로","Scope");
         EN.put("오실로스코프","Oscilloscope");
         EN.put("오일 온도","Oil temperature");
@@ -913,6 +927,7 @@ public final class UiText {
         EN.put("외기온","Outside");
         EN.put("왼쪽","Left");
         EN.put("왼쪽 ","Left ");
+        EN.put("왼쪽 고가","Overpass left");
         EN.put("왼쪽 뒤 바퀴속도 센서 단선·단락","Left rear wheel speed sensor open or short circuit");
         EN.put("왼쪽 뒤 바퀴속도 센서 범위·성능 이상 (간헐)","Left rear wheel speed sensor range/performance (intermittent)");
         EN.put("왼쪽 뒤 바퀴속도 센서 신호 없음·무효","Left rear wheel speed sensor no signal or invalid signal");
@@ -921,6 +936,8 @@ public final class UiText {
         EN.put("왼쪽 앞 바퀴속도 센서 범위·성능 이상 (간헐)","Left front wheel speed sensor range/performance (intermittent)");
         EN.put("왼쪽 앞 바퀴속도 센서 신호 없음·무효","Left front wheel speed sensor no signal or invalid signal");
         EN.put("왼쪽 앞 바퀴속도 센서 회로 이상","Left front wheel speed sensor circuit malfunction");
+        EN.put("왼쪽 지하차도","Underpass left");
+        EN.put("왼쪽 출구","Exit left");
         EN.put("왼쪽: 보여 줄 값 · 오른쪽 버튼: 그래프 모양","Left: the reading · right button: the graph");
         EN.put("요금 · 정차","Fare · stopped");
         EN.put("요금 · 주행","Fare · moving");
@@ -929,6 +946,7 @@ public final class UiText {
         EN.put("요레이트·횡가속도 센서 전기 계통 이상","Yaw rate / lateral acceleration sensor electrical fault");
         EN.put("우 방향지시등","Right turn signal");
         EN.put("우주선 워프","Starship warp");
+        EN.put("우회전","Turn right");
         EN.put("운전석","Driver");
         EN.put("운전석 문","Driver door");
         EN.put("운전석 벨트 버클 스위치 고장","Driver seat belt buckle switch failure");
@@ -995,6 +1013,7 @@ public final class UiText {
         EN.put("유리 톡톡","Glass tap");
         EN.put("유온","Oil");
         EN.put("유온 (ECU 후보)","Oil temp (ECU, candidate)");
+        EN.put("유턴","U-turn");
         EN.put("유형 %02X","Type %02X");
         EN.put("음량","Volume");
         EN.put("음악","Music");
@@ -1146,6 +1165,7 @@ public final class UiText {
         EN.put("종가속","Longitudinal G");
         EN.put("좋습니다","Good");
         EN.put("좌 방향지시등","Left turn signal");
+        EN.put("좌회전","Turn left");
         EN.put("주변 기기 검색","Find nearby devices");
         EN.put("주변 기기 검색 중","Searching for nearby devices");
         EN.put("주변 기기 검색을 누르고 연결할 기기를 페어링 모드로 켜주세요.","Tap Find nearby devices and put the device into pairing mode.");
@@ -1202,6 +1222,7 @@ public final class UiText {
         EN.put("직전 코너 최대 횡가속","Last corner's peak lateral G");
         EN.put("직전 코너 최저 속도","Last corner's lowest speed");
         EN.put("직접 선택","Chosen by you");
+        EN.put("직진","Straight on");
         EN.put("진단","DTC");
         EN.put("진단 서비스에 연결하지 못했습니다.","Could not connect to the diagnostic service.");
         EN.put("진하게","Solid");
@@ -1212,6 +1233,7 @@ public final class UiText {
         EN.put("차량 색","Car colour");
         EN.put("차량 속도","Vehicle speed");
         EN.put("차량 표시 상태를 확인하지 못했습니다. N 계기판 버튼으로 다시 열어주세요.","Could not confirm vehicle display status. Try the N Dashboard button again.");
+        EN.put("차로 변경","Change lane");
         EN.put("차를 팔거나 넘기기 전에 쓰는 기능입니다.\n\n삭제되는 것:\n· i30 계기판 앱과 그 설정 · 기록\n· 내 앱과 그 설정\n\n되돌리는 것:\n· ☆ 버튼을 원래 기능으로\n· 화면 가장자리 바로가기 버튼 끄기\n\n다시 쓰려면 설치기로 새로 설치하면 됩니다.","For selling or handing over the car.\n\nRemoved:\n· the i30 dashboard app with its settings and records\n· My Apps with its settings\n\nPut back:\n· the ☆ button to its own function\n· the edge shortcut button turned off\n\nTo use them again, install with the installer.");
         EN.put("차속 · 공회전 제어 · 보조 입력","Vehicle speed · idle control · auxiliary inputs");
         EN.put("차속 센서 범위·성능 이상","Vehicle speed sensor range/performance");
@@ -1249,6 +1271,7 @@ public final class UiText {
         EN.put("최근 60초","Last 60 s");
         EN.put("최대 횡G","Max lat G");
         EN.put("축소","scaled down");
+        EN.put("출구","Exit");
         EN.put("출력 (계산)","Power (calc.)");
         EN.put("출력 경로","Output route");
         EN.put("출발선 위치는 추정","Start / finish line estimated");
@@ -1424,6 +1447,8 @@ public final class UiText {
         EN.put("활성화 안 됨","Not activated");
         EN.put("회"," times");
         EN.put("회로 간헐 불량","Circuit intermittent");
+        EN.put("회전","Turn");
+        EN.put("회전교차로","Roundabout");
         EN.put("횟수","drives");
         EN.put("횡가속","Lateral G");
         EN.put("효과음","Effects");

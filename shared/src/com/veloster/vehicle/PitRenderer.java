@@ -185,6 +185,7 @@ public final class PitRenderer {
             paint.setStyle(Paint.Style.FILL);
         }
         if(picker)drawPicker(c,screen(cluster));
+        else if(graphLayout==null&&gaugeLayout==null)drawTbt(c,Tbt.current(frameTime));   // the navigation's next turn, over every page
         else if(graphLayout==null&&!mediaPage && music!=null && music.notice && !showsMusic())drawMedia(c,true);
         if(cluster&&!picker&&gaugeLayout==null&&graphLayout==null&&mediaToggleShown())drawArtworkToggle(c);
         c.restore();
@@ -680,6 +681,39 @@ public final class PitRenderer {
     private boolean showsMusic(){
         return gaugeLayout==null&&symmetric&&(page==PAGE_RACE&&raceMedia||isCluster(page)&&clusterRenderer.showsMusic(page-PAGE_CLASSIC));
     }
+    // ---- 길안내: the stock navigation's next turn (Tbt), a band over the top of every page while a turn is announced;
+    // a tap opens it over the whole page (big arrow and distance), another tap closes it.
+    public boolean tbtBig;private boolean tbtShown;
+    static final float TBT_T=58,TBT_B=106;
+    /** True when (x, y) is on the band, or anywhere on the page while it is open big. */
+    public boolean tbtHit(float x,float y){return tbtShown&&(tbtBig?y>52:y>=TBT_T&&y<=TBT_B&&x>=18&&x<=782);}
+    private final Path tbtArrow=arrowPath();
+    /** An arrow pointing up, about 2 units tall, centred on the origin: built once, turned and scaled by the canvas. */
+    private static Path arrowPath(){Path a=new Path();a.moveTo(0,-1);a.lineTo(.75f,-.15f);a.lineTo(.28f,-.15f);a.lineTo(.28f,1);a.lineTo(-.28f,1);a.lineTo(-.28f,-.15f);a.lineTo(-.75f,-.15f);a.close();return a;}
+    private void arrow(Canvas c,float x,float y,float size,float deg,int color){
+        c.save();c.translate(x,y);c.rotate(deg);c.scale(size,size);paint.setStyle(Paint.Style.FILL);paint.setColor(T(color));c.drawPath(tbtArrow,paint);c.restore();}
+    private void drawTbt(Canvas c,Tbt.State s){
+        if(!s.active)tbtBig=false;
+        tbtShown=s.maneuver||tbtBig&&s.active;if(!tbtShown)return;
+        String dist=Tbt.distance(s.metres),left=(Float.isNaN(s.destKm)?"":String.format(Locale.US,"%.1f km",s.destKm))+(s.minutes>=0?" · "+s.minutes+UiText.t("분"):"");
+        float deg=Tbt.arrow(s);
+        if(!tbtBig){
+            panel(c,18,TBT_T,764,TBT_B-TBT_T,0xf0101a20,BLUE);
+            arrow(c,50,82,17,deg,WHITE);
+            text(c,dist,82,92,26,WHITE,true);
+            text(c,UiText.t(s.label),82+textWidth(dist,26,true)+14,90,18,BLUE,true);
+            if(left.length()>0)text(c,left,770-textWidth(left,14,false),88,14,MUTED,false);
+            return;
+        }
+        panel(c,18,60,764,410,0xff0b1216,BLUE);
+        arrow(c,220,250,110,deg,WHITE);
+        text(c,dist.length()>0?dist:"—",380,230,72,WHITE,true);
+        text(c,UiText.t(s.label),384,292,34,BLUE,true);
+        if(s.dest.length()>0)text(c,UiText.t("목적지")+"  "+s.dest,384,350,18,MUTED,false);
+        if(left.length()>0)text(c,UiText.t("남은 거리")+"  "+left,384,380,18,MUTED,false);
+        text(c,UiText.t("누르면 닫기 · 순정 내비 안내"),36,456,12,MUTED,false);
+    }
+    private float textWidth(String s,float size,boolean bold){paint.setTypeface(bold?Typeface.DEFAULT_BOLD:Typeface.DEFAULT);paint.setTextSize(size);return paint.measureText(s);}
     private void drawMedia(Canvas c,boolean notice){
         long age=music==null?0:music.noticeAgeMs;
         float phase=Math.min(1f,Math.min(age/250f,(5000-age)/250f));

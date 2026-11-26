@@ -48,6 +48,12 @@ public final class TabsPreview {
         PitRenderer show=new PitRenderer();show.setSymmetric(true);show.setPage(PitRenderer.PAGE_SHOW);
         save(out,"4e_show",show,model,now,false,false);
         rec.setPage(PitRenderer.PAGE_RACE);save(out,"4c_race",rec,model,now,false,false);
+        {   // 길안내: the stock navigation's next turn as a band over the page, then opened big
+         String d=String.join("\n","Navigation Cluster:","  TBT SubInfo:","    distance      = 12.4 METER","    minutes       = 21","",
+             "  TBT Info:","    Display Type  = TURN","    Direction     = 270.0","    Distance      = 350.0 METER","","  DestName = 0xf4 0x00 0x8c 0xd6 0xac 0xc0 ","");
+         Tbt.set(Tbt.parse(d),now);save(out,"4c_race_tbt",rec,model,now,false,false);
+         PitRenderer tb=new PitRenderer();tb.setSymmetric(true);tb.setPage(PitRenderer.PAGE_RACE);tb.tbtBig=true;save(out,"4c_race_tbt_big",tb,model,now,false,false);
+         Tbt.set(Tbt.NONE,now);}
         model.hscanPd(0xc7,0x1c,new byte[]{2,1,0,0},now);save(out,"4c_race_tcs_off",rec,model,now,false,false);   // stability switches: TCS off, then TCS and ESC off
         model.hscanPd(0xc7,0x1c,new byte[]{2,2,0,0},now);save(out,"4c_race_esc_off",rec,model,now,false,false);model.hscanPd(0xc7,0x1c,new byte[]{0,0,0,0},now);
         save(out,"4c_race_music",rec,model,now,false,true);   // race tab with the music panel toggled on

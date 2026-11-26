@@ -564,8 +564,8 @@ public final class VehicleDash extends View implements Runnable {
             return android.graphics.Typeface.createFromFile(f);
         }catch(Throwable e){android.util.Log.w("VehicleDash","font "+name+": "+e);return null;}
     }
-    protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity);Gps.start(activity); post(this); }
-    protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();mediaReceiver.stop();artwork.close();Gps.stop();super.onDetachedFromWindow(); }
+    protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity);Gps.start(activity);TbtReader.start(); post(this); }
+    protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();mediaReceiver.stop();artwork.close();Gps.stop();TbtReader.stop();super.onDetachedFromWindow(); }
     public void run() {
         long delay=100;
         long tick=SystemClock.elapsedRealtime();
@@ -836,6 +836,7 @@ public final class VehicleDash extends View implements Runnable {
         }
         if(tap&&!blocked&&symmetric&&(PitRenderer.isCluster(page)||page==PitRenderer.PAGE_ECO||page==PitRenderer.PAGE_MANUAL)&&y>52&&downY>52&&renderer.clusterTap(x,y)){int kc=CassetteCluster.consumeKeyCmd();if(kc!=0)requestMedia(kc);if(EcoCluster.consumeChanged())saveEco();
             if(page==PitRenderer.PAGE_MANUAL)activity.getSharedPreferences("pit_vehicle_ui",0).edit().putBoolean("lambda_down_always",LambdaCluster.downAlways).apply();invalidate();return true;}
+        if(tap&&!blocked&&!picker&&renderer.tbtHit(x,y)&&renderer.tbtHit(downX,downY)){renderer.tbtBig=!renderer.tbtBig;invalidate();return true;}   // the guidance band opens big, a tap closes it
         if(tap&&!blocked&&gauges&&x>=650&&x<=788&&downX>=650&&downX<=788&&y>=54&&y<=78&&downY>=54&&downY<=78){gaugeEditor.toggleGrid();return true;}
         if(tap&&!blocked&&graphs&&y>=54&&y<=79&&downY>=54&&downY<=79){
             if(x>=628&&x<=702&&downX>=628&&downX<=702)graphEditor.window(60000);

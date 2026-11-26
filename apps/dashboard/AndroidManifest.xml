@@ -4,6 +4,8 @@
     <!-- the settings backup (SettingsBackup): a file that stays when the app is removed -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- the stock navigation's guidance, read from the cluster service's dump (TbtReader); granted to platform-signed apps -->
+    <uses-permission android:name="android.permission.DUMP" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- the floating window opens the dashboard at once, also within 5 s of the home key -->

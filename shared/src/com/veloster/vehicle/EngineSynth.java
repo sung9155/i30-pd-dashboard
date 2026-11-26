@@ -35,9 +35,23 @@ public final class EngineSynth {
 
     static final class Engine {
         final double[] cyl,coast,full,pulse;final double jitter,fScale,popMul,popRpm,flow,whistle,blowoff;
+        /** What sets one four apart from another (all off by default):
+         *  firePos - where each cylinder's pulse reaches the collector in the 720 deg cycle (0..1, null = evenly);
+         *            a boxer's unequal-length headers bunch them in pairs: the off-beat rumble.
+         *  camRpm, camLift - a high-lift cam above camRpm: orders 3 and up and the intake roar rise by camLift.
+         *  brap - an upshift at full throttle (rpm drops faster than a rev can) cuts ignition for a moment and the
+         *         unburnt charge cracks in the exhaust: a quick volley of pops (dual-clutch hot hatches).
+         *  flutter - lifting off boost with no blow-off valve: the compressor surges, a chopped "chu-tu-tu".
+         *  clatter - a diesel's combustion knock: a short bright click on every firing. */
+        double[] firePos;double camRpm,camLift,brap,flutter,clatter;
         Engine(double[] cyl,double jitter,double fScale,double popMul,double popRpm,double[] coast,double[] full,double[] pulse,double flow,double whistle,double blowoff){
             this.cyl=cyl;this.jitter=jitter;this.fScale=fScale;this.popMul=popMul;this.popRpm=popRpm;this.coast=coast;this.full=full;
             this.pulse=pulse;this.flow=flow;this.whistle=whistle;this.blowoff=blowoff;}
+        Engine fire(double... pos){firePos=pos;return this;}
+        Engine cam(double rpm,double lift){camRpm=rpm;camLift=lift;return this;}
+        Engine brap(double v){brap=v;return this;}
+        Engine flutter(double v){flutter=v;return this;}
+        Engine clatter(double v){clatter=v;return this;}
     }
     static final class Exhaust {
         final double[][] formants;final double dry,orderGain,low,high,pulseMul,flowMul,drive,popQ,popWindow,popBodyHz,popT0,popBig,popGain;
@@ -48,10 +62,10 @@ public final class EngineSynth {
     }
     /** An engine through an exhaust: what render() plays. */
     public static final class Voice {
-        final double[] cyl,coast=new double[16],full=new double[16],pulse;final double[][] formants;
-        final double jitter,dry,orderGain,flow,drive,whistle,blowoff,popGain,popRpm,popChance,popWindow,popBodyHz,popT0,popBig;
+        final double[] cyl,coast=new double[16],full=new double[16],pulse,firePos;final double[][] formants;
+        final double jitter,dry,orderGain,flow,drive,whistle,blowoff,popGain,popRpm,popChance,popWindow,popBodyHz,popT0,popBig,camRpm,camLift,brap,flutter,clatter;
         Voice(Engine e,Exhaust x){
-            cyl=e.cyl;jitter=e.jitter;
+            cyl=e.cyl;jitter=e.jitter;firePos=e.firePos;camRpm=e.camRpm;camLift=e.camLift;brap=e.brap;flutter=e.flutter;clatter=e.clatter;
             for(int m=0;m<16;m++){double s=m<=2?x.low:m>=8?x.high:1;coast[m]=e.coast[m]*s;full[m]=e.full[m]*s;}
             formants=new double[x.formants.length][];
             for(int f=0;f<formants.length;f++)formants[f]=new double[]{x.formants[f][0]*e.fScale,x.formants[f][1],x.formants[f][2]};
@@ -61,7 +75,7 @@ public final class EngineSynth {
             popGain=x.popGain;popRpm=e.popRpm;popChance=1-2*x.popQ*e.popMul;popWindow=x.popWindow;
             popBodyHz=x.popBodyHz*Math.sqrt(e.fScale);popT0=x.popT0/Math.sqrt(e.fScale);popBig=x.popBig;
         }
-        /** False for engines without a turbo (no whistle, no blow-off). */
+        /** False for engines without a turbo (no whistle, no blow-off or flutter). */
         public boolean turbo(){return whistle>0;}
     }
     /** engine 0..engines()-1 (0 = this car's 1.6 turbo four), exhaust 0..exhausts()-1 (0 = stock); out of range = 0. */
@@ -71,8 +85,9 @@ public final class EngineSynth {
     public static int engines(){return ENGINES.length;}
     public static int exhausts(){return EXHAUSTS.length;}
 
-    // Generated from the listening page tables (engine-sound.html); keep the two in step.
-    static final String[] ENGINE_IDS={"i4t","i6","v6","v8","v8flat"};
+    // 0..4 came from the listening page (engine-sound.html); 5..10, the fours added 2026-11-27, live only here
+    // (their samples are rendered from this class). Indexes are saved, so new engines only ever go at the end.
+    static final String[] ENGINE_IDS={"i4t","i6","v6","v8","v8flat","i4hot","i4cam","boxer","i4rally","i4light","i4diesel"};
     static final Engine[] ENGINES={
         new Engine(new double[]{1,0.86,0.95,0.8},0.12,1,1,2200,
             new double[]{0.05,0.1,0.03,1,0.03,0.1,0.02,0.32,0.02,0.06,0.01,0.14,0.01,0.03,0.01,0.05},
@@ -93,7 +108,40 @@ public final class EngineSynth {
         new Engine(new double[]{1,0.95,0.98,0.93,1,0.96,0.97,0.94},0.07,1.5,0.6,2600,
             new double[]{0.02,0.03,0.02,0.12,0.02,0.05,0.02,1,0.02,0.05,0.02,0.14,0.02,0.06,0.02,0.45},
             new double[]{0.04,0.06,0.04,0.2,0.04,0.1,0.04,1,0.04,0.12,0.04,0.28,0.04,0.14,0.04,0.6},
-            new double[]{0.3,0.4,0.28,0.48},0.04,0,0)};
+            new double[]{0.3,0.4,0.28,0.48},0.04,0,0),
+        // 5 2.0 turbo hot hatch: rasp in the low half orders, a hard 4th and 6th under load, crackle on lifts and a brap
+        //   on every flat-out upshift (dual-clutch hot hatches).
+        new Engine(new double[]{1,0.82,0.97,0.78},0.14,0.95,1.7,2000,
+            new double[]{0.08,0.16,0.06,1,0.05,0.14,0.03,0.4,0.03,0.09,0.02,0.18,0.01,0.05,0.01,0.06},
+            new double[]{0.26,0.34,0.2,1,0.18,0.38,0.14,0.7,0.12,0.3,0.09,0.48,0.07,0.2,0.05,0.24},
+            new double[]{0.4,0.5,0.32,0.55},0.05,0.013,0.07).brap(.9),
+        // 6 high-revving NA with a cam changeover: smooth and thin low down, then at 5600 rpm the high-lift cam opens
+        //   up a hard, bright scream with a lot of intake.
+        new Engine(new double[]{1,0.95,0.98,0.94},0.07,1.15,0.5,3200,
+            new double[]{0.03,0.06,0.02,1,0.02,0.12,0.02,0.3,0.02,0.1,0.01,0.16,0.01,0.06,0.01,0.08},
+            new double[]{0.08,0.12,0.06,1,0.06,0.24,0.05,0.5,0.05,0.24,0.04,0.36,0.03,0.16,0.03,0.2},
+            new double[]{0.3,0.4,0.28,0.45},0.06,0,0).cam(5600,1.3),
+        // 7 flat four, unequal-length headers: the pulses reach the collector in pairs (0, 200, 360, 560 deg), so the
+        //   half orders carry an off-beat rumble; a turbo that flutters instead of blowing off.
+        new Engine(new double[]{1,0.9,0.96,0.88},0.11,0.92,1,2200,
+            new double[]{0.3,0.5,0.32,1,0.12,0.18,0.08,0.3,0.05,0.08,0.03,0.12,0.02,0.04,0.01,0.04},
+            new double[]{0.45,0.7,0.48,1,0.24,0.32,0.16,0.5,0.1,0.18,0.07,0.28,0.05,0.12,0.04,0.14},
+            new double[]{0.4,0.5,0.32,0.55},0.045,0.015,0).fire(0,0.278,0.5,0.778).flutter(.8),
+        // 8 rally turbo with anti-lag: rough, pops on nearly every overrun stroke, flutter and a brap on upshifts.
+        new Engine(new double[]{1,0.78,0.94,0.74},0.2,0.95,2.6,1700,
+            new double[]{0.12,0.2,0.1,1,0.08,0.16,0.05,0.38,0.04,0.1,0.03,0.18,0.02,0.06,0.01,0.07},
+            new double[]{0.3,0.4,0.26,1,0.2,0.4,0.15,0.66,0.12,0.28,0.09,0.44,0.07,0.2,0.05,0.24},
+            new double[]{0.45,0.55,0.34,0.58},0.055,0.02,0).flutter(.6).brap(.7),
+        // 9 light 1.6 NA roadster: smooth and buzzy, little bass, a clean rise to the redline, few pops.
+        new Engine(new double[]{1,0.97,0.99,0.96},0.05,1.12,0.45,3000,
+            new double[]{0.02,0.04,0.02,1,0.02,0.16,0.02,0.36,0.01,0.12,0.01,0.2,0.01,0.08,0.01,0.1},
+            new double[]{0.05,0.08,0.04,1,0.04,0.26,0.04,0.5,0.03,0.2,0.03,0.3,0.02,0.12,0.02,0.14},
+            new double[]{0.28,0.38,0.26,0.42},0.035,0,0),
+        // 10 diesel four (turbo): deep and lumpy, a combustion click on every firing, no overrun pops.
+        new Engine(new double[]{1,0.88,0.95,0.86},0.1,0.88,0,99999,
+            new double[]{0.1,0.18,0.08,1,0.06,0.2,0.04,0.28,0.03,0.08,0.02,0.1,0.01,0.03,0.01,0.03},
+            new double[]{0.2,0.3,0.14,1,0.1,0.3,0.07,0.4,0.05,0.12,0.04,0.16,0.02,0.05,0.02,0.05},
+            new double[]{0.6,0.8,0.4,0.5},0.04,0.012,0.04).clatter(.8)};
     static final String[] EXHAUST_IDS={"stock","sport","resonator","straight"};
     static final Exhaust[] EXHAUSTS={
         new Exhaust(new double[][]{{105,1.1,1},{420,2.2,0.55},{1150,3,0.18}},0.35,0.3,1,1,1,1,0.8,0.15,2.5,60,0.01,0.08,1.3),
@@ -106,7 +154,7 @@ public final class EngineSynth {
     private double rpm,pedal,boost,targetRpm,targetPedal,targetBoost,master;
     private double phase,whistlePhase,wobblePhase;   // phase = half-order phase: 2*pi per 720 degrees of crank
     private int firing=-1;
-    private double pulse,blowoff,liftTimer,lastPedal,peakBoost;
+    private double pulse,blowoff,liftTimer,lastPedal,peakBoost,brapT,flutterPhase,clatterEnv,clatLp;
     private double hp,hpIn,blowLp,blowBp;
     private int popT=-1;
     private double popA,popT0,popB,popTau,crLp;
@@ -163,6 +211,7 @@ public final class EngineSynth {
                     // A step faster than 5000 rpm/s is a gear change or a clutch event, not a trend: hold it.
                     double sl=(rpm-lastRaw)/sinceNew;
                     slope=Math.abs(sl)*rate>5000?0:sl;interval=sinceNew;
+                    if(-sl*rate>5000&&lastPedal>.5&&lastRaw>3000&&p.brap>0)brapT=.12;   // a flat-out upshift: ignition cut
                 }
                 lastRaw=rpm;sinceNew=0;
             }
@@ -183,8 +232,10 @@ public final class EngineSynth {
             pulseDecay=Math.exp(-1/(.0025*rate)),blowDecay=Math.exp(-1/(.15*rate)),dt=n/rate;
         if(!running&&master<1e-5){master=0;for(int i=0;i<n;i++)out[off+i]=0;return;}   // fully faded: silence
         double load=pedal;
-        for(int m=0;m<16;m++)amp[m]=P.coast[m]+(P.full[m]-P.coast[m])*load;
-        liftTimer=Math.max(0,liftTimer-dt);flameHold=Math.max(0,flameHold-dt);
+        double cam=P.camRpm>0?Math.max(0,Math.min(1,(rpm-P.camRpm)/250+.5)):0,lift=1+P.camLift*cam;   // 250 rpm crossfade at the changeover
+        for(int m=0;m<16;m++)amp[m]=(P.coast[m]+(P.full[m]-P.coast[m])*load)*(m>=5?lift:1);
+        double flowK=1+.6*P.camLift*cam,cut=brapT>0?.35:1;   // the ignition cut drops the engine itself under the brap
+        liftTimer=Math.max(0,liftTimer-dt);flameHold=Math.max(0,flameHold-dt);brapT=Math.max(0,brapT-dt);
         for(int i=0;i<n;i++){
             if(leadN>0&&running&&!Double.isNaN(lastRaw)){   // predicted rpm, never more than 400 rpm from the last sample
                 double ahead=Math.min(sinceNew+leadN,leadN+1.5*interval);
@@ -196,10 +247,15 @@ public final class EngineSynth {
             double f=rpm/120;   // half-order frequency: one cycle per two revolutions
             phase+=2*Math.PI*f/rate;
             if(phase>=2*Math.PI)phase-=2*Math.PI;
-            int fire=(int)Math.floor(phase*nc/(2*Math.PI));
+            int fire;
+            if(P.firePos==null)fire=(int)Math.floor(phase*nc/(2*Math.PI));
+            else{double fr=phase/(2*Math.PI);fire=0;while(fire+1<nc&&fr>=P.firePos[fire+1])fire++;}
             if(fire!=firing){
                 firing=fire;
                 pulse=P.cyl[fire%nc]*(1+P.jitter*noise());
+                if(P.clatter>0)clatterEnv=1;
+                if(brapT>0&&fire%2==0&&master>.3&&popRate>0){   // brap: every other firing in the cut cracks in the exhaust (a short volley); the 팝 trim scales it
+                    popT0=P.popT0*(.6+.2*noise());popA=(1.1+.2*noise())*P.brap*Math.min(1.5,popRate);popB=1.8+.4*noise();popTau=.02;popT=0;}
                 // Overrun burble: a firing-locked, random subset of thuds gives the "du-du-du" that slows with the rpm.
                 if(liftTimer>0&&pedal<.05&&rpm>P.popRpm&&noise()>popC){
                     boolean big=noise()>1-2*P.popBig;double fade=.45+.55*Math.min(1,liftTimer/P.popWindow);
@@ -215,7 +271,7 @@ public final class EngineSynth {
             v*=P.orderGain;
             double nz=noise();
             v+=pulse*(pl[0]+pl[1]*nz)*(pl[2]+pl[3]*pedal);   // combustion pulse with noise in it
-            v+=nz*P.flow*(.2+pedal)*Math.min(1,rpm/4000);    // intake / flow noise with load
+            v+=nz*P.flow*flowK*(.2+pedal)*Math.min(1,rpm/4000);    // intake / flow noise with load (and the cam)
             pulse*=pulseDecay;
             double y=v*P.dry;
             for(int b=0;b<nf;b++){
@@ -225,7 +281,8 @@ public final class EngineSynth {
                 y+=o*P.formants[b][2]*3;
             }
             double dc=y-hpIn+.995*hp;hpIn=y;hp=dc;
-            double level=master*Math.min(1,rpm/800)*(.45+.55*pedal)*(.60+.40*Math.min(1,rpm/6000));
+            double level=master*Math.min(1,rpm/800)*(.45+.55*pedal)*(.60+.40*Math.min(1,rpm/6000))*cut;
+            if(clatterEnv>.001){clatLp+=(nz-clatLp)*.55;dc+=(nz-clatLp)*clatterEnv*P.clatter*.5*(.4+.6*pedal);clatterEnv*=.93;}   // diesel knock: a ~1 ms bright click
             double s=dc*level*ev;
             double spool=Math.max(0,Math.min(1,boost/1.2));
             if(spool>0){   // turbo whistle rises with boost, with a slow wobble
@@ -235,7 +292,11 @@ public final class EngineSynth {
                 s+=Math.sin(whistlePhase)*P.whistle*tv*spool*(.4+.6*pedal)*master;
             }
             // Blow-off: a short band-limited hiss (about 1.5-5 kHz), as loud as the boost it dumps.
-            if(blowoff>.001){blowLp+=(nz-blowLp)*.25;blowBp+=((nz-blowLp)-blowBp)*.5;s+=blowBp*P.blowoff*bv*blowoff*master;blowoff*=blowDecay;}
+            if(blowoff>.001){blowLp+=(nz-blowLp)*.25;blowBp+=((nz-blowLp)-blowBp)*.5;s+=blowBp*P.blowoff*bv*blowoff*master;
+                if(P.flutter>0){   // compressor surge: the boost leaves in ~18 Hz chops, deeper than a valve's hiss
+                    flutterPhase+=2*Math.PI*(14+8*blowoff)/rate;if(flutterPhase>2*Math.PI)flutterPhase-=2*Math.PI;
+                    double chop=Math.max(0,Math.sin(flutterPhase));s+=(blowLp*2+blowBp)*chop*chop*P.flutter*bv*blowoff*master*4;}
+                blowoff*=blowDecay;}
             double x=0,cr=0;
             if(popT>=0){
                 double t=popT/rate,T=popT0;

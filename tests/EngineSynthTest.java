@@ -42,6 +42,28 @@ public final class EngineSynthTest {
         }
         return new double[]{sum/n,low};
     }
+    /** Energy in the 0.25 s after a pull to 6500 rpm falls to 4500 at the given pedal, either in one CAN step (an upshift) or
+     *  over a second. */
+    private static double shift(int engine,double pedal,boolean step,double pops){
+        EngineSynth s=new EngineSynth(EngineSynth.RATE,EngineSynth.voice(engine,0));s.popRate=pops;float[] x=new float[512];double e=0;
+        for(int i=0;i<40;i++){s.set(5700+i*20,pedal,.8);s.render(x,0,512,1);}   // pulling to 6500 rpm, a new CAN value every block
+        for(int i=0;i<6;i++){s.set(step?4500+i*10:6500-i*40,pedal,.8);s.render(x,0,512,1);for(float v:x)e+=v*v;}
+        return e;
+    }
+    /** Energy over a 1.5 s lift from 4500 rpm with the given pop rate. */
+    private static double overrun(int engine,double pops){
+        EngineSynth s=new EngineSynth(EngineSynth.RATE,EngineSynth.voice(engine,0));s.popRate=pops;s.bovVol=0;float[] x=new float[512];double e=0;
+        for(int i=0;i<40;i++){s.set(4500,1,0);s.render(x,0,512,1);}
+        for(int i=0;i<32;i++){s.set(4500-i*40,0,-.5);s.render(x,0,512,1);for(float v:x)e+=v*v;}
+        return e;
+    }
+    /** Energy over 0.5 s after lifting off 1.2 bar of boost at 4500 rpm, with the blow-off trim bov. */
+    private static double lift(int engine,double bov){
+        EngineSynth s=new EngineSynth(EngineSynth.RATE,EngineSynth.voice(engine,0));s.bovVol=bov;s.popRate=0;float[] x=new float[512];double e=0;
+        for(int i=0;i<40;i++){s.set(4500,1,1.2);s.render(x,0,512,1);}
+        for(int i=0;i<11;i++){s.set(4400,0,.2);s.render(x,0,512,1);for(float v:x)e+=v*v;}
+        return e;
+    }
     private static double truth(double t){return t<.5?1500:t<2?1500+(t-.5)*2000:3000+Math.max(0,t-2.15)*1500;}
 
     public static void main(String[] args){
@@ -88,6 +110,25 @@ public final class EngineSynthTest {
         EngineSynth b=new EngineSynth();run(b,4000,1,1,1);
         float[] stop=run(b,Double.NaN,0,0,2);
         check(peak(stop)<.001,"fades out when the engine stops: "+peak(stop));
+        // The fours added 2026-11-27: each one's character shows in the sound.
+        // Flat four: the paired pulses put the off-beat order 1 (3000 rpm: 50 Hz) far up against an even four.
+        float[] boxer=run(new EngineSynth(EngineSynth.RATE,EngineSynth.voice(7,0)),3000,1,0,2),even=run(new EngineSynth(EngineSynth.RATE,EngineSynth.voice(0,0)),3000,1,0,2);
+        check(power(boxer,50)/power(boxer,100)>3*power(even,50)/power(even,100),"flat four rumbles on order 1");
+        // Cam changeover: order 6 (36 x rpm/360) rises across 5600 rpm far more than the light NA four's does.
+        double camUp=power(run(new EngineSynth(EngineSynth.RATE,EngineSynth.voice(6,0)),6200,1,0,2),620)/power(run(new EngineSynth(EngineSynth.RATE,EngineSynth.voice(6,0)),5000,1,0,2),500);
+        double plainUp=power(run(new EngineSynth(EngineSynth.RATE,EngineSynth.voice(9,0)),6200,1,0,2),620)/power(run(new EngineSynth(EngineSynth.RATE,EngineSynth.voice(9,0)),5000,1,0,2),500);
+        check(camUp>plainUp*2,"cam changeover brightens the top end: "+camUp+" vs "+plainUp);
+        // Brap: a flat-out upshift (6500 -> 4500 rpm in one CAN step) cracks (the 팝 trim at 0 takes it away); a slow
+        // fall does not, nor does the stock four.
+        check(shift(5,1,true,1)>shift(5,1,true,0)*1.25,"hot hatch brap on a flat-out upshift: "+shift(5,1,true,1)+" vs "+shift(5,1,true,0));
+        check(shift(5,1,false,1)==shift(5,1,false,0),"no brap on a slow fall");
+        check(shift(0,1,true,1)==shift(0,1,true,0),"no brap from the stock four");
+        // Flutter: lifting off boost with no valve chops the air; the 블로오프 trim silences it.
+        check(lift(7,1)>lift(7,0)*1.3,"flat four flutters on a lift: "+lift(7,1)+" vs "+lift(7,0));
+        // Diesel: a click on every firing (energy above 2 kHz at idle) and no overrun pops.
+        float[] dz=run(new EngineSynth(EngineSynth.RATE,EngineSynth.voice(10,0)),850,0,0,2),pz=run(new EngineSynth(EngineSynth.RATE,EngineSynth.voice(0,0)),850,0,0,2);
+        check(power(dz,2600)/rms(dz)>3*power(pz,2600)/rms(pz),"diesel clatter");
+        check(overrun(10,1)==overrun(10,0)&&overrun(5,1)>overrun(5,0),"diesel never pops (the hot hatch does)");
         System.out.println("PASS "+checks+" engine synth checks; lag "+Math.round(plain[0])+" -> "+Math.round(comp[0])+" rpm");
     }
 }

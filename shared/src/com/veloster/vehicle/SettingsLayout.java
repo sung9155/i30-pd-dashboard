@@ -52,9 +52,10 @@ public final class SettingsLayout {
      *  SOUND_MIX (엔진음): the engine against the turbo whistle and blow-off, 0 % leaves only those two. */
     public static final int[] SOUND_MIN={10,0,0,0,0,0},SOUND_MAX={200,100,200,200,200,150},SOUND_STEP={10,10,10,10,10,10},SOUND_DEFAULT={70,100,100,100,100,80};
     /** EngineSynth.ENGINES and EXHAUSTS names, in their order. */
-    public static final String[] SOUND_ENGINES={"1.6 터보 4기통","직렬 6기통 터보","V6 트윈터보","V8 크로스플레인","V8 플랫플레인"};
+    public static final String[] SOUND_ENGINES={"1.6 터보 4기통","직렬 6기통 터보","V6 트윈터보","V8 크로스플레인","V8 플랫플레인",
+        "4기통 · 2.0 터보 핫해치","4기통 · 고회전 캠 전환","4기통 · 수평대향 터보","4기통 · 랠리 안티랙","4기통 · 경량 자연흡기","4기통 · 디젤 터보"};
     /** Engines with a turbo (whistle and blow-off rows apply), per SOUND_ENGINES. */
-    public static final boolean[] SOUND_HAS_TURBO={true,true,true,false,false};
+    public static final boolean[] SOUND_HAS_TURBO={true,true,true,false,false,true,false,true,true,false,true};
     public static final String[] SOUND_EXHAUSTS={"순정","스포츠 머플러","중통 제거","풀 배기 · 팝앤뱅"};
     /** A − / + row's value after a tap in zone z (1 −, 2 +, 0 default). */
     public static int soundStep(int row,int value,int z){

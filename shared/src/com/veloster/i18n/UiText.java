@@ -65,6 +65,12 @@ public final class UiText {
         EN.put("3번 인젝터 회로 이상","Injector 3 circuit malfunction");
         EN.put("4 × 3 보기","4 x 3 grid");
         EN.put("40 km/h부터 110 km/h까지 바람·노면 소음만큼 크게","Louder from 40 to 110 km/h, to match wind and road noise");
+        EN.put("4기통 · 2.0 터보 핫해치","Four · 2.0 turbo hot hatch");
+        EN.put("4기통 · 경량 자연흡기","Four · light NA");
+        EN.put("4기통 · 고회전 캠 전환","Four · high-rev cam changeover");
+        EN.put("4기통 · 디젤 터보","Four · turbo diesel");
+        EN.put("4기통 · 랠리 안티랙","Four · rally anti-lag");
+        EN.put("4기통 · 수평대향 터보","Four · flat-four turbo");
         EN.put("4단 기어비 불일치","Incorrect 4th gear ratio");
         EN.put("4번 실린더 실화 감지","Cylinder 4 misfire detected");
         EN.put("4번 예열 플러그 회로 이상","Glow plug 4 circuit malfunction");

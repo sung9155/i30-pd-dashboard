@@ -9,6 +9,9 @@
 #
 # Onto the car, with no internet: i30pd_port\installer\install.ps1 -LocalBuild (its own .cmd launcher sits beside it)
 # installs what is in build\apk. This file stays ASCII: Windows PowerShell 5.1 reads a BOM-less script as ANSI.
+# PositionalBinding off: without it the first bare word ("hub", "dashboard") was taken as -Save's file name, and the
+# image was written to a file of that name instead of building.
+[CmdletBinding(PositionalBinding = $false)]
 param(
   [switch]$Rebuild,
   [string]$Save,

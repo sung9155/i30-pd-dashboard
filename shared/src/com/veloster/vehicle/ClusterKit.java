@@ -15,7 +15,7 @@ import java.util.Locale;
  */
 abstract class ClusterKit {
     protected final Paint p=new Paint(3);
-    protected final Path path=new Path();
+    protected final KeyPath path=new KeyPath();   // draw path.kept(): see KeyPath
     // ---- shape memo. Android 4.2's GPU renderer turns every drawPath into a texture on the UI thread, and reuses it only
     // for the same, unchanged Path object: the one shared `path`, reset and rebuilt for every shape, missed every time
     // (2026-11-26 car traces: 80년대 201 ms, 람다 134 ms, 택시 100 ms of GPU work a frame, mostly 7-segment and band
@@ -100,7 +100,7 @@ abstract class ClusterKit {
         srcRect.set(sx,sy,sx+sw,sy+sh);r.set(l,t,rr,bt);c.drawBitmap(b,srcRect,r,bmpPaint);
     }
     /** Fills the current path. */
-    protected void poly(Canvas c,int color){p.setStyle(Paint.Style.FILL);p.setColor(col(color));c.drawPath(path,p);}
+    protected void poly(Canvas c,int color){p.setStyle(Paint.Style.FILL);p.setColor(col(color));c.drawPath(path.kept(),p);}
     protected void dot(Canvas c,float x,float y,float rad,int color){p.setStyle(Paint.Style.FILL);p.setColor(col(color));c.drawCircle(x,y,rad,p);}
     protected void ring(Canvas c,float x,float y,float rad,float width,int color){
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(width);p.setColor(col(color));c.drawCircle(x,y,rad,p);p.setStyle(Paint.Style.FILL);

@@ -17,7 +17,7 @@ public final class PitRenderer {
     private static int T(int c){return Theme.current().map(c);}
     private static int D(){return Theme.current().danger;}
     private final Paint paint=new Paint(3);
-    private final Path shape=new Path();
+    private final KeyPath shape=new KeyPath();   // draw shape.kept(): see KeyPath
     private Shader background;private Theme backgroundTheme;
     /** The page gradient is a Shader built once per theme (a cached Shader would keep the old theme's colours). */
     private Shader background(){
@@ -520,7 +520,7 @@ public final class PitRenderer {
             if(g==FloatPanel.BAR){box(c,il,cy-3,ir,cy+3,0xff2a343b);box(c,il,cy-3,il+(ir-il)*.6f,cy+3,BLUE);}
             else if(g==FloatPanel.LINE){shape.reset();float[] ys={.7f,.5f,.6f,.3f,.45f,.2f,.35f};
                 for(int j=0;j<ys.length;j++){float xx=il+j*(ir-il)/(ys.length-1),yy=cy-10+ys[j]*20;if(j==0)shape.moveTo(xx,yy);else shape.lineTo(xx,yy);}
-                paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2);paint.setColor(T(BLUE));c.drawPath(shape,paint);paint.setStyle(Paint.Style.FILL);}
+                paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2);paint.setColor(T(BLUE));c.drawPath(shape.kept(),paint);paint.setStyle(Paint.Style.FILL);}
             else if(g==FloatPanel.LED){float sw=(ir-il)/8;for(int j=0;j<8;j++)box(c,il+j*sw+1,cy-4,il+(j+1)*sw-1,cy+4,j<5?BLUE:0xff2a343b);}
             if(g==FloatPanel.NUM)centered(c,nm,(b[0]+b[2])/2,cy+5,14,ink,true);else fitted(c,nm,ir+8,cy+5,14,b[2]-ir-14,ink);}
         chip(c,SettingsLayout.S_CANCEL_BOX,UiText.t("취소"),null,false,false);
@@ -587,7 +587,7 @@ public final class PitRenderer {
         shape.reset();
         if(up){shape.moveTo(cx,cy-7);shape.lineTo(cx-8,cy+5);shape.lineTo(cx+8,cy+5);}
         else{shape.moveTo(cx,cy+7);shape.lineTo(cx-8,cy-5);shape.lineTo(cx+8,cy-5);}
-        shape.close();c.drawPath(shape,paint);
+        shape.close();c.drawPath(shape.kept(),paint);
     }
     // Mini previews for the screen list: each layout rendered once at thumbnail size and cached, rebuilt when the
     // car paint or theme changes (so the 8-bit and themed previews stay right).
@@ -630,20 +630,24 @@ public final class PitRenderer {
         }
     }
     /** Pixel width of a header tab: its label plus side padding, with a sensible minimum. */
-    private float tabWidth(String label){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(14);return Math.max(56f,paint.measureText(label)+24f);}
+    /** Tab widths by label: every page measured all 26 tab labels every frame. ponytail: grows by a language's labels only. */
+    private final java.util.HashMap<String,Float> tabW0=new java.util.HashMap<String,Float>();
+    private float tabWidth(String label){Float w=tabW0.get(label);
+        if(w==null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(14);w=Math.max(56f,paint.measureText(label)+24f);tabW0.put(label,w);}
+        return w;}
     /** Faint chevron at a strip edge that has more tabs past it; dir -1 points left. */
     private void arrow(Canvas c,float x,int dir){
         box(c,x-7,9,x+7,45,0xff090b0c);
         shape.reset();shape.moveTo(x+dir*4,27);shape.lineTo(x-dir*3,20);shape.lineTo(x-dir*3,34);shape.close();
-        paint.setColor(T(0xcc91a5ae));c.drawPath(shape,paint);
+        paint.setColor(T(0xcc91a5ae));c.drawPath(shape.kept(),paint);
     }
     private void box(Canvas c,float l,float t,float r,float b,int color){paint.setColor(T(color));c.drawRect(l,t,r,b,paint);}
     private void panel(Canvas c,float x,float y,float w,float h,int fill,int edge){
         if(ThemeShapes.cell(c,paint,shape,cellRect,x,y,x+w,y+h,T(fill),T(edge)))return;
         shape.reset();shape.moveTo(x,y);shape.lineTo(x+w-12,y);shape.lineTo(x+w,y+12);
         shape.lineTo(x+w,y+h);shape.lineTo(x+12,y+h);shape.lineTo(x,y+h-12);shape.close();
-        paint.setColor(T(fill));c.drawPath(shape,paint);
-        paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1);paint.setColor(T(edge));c.drawPath(shape,paint);paint.setStyle(Paint.Style.FILL);
+        paint.setColor(T(fill));c.drawPath(shape.kept(),paint);
+        paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1);paint.setColor(T(edge));c.drawPath(shape.kept(),paint);paint.setStyle(Paint.Style.FILL);
     }
     private void stroke(Canvas c,float x,float y,float x2,float y2,int color,float width){
         paint.setColor(T(color));paint.setStrokeWidth(width);c.drawLine(x,y,x2,y2,paint);
@@ -978,7 +982,7 @@ public final class PitRenderer {
             float cx=x+32,cy=y+(head?46:56),radius=head?17:23;
             paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(head?3:4);paint.setColor(T(LINE));
             RectF arc=new RectF(cx-radius,cy-radius,cx+radius,cy+radius);c.drawArc(arc,150,240,false,paint);
-            if(position){paint.setColor(T(BLUE));c.drawArc(arc,150,240*f,false,paint);}
+            if(position){paint.setColor(T(BLUE));c.drawArc(arc,150,KeyPath.arc(240*f),false,paint);}
             paint.setStyle(Paint.Style.FILL);
             if(position){double angle=Math.toRadians(150+240*f);stroke(c,cx,cy,cx+(float)Math.cos(angle)*(radius-6),cy+(float)Math.sin(angle)*(radius-6),WHITE,1.5f);paint.setColor(T(BLUE));c.drawCircle(cx,cy,2,paint);}
             fittedNumber(c,number,x+58,y+(head?54:66),head?26:28,w-68,color);

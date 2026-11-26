@@ -16,13 +16,14 @@ public final class GaugeRenderer {
     private static final int BLUE=0xffa4d9ef,WHITE=0xffe1edf2,MUTED=0xff8299a4,LINE=0xff293943;
     private void text(Canvas c,String s,float x,float y,float size,int color){p.setStyle(Paint.Style.FILL);p.setColor(T(color));p.setTypeface(Typeface.DEFAULT);p.setTextAlign(Paint.Align.CENTER);p.setTextSize(size);c.drawText(s,x,y,p);}
     /** Centered numeric readout with a fixed digit cell, so a narrow 1 does not make the whole value jitter as it changes. */
+    private final RaceRenderer.Digits digitW=new RaceRenderer.Digits();
     private void number(Canvas c,String s,float cx,float y,float size,int color){
-        p.setStyle(Paint.Style.FILL);p.setColor(T(color));p.setTypeface(Typeface.DEFAULT);p.setTextAlign(Paint.Align.LEFT);p.setTextSize(size);
-        float dw=0;for(char d='0';d<='9';d++)dw=Math.max(dw,p.measureText(String.valueOf(d)));
+        p.setStyle(Paint.Style.FILL);p.setColor(T(color));p.setTextAlign(Paint.Align.LEFT);
+        float[] d=digitW.of(p,size,false);float dw=d[10];   // ~84 measureText a frame on 12 gauges before the cache
         float total=0;for(int k=0;k<s.length();k++){char ch=s.charAt(k);total+=ch>='0'&&ch<='9'?dw:p.measureText(String.valueOf(ch));}
         float x=cx-total/2;
-        for(int k=0;k<s.length();k++){char ch=s.charAt(k);String g=String.valueOf(ch);float gw=p.measureText(g);
-            if(ch>='0'&&ch<='9'){c.drawText(g,x+(dw-gw)/2,y,p);x+=dw;}else{c.drawText(g,x,y,p);x+=gw;}}
+        for(int k=0;k<s.length();k++){char ch=s.charAt(k);String g=String.valueOf(ch);
+            if(ch>='0'&&ch<='9'){c.drawText(g,x+(dw-d[ch-'0'])/2,y,p);x+=dw;}else{float gw=p.measureText(g);c.drawText(g,x,y,p);x+=gw;}}
         p.setTextAlign(Paint.Align.CENTER);
     }
     private void line(Canvas c,float x,float y,float xx,float yy,int color,float width){p.setColor(T(color));p.setStrokeWidth(width);c.drawLine(x,y,xx,yy,p);}
@@ -64,7 +65,7 @@ public final class GaugeRenderer {
             if(style==0){
                 float cy=t+107,r=63;
                 p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(5);p.setColor(T(LINE));RectF arc=new RectF(cx-r,cy-r,cx+r,cy+r);c.drawArc(arc,150,240,false,p);
-                if(ok){p.setColor(T(BLUE));c.drawArc(arc,150,240*f,false,p);}
+                if(ok){p.setColor(T(BLUE));c.drawArc(arc,150,KeyPath.arc(240*f),false,p);}
                 for(int tick=0;tick<=8;tick++){double a=Math.toRadians(150+30*tick);line(c,cx+(float)Math.cos(a)*54,cy+(float)Math.sin(a)*54,cx+(float)Math.cos(a)*60,cy+(float)Math.sin(a)*60,MUTED,1);}
                 if(ok){double a=Math.toRadians(150+240*f);line(c,cx,cy,cx+(float)Math.cos(a)*48,cy+(float)Math.sin(a)*48,WHITE,2);p.setStyle(Paint.Style.FILL);p.setColor(T(BLUE));c.drawCircle(cx,cy,4,p);}
                 text(c,axis(lo),cx-69,t+155,10,MUTED);text(c,axis(hi),cx+69,t+155,10,MUTED);

@@ -20,7 +20,7 @@ public final class RaceRenderer {
     private static int D(){return Theme.current().danger;}
     private final Paint p=new Paint(3);
     private final RectF r=new RectF();
-    private final Path path=new Path(),cellPath=new Path();
+    private final KeyPath path=new KeyPath();private final Path cellPath=new Path();
     private final RectF cellRect=new RectF();
     private static final int PANEL=0xff101315,LINE=0xff303638,TRACK=0xff1d2326,BLUE=0xffa4d9ef,WHITE=0xffe1edf2,MUTED=0xff91a5ae,
         RED=0xffff4059,AMBER=0xffffb84d,GREEN=0xff3ddc84,BG=0xff040506;
@@ -188,7 +188,7 @@ public final class RaceRenderer {
         p.setStyle(Paint.Style.FILL);p.setColor(T(lit?AMBER:active?0xff6a5326:0xff3a4650));
         float cy=68,tip=left?l+7:rr-7,base=left?rr-8:l+8;
         path.reset();path.moveTo(tip,cy);path.lineTo(base,cy-8);path.lineTo(base,cy+8);path.close();
-        c.drawPath(path,p);
+        c.drawPath(path.kept(),p);
     }
     private boolean blink(){return (now/BLINK_MS)%2==0;}
     private static int mix(int a,int b,float t){

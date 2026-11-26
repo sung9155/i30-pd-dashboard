@@ -57,7 +57,7 @@ final class PassengerCluster extends ClusterKit {
         if(Float.isNaN(kmh))return "차량 정보를 기다리는 중이에요";
         if(d!=null&&d.running[0])return "0→100 재는 중!";
         if(d!=null&&!Float.isNaN(d.last[0])&&now-d.finishedAt[0]<6000)return "방금 0→100 기록이 나왔어요!";
-        if(kmh<1)return d!=null&&d.coolDownLeft()>0?"터보를 식히는 중이에요":"잠시 멈췄어요";
+        if(kmh<1)return d!=null&&d.coolDownLeft()>0?"터보를 식히는 중이에요":"정차 중";
         if(!Float.isNaN(lat)&&Math.abs(lat)>=0.35f)return lat>0?"왼쪽으로 돌아요 · 꽉 잡으세요":"오른쪽으로 돌아요 · 꽉 잡으세요";
         if(!Float.isNaN(lon)&&lon<=-0.35f)return "속도를 줄이는 중이에요";
         if(!Float.isNaN(lon)&&lon>=0.25f||!Float.isNaN(pedal)&&pedal>=70)return "힘껏 가속하는 중!";

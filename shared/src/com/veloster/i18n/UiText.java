@@ -393,6 +393,7 @@ public final class UiText {
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
         EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
         EN.put("다이아 커팅","Diamond cut");
+        EN.put("다이얼","Dial");
         EN.put("단","gear");
         EN.put("단 = 워프 단계","gear = warp stage");
         EN.put("단선","Open circuit");
@@ -634,6 +635,8 @@ public final class UiText {
         EN.put("브레이크 진공 펌프 계통 고장","Brake vacuum pump system failure");
         EN.put("브레이크 진공 펌프 릴레이 회로 단선·단락","Brake vacuum pump relay circuit open or short circuit");
         EN.put("브레이크·안전","Brakes · safety");
+        EN.put("브리티시 그린","British green");
+        EN.put("블랙","Black");
         EN.put("블로오프","Blow-off");
         EN.put("블루투스","Bluetooth");
         EN.put("블루투스 기기 검색·페어링","Bluetooth discovery and pairing");
@@ -795,6 +798,7 @@ public final class UiText {
         EN.put("신호 파형 이상","Signal waveform fault");
         EN.put("신호 허용 범위 미만","Signal below allowable range");
         EN.put("신호 허용 범위 초과","Signal above allowable range");
+        EN.put("실버","Silver");
         EN.put("실제 속도로 표시","Show the true speed");
         EN.put("실행 가능한 기본 앱이 더 없습니다.","No other system apps are available to open.");
         EN.put("실행 가능한 액티비티가 없습니다: ","No launchable activity: ");
@@ -1095,7 +1099,6 @@ public final class UiText {
         EN.put("잘못된 부품 장착","Incorrect component installed");
         EN.put("잘못된 통신 데이터 수신","Invalid communication data received");
         EN.put("잠시 기다리세요. 끝나면 이 화면이 닫힙니다.","Please wait. This screen closes when done.");
-        EN.put("잠시 멈췄어요","Stopped for a moment");
         EN.put("재생 중","Playing");
         EN.put("재생 중인 곡 없음","No track playing");
         EN.put("재시작","Restart");
@@ -1154,6 +1157,7 @@ public final class UiText {
         EN.put("정지 유지 · 곧 트리 시작","Hold still · tree starting");
         EN.put("정차 · 공회전 ","Stopped · idle ");
         EN.put("정차 상태에서 확인하세요. 이 화면을 여는 것만으로 무선 설정은 바뀌지 않습니다.","Check while parked. Opening this screen alone does not change wireless settings.");
+        EN.put("정차 중","Stopped");
         EN.put("정차 후 다음 운행","Stop for next trip");
         EN.put("정차 후 출발하면 측정","starts when you pull away from a stop");
         EN.put("정차하면 트리가 켜집니다","Stop to light the tree");
@@ -1353,6 +1357,7 @@ public final class UiText {
         EN.put("크랭크-배기 캠 위치 상관관계 이상","Crankshaft / exhaust camshaft position correlation fault");
         EN.put("크랭크-흡기 캠 위치 상관관계 이상","Crankshaft / intake camshaft position correlation fault");
         EN.put("크롬 원형 바늘","Chrome round dials");
+        EN.put("크림 · 월넛","Cream · walnut");
         EN.put("큰 값 + 목록","Big + list");
         EN.put("클래식","Classic");
         EN.put("클러스터","Cluster");

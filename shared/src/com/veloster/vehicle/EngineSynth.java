@@ -154,7 +154,7 @@ public final class EngineSynth {
     private double rpm,pedal,boost,targetRpm,targetPedal,targetBoost,master;
     private double phase,whistlePhase,wobblePhase;   // phase = half-order phase: 2*pi per 720 degrees of crank
     private int firing=-1;
-    private double pulse,blowoff,liftTimer,lastPedal,peakBoost,brapT,flutterPhase,clatterEnv,clatLp;
+    private double pulse,blowoff,liftTimer,lastPedal,peakBoost,brapT,flutterPhase,flutLp1,flutLp2,clatterEnv,clatLp;
     private double hp,hpIn,blowLp,blowBp;
     private int popT=-1;
     private double popA,popT0,popB,popTau,crLp;
@@ -293,9 +293,11 @@ public final class EngineSynth {
             }
             // Blow-off: a short band-limited hiss (about 1.5-5 kHz), as loud as the boost it dumps.
             if(blowoff>.001){blowLp+=(nz-blowLp)*.25;blowBp+=((nz-blowLp)-blowBp)*.5;s+=blowBp*P.blowoff*bv*blowoff*master;
-                if(P.flutter>0){   // compressor surge: the boost leaves in ~18 Hz chops, deeper than a valve's hiss
-                    flutterPhase+=2*Math.PI*(14+8*blowoff)/rate;if(flutterPhase>2*Math.PI)flutterPhase-=2*Math.PI;
-                    double chop=Math.max(0,Math.sin(flutterPhase));s+=(blowLp*2+blowBp)*chop*chop*P.flutter*bv*blowoff*master*4;}
+                if(P.flutter>0){   // compressor surge: a dark rush (two-pole ~600 Hz) swelling ~9-15 times a second, never fully gated
+                    // (2026-11-27: the first take - bright hiss gated on/off at 14-22 Hz - sounded harsh, "츄츄츄")
+                    flutLp1+=(nz-flutLp1)*.085;flutLp2+=(flutLp1-flutLp2)*.085;
+                    flutterPhase+=2*Math.PI*(9+6*blowoff)/rate;if(flutterPhase>2*Math.PI)flutterPhase-=2*Math.PI;
+                    double sw=.5+.5*Math.sin(flutterPhase);s+=flutLp2*(.3+.7*sw*sw)*P.flutter*bv*blowoff*master*15;}
                 blowoff*=blowDecay;}
             double x=0,cr=0;
             if(popT>=0){

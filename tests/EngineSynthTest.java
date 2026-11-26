@@ -124,7 +124,8 @@ public final class EngineSynthTest {
         check(shift(5,1,false,1)==shift(5,1,false,0),"no brap on a slow fall");
         check(shift(0,1,true,1)==shift(0,1,true,0),"no brap from the stock four");
         // Flutter: lifting off boost with no valve chops the air; the 블로오프 trim silences it.
-        check(lift(7,1)>lift(7,0)*1.3,"flat four flutters on a lift: "+lift(7,1)+" vs "+lift(7,0));
+        // (softened 2026-11-27: a dark rush rather than gated hiss, so a little less energy than the first take's 1.38x)
+        check(lift(7,1)>lift(7,0)*1.2,"flat four flutters on a lift: "+lift(7,1)+" vs "+lift(7,0));
         // Diesel: a click on every firing (energy above 2 kHz at idle) and no overrun pops.
         float[] dz=run(new EngineSynth(EngineSynth.RATE,EngineSynth.voice(10,0)),850,0,0,2),pz=run(new EngineSynth(EngineSynth.RATE,EngineSynth.voice(0,0)),850,0,0,2);
         check(power(dz,2600)/rms(dz)>3*power(pz,2600)/rms(pz),"diesel clatter");

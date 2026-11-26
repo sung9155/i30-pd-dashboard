@@ -546,6 +546,13 @@ public final class TabsPreview {
               BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
               new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,now+n*70,null);
               ImageIO.write(img,"png",new File(out,n==0?"9u_neon_glitch.png":"9u_neon_hot.png"));}
+         // 아날로그: every dial look (a tap steps through them), the needles eased in
+         for(int s=0;s<AnalogCluster.STYLE_NAMES.length;s++){AnalogCluster.style=s;AnalogCluster k=new AnalogCluster();BufferedImage img=null;
+              Telemetry.Sample[] q=with(model,now,ix,new float[]{96,4300,4,55,0,0,0,0,90,0.8f,98});
+              for(int f=0;f<40;f++){img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+                  new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,now+f*50L,null);}
+              ImageIO.write(img,"png",new File(out,"9t_analog_style"+s+".png"));}
+         AnalogCluster.style=0;
          // 동승자: a right-hand bend at 0.5 G with this drive's records behind it
          {PassengerCluster k=new PassengerCluster();DriveStats d=new DriveStats();long t0=now-20000;
           for(int f=0;f<400;f++){float la=-0.5f*Math.min(1,f/400f),lo=f<300?0.15f:-0.1f;d.update(t0+f*50L,90,t0+f*50L,4200,0.6f,la,lo,t0+f*50L,90,40);}

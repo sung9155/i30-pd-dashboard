@@ -19,7 +19,23 @@ import android.graphics.Typeface;
  */
 final class AnalogCluster extends ClusterKit {
     private static final float SX=180,TX=620,BY=214,BR=150,SMX=400,BOY=104,TMY=324,SR=52,SPAN=130,SMALL_SPAN=120,KMH_MAX=260,T_MIN=40,T_MAX=130,HOT=110,LAMP_X=SMX-82,LAMP_Y=TMY+34;
-    private static final int FACE=0xfff2e6c8,NUM=0xff2a2018,TICK=0xff3a3026,NEEDLE=0xffe0521c,RED_ZONE=0xffc0392b,WOOD=0xff3b2416,DRUM=0xff17130f,DRUM_FG=0xfff4ecd8;
+    private static final int RED_ZONE=0xffc0392b,DRUM=0xff17130f,DRUM_FG=0xfff4ecd8;
+    /** Dial looks, in the order a tap on the screen steps through (by the face's hue, the colourless ones last): name,
+     *  face, numerals, ticks, needle, face rim shade, backdrop (0 walnut, 1 dark leather, 2 brushed metal). */
+    static final String[] STYLE_NAMES={"크림 · 월넛","브리티시 그린","네이비","화이트","실버","블랙"};
+    private static final int[][] STYLES={
+        {0xfff2e6c8,0xff2a2018,0xff3a3026,0xffe0521c,0xffb8a582,0},
+        {0xff1f4a33,0xfff1ead2,0xffd9d2b8,0xfff4f1e6,0xff10291c,0},
+        {0xff1a2a4a,0xfff2f2f2,0xffd6dce8,0xffff7a1a,0xff0c1528,1},
+        {0xfff7f7f5,0xff141414,0xff2a2a2a,0xffd81e1e,0xffc9c9c4,2},
+        {0xffc9ccd0,0xff15171a,0xff2a2d31,0xffd81e1e,0xff8e9297,2},
+        {0xff101012,0xfff0f0f0,0xffd8d8d8,0xffff6a1a,0xff000000,1}};
+    /** The look in use (saved by VehicleDash as analog_style). */
+    static volatile int style;
+    private int FACE,NUM,TICK,NEEDLE,RIM,BACK;
+    private long styleShownAt=Long.MIN_VALUE/2;
+    /** A tap anywhere on the screen: the next look. */
+    @Override boolean tap(float x,float y){style=(style+1)%STYLES.length;styleShownAt=now;return true;}
     private Bitmap face;private String faceKey="";
     /** Needles point to 12 o'clock from the pivot at (0,0), with a short counterweight; built once, turned with the canvas. */
     private final Path bigNeedle=needle(BR-12,24,4.5f),smallNeedle=needle(SR-8,12,3);
@@ -35,8 +51,9 @@ final class AnalogCluster extends ClusterKit {
     @Override protected void draw(Canvas c){
         c.save();c.translate(0,52);
         float bt=boostTop();
-        String key=prof.maxRpm+"/"+prof.redline+"/"+bt+"/"+com.veloster.i18n.UiText.language();
-        if(face==null||!key.equals(faceKey)){face=buildFace(bt);faceKey=key;}
+        int st=Math.max(0,Math.min(STYLES.length-1,style));int[] s=STYLES[st];FACE=s[0];NUM=s[1];TICK=s[2];NEEDLE=s[3];RIM=s[4];BACK=s[5];
+        String key=prof.maxRpm+"/"+prof.redline+"/"+bt+"/"+com.veloster.i18n.UiText.language()+"/"+st;
+        if(face==null||!key.equals(faceKey)){face=recycle(face);face=buildFace(bt);faceKey=key;}
         c.drawBitmap(face,0,0,null);
         float kmh=v(7),rpm=v(0),boost=v(Telemetry.BOOST),cool=v(2),oil=v(Telemetry.OIL_ECU),odo=v(Telemetry.ODOMETER);
         // needles ease toward the reading (old needles lag a little, about 0.1 s); a missing reading parks the needle at the
@@ -59,6 +76,7 @@ final class AnalogCluster extends ClusterKit {
         // needles, each with a soft shadow below it
         needle(c,SX,BY,aSpeed,bigNeedle,12);needle(c,TX,BY,aRpm,bigNeedle,12);
         needle(c,SMX,BOY,aBoost,smallNeedle,7);needle(c,SMX,TMY,aTemp,smallNeedle,7);
+        if(now-styleShownAt<1500){round(c,SMX-110,392,SMX+110,422,6,0xcc000000);bold(c,t("다이얼")+": "+t(STYLE_NAMES[Math.max(0,Math.min(STYLES.length-1,style))]),SMX,413,16,0xffffffff,Paint.Align.CENTER);}   // the look just picked
         c.restore();
     }
     private float ease(float a,float to){return Math.abs(to-a)<0.3f?to:a+(to-a)*k;}
@@ -74,11 +92,7 @@ final class AnalogCluster extends ClusterKit {
     @Override void trim(){face=recycle(face);faceKey="";}
     private Bitmap buildFace(float bt){
         Bitmap b=bitmap(800,428);Canvas c=new Canvas(b);
-        // walnut: bands of brown with a fixed grain
-        fill(c,0,0,800,428,WOOD);
-        java.util.Random rnd=new java.util.Random(30);
-        for(int y=0;y<428;y+=2){int sh=rnd.nextInt(18)-9;line(c,0,y,800,y+rnd.nextInt(3)-1,2,mix(0xff5a3822,WOOD,0.35f+sh/40f));}
-        for(int k=0;k<26;k++){float y=rnd.nextFloat()*428;line(c,0,y,800,y+rnd.nextFloat()*8-4,1,0x55201208);}
+        backdrop(c);
         // the big dials
         dial(c,SX,BY,BR,16);dial(c,TX,BY,BR,16);dial(c,SMX,BOY,SR,10);dial(c,SMX,TMY,SR,10);
         // speed: 10 km/h ticks, numbers every 20
@@ -112,8 +126,20 @@ final class AnalogCluster extends ClusterKit {
         p.setShader(new LinearGradient(0,cy-rad-bezel,0,cy+rad+bezel,new int[]{0xff2a2a2a,0xffcfcfcf},new float[]{0,1},Shader.TileMode.CLAMP));
         c.drawCircle(cx,cy,rad+bezel*0.45f,p);p.setShader(null);
         dot(c,cx,cy,rad+2,0xff1a140e);
-        for(int k=0;k<6;k++)dot(c,cx,cy,rad*(1-k*0.06f),mix(FACE,0xffb8a582,0.55f+k*0.09f));
+        for(int k=0;k<6;k++)dot(c,cx,cy,rad*(1-k*0.06f),mix(FACE,RIM,0.55f+k*0.09f));
         dot(c,cx,cy,rad*0.66f,FACE);
+    }
+    /** Walnut (bands of brown with a fixed grain), dark leather (a fine stipple) or brushed metal (fine horizontal lines). */
+    private void backdrop(Canvas c){
+        java.util.Random rnd=new java.util.Random(30);
+        if(BACK==0){int wood=0xff3b2416;fill(c,0,0,800,428,wood);
+            for(int y=0;y<428;y+=2){int sh=rnd.nextInt(18)-9;line(c,0,y,800,y+rnd.nextInt(3)-1,2,mix(0xff5a3822,wood,0.35f+sh/40f));}
+            for(int k=0;k<26;k++){float y=rnd.nextFloat()*428;line(c,0,y,800,y+rnd.nextFloat()*8-4,1,0x55201208);}}
+        else if(BACK==1){fill(c,0,0,800,428,0xff151313);
+            for(int k=0;k<5000;k++){float x=rnd.nextFloat()*800,y=rnd.nextFloat()*428;fill(c,x,y,x+2,y+2,rnd.nextBoolean()?0x14ffffff:0x22000000);}
+            for(int y=40;y<428;y+=96)line(c,0,y,800,y,1,0x18ffffff);}   // stitched panels
+        else{fill(c,0,0,800,428,0xff5d6065);
+            for(int y=0;y<428;y++){int sh=rnd.nextInt(20)-10;line(c,0,y,800,y,1,mix(0xff7d8187,0xff4a4d52,0.5f+sh/30f));}}
     }
     private void tick(Canvas c,float cx,float cy,float r0,float len,float deg,float w,int color){line(c,px(cx,r0,deg),py(cy,r0,deg),px(cx,r0-len,deg),py(cy,r0-len,deg),w,color);}
     private void drum(Canvas c,float l,float t,float rr,float b){round(c,l-3,t-3,rr+3,b+3,4,0xff8c8c8c);round(c,l,t,rr,b,3,DRUM);}

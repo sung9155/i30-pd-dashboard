@@ -101,15 +101,6 @@ public final class FloatPanel {
     public static final String[] SKIN_NAMES=FloatSkin.NAMES;
     public static volatile int skin=AUTO;
     public static int skinCount(){return FloatSkin.NAMES.length;}
-    /** 추천 presets (SettingsLayout.F_PRESETS order): shape, count, look (FloatSkin index), size, transparency.
-     *  기본 = 카드 4 · 레이스 = 변속등 2 레이스 크게 진하게 · 미니 = 캡슐 1 작게 연하게 · 음악 = 음악 2. */
-    private static final int[][] PRESETS={{CARD,4,0,1,1},{SHIFT,2,1,2,0},{PILL,1,0,0,2},{MUSIC,2,0,1,1}};
-    /** Sets preset i and turns the window on; each cell keeps the reading picked for it. */
-    public static void applyPreset(int i){if(i<0||i>=PRESETS.length)return;int[] p=PRESETS[i];
-        shape=p[0];count=fitCount(p[0],p[1]);setActiveSkin(p[2]);size=p[3];alpha=p[4];}
-    /** Whether the window is on and set exactly as preset i (the look: the one seen now). */
-    public static boolean presetMatch(int i){if(i<0||i>=PRESETS.length||shape==OFF)return false;int[] p=PRESETS[i];
-        return shape==p[0]&&count==fitCount(p[0],p[1])&&skin>=0&&skinNow()==p[2]&&size==p[3]&&alpha==p[4];}
     /** The round gauge shape is on: square cells, a disc each, no window body. */
     public static boolean round(){return round(shape==OFF?lastShape:shape);}
     public static boolean round(int s){return s==ROUND;}
@@ -525,7 +516,7 @@ public final class FloatPanel {
         if(!dy())return;
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(sw);p.setStrokeCap(Paint.Cap.ROUND);
         if(!Float.isNaN(f)){f=Math.max(0,Math.min(1,f));float zero=zero(sig),a=Math.min(zero,f),b=Math.max(zero,f);
-            p.setColor(lv==2?HOT:lv==1?WARM:ACC);c.drawArc(r,135+270*a,Math.max(1,270*(b-a)),false,p);}
+            p.setColor(lv==2?HOT:lv==1?WARM:ACC);c.drawArc(r,KeyPath.arc(135+270*a),KeyPath.arc(Math.max(1,270*(b-a))),false,p);}
         p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
         float pf=Float.isNaN(pk)?Float.NaN:frac(sig,pk);
         if(!Float.isNaN(pf)){double a=Math.toRadians(135+270*Math.max(0,Math.min(1,pf)));float o=ar+sw/2+1*k,in=ar-sw/2-1*k;   // the peak: a white tick across the ring

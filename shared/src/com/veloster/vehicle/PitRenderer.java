@@ -17,7 +17,7 @@ public final class PitRenderer {
     private static int T(int c){return Theme.current().map(c);}
     private static int D(){return Theme.current().danger;}
     private final Paint paint=new Paint(3);
-    private final Path shape=new Path();
+    private final KeyPath shape=new KeyPath();   // draw shape.kept(): see KeyPath
     private Shader background;private Theme backgroundTheme;
     /** The page gradient is a Shader built once per theme (a cached Shader would keep the old theme's colours). */
     private Shader background(){
@@ -38,6 +38,7 @@ public final class PitRenderer {
     private final GraphRenderer graphRenderer=new GraphRenderer();
     private final PerformanceRenderer performanceRenderer=new PerformanceRenderer();
     private final RaceRenderer raceRenderer=new RaceRenderer();
+    private final RaceRenderer.Digits digitW=new RaceRenderer.Digits();   // fittedNumber: digit widths per size
     private final LambdaCluster mtSport=new LambdaCluster();
     private final EcoCluster eco=new EcoCluster();
     private final TachoCluster tacho=new TachoCluster();
@@ -312,17 +313,21 @@ public final class PitRenderer {
                         dim=d<0;value=d<0?"끔":SettingsLayout.BEEP_SOUNDS[d];break;}
                     name=i==SettingsLayout.RPM_SHIFT?"변속 목표":"레드라인";
                     sub=i==SettingsLayout.RPM_SHIFT?"레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값":"SHIFT 경고 · 빨간 구간 · 이름을 누르면 기본값";break;
-                case SettingsLayout.SOUND:
+                case SettingsLayout.SOUND:{
                     if(!SettingsLayout.ENGINE_SOUND){name="엔진 사운드";dim=true;value="사용 안 함";}
                     else if(i==SettingsLayout.SOUND_ON){sel=soundOn;name="엔진 사운드";sub="항상 = 플로팅 창에서도";value=!soundOn?"끔":SettingsLayout.floatSound?"항상":"계기판";}
                     else if(i==SettingsLayout.SOUND_ROUTE){name="출력 경로";dim=!soundOn;value=SettingsLayout.SOUND_ROUTES[soundRoute];}
                     else if(i==SettingsLayout.SOUND_ENGINE){name="엔진";dim=!soundOn;value=SettingsLayout.SOUND_ENGINES[soundEngine];}
                     else if(i==SettingsLayout.SOUND_EXHAUST){name="배기";dim=!soundOn;value=SettingsLayout.SOUND_EXHAUSTS[soundExhaust];}
                     else if(i==SettingsLayout.SOUND_FAST){sel=EngineSound.fast;name="소리 반응 속도";dim=!soundOn;sub="빠름: 소리가 덜 늦음 · 화면이 느려질 때 소리가 끊기면 보통으로";value=EngineSound.fast?"빠름":"보통";}
+                    else if(i==SettingsLayout.SOUND_YIELD){int m=EngineSound.yieldMode;sel=m>0;name="안내·통화 양보";dim=!soundOn;
+                        sub="내비 안내·전화·음성인식 때 엔진 소리를 줄이거나 멈춤 · 통화는 늘 멈춤";value=SettingsLayout.SOUND_YIELDS[m];}
+                    else if(i==SettingsLayout.SOUND_BOOST){int b=EngineSound.boostLevel;sel=b>0;name="속도 따라 키우기";dim=!soundOn;
+                        sub="40 km/h부터 110 km/h까지 바람·노면 소음만큼 크게";value=SettingsLayout.SOUND_BOOSTS[b];}
                     else{name=SOUND_ROW_NAMES[i-SettingsLayout.SOUND_VOLUME];sub=SOUND_ROW_SUBS[i-SettingsLayout.SOUND_VOLUME];
                         boolean noTurbo=(i==SettingsLayout.SOUND_TURBO||i==SettingsLayout.SOUND_BOV)&&!SettingsLayout.SOUND_HAS_TURBO[soundEngine];
                         dim=!soundOn||noTurbo;}
-                    break;
+                    break;}
                 case SettingsLayout.FX:   // sounds that are not the engine: each its own switch (strings kept as they were, for the translations)
                     if(i==SettingsLayout.FX_CLICK){sel=CassetteCluster.clickSound;name="카세트 찰칵 소리";sub="카세트 화면의 건반: 재생·일시정지는 철컥, 곡 넘김은 딸깍 · 엔진 사운드와 별개";value=CassetteCluster.clickSound?"켬":"끔";}
                     else if(i==SettingsLayout.FX_COIN){sel=EcoCluster.coinSound;name="에코 동전 소리";sub="에코 화면에서 동전이 떨어질 때 · 엔진 사운드와 별개";value=EcoCluster.coinSound?"켬":"끔";}
@@ -399,7 +404,7 @@ public final class PitRenderer {
         if(off){box(c,px,py,px+w*k,py+h*k,0xb0040506);centered(c,UiText.t("꺼져 있음"),px+w*k/2,py+h*k/2+6,16,MUTED,true);}
         else{paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2);paint.setColor(T(BLUE));
             if(FloatPanel.round())c.drawCircle(sx+cw*k/2,sy+ch*k/2,cw*k/2,paint);else c.drawRect(sx+2,sy+2,sx+cw*k-2,sy+ch*k-2,paint);paint.setStyle(Paint.Style.FILL);}
-        text(c,UiText.t("칸을 누르면 값 바꾸기")+(k<.999f?" · "+UiText.t("축소"):""),SettingsLayout.FW_L+10,SettingsLayout.FW_B-5,11,MUTED,false);
+        text(c,UiText.t("칸을 누르면 값 바꾸기")+(k<.999f?" · "+UiText.t("축소"):k>1.001f?" · "+UiText.t("확대"):""),SettingsLayout.FW_L+10,SettingsLayout.FW_B-5,11,MUTED,false);
         // right column
         {float[] b=SettingsLayout.F_ON_BOX;String on=UiText.t("플로팅")+"  "+UiText.t(off?"끔":"켬");   // the main switch: filled while on
             if(off)chip(c,b,on,null,false,false);else{box(c,b[0],b[1],b[2],b[3],BLUE);centered(c,on,(b[0]+b[2])/2,(b[1]+b[3])/2+6,15,DARK_INK,true);}}
@@ -416,8 +421,7 @@ public final class PitRenderer {
         text(c,UiText.t("투명도"),SettingsLayout.F_ALPHA_LABEL_X,SettingsLayout.F_ROW_Y[2]+SettingsLayout.F_ROW_H/2+5,14,MUTED,true);
         slider(c,SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,SettingsLayout.F_SIZES,size,off);
         slider(c,SettingsLayout.F_ALPHA_BAR,SettingsLayout.F_ALPHA_KNOB,SettingsLayout.F_ALPHAS,FloatPanel.alpha,off);
-        for(int i=0;i<SettingsLayout.F_PRESETS.length;i++)chip(c,SettingsLayout.floatBox(SettingsLayout.F_PRESET+i),UiText.t(SettingsLayout.F_PRESETS[i]),null,FloatPanel.presetMatch(i),false);   // a preset turns the window on: never dim
-        for(int t:SettingsLayout.F_TARGETS){if(t<SettingsLayout.F_SHAPE||t==SettingsLayout.F_SIZE||t==SettingsLayout.F_ALPHA||t>=SettingsLayout.F_PRESET)continue;int g=t/10*10,i=t-g;String label;boolean on;
+        for(int t:SettingsLayout.F_TARGETS){if(t<SettingsLayout.F_SHAPE||t==SettingsLayout.F_SIZE||t==SettingsLayout.F_ALPHA)continue;int g=t/10*10,i=t-g;String label;boolean on;
             switch(g){case SettingsLayout.F_SHAPE:label=SettingsLayout.F_SHAPES[i];on=shape==i+1;break;
                 case SettingsLayout.F_COUNT:label=SettingsLayout.F_COUNTS[i];on=n==FloatPanel.COUNTS[i];break;
                 case SettingsLayout.F_SIZE:label=SettingsLayout.F_SIZES[i];on=size==i;break;
@@ -514,7 +518,7 @@ public final class PitRenderer {
             if(g==FloatPanel.BAR){box(c,il,cy-3,ir,cy+3,0xff2a343b);box(c,il,cy-3,il+(ir-il)*.6f,cy+3,BLUE);}
             else if(g==FloatPanel.LINE){shape.reset();float[] ys={.7f,.5f,.6f,.3f,.45f,.2f,.35f};
                 for(int j=0;j<ys.length;j++){float xx=il+j*(ir-il)/(ys.length-1),yy=cy-10+ys[j]*20;if(j==0)shape.moveTo(xx,yy);else shape.lineTo(xx,yy);}
-                paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2);paint.setColor(T(BLUE));c.drawPath(shape,paint);paint.setStyle(Paint.Style.FILL);}
+                paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2);paint.setColor(T(BLUE));c.drawPath(shape.kept(),paint);paint.setStyle(Paint.Style.FILL);}
             else if(g==FloatPanel.LED){float sw=(ir-il)/8;for(int j=0;j<8;j++)box(c,il+j*sw+1,cy-4,il+(j+1)*sw-1,cy+4,j<5?BLUE:0xff2a343b);}
             if(g==FloatPanel.NUM)centered(c,nm,(b[0]+b[2])/2,cy+5,14,ink,true);else fitted(c,nm,ir+8,cy+5,14,b[2]-ir-14,ink);}
         chip(c,SettingsLayout.S_CANCEL_BOX,UiText.t("취소"),null,false,false);
@@ -581,7 +585,7 @@ public final class PitRenderer {
         shape.reset();
         if(up){shape.moveTo(cx,cy-7);shape.lineTo(cx-8,cy+5);shape.lineTo(cx+8,cy+5);}
         else{shape.moveTo(cx,cy+7);shape.lineTo(cx-8,cy-5);shape.lineTo(cx+8,cy-5);}
-        shape.close();c.drawPath(shape,paint);
+        shape.close();c.drawPath(shape.kept(),paint);
     }
     // Mini previews for the screen list: each layout rendered once at thumbnail size and cached, rebuilt when the
     // car paint or theme changes (so the 8-bit and themed previews stay right).
@@ -624,20 +628,24 @@ public final class PitRenderer {
         }
     }
     /** Pixel width of a header tab: its label plus side padding, with a sensible minimum. */
-    private float tabWidth(String label){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(14);return Math.max(56f,paint.measureText(label)+24f);}
+    /** Tab widths by label: every page measured all 26 tab labels every frame. ponytail: grows by a language's labels only. */
+    private final java.util.HashMap<String,Float> tabW0=new java.util.HashMap<String,Float>();
+    private float tabWidth(String label){Float w=tabW0.get(label);
+        if(w==null){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(14);w=Math.max(56f,paint.measureText(label)+24f);tabW0.put(label,w);}
+        return w;}
     /** Faint chevron at a strip edge that has more tabs past it; dir -1 points left. */
     private void arrow(Canvas c,float x,int dir){
         box(c,x-7,9,x+7,45,0xff090b0c);
         shape.reset();shape.moveTo(x+dir*4,27);shape.lineTo(x-dir*3,20);shape.lineTo(x-dir*3,34);shape.close();
-        paint.setColor(T(0xcc91a5ae));c.drawPath(shape,paint);
+        paint.setColor(T(0xcc91a5ae));c.drawPath(shape.kept(),paint);
     }
     private void box(Canvas c,float l,float t,float r,float b,int color){paint.setColor(T(color));c.drawRect(l,t,r,b,paint);}
     private void panel(Canvas c,float x,float y,float w,float h,int fill,int edge){
         if(ThemeShapes.cell(c,paint,shape,cellRect,x,y,x+w,y+h,T(fill),T(edge)))return;
         shape.reset();shape.moveTo(x,y);shape.lineTo(x+w-12,y);shape.lineTo(x+w,y+12);
         shape.lineTo(x+w,y+h);shape.lineTo(x+12,y+h);shape.lineTo(x,y+h-12);shape.close();
-        paint.setColor(T(fill));c.drawPath(shape,paint);
-        paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1);paint.setColor(T(edge));c.drawPath(shape,paint);paint.setStyle(Paint.Style.FILL);
+        paint.setColor(T(fill));c.drawPath(shape.kept(),paint);
+        paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1);paint.setColor(T(edge));c.drawPath(shape.kept(),paint);paint.setStyle(Paint.Style.FILL);
     }
     private void stroke(Canvas c,float x,float y,float x2,float y2,int color,float width){
         paint.setColor(T(color));paint.setStrokeWidth(width);c.drawLine(x,y,x2,y2,paint);
@@ -652,13 +660,12 @@ public final class PitRenderer {
     }
     /** Left-aligned numeric readout with a fixed digit cell, so a narrow 1 in the middle does not shift the other digits (no jitter). */
     private void fittedNumber(Canvas c,String s,float x,float y,float size,float width,int color){
-        paint.setTypeface(Typeface.DEFAULT);paint.setTextSize(size);
-        float dw=0;for(char d='0';d<='9';d++)dw=Math.max(dw,paint.measureText(String.valueOf(d)));
+        float[] d=digitW.of(paint,size,false);float dw=d[10];
         float total=0;for(int k=0;k<s.length();k++){char ch=s.charAt(k);total+=ch>='0'&&ch<='9'?dw:paint.measureText(String.valueOf(ch));}
-        if(total>width&&total>0){paint.setTextSize(size*width/total);dw*=width/total;}
+        if(total>width&&total>0){d=digitW.of(paint,size*width/total,false);dw=d[10];}
         paint.setColor(T(color));float cx=x;
-        for(int k=0;k<s.length();k++){char ch=s.charAt(k);String g=String.valueOf(ch);float gw=paint.measureText(g);
-            if(ch>='0'&&ch<='9'){c.drawText(g,cx+(dw-gw)/2,y,paint);cx+=dw;}else{c.drawText(g,cx,y,paint);cx+=gw;}}
+        for(int k=0;k<s.length();k++){char ch=s.charAt(k);String g=String.valueOf(ch);
+            if(ch>='0'&&ch<='9'){c.drawText(g,cx+(dw-d[ch-'0'])/2,y,paint);cx+=dw;}else{float gw=paint.measureText(g);c.drawText(g,cx,y,paint);cx+=gw;}}
     }
     private void ellipsis(Canvas c,String s,float x,float y,float size,float width,int color){
         paint.setTypeface(Typeface.DEFAULT);paint.setTextSize(size);
@@ -973,7 +980,7 @@ public final class PitRenderer {
             float cx=x+32,cy=y+(head?46:56),radius=head?17:23;
             paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(head?3:4);paint.setColor(T(LINE));
             RectF arc=new RectF(cx-radius,cy-radius,cx+radius,cy+radius);c.drawArc(arc,150,240,false,paint);
-            if(position){paint.setColor(T(BLUE));c.drawArc(arc,150,240*f,false,paint);}
+            if(position){paint.setColor(T(BLUE));c.drawArc(arc,150,KeyPath.arc(240*f),false,paint);}
             paint.setStyle(Paint.Style.FILL);
             if(position){double angle=Math.toRadians(150+240*f);stroke(c,cx,cy,cx+(float)Math.cos(angle)*(radius-6),cy+(float)Math.sin(angle)*(radius-6),WHITE,1.5f);paint.setColor(T(BLUE));c.drawCircle(cx,cy,2,paint);}
             fittedNumber(c,number,x+58,y+(head?54:66),head?26:28,w-68,color);

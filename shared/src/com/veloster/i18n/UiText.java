@@ -64,6 +64,13 @@ public final class UiText {
         EN.put("3번 인젝터 회로 높음","Injector 3 circuit high");
         EN.put("3번 인젝터 회로 이상","Injector 3 circuit malfunction");
         EN.put("4 × 3 보기","4 x 3 grid");
+        EN.put("40 km/h부터 110 km/h까지 바람·노면 소음만큼 크게","Louder from 40 to 110 km/h, to match wind and road noise");
+        EN.put("4기통 · 2.0 터보 핫해치","Four · 2.0 turbo hot hatch");
+        EN.put("4기통 · 경량 자연흡기","Four · light NA");
+        EN.put("4기통 · 고회전 캠 전환","Four · high-rev cam changeover");
+        EN.put("4기통 · 디젤 터보","Four · turbo diesel");
+        EN.put("4기통 · 랠리 안티랙","Four · rally anti-lag");
+        EN.put("4기통 · 수평대향 터보","Four · flat-four turbo");
         EN.put("4단 기어비 불일치","Incorrect 4th gear ratio");
         EN.put("4번 실린더 실화 감지","Cylinder 4 misfire detected");
         EN.put("4번 예열 플러그 회로 이상","Glow plug 4 circuit malfunction");
@@ -203,6 +210,7 @@ public final class UiText {
         EN.put("각진","Square");
         EN.put("감시 회로(워치독) 오류","Monitoring circuit (watchdog) error");
         EN.put("값·그래프 바꾸기","Change reading and graph");
+        EN.put("강 (+9 dB)","High (+9 dB)");
         EN.put("강원","Gangwon");
         EN.put("강제 재시작","Restart head unit");
         EN.put("개"," full");
@@ -327,6 +335,7 @@ public final class UiText {
         EN.put("내부 고장","Internal failure");
         EN.put("내부 전자 회로 고장","Internal electronic circuit failure");
         EN.put("내비 빌드","Head unit build");
+        EN.put("내비 안내·전화·음성인식 때 엔진 소리를 줄이거나 멈춤 · 통화는 늘 멈춤","Lower or stop the engine sound for prompts, calls and voice control · calls always stop it");
         EN.put("내비 효과음 · 차에서 무음","Navi effects · silent in car");
         EN.put("내비게이션 시스템을 재시작합니다. 화면·음악·PC 연결이 잠시 끊깁니다. 정차 중에 사용하세요.","Restart the head unit. The display, music and PC connection will be interrupted briefly. Use while parked.");
         EN.put("내비게이션 재시작","Restart head unit");
@@ -494,7 +503,6 @@ public final class UiText {
         EN.put("목록 편집","Edit app list");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
-        EN.put("미니","Mini");
         EN.put("미드나이트 퍼플","Midnight Purple");
         EN.put("미등","Position lamps");
         EN.put("미디어 소스 · 차에서 무음","Media source · silent in car");
@@ -703,6 +711,7 @@ public final class UiText {
         EN.put("속도","Speed");
         EN.put("속도 GPS 보정 값 초기화","Reset the GPS speed correction");
         EN.put("속도 km/h","Speed km/h");
+        EN.put("속도 따라 키우기","Louder with speed");
         EN.put("속도계가 실제보다 %.1f %% 낮게 나옴","The speedometer reads %.1f %% low");
         EN.put("속도계가 실제보다 %.1f %% 높게 나옴","The speedometer reads %.1f %% high");
         EN.put("속도계가 실제와 같음","The speedometer reads true");
@@ -775,6 +784,9 @@ public final class UiText {
         EN.put("아이언 그레이","Iron Grey");
         EN.put("아주 크게","Extra large");
         EN.put("아케이드","Arcade");
+        EN.put("안내 때 멈추기","Stop for prompts");
+        EN.put("안내 때 줄이기","Lower for prompts");
+        EN.put("안내·통화 양보","Give way to prompts and calls");
         EN.put("안드로이드 기본 · 차에서 무음","Android default · silent in car");
         EN.put("안드로이드 기본앱","Android utilities");
         EN.put("안드로이드 블루투스 어댑터가 없습니다.","No Android Bluetooth adapter is available.");
@@ -798,6 +810,7 @@ public final class UiText {
         EN.put("앱 화면을 열지 못했습니다. 알림에서 다시 시도하세요.","Could not open My Apps. Try the notification.");
         EN.put("야간","Night");
         EN.put("야간 미니멀","Night minimal");
+        EN.put("약 (+3 dB)","Low (+3 dB)");
         EN.put("얇은 띠","Thin strip");
         EN.put("언어","Language");
         EN.put("언어 설정을 저장하지 못했습니다.","Could not save the language setting.");
@@ -1157,6 +1170,7 @@ public final class UiText {
         EN.put("주행가능거리","Range");
         EN.put("주행거리","Odometer");
         EN.put("주황 LCD","Orange LCD");
+        EN.put("중 (+6 dB)","Medium (+6 dB)");
         EN.put("중통 제거","Resonator delete");
         EN.put("증발가스 누설 (주유구 캡 풀림·없음)","Evaporative emission leak (fuel filler cap loose or missing)");
         EN.put("증발가스 벤트 밸브 회로 이상","Evaporative emission vent valve circuit malfunction");
@@ -1233,7 +1247,6 @@ public final class UiText {
         EN.put("최근 30초","Last 30 s");
         EN.put("최근 60초","Last 60 s");
         EN.put("최대 횡G","Max lat G");
-        EN.put("추천","Presets");
         EN.put("축소","scaled down");
         EN.put("출력 (계산)","Power (calc.)");
         EN.put("출력 경로","Output route");
@@ -1403,6 +1416,7 @@ public final class UiText {
         EN.put("화면","Screens");
         EN.put("화면 잠금 상태를 추적할 수 없어 알림만 표시합니다.","Screen lock state cannot be tracked. Only the notification is shown.");
         EN.put("화이트","White");
+        EN.put("확대","scaled up");
         EN.put("확인","OK");
         EN.put("확인 불가","Unknown");
         EN.put("확정","Confirmed");

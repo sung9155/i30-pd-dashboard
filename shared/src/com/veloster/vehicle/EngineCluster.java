@@ -66,7 +66,7 @@ final class EngineCluster extends ClusterKit {
     private void dial(Canvas c,float cx,float cy,float rad,float val,float min,float max,float amb,float red,String label,String sub,String txt){
         boolean ok=!Float.isNaN(val);float f=ok?clamp((val-min)/(max-min),0,1):0;int col=!ok?SUB:val>=red?RD:val>=amb?AM:WH;
         r.set(cx-rad,cy-rad,cx+rad,cy+rad);
-        if(ok){p.setStyle(Paint.Style.FILL);p.setColor(GY);c.drawArc(r,180,210*f,true,p);}
+        if(ok){p.setStyle(Paint.Style.FILL);p.setColor(GY);c.drawArc(r,180,KeyPath.arc(210*f),true,p);}
         p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(WH);c.drawArc(r,180,210,false,p);p.setStyle(Paint.Style.FILL);
         mark(c,cx,cy,rad,(amb-min)/(max-min),AM);mark(c,cx,cy,rad,(red-min)/(max-min),RD);
         if(ok){double a=Math.toRadians(180+210*f);line(c,cx,cy,cx+(float)Math.cos(a)*(rad-2),cy+(float)Math.sin(a)*(rad-2),3,col);}

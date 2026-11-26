@@ -36,6 +36,11 @@ CAN 메시지·신호의 배치와 배율은 [commaai/opendbc](https://github.co
 
 에코 화면 배기구 보기의 차(뒷범퍼 왼쪽 아래)는 3D 모델 "hyundai i30 n"(amogusstrikesback2, https://sketchfab.com/3d-models/hyundai-i30-n-90c3bd24390b46299cf01c16d5e8091f)을 렌더한 그림이며 CC BY 4.0(https://creativecommons.org/licenses/by/4.0/)을 따릅니다. 바꾼 점: 번호판을 숨기고 차체를 회색으로 칠해 낮은 뒤쪽 시점에서 렌더했고, 차체 부분만 따로 떼어 앱이 차량 색을 곱해 입힙니다(`apps/dashboard/res/raw/eco_car_rear.png`, `eco_car_paint.png`). 아케이드 화면과 같은 모델이라 같은 사정(게임에서 가져온 모델일 수 있음)이 있고, 권리자가 요청하면 이 그림을 빼겠습니다.
 
+## 엔진 사운드: 안내·통화 양보
+
+`SoundYield`(안내·통화 양보, 속도 따라 키우기)는 [jihoon-seo/de22ev-ves](https://github.com/jihoon-seo/de22ev-ves)(`0561cae`, MIT, Copyright (c) 2026 Jihoon Seo)의 `AudioPolicy`·`SharedChannel`·`GainEnvelope.speedBoost`를 옮긴 것입니다. 마이컴 리스너 번호와 스트림 종류는 우리 펌웨어(V141)에 맞게 바꿨고, 출력 필터와 EV 엔진 모델은 뺐습니다. 위 MIT 허가 문구가 이 파일들에도 적용됩니다.
+
+
 ## 이 레포에 넣지 않은 것
 
 - 현대자동차 순정 펌웨어, 순정 앱, 그 디컴파일 결과. 문서의 "PD 펌웨어 대조"는 공개된 펌웨어를 받아 확인한 사실(클래스·액티비티 이름 등)만 적은 것입니다.

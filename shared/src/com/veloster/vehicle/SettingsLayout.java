@@ -41,7 +41,9 @@ public final class SettingsLayout {
     /** Virtual engine sound (off 2026-11-04, back 2026-11-05 at the user's word). false: the 사운드 pane shows one dimmed
      *  line and the sound never starts, whatever was saved. ponytail: a flag, not a removal. */
     public static final boolean ENGINE_SOUND=true;
-    public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_MIX=5,SOUND_POP=6,SOUND_TURBO=7,SOUND_BOV=8,SOUND_LEAD=9,SOUND_FAST=10;
+    public static final int SOUND_ON=0,SOUND_ROUTE=1,SOUND_ENGINE=2,SOUND_EXHAUST=3,SOUND_VOLUME=4,SOUND_MIX=5,SOUND_POP=6,SOUND_TURBO=7,SOUND_BOV=8,SOUND_LEAD=9,SOUND_FAST=10,SOUND_YIELD=11,SOUND_BOOST=12;
+    /** 안내·통화 양보 (SoundYield.OFF, DUCK, STOP) and 속도 따라 키우기 (SoundYield.speedBoost levels 0..3). */
+    public static final String[] SOUND_YIELDS={"끔","안내 때 줄이기","안내 때 멈추기"},SOUND_BOOSTS={"끔","약 (+3 dB)","중 (+6 dB)","강 (+9 dB)"};
     /** 효과음 pane rows: sounds that are not the engine (each its own switch, independent of ENGINE_SOUND). */
     public static final int FX_CLICK=0,FX_COIN=1,FX_CHIME=2,FX_CHIME_SOUND=3,FX_VOL=4;
     /** 효과음 volume in percent (0..200, − / + on FX_VOL): coin, cassette click and speed chime; the shift and downshift beeps keep RPM_BEEP_VOL. */
@@ -50,9 +52,10 @@ public final class SettingsLayout {
      *  SOUND_MIX (엔진음): the engine against the turbo whistle and blow-off, 0 % leaves only those two. */
     public static final int[] SOUND_MIN={10,0,0,0,0,0},SOUND_MAX={200,100,200,200,200,150},SOUND_STEP={10,10,10,10,10,10},SOUND_DEFAULT={70,100,100,100,100,80};
     /** EngineSynth.ENGINES and EXHAUSTS names, in their order. */
-    public static final String[] SOUND_ENGINES={"1.6 터보 4기통","직렬 6기통 터보","V6 트윈터보","V8 크로스플레인","V8 플랫플레인"};
+    public static final String[] SOUND_ENGINES={"1.6 터보 4기통","직렬 6기통 터보","V6 트윈터보","V8 크로스플레인","V8 플랫플레인",
+        "4기통 · 2.0 터보 핫해치","4기통 · 고회전 캠 전환","4기통 · 수평대향 터보","4기통 · 랠리 안티랙","4기통 · 경량 자연흡기","4기통 · 디젤 터보"};
     /** Engines with a turbo (whistle and blow-off rows apply), per SOUND_ENGINES. */
-    public static final boolean[] SOUND_HAS_TURBO={true,true,true,false,false};
+    public static final boolean[] SOUND_HAS_TURBO={true,true,true,false,false,true,false,true,true,false,true};
     public static final String[] SOUND_EXHAUSTS={"순정","스포츠 머플러","중통 제거","풀 배기 · 팝앤뱅"};
     /** A − / + row's value after a tap in zone z (1 −, 2 +, 0 default). */
     public static int soundStep(int row,int value,int z){
@@ -88,7 +91,7 @@ public final class SettingsLayout {
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
         switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
-            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_FAST+1:1;case FX:return FX_VOL+1;case LANG:return LANGS.length;case DIAG:return 5;case FLOAT:return FLOAT_CELL+4;
+            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_BOOST+1:1;case FX:return FX_VOL+1;case LANG:return LANGS.length;case DIAG:return 5;case FLOAT:return FLOAT_CELL+4;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
     public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME?3:cat==PAINT?2:1;}
@@ -147,18 +150,18 @@ public final class SettingsLayout {
         return 0;
     }
     // --- 플로팅 pane ---
-    /** The preview well (the window drawn at its real size, or smaller when it does not fit), its caption below it. */
-    public static final float FW_L=PANE_L,FW_T=TOP+2,FW_R=566,FW_B=252,FW_CAPTION=16;
+    /** The preview well (the window drawn as large as fits, up to twice its real size), its caption below it. */
+    public static final float FW_L=PANE_L,FW_T=TOP+2,FW_R=566,FW_B=322,FW_CAPTION=16;
     /** The right column: the on switch, the button-hiding switch, and the chosen cell's box with its change button. */
     public static final float FC_L=576,FC_R=PANE_R;
     public static final float[] F_ON_BOX={FC_L,FW_T,FC_R,FW_T+38},F_HIDE_BOX={FC_L,FW_T+42,FC_R,FW_T+78},F_MUSIC_BOX={FC_L,FW_T+82,FC_R,FW_T+118},
         F_CELL_BOX={FC_L,FW_T+124,FC_R,FW_B},F_EDIT_BOX={FC_L+12,FW_B-42,FC_R-12,FW_B-6};
     /** Button rows under the preview: label at PANE_L+6, buttons from F_ROW_X; ROW_H tall, F_GAP apart. */
     public static final float F_ROW_X=PANE_L+70,F_ROW_H=36,F_GAP=8;
-    public static final float[] F_ROW_Y={262,306,350,394};
-    public static final String[] F_ROW_LABELS={"모양","색감","크기","추천"};
+    public static final float[] F_ROW_Y={332,376,420};   // the last row ends at 456, above the hint line
+    public static final String[] F_ROW_LABELS={"모양","색감","크기"};
     /** Tap targets: on, hide, edit (the chosen cell), a preview cell (+ k), then each row's buttons (+ index). */
-    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_MUSIC=7,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60,F_ALPHA=70,F_SKIN=4,F_SKIN_DAY=8,F_DN=90,SKIN_SHEET=100,SKIN_SHEET_DAY=102,F_FORM=5,FORM_SHEET=101,F_AUTO=6,F_PRESET=80;
+    public static final int F_ON=1,F_HIDE=2,F_EDIT=3,F_MUSIC=7,F_CELL=10,F_SHAPE=20,F_COUNT=30,F_SIZE=40,F_CORNER=50,F_COLOR=60,F_ALPHA=70,F_SKIN=4,F_SKIN_DAY=8,F_DN=90,SKIN_SHEET=100,SKIN_SHEET_DAY=102,F_FORM=5,FORM_SHEET=101,F_AUTO=6;
     /** 크기 and 투명도 as two bars on one row, each snapping to its stops; the knob is a chip with the value's name. */
     public static final float[] F_SIZE_BAR={248,F_ROW_Y[2],500,F_ROW_Y[2]+F_ROW_H},F_ALPHA_BAR={566,F_ROW_Y[2],788,F_ROW_Y[2]+F_ROW_H};
     public static final float F_SIZE_KNOB=78,F_ALPHA_KNOB=66,F_ALPHA_LABEL_X=512;
@@ -167,14 +170,11 @@ public final class SettingsLayout {
     /** The stop nearest x (a finger past either end keeps to that end). */
     public static int sliderStop(float[] bar,float knob,int stops,float x){float a=bar[0]+knob/2,b=bar[2]-knob/2;if(stops<2)return 0;
         return Math.max(0,Math.min(stops-1,Math.round((x-a)/((b-a)/(stops-1)))));}
-    /** 추천 row: one tap sets shape, count, look, size and transparency together (FloatPanel.applyPreset). */
-    public static final String[] F_PRESETS={"기본","레이스","미니","음악"};
-    public static final float F_PRESET_X=248,F_PRESET_W=129;
     /** 모양 at the start of the first row: opens the shape sheet (FloatPanel.FORMS). */
-    public static final float[] F_FORM_BOX={248,262,470,298};
+    public static final float[] F_FORM_BOX={248,F_ROW_Y[0],470,F_ROW_Y[0]+F_ROW_H};
     /** The 색감 row: the 계기판 따라 switch, 자동 / 낮 / 밤 (F_DN + DayNight value), then the day and the night look chips that open
      *  their look sheet (VehicleDash.floatEdit = SKIN_SHEET_DAY / SKIN_SHEET). */
-    public static final float[] F_AUTO_BOX={248,306,380,342},F_SKIN_DAY_BOX={556,306,668,342},F_SKIN_BOX={676,306,788,342};
+    public static final float[] F_AUTO_BOX={248,F_ROW_Y[1],380,F_ROW_Y[1]+F_ROW_H},F_SKIN_DAY_BOX={556,F_ROW_Y[1],668,F_ROW_Y[1]+F_ROW_H},F_SKIN_BOX={676,F_ROW_Y[1],788,F_ROW_Y[1]+F_ROW_H};
     public static final String[] F_DN_NAMES={"자동","낮","밤"};
     /** 칸 수 sits on the 모양 row, right of the shape chip: the shape decides which counts there are. */
     public static final float F_COUNT_X=540;
@@ -184,8 +184,7 @@ public final class SettingsLayout {
     /** The button for target t ({l, t, r, b}), or null (preview cells are placed by floatPreview*). */
     public static float[] floatBox(int t){
         if(t==F_SIZE)return F_SIZE_BAR;if(t==F_ALPHA)return F_ALPHA_BAR;
-        if(t>=F_PRESET&&t<F_PRESET+F_PRESETS.length){float x=F_PRESET_X+(t-F_PRESET)*(F_PRESET_W+F_GAP);return new float[]{x,F_ROW_Y[3],x+F_PRESET_W,F_ROW_Y[3]+F_ROW_H};}
-        if(t>=F_DN&&t<F_DN+F_DN_NAMES.length){float x=388+(t-F_DN)*56;return new float[]{x,306,x+52,342};}if(t==F_SKIN_DAY)return F_SKIN_DAY_BOX;   // 자동 / 낮 / 밤 52 wide: the car tap minimum
+        if(t>=F_DN&&t<F_DN+F_DN_NAMES.length){float x=388+(t-F_DN)*56;return new float[]{x,F_ROW_Y[1],x+52,F_ROW_Y[1]+F_ROW_H};}if(t==F_SKIN_DAY)return F_SKIN_DAY_BOX;   // 자동 / 낮 / 밤 52 wide: the car tap minimum
         if(t==F_FORM)return F_FORM_BOX;if(t==F_MUSIC)return F_MUSIC_BOX;if(t==F_SKIN)return F_SKIN_BOX;if(t==F_AUTO)return F_AUTO_BOX;if(t==F_ON)return F_ON_BOX;if(t==F_HIDE)return F_HIDE_BOX;if(t==F_EDIT)return F_EDIT_BOX;
         int g=t/10*10,i=t-g;float[] w;float x,y;
         switch(g){case F_SHAPE:w=W_SHAPE;x=F_ROW_X;y=F_ROW_Y[0];break;case F_COUNT:w=W_COUNT;x=F_COUNT_X;y=F_ROW_Y[0];break;
@@ -196,10 +195,10 @@ public final class SettingsLayout {
         return new float[]{x,y,x+w[i],y+F_ROW_H};
     }
     /** Every button target in drawing order. */
-    public static final int[] F_TARGETS={F_ON,F_HIDE,F_EDIT,F_SKIN,F_FORM,F_AUTO,F_DN,F_DN+1,F_DN+2,F_SKIN_DAY,F_MUSIC,F_COUNT,F_COUNT+1,F_COUNT+2,F_SIZE,F_ALPHA,
-        F_PRESET,F_PRESET+1,F_PRESET+2,F_PRESET+3};
-    /** The preview's scale for a window w x h: 1, or less so it fits the well with an 8 px margin. */
-    public static float floatPreviewScale(float w,float h){return Math.min(1,Math.min((FW_R-FW_L-16)/w,(FW_B-FW_CAPTION-FW_T-12)/h));}
+    public static final int[] F_TARGETS={F_ON,F_HIDE,F_EDIT,F_SKIN,F_FORM,F_AUTO,F_DN,F_DN+1,F_DN+2,F_SKIN_DAY,F_MUSIC,F_COUNT,F_COUNT+1,F_COUNT+2,F_SIZE,F_ALPHA};
+    /** The preview's scale for a window w x h: as large as fits the well with an 8 px margin, at most twice the real size
+     *  (a small window would otherwise be a dot in the well; the caption says when it is not 1:1). */
+    public static float floatPreviewScale(float w,float h){return Math.min(2,Math.min((FW_R-FW_L-16)/w,(FW_B-FW_CAPTION-FW_T-12)/h));}
     public static float floatPreviewX(float w,float h){return (FW_L+FW_R)/2-w*floatPreviewScale(w,h)/2;}
     public static float floatPreviewY(float w,float h){return (FW_T+FW_B-FW_CAPTION)/2-h*floatPreviewScale(w,h)/2;}
     /** The target under x,y on the 플로팅 pane, or -1. The preview has cols x rows cells of cw x ch at size 1. */

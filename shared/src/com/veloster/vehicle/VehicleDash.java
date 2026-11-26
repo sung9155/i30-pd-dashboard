@@ -194,7 +194,10 @@ public final class VehicleDash extends View implements Runnable {
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);soundOn=SettingsLayout.ENGINE_SOUND&&p.getBoolean("engine_sound",false);
             soundRoute=Math.max(0,Math.min(SettingsLayout.SOUND_ROUTES.length-1,p.getInt("engine_sound_route",0)));
             soundEngine=Math.max(0,Math.min(EngineSynth.engines()-1,p.getInt("engine_sound_engine",0)%EngineSynth.engines()));
-            soundExhaust=Math.max(0,Math.min(EngineSynth.exhausts()-1,p.getInt("engine_sound_exhaust",0)));EngineSound.fast=p.getBoolean("engine_sound_fast",false);SpeedChime.kmh=p.getInt("speed_chime_kmh",0);loadFloat(p);SpeedChime.sound=Math.max(0,Math.min(SpeedChime.NAMES.length-1,p.getInt("speed_chime_sound",0)));CassetteCluster.clickSound=p.getBoolean("cassette_click",true);
+            soundExhaust=Math.max(0,Math.min(EngineSynth.exhausts()-1,p.getInt("engine_sound_exhaust",0)));EngineSound.fast=p.getBoolean("engine_sound_fast",false);
+            EngineSound.yieldMode=Math.max(0,Math.min(SettingsLayout.SOUND_YIELDS.length-1,p.getInt("engine_sound_yield",0)));
+            EngineSound.boostLevel=Math.max(0,Math.min(SettingsLayout.SOUND_BOOSTS.length-1,p.getInt("engine_sound_boost",0)));
+            SpeedChime.kmh=p.getInt("speed_chime_kmh",0);loadFloat(p);SpeedChime.sound=Math.max(0,Math.min(SpeedChime.NAMES.length-1,p.getInt("speed_chime_sound",0)));CassetteCluster.clickSound=p.getBoolean("cassette_click",true);
             for(int k=0;k<soundVals.length;k++)soundVals[k]=Math.max(SettingsLayout.SOUND_MIN[k],Math.min(SettingsLayout.SOUND_MAX[k],p.getInt(SOUND_KEYS[k],SettingsLayout.SOUND_DEFAULT[k])));}
         catch(ClassCastException e){/* Sound off for an incompatible saved value. */}
         applySound();
@@ -437,8 +440,6 @@ public final class VehicleDash extends View implements Runnable {
             floatSel=k;floatEdit=k;int cur=FloatPanel.cells[k];floatEditSig=cur>=0&&FloatPanel.available(cur,prof)?cur:-1;floatEditGraph=FloatPanel.graphs[k];
             int[] gs=FloatPanel.groups(prof);int want=FloatPanel.groupOf(FloatPanel.resolve(cur,k,prof));floatEditTab=0;for(int gt=0;gt<gs.length;gt++)if(gs[gt]==want)floatEditTab=gt;   // open on the reading's group
             return;}
-        else if(t>=SettingsLayout.F_PRESET&&t<SettingsLayout.F_PRESET+SettingsLayout.F_PRESETS.length){FloatPanel.applyPreset(t-SettingsLayout.F_PRESET);
-            floatSel=Math.max(0,Math.min(floatSel,FloatPanel.used(FloatPanel.shape,FloatPanel.count)-1));}
         else{int g=t/10*10,i=t-g;
             if(g==SettingsLayout.F_SHAPE){if(off)FloatPanel.lastShape=i+1;else FloatPanel.shape=i+1;}
             else if(g==SettingsLayout.F_COUNT){if(!FloatPanel.fits(shape,FloatPanel.COUNTS[i]))return;FloatPanel.count=FloatPanel.COUNTS[i];floatSel=Math.min(floatSel,FloatPanel.count-1);}
@@ -759,6 +760,8 @@ public final class VehicleDash extends View implements Runnable {
                     else if(i==SettingsLayout.SOUND_ON){boolean was=soundOn;SettingsLayout.floatSound=soundOn&&!SettingsLayout.floatSound;soundOn=!was||SettingsLayout.floatSound;   // 끔 -> 계기판 -> 항상 -> 끔, like 변속 알림음
                         e.putBoolean("float_sound",SettingsLayout.floatSound);}
                     else if(i==SettingsLayout.SOUND_ROUTE)soundRoute=(soundRoute+1)%SettingsLayout.SOUND_ROUTES.length;
+                    else if(i==SettingsLayout.SOUND_YIELD){EngineSound.yieldMode=(EngineSound.yieldMode+1)%SettingsLayout.SOUND_YIELDS.length;e.putInt("engine_sound_yield",EngineSound.yieldMode);sound.play(-1);}   // read when the thread starts: restarted below
+                    else if(i==SettingsLayout.SOUND_BOOST){EngineSound.boostLevel=(EngineSound.boostLevel+1)%SettingsLayout.SOUND_BOOSTS.length;e.putInt("engine_sound_boost",EngineSound.boostLevel);}
                     else if(i==SettingsLayout.SOUND_ENGINE)soundEngine=(soundEngine+1)%EngineSynth.engines();
                     else if(i==SettingsLayout.SOUND_EXHAUST)soundExhaust=(soundExhaust+1)%EngineSynth.exhausts();
                     else{int z=SettingsLayout.stepZone(x);if(z<0||z!=SettingsLayout.stepZone(downX))break;   // − / +; the label is the default

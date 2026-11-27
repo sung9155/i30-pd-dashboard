@@ -11,6 +11,7 @@ import java.util.Locale;
  */
 final class HudCluster extends ClusterKit {
     private static final int G=0xff7dff8e,GD=0xff3f8048,GF=0xff12301a;
+    { tintKey=G; }   // other themes: the HUD green becomes the theme accent
     private static final float CX=400,CY=270;
 
     @Override protected void draw(Canvas c){
@@ -30,7 +31,7 @@ final class HudCluster extends ClusterKit {
         }
         c.restore();
         // bank arc and pointer
-        r.set(CX-170,CY-170,CX+170,CY+170);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(G);c.drawArc(r,-135,90,false,p);p.setStyle(Paint.Style.FILL);
+        r.set(CX-170,CY-170,CX+170,CY+170);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(col(G));c.drawArc(r,-135,90,false,p);p.setStyle(Paint.Style.FILL);
         for(int d:new int[]{-45,-30,-20,-10,0,10,20,30,45}){float l=d%30==0||Math.abs(d)==45?14:8;line(c,px(CX,170,d),py(CY,170,d),px(CX,170+l,d),py(CY,170+l,d),2,G);}
         float a=(float)Math.toDegrees(-roll);
         path.reset();path.moveTo(px(CX,164,a),py(CY,164,a));path.lineTo(px(CX,150,a-3),py(CY,150,a-3));path.lineTo(px(CX,150,a+3),py(CY,150,a+3));path.close();poly(c,G);
@@ -85,7 +86,7 @@ final class HudCluster extends ClusterKit {
         if(side<0){path.moveTo(bx,mid-18);path.lineTo(bx+bw,mid-18);path.lineTo(bx+bw+12,mid);path.lineTo(bx+bw,mid+18);path.lineTo(bx,mid+18);}
         else{path.moveTo(bx+bw,mid-18);path.lineTo(bx,mid-18);path.lineTo(bx-12,mid);path.lineTo(bx,mid+18);path.lineTo(bx+bw,mid+18);}
         path.close();poly(c,0xff000000);
-        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(G);c.drawPath(path.kept(),p);p.setStyle(Paint.Style.FILL);
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(2);p.setColor(col(G));c.drawPath(path.kept(),p);p.setStyle(Paint.Style.FILL);
         mono(c,Float.isNaN(val)?"—":String.valueOf(Math.round(val)),bx+bw/2,mid+8,21,G,Paint.Align.CENTER);
         mono(c,label,x+w/2,top-8,15,G,Paint.Align.CENTER);
     }

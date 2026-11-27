@@ -21,6 +21,7 @@ final class LambdaCluster extends ClusterKit {
         GREEN=0xff3ddc84,BLUE=0xff4aa8ff,RED=0xffff4059,AMBER=0xffffb84d,INK=0xff000000;
     /** One colour per gear (index = gear), from the owner's sketch: 5 teal, 4 yellow, 3 red, 2 purple. */
     private static final int[] GEAR_INK={0,0xffff5fa8,0xff9b5cff,0xffff6a4d,0xffffe04a,0xff2fe0c4,0xff5ab4ff,0xffc0c8ff};
+    { tintKey=CYAN;keep=new int[]{GREEN,BLUE,RED,AMBER,OR,0xffff5fa8,0xff9b5cff,0xffff6a4d,0xffffe04a,0xff2fe0c4,0xff5ab4ff,0xffc0c8ff}; }   // other themes: cyan becomes the accent; gear inks and states stay
     private static final float TOP=112,BOT=446,HALF=118,APEX=30,BAND=11,SPEED_MAX=260;   // a steep Λ
     private static final float LCX=172,RCX=628,COL_Y0=TOP+50,COL_Y1=412;   // the two Λ centres, mirrored about x = 400
     int shiftTarget=6000;   // set by PitRenderer from 설정 → RPM

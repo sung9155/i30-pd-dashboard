@@ -15,9 +15,14 @@ import java.util.Locale;
 public final class ClusterRenderer {
     /** Every colour goes through the selected theme (identity for N). */
     private static int T(int c){return Theme.current().map(c);}
-    /** Retro keeps its own LCD palette in every theme; only warnings follow the theme (danger + ring). */
+    /** Retro draws its own LCD palette: N keeps it, other themes recolour it around the orange (Theme.tint); the red
+     *  redline / peak, the cyan tyre-ok and warnings (danger + ring) stay. */
     private boolean fixedPalette;
-    private int col(int c){return fixedPalette?c:T(c);}
+    private int col(int c){
+        if(!fixedPalette)return T(c);
+        if(c==LCD_RED||c==0xff3a0a06||c==CYAN||c==R_LOW||c==D())return c;
+        return Theme.current().tint(c,ORANGE);
+    }
     private static int D(){return Theme.current().danger;}
     private final Paint p=new Paint(3);
     private final Path path=new Path();
@@ -27,7 +32,7 @@ public final class ClusterRenderer {
         BLUE=0xffa4d9ef,AMBER=0xffffb84d,GREEN=0xff3ddc84,YELLOW=0xffffd21a,NIGHT=0xff2a2f6a;
     // Retro LCD palette (not themed).
     private static final int ORANGE=0xffff7a1a,R_AMBER=0xffffb02e,R_YELLOW=0xffffd23a,LCD_RED=0xffff3a2a,FRAME=0xff8a2a10,CELL=0xff140500,
-        R_BG=0xff080200,R_DIM=0xff2a0a04,CYAN=0xff2cd4e8,PINK=0xffff9ad0;
+        R_BG=0xff080200,R_DIM=0xff2a0a04,CYAN=0xff2cd4e8,PINK=0xffff9ad0,R_LOW=0xffffb030;   // R_LOW: a low tyre, kept amber in every theme
     private static final float TIRE_LOW=30,TIRE_CRIT=26;
     private static final long POP_MS=150;
 
@@ -208,7 +213,7 @@ public final class ClusterRenderer {
         for(int i=0;i<4;i++){
             boolean right=i%2==1,rear=i>=2;float val=v(ts[i]);boolean crit=!Float.isNaN(val)&&val<TIRE_CRIT;
             float x=right?694:616,y=rear?268:148;
-            fill(c,x,y,x+16,y+40,Float.isNaN(val)?R_DIM:crit?D():val<TIRE_LOW?R_AMBER:CYAN);
+            fill(c,x,y,x+16,y+40,Float.isNaN(val)?R_DIM:crit?D():val<TIRE_LOW?R_LOW:CYAN);
             if(crit)ThemeShapes.ring(c,p,x-3,y-3,x+19,y+43);
             mono(c,fmt("%.0f",val),right?780:548,y+28,22,R_AMBER,right?Paint.Align.RIGHT:Paint.Align.LEFT);
             float tt=v(Telemetry.TIRE_TEMP_FL+i);if(!Float.isNaN(tt))mono(c,fmt("%.0f",tt)+"°",right?780:548,y+42,11,R_AMBER,right?Paint.Align.RIGHT:Paint.Align.LEFT);
@@ -230,6 +235,7 @@ public final class ClusterRenderer {
     // ---- Rally -----------------------------------------------------------------------------------------------
     private void rally(Canvas c){
         fill(c,0,52,800,480,0xff000000);
+        int fr=Theme.current().id.equals("n")?0xffdddddd:Theme.current().accent;   // the white outlines take the theme's accent (N: white)
         // Rev bar: one cell per gear, green to red, white marker at the current rpm.
         int n=prof.topGear;float l=12,rr=788,w=(rr-l)/n,rpm=v(0);
         for(int i=0;i<n;i++){
@@ -237,27 +243,27 @@ public final class ClusterRenderer {
             wide(c,String.valueOf(i+1),l+(i+.5f)*w,87,24,0xff111111);
         }
         if(!Float.isNaN(rpm)){float x=l+(rr-l)*Math.max(0,Math.min(1,rpm/prof.maxRpm));fill(c,x-2,56,x+2,98,0xffffffff);}
-        frame(c,l,60,rr,94,0xffdddddd);
+        frame(c,l,60,rr,94,fr);
         // Speed | gear | boost, tyres | gear | temperatures, then four small boxes.
-        frame(c,12,102,262,162,0xffdddddd);wide(c,fmt("%.0f",v(7)),137,150,40,0xffffffff);
-        frame(c,538,102,788,162,0xffdddddd);wide(c,fmt("%.2f",v(Telemetry.BOOST)),663,150,36,0xffffffff);
-        frame(c,270,102,530,356,0xffdddddd);
+        frame(c,12,102,262,162,fr);wide(c,fmt("%.0f",v(7)),137,150,40,0xffffffff);
+        frame(c,538,102,788,162,fr);wide(c,fmt("%.2f",v(Telemetry.BOOST)),663,150,36,0xffffffff);
+        frame(c,270,102,530,356,fr);
         float pop=Math.max(0,1-(now-popAt)/(float)POP_MS),g=v(8);
         int gearCol=Theme.current().id.equals("n")?0xff77ffff:Theme.current().accent;
         String gt=Telemetry.gearText(g,v(Telemetry.GEAR_SELECTOR),prof);
         wide(c,gt,400,320,big(gt,220)*(1+.2f*pop),pop>0?mix(0xffffffff,gearCol,pop):gearCol);
-        frame(c,12,170,262,356,0xffdddddd);caption(c,"TIRE PRESS",137,190);
+        frame(c,12,170,262,356,fr);caption(c,"TIRE PRESS",137,190);
         int[] ts={Telemetry.TPMS_FL,Telemetry.TPMS_FR,Telemetry.TPMS_RL,Telemetry.TPMS_RR};
         for(int i=0;i<4;i++){float val=v(ts[i]);boolean crit=!Float.isNaN(val)&&val<TIRE_CRIT;
             wide(c,fmt("%.0f",val),i%2==0?80:194,i<2?256:330,40,crit?D():!Float.isNaN(val)&&val<TIRE_LOW?AMBER:0xffffffff);
             float tt=v(Telemetry.TIRE_TEMP_FL+i);if(!Float.isNaN(tt))wide(c,fmt("%.0f",tt)+"°C",i%2==0?80:194,i<2?276:350,12,0xffbbbbbb);}
-        frame(c,538,170,788,356,0xffdddddd);caption(c,"COOLANT · INTAKE",663,190);
+        frame(c,538,170,788,356,fr);caption(c,"COOLANT · INTAKE",663,190);
         wide(c,fmt("%.0f",v(2)),606,290,44,temp(v(2),100,110));wide(c,fmt("%.0f",v(Telemetry.INTAKE)),722,290,44,temp(v(Telemetry.INTAKE),60,80));
         float mode=v(Telemetry.DRIVE_MODE);
-        frame(c,12,364,262,428,0xffdddddd);wide(c,Float.isNaN(mode)?"—":Telemetry.driveModeLabel((int)mode),137,408,26,0xffffffff);
+        frame(c,12,364,262,428,fr);wide(c,Float.isNaN(mode)?"—":Telemetry.driveModeLabel((int)mode),137,408,26,0xffffffff);
         frame(c,270,364,396,428,0xff22dddd);wide(c,fmt("%.0f",rpm),333,406,22,0xffffffff);
         frame(c,404,364,530,428,0xffee7722);wide(c,fmt("%.0f",v(Telemetry.RANGE)),467,406,22,0xffffffff);
-        frame(c,538,364,788,428,0xffdddddd);wide(c,fmt("%.0f",v(9))+"%",663,408,28,0xffffffff);
+        frame(c,538,364,788,428,fr);wide(c,fmt("%.0f",v(9))+"%",663,408,28,0xffffffff);
         warnings(c,436,472);
     }
     /** Rounded white outline (radius 7), the Rally look in every theme. */

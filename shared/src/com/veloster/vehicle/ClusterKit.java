@@ -66,7 +66,19 @@ abstract class ClusterKit {
 
     /** Display text in the selected language (Korean source strings, translations/en.json). */
     protected static String t(String ko){return com.veloster.i18n.UiText.t(ko);}
-    protected int col(int c){return themed?Theme.current().map(c):c;}
+    /** Fixed-palette screens: their own accent. Other themes recolour the palette around it (Theme.tint); N keeps it. */
+    protected int tintKey;
+    /** Colours tint leaves alone: warnings, ok / caution, per-gear inks. The theme's danger and accent and the drive-mode
+     *  accent always stay. */
+    protected int[] keep={};
+    protected int col(int c){
+        if(themed)return Theme.current().map(c);
+        if(tintKey==0)return c;
+        Theme t=Theme.current();int rgb=c|0xff000000;
+        if(rgb==(t.danger|0xff000000)||rgb==(t.accent|0xff000000)||rgb==(Theme.modeAccent()|0xff000000))return c;
+        for(int k:keep)if((k|0xff000000)==rgb)return c;
+        return t.tint(c,tintKey);
+    }
     protected static int danger(){return Theme.current().danger;}
     protected float v(int i){return i>=0&&i<s.length&&s[i].valid&&!Float.isNaN(s[i].value)&&!Float.isInfinite(s[i].value)?Telemetry.displayValue(i,s[i].value):Float.NaN;}
     protected static String fmt(String f,float x){return Float.isNaN(x)?"—":Telemetry.format(f,x);}

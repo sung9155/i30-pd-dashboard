@@ -109,6 +109,19 @@ public final class Theme {
     /** Themed colour for a non-warning state; never the danger colour (amber's accent sits close to its danger red). */
     public int calm(int nColor){int c=map(nColor);return (c&0xffffff)==(danger&0xffffff)?map(0xff91a5ae):c;}
 
+    /** A fixed-palette screen's colour moved into this theme (2026-11-27: 레트로 · 80년대 · HUD · 람다 · RPM · 아날로그 own
+     *  palettes): N returns own; greys, whites and blacks stay; a coloured ink becomes the accent at own's brightness
+     *  relative to key (the screen's own accent), turning whiter when own is brighter than key. Alpha comes from own. */
+    public int tint(int own,int key){
+        if(keys==null)return own;
+        int r=(own>>16)&255,g=(own>>8)&255,b=own&255,mx=Math.max(r,Math.max(g,b)),mn=Math.min(r,Math.min(g,b));
+        if(mx<12||mx-mn<mx*0.35f)return own;   // grey, white, black
+        float k=luma(own)/Math.max(1f,luma(key));int out=0;
+        for(int sh=16;sh>=0;sh-=8){int a=(accent>>sh)&255;out|=Math.min(255,Math.round(k<=1?a*k:a+(255-a)*Math.min(1,k-1)))<<sh;}
+        return (own&0xff000000)|out;
+    }
+    private static float luma(int c){return (2*((c>>16)&255)+5*((c>>8)&255)+(c&255))/8f;}
+
     /** Theme colour for an N palette colour; alpha comes from the input. Colours outside the table pass through. */
     public int map(int nColor){
         if(modeAccent!=0){int rgb=nColor&0xffffff;

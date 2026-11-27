@@ -8,6 +8,7 @@ import java.util.Locale;
 /** 80s digital dash: teal VFD glass with ghost segments, stepped speed bar, rising tach, TURBO lamp, gear in amber. */
 final class VfdCluster extends ClusterKit {
     private static final int ON=0xff4ff3d3,GHOST=0xff0b211d,AMB=0xffffb23e,AMB_GHOST=0xff261b09,RED=0xffff4b3a,DIM=0xff2a8a78,BOX=0xff163a33;
+    { tintKey=ON;keep=new int[]{AMB,AMB_GHOST,RED,0xff2a0d0a,0xffb03a2c,0xff1a0e00}; }   // other themes: the teal becomes the accent, amber and red stay
 
     @Override protected void draw(Canvas c){
         float v=v(7),rpm=v(0),boost=v(Telemetry.BOOST),top=boostTop();

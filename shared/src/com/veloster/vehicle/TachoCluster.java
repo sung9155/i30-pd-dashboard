@@ -26,6 +26,7 @@ final class TachoCluster extends ClusterKit {
         RED=0xffff3b30,BLUE=0xff4aa8ff,GRN=0xff3ddc84,YEL=0xffffd23f,CYAN=0xff5fe3e0,TICK=0xffc9d3d8,DIM=0xff141c21;
     /** One colour per gear, the 람다 screen's. */
     private static final int[] INK={0,0xffff5fa8,0xff9b5cff,0xffff6a4d,0xffffe04a,0xff2fe0c4,0xff5ab4ff,0xffc0c8ff};
+    { tintKey=CYAN;keep=new int[]{RED,BLUE,GRN,YEL,0xffff5fa8,0xff9b5cff,0xffff6a4d,0xffffe04a,0xff2fe0c4,0xff5ab4ff,0xffc0c8ff}; }   // other themes: cells, edges and cyan follow the accent
     private static final float[][] TL={{14,14},{170,14},{112,118},{14,118}},MID={{14,126},{112,126},{112,286},{14,286}},BL={{14,294},{112,294},{182,414},{14,414}};   // (182,414) lies on the same circle round the dial as (112,294), radius 301: with 170 the arc missed both corners (a notch at the top, a slanted bottom edge)
     private Bitmap face;private String faceKey="";private final RectF arc=new RectF();
     private int lastGear;private float peak;private long peakAt;
@@ -43,7 +44,7 @@ final class TachoCluster extends ClusterKit {
     @Override protected void draw(Canvas c){
         c.save();c.translate(0,52);
         int acc=accent();
-        String key=prof.maxRpm+"/"+prof.redline+"/"+shiftTarget+"/"+acc+"/"+com.veloster.i18n.UiText.language()+"/"+(prof.trans==VehicleProfile.Trans.MT);
+        String key=prof.maxRpm+"/"+prof.redline+"/"+shiftTarget+"/"+acc+"/"+Theme.current().id+"/"+com.veloster.i18n.UiText.language()+"/"+(prof.trans==VehicleProfile.Trans.MT);
         if(face==null||!key.equals(faceKey)){face=buildFace(acc);faceKey=key;}
         c.drawBitmap(face,0,0,null);
         float rpm=v(0),kmh=v(7),raw=s[8].valid?s[8].value:Float.NaN;
@@ -165,14 +166,14 @@ final class TachoCluster extends ClusterKit {
             else path.lineTo(x,y);
         }
         path.close();
-        poly(c,CELL);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawPath(path.kept(),p);p.setStyle(Paint.Style.FILL);
+        poly(c,CELL);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(col(EDGE));c.drawPath(path.kept(),p);p.setStyle(Paint.Style.FILL);
     }
     private void label(Canvas c,boolean right,float y,String s,int acc){bold(c,s,right?W-28:28,y,14,acc,right?Paint.Align.RIGHT:Paint.Align.LEFT);}
     private void sectorCell(Canvas c,float d0,float d1,String label,int acc){
         path.reset();RectF o=new RectF(CX-AR1,CY-AR1,CX+AR1,CY+AR1),in=new RectF(CX-AR0,CY-AR0,CX+AR0,CY+AR0);
         path.arcTo(o,d0,d1-d0);path.arcTo(in,d1,d0-d1);path.close();poly(c,CELL);
-        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(EDGE);c.drawPath(path.kept(),p);
-        p.setStrokeWidth(8);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(TRACK);float r=AR1-8;r(r);c.drawArc(this.r,d0+3.5f,d1-d0-7,false,p);p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
+        p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1);p.setColor(col(EDGE));c.drawPath(path.kept(),p);
+        p.setStrokeWidth(8);p.setStrokeCap(Paint.Cap.ROUND);p.setColor(col(TRACK));float r=AR1-8;r(r);c.drawArc(this.r,d0+3.5f,d1-d0-7,false,p);p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);
         float am=(d0+d1)/2,lx=px(am,AR0+28),ly=py(am,AR0+28);
         c.save();c.rotate(tilt(am),lx,ly);bold(c,label,lx,ly-8,12,acc,Paint.Align.CENTER);c.restore();
     }

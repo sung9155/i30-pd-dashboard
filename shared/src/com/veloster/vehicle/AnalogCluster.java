@@ -30,6 +30,7 @@ import android.graphics.Typeface;
 final class AnalogCluster extends ClusterKit {
     private static final float SX=180,TX=620,BY=214,BR=150,SMX=400,BOY=104,TMY=324,SR=52,SPAN=130,SMALL_SPAN=120,KMH_MAX=260,T_MIN=40,T_MAX=130,HOT=110,LAMP_X=SMX-82,LAMP_Y=TMY+34;
     private static final int RED_ZONE=0xffd8302a,DRUM=0xff111111,DRUM_FG=0xfff4f4f4;
+    { tintKey=0xff2fd6ff;keep=new int[]{RED_ZONE,0xff3a1412}; }   // other themes: needles, digital cyan and the arc follow the accent; the red zone stays
     // 클래식: black faces
     private static final int FACE=0xff101012,NUM=0xfff0f0f0,TICK=0xffd8d8d8,NEEDLE=0xffff6a1a,RIM=0xff000000;
     // 디지털
@@ -68,7 +69,7 @@ final class AnalogCluster extends ClusterKit {
     @Override protected void draw(Canvas c){
         c.save();c.translate(0,52);
         float bt=boostTop();int lk=look();
-        String key=prof.maxRpm+"/"+prof.redline+"/"+bt+"/"+com.veloster.i18n.UiText.language()+"/"+lk;
+        String key=prof.maxRpm+"/"+prof.redline+"/"+bt+"/"+com.veloster.i18n.UiText.language()+"/"+lk+"/"+Theme.current().id;
         if(face==null||!key.equals(faceKey)){face=recycle(face);
             face=lk==DIGITAL?buildDigital():lk==MINIMAL?buildMinimal(bt):lk==ARC?buildArc():lk==RACE?buildRace():buildFace(bt);faceKey=key;}
         c.drawBitmap(face,0,0,null);
@@ -132,7 +133,7 @@ final class AnalogCluster extends ClusterKit {
     private void needle(Canvas c,float cx,float cy,float deg,Path n,float hub,int color){
         p.setStyle(Paint.Style.FILL);
         c.save();c.translate(cx+2.5f,cy+3);c.rotate(deg);p.setColor(0x55000000);c.drawPath(n,p);c.restore();
-        c.save();c.translate(cx,cy);c.rotate(deg);p.setColor(color);c.drawPath(n,p);c.restore();
+        c.save();c.translate(cx,cy);c.rotate(deg);p.setColor(col(color));c.drawPath(n,p);c.restore();
         dot(c,cx,cy,hub,0xffb9b9b9);dot(c,cx,cy,hub*0.45f,0xff3a3a3a);
     }
     /** 디지털 and 아크: the readings in big digits in the dials' middles, the gear between them. */

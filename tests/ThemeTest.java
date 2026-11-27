@@ -57,6 +57,13 @@ public final class ThemeTest {
             check(t.map(0xff040506)==bg&&t.map(t.danger)==t.danger,id+": mode leaves the rest alone");
             Theme.mode(0);check(t.map(0xffa4d9ef)==own&&t.map(0xff233b46)==ownDim,id+": NORMAL keeps the theme accent");
             Theme.mode(-1);check(t.map(0xffa4d9ef)==own,id+": off keeps the theme accent");}
+        // Fixed-palette screens (레트로 · 80년대 · HUD · 람다 · RPM · 아날로그): tint around the screen's own accent.
+        {Theme n=Theme.of("n"),r=Theme.of("red");int key=0xff7dff8e;
+         check(n.tint(key,key)==key&&n.tint(0xff12301a,key)==0xff12301a,"N keeps a screen's own palette");
+         check(r.tint(key,key)==r.accent,"the screen's own accent becomes the theme accent");
+         check(r.tint(0xfff2f6f8,key)==0xfff2f6f8&&r.tint(0xff7f9a9c,key)==0xff7f9a9c&&r.tint(0xff000000,key)==0xff000000,"white, grey and black stay");
+         int dim=r.tint(0xff12301a,key);check(((dim>>16)&255)<((r.accent>>16)&255)/2&&dim!=0xff12301a,"a dark ink becomes a dark accent");
+         check((r.tint(0x8012301a,key)>>>24)==0x80,"alpha kept");}
         System.out.println("PASS "+checks+" theme checks");
     }
 }

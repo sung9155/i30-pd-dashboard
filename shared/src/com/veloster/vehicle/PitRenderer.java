@@ -44,7 +44,7 @@ public final class PitRenderer {
     private final TachoCluster tacho=new TachoCluster();
     private final WrcCluster wrc=new WrcCluster();private final NeonCluster neon=new NeonCluster();
     /** The screens after RPM, in ClusterPicker order (WRC, 아날로그, 신스웨이브): drawn here like 에코 and RPM. */
-    private final ClusterKit[] more={wrc,new AnalogCluster(),neon};
+    private final ClusterKit[] more={new AnalogCluster(),neon,wrc};   // ClusterPicker order: 아날로그, 신스웨이브, WRC
     private ClusterKit more(int pg){int i=pg-PAGE_TACHO-1;return i>=0&&i<more.length?more[i]:null;}
     private final ShowRenderer showRenderer=new ShowRenderer();
     private final ClusterRenderer clusterRenderer=new ClusterRenderer();

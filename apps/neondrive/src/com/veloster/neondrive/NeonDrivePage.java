@@ -11,8 +11,11 @@ public final class NeonDrivePage {
     private final NeonView view;
     private boolean running;
 
-    public NeonDrivePage(Context context, DriveSignals signals, Runnable onExit) {
-        view = new NeonView(context, signals, true);
+    public NeonDrivePage(Context context, DriveSignals signals, Runnable onExit) { this(context, signals, onExit, null); }
+
+    /** media: the dashboard's now-playing state (its receiver keeps running while the page is up), or null for an own one. */
+    public NeonDrivePage(Context context, DriveSignals signals, Runnable onExit, com.veloster.vehicle.MediaState media) {
+        view = new NeonView(context, signals, true, media);
         view.setExit(onExit);
     }
     public View view() { return view; }

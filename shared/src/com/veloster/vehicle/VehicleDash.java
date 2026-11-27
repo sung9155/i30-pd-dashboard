@@ -203,7 +203,7 @@ public final class VehicleDash extends View implements Runnable {
             if(pdSignals==null)pdSignals=new com.veloster.neondrive.PdSignals(DATA);
             boolean car=up&&screen==ClusterPicker.CAR3D,neon=up&&screen==ClusterPicker.NEON_DRIVE;
             if(car&&carPage==null)carPage=new com.veloster.car3d.CarPage(activity,pdSignals,exitOverlay);
-            if(neon&&neonPage==null)neonPage=new com.veloster.neondrive.NeonDrivePage(activity,pdSignals,exitOverlay);
+            if(neon&&neonPage==null)neonPage=new com.veloster.neondrive.NeonDrivePage(activity,pdSignals,exitOverlay,mediaState);   // the dashboard's now-playing state: the playing track shows at once
             if(carPage!=null){if(!car)carPage.stop();overlay(carPage.view(),car);if(car)carPage.start();}
             if(neonPage!=null){if(!neon)neonPage.stop();overlay(neonPage.view(),neon);if(neon)neonPage.start();}
         }catch(RuntimeException e){com.veloster.diagnostics.ErrorLog.record("own_view_page",e);android.util.Log.e("VehicleDash","screen "+screen+" unavailable",e);}

@@ -201,10 +201,10 @@ public final class DriveModel {
         return g;
     }
 
-    /** Demo gear for the 8-speed DCT: neutral when stopped, then 1..8. */
+    /** Demo gear for the DCT: neutral when stopped, then 1..7 (the i30 PD's 7-speed DCT). */
     public static int demoGear8(float kmh) {
         if (kmh < 1f) return DriveSignals.GEAR_NEUTRAL;
-        float[] up = {15, 30, 48, 68, 90, 112, 135};
+        float[] up = {15, 30, 48, 68, 90, 112};
         int g = 1;
         for (float u : up) if (kmh >= u) g++;
         return g;

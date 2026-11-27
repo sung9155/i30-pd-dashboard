@@ -107,7 +107,7 @@ public final class NeonRenderer {
             }
         }
     }
-    /** Gear display: off, 6-speed manual H gate, or 8-speed DCT (P R N D + gear). */
+    /** Gear display: off, 6-speed manual H gate, or the DCT (a P R N D gate and the gear in big digits). */
     public static final int GEARS_OFF = 0, GEARS_MANUAL = 1, GEARS_DCT = 2;
     public static final String[] GEARS_KO = {"끄기", "수동 6단", "DCT"}, GEARS_EN = {"Off", "6-spd MT", "DCT"};
     private int gearMode = GEARS_MANUAL;
@@ -740,30 +740,38 @@ public final class NeonRenderer {
     }
 
     /**
-     * 8-speed DCT in the HUD style: P R N D letters with the current one lit and underlined, and while in
-     * drive the gear number (1..8) after the D. P is never lit (no park signal is decoded).
+     * DCT in the HUD style, like an automatic's selector and gear readout rather than a manual's H gate: a short
+     * vertical gate (P R N D stacked, the lever's slot lit as a block beside its letter), and next to it one big pixel
+     * glyph — the gear number in drive (1..7), R or N otherwise, a dim dash before any gear. P is never lit (no park
+     * signal is decoded). (2026-11-27, the owner: an H shifter on an automatic looks wrong.)
      */
     private void drawDctGear(Canvas c, float right, float bottom, int gear) {
         boolean known = gear != DriveSignals.GEAR_UNKNOWN;
         boolean drive = gear >= 1 && gear <= 8;
-        float cell = 3f, step = (PixelFont.COLS + 2) * cell, top = bottom - 12 - PixelFont.ROWS * cell;
-        String num = drive ? String.valueOf(gear) : "";
-        float numW = PixelFont.COLS * cell, x0 = right - numW - 6 - 4 * step;
-        String[] letters = {"P", "R", "N", "D"};
         int lit = !known ? -1 : gear == DriveSignals.GEAR_R ? 1 : gear == DriveSignals.GEAR_NEUTRAL ? 2 : drive ? 3 : -1;
+        // the big glyph
+        float big = 6f, bigW = PixelFont.COLS * big, bigH = PixelFont.ROWS * big, bigTop = bottom - 4 - bigH;
+        String glyph = !known ? "-" : drive ? String.valueOf(gear) : gear == DriveSignals.GEAR_R ? "R" : gear == DriveSignals.GEAR_NEUTRAL ? "N" : "-";
+        boolean hot = known && glyph.charAt(0) != '-';
+        pixelText(c, glyph, right - bigW, bigTop, big, hot ? HUD_YELLOW : 0x66b8c8d0, hot ? HUD_ORANGE : 0x66b8c8d0);
+        // the gate: P R N D stacked, a cyan rail, the lit slot as a block on the rail
+        float cell = 1.6f, lw = PixelFont.COLS * cell, lh = PixelFont.ROWS * cell, gap = 3.2f, stackH = 4 * lh + 3 * gap;
+        float lx = right - bigW - 12 - lw, top = bottom - 4 - stackH, rail = lx - 7;
+        String[] letters = {"P", "R", "N", "D"};
+        p.setStyle(Paint.Style.FILL);
+        p.setColor(HUD_SHADOW); c.drawRect(rail - 1.5f, top - 1.5f, rail + 3.5f, top + stackH + 3.5f, p);
+        p.setColor(known ? HUD_CYAN : 0x5588a0b0); c.drawRect(rail, top, rail + 2, top + stackH, p);
         for (int i = 0; i < 4; i++) {
-            float lx = x0 + i * step;
+            float ly = top + i * (lh + gap);
             boolean on = i == lit;
             int dim = known ? 0xccd8f8ff : 0x66b8c8d0;
-            pixelText(c, letters[i], lx, top, cell, on ? HUD_YELLOW : dim, on ? HUD_ORANGE : dim);
+            pixelText(c, letters[i], lx, ly, cell, on ? HUD_YELLOW : dim, on ? HUD_ORANGE : dim);
             if (on) {
-                float w = PixelFont.COLS * cell;
-                p.setStyle(Paint.Style.FILL);
-                p.setColor(HUD_SHADOW); c.drawRect(lx - 1.5f, bottom - 7.5f, lx + w + 2.5f, bottom - 1.5f + 2.5f, p);
-                p.setColor(HUD_CYAN); c.drawRect(lx, bottom - 6, lx + w, bottom - 2, p);
+                float cy = ly + lh / 2;
+                p.setColor(HUD_SHADOW); c.drawRect(rail - 4.5f, cy - 4.5f, rail + 7.5f, cy + 5.5f, p);
+                p.setColor(HUD_YELLOW); c.drawRect(rail - 3, cy - 3, rail + 5, cy + 4, p);
             }
         }
-        if (drive) pixelText(c, num, right - numW, top, cell, HUD_YELLOW, HUD_ORANGE);
     }
 
     /**

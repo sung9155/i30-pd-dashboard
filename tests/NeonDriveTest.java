@@ -222,7 +222,7 @@ public final class NeonDriveTest {
         check(gs.snapshot(9201).gear == DriveSignals.GEAR_NEUTRAL, "gear 9: no forward gear");
         nadd[4] = 7; gs.gearInfo(nadd, 9300);
         check(gs.snapshot(9301).gear == 7 && gs.snapshot(9301).gear != DriveSignals.GEAR_R, "gear 7 is not reverse");
-        check(DriveModel.demoGear8(0) == 0 && DriveModel.demoGear8(20) == 2 && DriveModel.demoGear8(150) == 8, "demo DCT gears");
+        check(DriveModel.demoGear8(0) == 0 && DriveModel.demoGear8(20) == 2 && DriveModel.demoGear8(150) == 7, "demo DCT gears (7-speed)");
         check(DriveModel.demoGear(0) == 0 && DriveModel.demoGear(50) == 3 && DriveModel.demoGear(150) == 6, "demo gears");
         // Standstill: park brake bit, stop timer, showroom and trip statistics.
         DriveSignals pks = new DriveSignals(); DriveModel pm = new DriveModel();

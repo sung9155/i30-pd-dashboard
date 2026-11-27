@@ -95,6 +95,8 @@ public class DriveSignals {
     private boolean dctSeen;
     /** Signs of the 8-speed DCT this session: a non-zero TCU frame or a 7th / 8th gear. A guess, unconfirmed on a DCT car. */
     public synchronized boolean dctSeen() { return dctSeen; }
+    /** The car's gearbox when the host knows it: 1 DCT, 0 manual, -1 unknown (the standalone app guesses with dctSeen). */
+    public int transmission() { return -1; }
 
     public synchronized void record(int function, byte[] b, long now) {
         if (b == null || !accepts(function, b.length)) return;

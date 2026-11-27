@@ -28,6 +28,8 @@ public final class PdSignals extends DriveSignals {
 
     /** The LVR12 gear lever only comes from a DCT car (Telemetry.profile's rule). */
     @Override public boolean dctSeen() { return t.sample(Telemetry.GEAR_SELECTOR, 0).seen; }
+    /** The dashboard's car profile (6MT or 7DCT): the gear display follows it. */
+    @Override public int transmission() { return t.profile().trans == com.veloster.vehicle.VehicleProfile.Trans.DCT ? 1 : 0; }
 
     @Override public synchronized Snapshot snapshot(long now, Snapshot s) {
         Telemetry.Sample speed = fresh(7, now), pedal = fresh(9, now), bar = fresh(10, now), brake = fresh(Telemetry.BRAKE_SWITCH, now),

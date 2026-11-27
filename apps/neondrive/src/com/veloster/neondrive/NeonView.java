@@ -173,6 +173,13 @@ final class NeonView extends View implements Runnable {
      *  switches to the 8-speed DCT display. Unconfirmed on a DCT car; the setting can be changed back and stays. */
     private boolean dctChecked;
     private void dctAuto() {
+        int tr = signals.transmission();
+        if (tr >= 0) {   // in the dashboard: the car profile decides (6MT gate or the DCT display), unless the gear display is off
+            int want = tr == 1 ? NeonRenderer.GEARS_DCT : NeonRenderer.GEARS_MANUAL;
+            if (renderer.gearMode() != NeonRenderer.GEARS_OFF && renderer.gearMode() != want) { renderer.setGearMode(want); model.setEightSpeed(tr == 1); }
+            renderer.setDctGuessed(false);
+            return;
+        }
         if (dctChecked || !signals.dctSeen()) return;
         dctChecked = true;
         SharedPreferences prefs = getContext().getSharedPreferences(PREFS, 0);

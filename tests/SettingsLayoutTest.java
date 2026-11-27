@@ -16,7 +16,7 @@ public final class SettingsLayoutTest {
         check(SettingsLayout.THEME_NAMES.length==Theme.IDS.length,"a name per theme");
         check(SettingsLayout.count(SettingsLayout.SCREENS)==ClusterPicker.COUNT&&SettingsLayout.count(SettingsLayout.PAINT)==CarPaint.IDS.length+3&&SettingsLayout.PAINT_SKY==CarPaint.IDS.length&&SettingsLayout.PAINT_NARROW_PLATE==SettingsLayout.PAINT_WIDE_PLATE+1&&SettingsLayout.PAINT_WIDE_PLATE==CarPaint.IDS.length+1,"every screen and paint listed, then the 8-bit sky and the two plates");
         check(SettingsLayout.count(SettingsLayout.DONE)==0&&SettingsLayout.item(SettingsLayout.DONE,400,200)==-1,"완료 has no pane");
-        check(SettingsLayout.count(SettingsLayout.MODE)==SettingsLayout.MODE_FIRST+ClusterPicker.MODES.length,"a row per mode after the two switches");
+        check(SettingsLayout.count(SettingsLayout.MODE)==SettingsLayout.MODE_FIRST+ClusterPicker.MODES.length,"a row per mode after the three switches");
         check(SettingsLayout.count(SettingsLayout.PICK)==ClusterPicker.COUNT+1&&SettingsLayout.top(SettingsLayout.PICK,0)>=SettingsLayout.TOP+SettingsLayout.TITLE_H,"chooser: every screen and 원래 화면, under its title");
         for(int cat=0;cat<=SettingsLayout.PICK;cat++){
             if(SettingsLayout.rowScroll(cat))continue;   // scrollable panes (사운드, RPM): checked below

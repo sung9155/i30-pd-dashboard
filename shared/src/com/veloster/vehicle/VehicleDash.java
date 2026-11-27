@@ -373,7 +373,7 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){PlatePixels.wide="";PlatePixels.narrow="";}
         try{Weather.selectSky(a.getSharedPreferences("pit_vehicle_ui",0).getString("sky_8bit","auto"));}
         catch(ClassCastException e){Weather.selectSky("auto");}
-        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);modeColor=p.getBoolean("mode_color",false);speedCalOn=p.getBoolean("speed_cal",false);speedCal.restore(p.getFloat("speed_cal_ratio",Float.NaN),p.getInt("speed_cal_samples",0));modeScreen=p.getBoolean("mode_screen",false);
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);modeColor=p.getBoolean("mode_color",false);PitRenderer.tbtBand=p.getBoolean("tbt_band",true);speedCalOn=p.getBoolean("speed_cal",false);speedCal.restore(p.getFloat("speed_cal_ratio",Float.NaN),p.getInt("speed_cal_samples",0));modeScreen=p.getBoolean("mode_screen",false);
             for(int k=0;k<modeTargets.length;k++)modeTargets[k]=ClusterPicker.validTarget(p.getInt("mode_screen_"+ClusterPicker.MODE_NAMES[k].toLowerCase(java.util.Locale.US),ClusterPicker.MODE_DEFAULT[k]));}
         catch(ClassCastException e){/* Both options off for an incompatible saved value. */}
         try{
@@ -937,8 +937,9 @@ public final class VehicleDash extends View implements Runnable {
                 case SettingsLayout.MODE:
                     if(i==SettingsLayout.MODE_COLOR)modeColor=!modeColor;
                     else if(i==SettingsLayout.MODE_SCREEN){modeScreen=!modeScreen;modeBack=-1;}
+                    else if(i==SettingsLayout.MODE_TBT)PitRenderer.tbtBand=!PitRenderer.tbtBand;
                     else pickSlot=i-SettingsLayout.MODE_FIRST;
-                    e.putBoolean("mode_color",modeColor).putBoolean("mode_screen",modeScreen);break;
+                    e.putBoolean("mode_color",modeColor).putBoolean("mode_screen",modeScreen).putBoolean("tbt_band",PitRenderer.tbtBand);break;
                 case SettingsLayout.LANG:
                     if(LanguageSettings.save(activity,SettingsLayout.LANGS[i])&&entry!=null)entry.setText(UiText.t("N 계기판"));   // the OEM screen's entry button follows the language too
                     break;

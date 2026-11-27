@@ -308,7 +308,8 @@ public final class PitRenderer {
                         value=PlatePixels.shown(wd?PlatePixels.wide:PlatePixels.narrow);break;}
                     {int pi=SettingsLayout.PAINT_ORDER[i];sel=pi==CarPaint.index();name=CarPaint.LABELS[pi];swatch=CarPaint.color(pi);}break;
                 case SettingsLayout.MODE:
-                    if(i<SettingsLayout.MODE_FIRST){sel=i==0?modeColor:modeScreen;name=i==0?"모드 색":"모드 화면";
+                    if(i==SettingsLayout.MODE_TBT){sel=tbtBand;name="길안내 띠";sub="순정 내비 안내 중 모든 화면 위 · 끄면 WRC 칸에만";value=sel?"켬":"끔";}
+                    else if(i<SettingsLayout.MODE_FIRST){sel=i==0?modeColor:modeScreen;name=i==0?"모드 색":"모드 화면";
                         sub=i==0?"ECO 초록 · SPORT 주황":"모드를 바꾸면 아래 화면으로";value=sel?"켬":"끔";}
                     else{int k=i-SettingsLayout.MODE_FIRST;name=ClusterPicker.MODE_NAMES[k];dim=!modeScreen;sub="눌러서 화면 고르기";value=screenName(modeTargets[k]);}
                     break;
@@ -773,7 +774,10 @@ public final class PitRenderer {
     private static Path arrowPath(){Path a=new Path();a.moveTo(0,-1);a.lineTo(.75f,-.15f);a.lineTo(.28f,-.15f);a.lineTo(.28f,1);a.lineTo(-.28f,1);a.lineTo(-.28f,-.15f);a.lineTo(-.75f,-.15f);a.close();return a;}
     private void arrow(Canvas c,float x,float y,float size,float deg,int color){
         c.save();c.translate(x,y);c.rotate(deg);c.scale(size,size);paint.setStyle(Paint.Style.FILL);paint.setColor(T(color));c.drawPath(tbtArrow,paint);c.restore();}
+    /** 설정 → 주행 모드 → 길안내 띠 (default on): off, no band and no big view; the WRC card still shows the guidance. */
+    public static volatile boolean tbtBand=true;
     private void drawTbt(Canvas c,Tbt.State s){
+        if(!tbtBand){tbtShown=false;tbtBig=false;return;}
         if(!s.active)tbtBig=false;
         tbtShown=s.maneuver||tbtBig&&s.active;if(!tbtShown)return;
         String dist=Tbt.distance(s.metres),left=(Float.isNaN(s.destKm)?"":String.format(Locale.US,"%.1f km",s.destKm))+(s.minutes>=0?" · "+s.minutes+UiText.t("분"):"");

@@ -67,7 +67,7 @@ public final class SettingsLayout {
      *  this firmware and are kept for other head units. */
     public static final String[] SOUND_ROUTES={"알림 채널 · 앞 스피커","내비 효과음 · 차에서 무음","미디어 소스 · 차에서 무음","안드로이드 기본 · 차에서 무음"};
     /** Mode pane rows: the two switches, then one row per ClusterPicker.MODES. */
-    public static final int MODE_COLOR=0,MODE_SCREEN=1,MODE_FIRST=2;
+    public static final int MODE_COLOR=0,MODE_SCREEN=1,MODE_TBT=2,MODE_FIRST=3;   // MODE_TBT: 길안내 띠 on / off
     public static final float TITLE_H=30;
     public static final String[] CATS={"화면","주행 모드","플로팅","테마","차량 색","언어","글꼴","RPM","엔진 사운드","효과음","진단","완료"};
     /** 차량 색 tiles by colour family, four to a family (two rows of the 2-column grid): white, silver, grey, black | the blues |

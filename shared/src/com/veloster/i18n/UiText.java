@@ -352,6 +352,7 @@ public final class UiText {
         EN.put("기존 핫스팟이 이미 켜져 있습니다. 설정을 변경하지 않았습니다.","The existing hotspot is already on. No settings were changed.");
         EN.put("긴 비프","Long beep");
         EN.put("길게","long");
+        EN.put("길안내 띠","Guidance band");
         EN.put("꺼져 있음","Off");
         EN.put("꺼짐","Off");
         EN.put("끄기","Disable");
@@ -821,6 +822,7 @@ public final class UiText {
         EN.put("순정 · 앱에 포함된 글꼴 · 내비에 설치된 글꼴","Factory, in-app and installed fonts");
         EN.put("순정 글꼴 (Mobis · Roboto)","Factory fonts (Mobis · Roboto)");
         EN.put("순정 글꼴 파일이 없습니다: ","Factory font files are missing: ");
+        EN.put("순정 내비 안내 중 모든 화면 위 · 끄면 WRC 칸에만","Over every screen while the stock navi guides · off: only in the WRC card");
         EN.put("순정도 이 앱이 쓴 것도 아닌 글꼴 설정이라 바꾸지 않습니다","The font settings are neither the factory ones nor this app's, so nothing is changed");
         EN.put("숫자","Number");
         EN.put("숫자만","Number only");

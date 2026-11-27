@@ -11,9 +11,9 @@ public class Car3DTest {
     static void check(boolean v, String message) { if (!v) throw new AssertionError(message); }
 
     public static void main(String[] args) throws Exception {
-        byte[] data = Files.readAllBytes(Paths.get(System.getProperty("vn.root", "."), "apps/dashboard/assets/car3d/veloster_n.bin"));
+        byte[] data = Files.readAllBytes(Paths.get(System.getProperty("vn.root", "."), "apps/dashboard/assets/car3d/i30n.bin"));
         CarModel m = CarModel.parse(data);
-        check(m.triangles > 50000 && m.triangles < 125000, "triangle budget for the head unit: " + m.triangles);
+        check(m.triangles > 20000 && m.triangles < 125000, "triangle budget for the head unit: " + m.triangles);
         int[] wheels = new int[4], callipers = new int[4]; boolean lamp = false, glass = false;
         float minY = 9, maxY = -9, minZ = 9, maxZ = -9, minX = 9, maxX = -9;
         int[] groups = new int[CarState.GROUPS];
@@ -38,9 +38,9 @@ public class Car3DTest {
         for (int k = 0; k < 4; k++) check(wheels[k] == 1 && callipers[k] == 1, "every corner has a wheel and a calliper: " + k);
         check(lamp && glass, "lamp and glass parts present");
         check(Math.abs(minY) < 0.01f, "the car stands on y=0");
-        check(maxZ - minZ > 4.1f && maxZ - minZ < 4.4f, "length of a Veloster N (4,265 mm class): " + (maxZ - minZ));
+        check(maxZ - minZ > 4.25f && maxZ - minZ < 4.45f, "length of an i30 hatch (4,340 mm class): " + (maxZ - minZ));
         check(maxX - minX > 1.75f && maxX - minX < 2.15f, "width with mirrors: " + (maxX - minX));
-        check(maxY > 1.3f && maxY < 1.45f, "height (1,399 mm): " + maxY);
+        check(maxY > 1.4f && maxY < 1.5f, "height (1,455 mm class): " + maxY);
         for (int g : new int[] {CarState.HEAD, CarState.TAIL, CarState.STOP, CarState.TURN_L, CarState.TURN_R, CarState.REVERSE, 8})
             check(groups[g] > 0, "lamp group has triangles: " + g);
         boolean[] spot = new boolean[CarState.GROUPS];

@@ -1,43 +1,47 @@
 #!/usr/bin/env python3
-"""Convert the Sketchfab "2022 Hyundai Veloster N" glTF into the 내 차 (3D car) screen's asset.
+"""Convert the Sketchfab "hyundai i30 n" glTF into the 내 차 (3D car) screen's asset.
 
-    python3 scripts/car3d_model.py <unzipped glTF folder> [--out apps/dashboard/assets/car3d] [--preview out.png]
+    python3 scripts/car3d_model.py <unzipped glTF folder> [--out apps/dashboard/assets/car3d]
 
-Model: "2022 Hyundai Veloster N" by Ddiaz Design,
-https://sketchfab.com/3d-models/2022-hyundai-veloster-n-d85ea2322d814899ad5905210f2c0e5a, CC BY-NC-SA 4.0. The
-converted mesh and lamp textures written here are an adaptation of it and stay under CC BY-NC-SA 4.0
-(apps/dashboard/assets/car3d/LICENSE.txt); this script itself is MIT like the rest of the repository.
+Model: "hyundai i30 n" by amogusstrikesback2, https://sketchfab.com/3d-models/hyundai-i30-n-90c3bd24390b46299cf01c16d5e8091f,
+CC BY 4.0. The mesh and lamp atlas written here are an adaptation of it (apps/dashboard/assets/car3d/LICENSE.txt); this
+script itself is MIT like the rest of the repository. The material and node names below are this model's: the script
+is i30-specific (the Veloster N converter it replaces read a different model).
 
 What the conversion does, for a Telechips tcc893x (GLES 2.0) at 800x480:
-  * metres, origin at the ground under the middle of the car, +Z forward, +Y up, +X the car's left (the glTF's own axes)
-  * drops the engine and the parts under the bonnet, decimates the rest except the paint (about 406k -> ~116k triangles)
-  * bakes base-colour textures into vertex colours; only the lamp atlas stays a texture (LED detail)
-  * splits the four wheels (tyre, rim, disc: spin + steer) from the callipers (steer only)
-  * sorts every lamp triangle into a lamp group from the colour it glows in the emissive map and where it sits:
-    white front = headlamp, amber = turn signal (side from X), red rear = tail / stop, spoiler = high-mount stop,
-    white rear = reversing lamp
+  * metres (the glTF already is), origin at the ground under the middle of the car, +Z forward, +Y up, +X the car's left
+  * the model is light (about 31k triangles), so nothing is decimated; it drops the light-beam cones and flare sprites,
+    and both number plates (a game logo) are drawn blank
+  * bakes the body / tyre / rim colours into vertex colours; Material.001's clearcoat map marks the body paint (CarPaint)
+  * the chrome / detail parts (grille, badges, lamp units) and the glow decals keep their textures: one lamp atlas,
+    Material.002 on the left half, Material.006 (glows) on the right; the glow map is the same picture
+  * the four wheels (rim + tyre: spin + steer) and the callipers (steer only) are separate nodes in the glTF
+  * lamp groups: the glow decals by node (brakes = stop, reverse, position = tail / front DRL); the lamp units by where
+    they sit and the colour under them (red at the back = tail, the headlamp's inner elements = headlamp). The model has
+    no amber lamp: the turn signals are an estimate (outer headlamp ring, inner upper tail-lamp guide), and the glow map
+    is recoloured amber under them (red under the high-mount stop lamp's orange picture)
+  * run it again on the same zip and the output is byte for byte the same
 
-Needs numpy, scipy, Pillow and fast-simplification (development only; the app just reads the output).
+Needs numpy and Pillow (development only; the app just reads the output).
 
-File format (little endian), assets/car3d/veloster_n.bin:
-  "VN3D" u32 version=1, u32 parts
+File format (little endian), assets/car3d/i30n.bin:
+  "VN3D" u32 version=2, u32 parts
   per part: u8 program (0 body, 1 lamp, 2 glass), u8 motion (0 fixed, 1 wheel, 2 calliper), u8 corner (0 FL, 1 FR,
-            2 RL, 3 RR), u8 0, f32 pivot x y z, u32 vertices, u32 indices, vertices*24 bytes, indices*u16 (padded to 4)
+            2 RL, 3 RR), u8 0, f32 pivot x y z, u32 vertices, u32 indices, vertices*28 bytes, indices*u16 (padded to 4)
   vertex (28 bytes): f32 x y z, s16 nx ny nz (/32767), u16 lamp group (8 = body paint), u8 r g b a (body: a = gloss, glass: a = opacity),
           u16 u v (/65535)
   then u32 spots, per spot: u8 lamp group, 3 x u8 0, f32 x y z, f32 normal x y z, f32 radius (glow halos)
 """
 import argparse
 import json
-import os
 import struct
-import sys
 from pathlib import Path
 
 import numpy as np
 from PIL import Image
 
 VERSION = 2
+OUT_NAME = 'i30n.bin'
 BODY, LAMP, GLASS = 0, 1, 2
 FIXED, WHEEL, CALLIPER = 0, 1, 2
 FL, FR, RL, RR = 0, 1, 2, 3
@@ -45,22 +49,19 @@ FL, FR, RL, RR = 0, 1, 2, 3
 NONE, HEAD, POSITION, TAIL, STOP, TURN_L, TURN_R, REVERSE = 0, 1, 2, 3, 4, 5, 6, 7
 PAINT = 8   # body vertices that take the chosen factory colour (CarPaint)
 
-SCALE = 100.0   # the glTF is in 1/100 m
-DROP_MATERIALS = {"Engine_Plas", "Engine", "Engine_a", "Velosterdummy_material_4_014", "Velosterdummy_material_5_010",
-                  "Velosterdummy_material_6_010"}
-DROP_NODES = ("SM_Engine_101",)
-# Fraction of triangles kept, by material (1 = untouched).
-# The paint keeps every triangle and the modeller's normals: decimated paint shows ripples in the reflection.
-KEEP = {"CarPaint": 1.0, "material": 0.12, "RimHub": 0.22, "Calipers": 0.35, "tire": 0.7, "Interior": 0.05,
-        "Interior_leather": 0.09, "InteriorPlatic": 0.10, "Interior_SH": 0.15, "Leather_normal": 0.2,
-        "Interior_A": 0.3, "Light": 1.0, "Glass_light": 0.7, "Windowd": 1.0}
+ATLAS = 512   # each half of the lamp atlas (Material.002 left, Material.006 right)
 # Gloss (vertex alpha of body parts): how much of the fake sky reflection a material shows.
-GLOSS = {"CarPaint": 1.0, "mirror": 1.0, "RimHub": 0.6, "Calipers": 0.5, "Carbon": 0.45, "material": 0.25,
-         "tire": 0.05, "Display": 0.3}
-# Flat colours where the texture average is misleading or there is none.
-COLOR = {"mirror": (0.75, 0.78, 0.82), "Glass_light": (0.9, 0.92, 0.95), "Windowd": (0.02, 0.025, 0.03)}
-# Opacity of the glass parts (the glTF lens is 55 % black, which would hide the lamps).
-OPACITY = {"Glass_light": 0.12, "Windowd": 0.62}
+GLOSS = {'paint': 1.0, 'Material.001': 0.15, 'Material.002': 0.6, 'Material.003': 0.05, 'Material.004': 0.05,
+         'Material.005': 0.3}
+CALLIPER_GLOSS = 0.5
+WINDOW, LENS = (0.02, 0.025, 0.03), (0.9, 0.92, 0.95)
+OPACITY_WINDOW, OPACITY_LENS = 0.62, 0.12
+PLATE = (0.86, 0.87, 0.86)   # blank number plates
+# Glow colour where the lamp's own picture has the wrong one: the turn signals (chrome / red pictures) glow amber, the
+# high-mount stop lamp (an orange triangle picture) red.
+AMBER, RED = (1.0, 0.55, 0.08), (1.0, 0.08, 0.05)
+# The front plate inside the grille picture of Material.002 (a game logo): its box, as fractions of the atlas.
+FRONT_PLATE = (164 / 1024, 818 / 1024, 580 / 1024, 910 / 1024)
 
 CT = {5120: np.int8, 5121: np.uint8, 5122: np.int16, 5123: np.uint16, 5125: np.uint32, 5126: np.float32}
 NC = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4, 'MAT4': 16}
@@ -96,8 +97,7 @@ def load(folder):
         raw = np.frombuffer(buf, dtype=np.uint8, count=stride * (a['count'] - 1) + n * dt.itemsize, offset=off)
         return np.lib.stride_tricks.as_strided(raw, shape=(a['count'], n * dt.itemsize), strides=(stride, 1)).copy().view(dt).reshape(a['count'], n)
 
-    def tex(mat, key):
-        info = mat.get(key) or mat.get('pbrMetallicRoughness', {}).get(key)
+    def image(info):
         if not info:
             return None
         uri = g['images'][g['textures'][info['index']]['source']]['uri']
@@ -112,14 +112,15 @@ def load(folder):
             P = acc(at['POSITION']).astype(np.float64); N = acc(at['NORMAL']).astype(np.float64)
             UV = acc(at['TEXCOORD_0']).astype(np.float64) if 'TEXCOORD_0' in at else np.zeros((len(P), 2))
             I = acc(p['indices']).reshape(-1, 3).astype(np.int64)
-            P = (np.c_[P, np.ones(len(P))] @ W.T)[:, :3] * SCALE
+            P = (np.c_[P, np.ones(len(P))] @ W.T)[:, :3]
             N = N @ np.linalg.inv(W[:3, :3]); N /= np.linalg.norm(N, axis=1, keepdims=True) + 1e-12
             if np.linalg.det(W[:3, :3]) < 0:
                 I = I[:, ::-1]
             pbr = mat.get('pbrMetallicRoughness', {})
+            coat = mat.get('extensions', {}).get('KHR_materials_clearcoat', {}).get('clearcoatTexture')
             prims.append(dict(node=name, mat=mat['name'], P=P, N=N, UV=UV, I=I,
-                              factor=np.array(pbr.get('baseColorFactor', [1, 1, 1, 1])),
-                              base=tex(mat, 'baseColorTexture'), emissive=tex(mat, 'emissiveTexture'),
+                              factor=np.array(pbr.get('baseColorFactor', [1, 1, 1, 1]), dtype=np.float64),
+                              base=image(pbr.get('baseColorTexture')), coat=image(coat),
                               blend=mat.get('alphaMode') == 'BLEND'))
         for c in n.get('children', []):
             walk(c, W)
@@ -131,9 +132,22 @@ def load(folder):
 
 def sample(img, uv):
     h, w = img.shape[:2]
-    x = np.clip(((uv[:, 0] % 1.0) * w).astype(int), 0, w - 1)
-    y = np.clip(((uv[:, 1] % 1.0) * h).astype(int), 0, h - 1)
+    x = np.clip(((uv[..., 0] % 1.0) * w).astype(int), 0, w - 1)
+    y = np.clip(((uv[..., 1] % 1.0) * h).astype(int), 0, h - 1)
     return img[y, x]
+
+
+def corner_uv(p):
+    """Per triangle corner UVs pulled 20 % toward the triangle's centre: a corner on a UV island's edge would
+    otherwise pick up the colour of the next island."""
+    uv = p['UV'][p['I']]
+    return uv * 0.8 + uv.mean(1, keepdims=True) * 0.2
+
+
+def tri_colour(p):
+    """Mean texture colour under each triangle (centre and the three pulled-in corners)."""
+    uv = corner_uv(p)
+    return (sample(p['base'], uv).sum(1) + sample(p['base'], uv.mean(1)))[:, :3] / 4
 
 
 def corner_of(c):
@@ -141,60 +155,69 @@ def corner_of(c):
     return (FL if c[0] > 0 else FR) if c[2] > 0 else (RL if c[0] > 0 else RR)
 
 
-def lamp_groups(p):
-    """Lamp group per triangle of a 'Light' primitive."""
-    I = p['I']; c = p['P'][I].mean(1)
-    e = sample(p['emissive'], p['UV'][I].mean(1))[:, :3] if p['emissive'] is not None else np.zeros((len(I), 3))
-    r, g, b = e.T; lit = e.max(1) > 0.25
-    red = lit & (r > 0.5) & (g < 0.35 * r)
-    amber = lit & (r > 0.5) & (g >= 0.35 * r) & (b < 0.6 * g)
-    white = lit & ~red & ~amber
-    out = np.full(len(I), NONE)
-    turn = np.where(c[:, 0] > 0, TURN_L, TURN_R)
-    front = c[:, 2] > 0
-    if 'Spoiler' in p['node']:
-        out[red | white | amber] = STOP
-        return out
-    out[amber] = turn[amber]
-    out[front & white] = HEAD
-    out[front & red] = POSITION        # the orange-red glow around the projectors
-    out[~front & red] = TAIL
-    out[~front & white] = REVERSE
+def dropped(p):
+    """Triangles to leave out: the light-beam cones and the lens-flare sprites in front of the headlamps."""
+    if p['mat'] != 'Material.006' or 'front_and_back' not in p['node']:
+        return np.zeros(len(p['I']), bool)
+    return (p['P'][p['I']].mean(1)[:, 2] > 1.5) & (tri_colour(p).max(1) < 0.3)
+
+
+def part_centres(p):
+    """Per triangle: the centre of the connected piece it belongs to (vertices welded by position), so a lamp piece is
+    sorted as a whole."""
+    _, weld = np.unique(np.round(p['P'], 4), axis=0, return_inverse=True)
+    I = weld.reshape(-1)[p['I']]
+    parent = np.arange(weld.max() + 1)
+
+    def root(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]; a = parent[a]
+        return a
+    for a, b, c in I:
+        ra = root(a); parent[root(b)] = ra; parent[root(c)] = ra
+    label = np.array([root(t[0]) for t in I])
+    c = p['P'][p['I']].mean(1); out = np.empty_like(c)
+    for k in np.unique(label):
+        out[label == k] = c[label == k].mean(0)
     return out
 
 
-def weld(P, I, tol=1e-5):
-    q = np.round(P / tol).astype(np.int64)
-    _, first, inv = np.unique(q, axis=0, return_index=True, return_inverse=True)
-    return P[first], inv.reshape(-1)[I], first
+def side_turn(c):
+    return np.where(c[:, 0] > 0, TURN_L, TURN_R)
 
 
-def smooth_normals(P, I, crease_deg=50.0):
-    """Corner normals: average the faces around a vertex whose normal is within the crease angle."""
-    fn = np.cross(P[I[:, 1]] - P[I[:, 0]], P[I[:, 2]] - P[I[:, 0]])
-    area = np.linalg.norm(fn, axis=1, keepdims=True); fu = fn / (area + 1e-20)
-    nf = len(I); corner_v = I.reshape(-1); corner_f = np.repeat(np.arange(nf), 3)
-    order = np.argsort(corner_v, kind='stable'); sv = corner_v[order]; sf = corner_f[order]
-    starts = np.r_[0, np.flatnonzero(np.diff(sv)) + 1, len(sv)]
-    out = np.zeros((nf * 3, 3)); cos = np.cos(np.radians(crease_deg))
-    for a, b in zip(starts[:-1], starts[1:]):
-        fs = sf[a:b]; u = fu[fs]; w = fn[fs]
-        if b - a == 1:
-            out[order[a]] = u[0]; continue
-        sim = (u @ u.T) > cos
-        acc = sim.astype(np.float64) @ w
-        acc /= np.linalg.norm(acc, axis=1, keepdims=True) + 1e-20
-        out[order[a:b]] = acc
-    return out.reshape(nf, 3, 3)
+def decal_groups(p):
+    """Glow decals (Material.006): the lamp group from the node; in the tail lamps the inner upper light guide is taken
+    as the turn signal (an estimate: the model has no amber lamp, and where the i30's rear indicator sits in the
+    cluster is not checked)."""
+    c = part_centres(p); n = len(c); node = p['node']
+    if 'brakes' in node:
+        return np.full(n, STOP)
+    if 'reverse' in node:
+        return np.full(n, REVERSE)
+    out = np.where(c[:, 2] > 0, POSITION, TAIL)   # position lamps: the front DRL strip, the rear light guides
+    inner_upper = (c[:, 2] < 0) & (np.abs(c[:, 0]) > 0.40) & (np.abs(c[:, 0]) < 0.56) & (c[:, 1] > 0.94)
+    out[inner_upper] = side_turn(c)[inner_upper]
+    return out
 
 
-def decimate(P, I, keep):
-    if keep >= 0.999 or len(I) < 200:
-        return P, I
-    import fast_simplification
-    Pw, Iw, _ = weld(P, I)
-    Pd, Id = fast_simplification.simplify(Pw.astype(np.float32), Iw.astype(np.int32), target_reduction=1 - keep, agg=6)
-    return Pd.astype(np.float64), Id.astype(np.int64)
+def unit_groups(p):
+    """Chrome / detail triangles (Material.002) that belong to a lamp unit, from where they sit and the colour under
+    them. Each headlamp has three round elements: the inner two are the headlamp, the outer chrome ring is taken as the
+    turn signal (an estimate, like the rear one). Red at the back is the tail lamp, in the middle up high the high-mount
+    stop lamp; the red reflectors low in the bumper do not light."""
+    c = part_centres(p); e = tri_colour(p); r, g, b = e.T
+    out = np.full(len(c), NONE)
+    red = (r > 0.25) & (g < 0.45 * r) & (b < 0.45 * r)
+    x = np.abs(c[:, 0])
+    rear = (c[:, 2] < -1.55) & red & (c[:, 1] > 0.75)
+    out[rear] = np.where((x < 0.2) & (c[:, 1] > 1.2), STOP, TAIL)[rear]
+    head = (c[:, 2] > 1.75) & (x > 0.5) & (c[:, 1] > 0.6) & (c[:, 1] < 0.85) & (e.max(1) > 0.3)
+    outer = head & (x > 0.70)
+    out[head & ~outer] = HEAD
+    if 'Chrome' in p['node']:   # the outer ring; the lens decal in front of it shares its picture with the headlamp's
+        out[outer] = side_turn(c)[outer]
+    return out
 
 
 class Part:
@@ -211,18 +234,17 @@ class Part:
 
 
 def build(prims):
-    from scipy.spatial import cKDTree
-    allP = np.vstack([p['P'] for p in prims if p['mat'] not in DROP_MATERIALS])
+    keep = {id(p): ~dropped(p) for p in prims}
+    allP = np.vstack([p['P'][p['I'][keep[id(p)]]].reshape(-1, 3) for p in prims])
     lo, hi = allP.min(0), allP.max(0)
     offset = np.array([-(lo[0] + hi[0]) / 2, -lo[1], -(lo[2] + hi[2]) / 2])
     for p in prims:
         p['P'] = p['P'] + offset
-    # Wheel centres from the tyres.
+    tyres = [p for p in prims if p['mat'] == 'Material.003']
     centres = {}
-    for k in range(4):
-        pts = np.vstack([p['P'] for p in prims if p['mat'] == 'tire' and corner_of(p['P'].mean(0)) == k])
-        centres[k] = (pts.min(0) + pts.max(0)) / 2
-    radius = float(np.mean([np.vstack([p['P'] for p in prims if p['mat'] == 'tire' and corner_of(p['P'].mean(0)) == k])[:, 1].max() / 2 for k in range(4)]))
+    for p in tyres:
+        centres[corner_of(p['P'].mean(0))] = (p['P'].min(0) + p['P'].max(0)) / 2
+    radius = float(np.mean([np.ptp(p['P'][:, 1]) / 2 for p in tyres]))
     parts = {}
 
     def part(program, motion=FIXED, corner=0):
@@ -230,77 +252,73 @@ def build(prims):
 
     stats = {}
     spots = {}
+    tints = []   # (atlas UV triangles, colour): glow map areas to recolour
     for p in prims:
-        if p['mat'] in DROP_MATERIALS or any(d in p['node'] for d in DROP_NODES):
+        I = p['I'][keep[id(p)]]; P = p['P']; N = p['N']; node = p['node']; mat = p['mat']
+        tri = P[I]; nrm = N[I]; n = len(I)
+        if not n:
             continue
-        mat = p['mat']; I = p['I']; P = p['P']
-        # Per-vertex base colour (texture sample x factor), sampled on the full mesh before decimation.
-        col = np.tile(p['factor'], (len(P), 1))
-        if p['base'] is not None:
-            col = col * sample(p['base'], p['UV'])
-        if mat in COLOR:
-            col[:, :3] = COLOR[mat]
-        if p['blend']:
-            alpha = np.full(len(P), OPACITY.get(mat, 0.5))
+        wheel = 'Wheel' in node; calliper = 'caliper' in node
+        if p['blend']:   # glass: windows and the lamp lenses
+            lens = 'Lights' in node
+            col = np.tile(list(LENS if lens else WINDOW) + [OPACITY_LENS if lens else OPACITY_WINDOW], (n, 3, 1))
+            part(GLASS).add(tri, nrm, np.full(n, NONE), col, np.zeros((n, 3, 2)))
+            key = 'lens' if lens else 'window'
+        elif mat in ('Material.002', 'Material.006') and not wheel and not calliper:
+            # textured in the lamp atlas: Material.002 on the left half, the glow decals on the right
+            q = dict(p, I=I)
+            groups = decal_groups(q) if mat == 'Material.006' else unit_groups(q)
+            uv = p['UV'][I] * [0.5, 1.0] + ([0.5, 0.0] if mat == 'Material.006' else [0.0, 0.0])
+            col = np.ones((n, 3, 4))
+            part(LAMP).add(tri, nrm, groups, col, uv)
+            turn = (groups == TURN_L) | (groups == TURN_R)
+            high = (groups == STOP) & (np.abs(tri.mean(1)[:, 0]) < 0.2) & (mat == 'Material.006')
+            tints += [(uv[turn], AMBER), (uv[high], RED)]
+            tints.append((uv[(groups != NONE) & ~turn & ~high], None))   # lamps that keep their colour (overlap check)
+            collect_spots(q, groups, spots)
+            key = 'lamp ' + mat
         else:
-            alpha = np.full(len(P), GLOSS.get(mat, 0.15))
-        col[:, 3] = alpha
-        node = p['node']
-        is_wheel = mat in ('tire', 'RimHub') or 'Disc_Scale' in node or 'SK_Rim' in node
-        is_calliper = 'Ani_Wheel_Caliper' in node
-        if mat == 'Light':
-            groups = lamp_groups(p)
-            collect_spots(p, groups, spots)
-            prog = part(LAMP)
-            prog.add(P[I], p['N'][I], groups, col[I], p['UV'][I])
-            stats[mat] = stats.get(mat, 0) + len(I)
-            continue
-        if p['blend'] and mat in ('Glass_light', 'Windowd'):
-            target = part(GLASS)
-        elif is_wheel or is_calliper:
-            target = part(BODY, CALLIPER if is_calliper else WHEEL, corner_of(P[I].mean(1).mean(0)))
-        else:
-            target = part(BODY)
-        keep = KEEP.get(mat, 0.5)
-        if keep >= 0.999:   # untouched: the original (smooth) normals
-            Pd, Id, Nd = P, I, p['N'][I]
-        else:
-            Pd, Id = decimate(P, I, keep)
-            Nd = smooth_normals(Pd, Id)
-        # Carry colours over from the nearest original vertex.
-        _, near = cKDTree(P).query(Pd)
-        cd = col[near]
-        group = np.full(len(Id), PAINT if mat == 'CarPaint' else NONE)
-        target.add(Pd[Id], Nd, group, cd[Id], np.zeros((len(Id), 3, 2)))
-        stats[mat] = stats.get(mat, 0) + len(Id)
-    return parts, centres, radius, offset, stats, finish_spots(spots)
+            q = dict(p, I=I); uv = corner_uv(q)
+            col = np.tile(p['factor'], (n, 3, 1))
+            if mat == 'Material.005':   # the number plate's picture is a game logo: blank plate
+                col[..., :3] = PLATE
+            elif p['base'] is not None:
+                col = col * sample(p['base'], uv)
+            col[..., 3] = CALLIPER_GLOSS if calliper else GLOSS.get(mat, 0.15)
+            group = np.full(n, NONE)
+            if p['coat'] is not None:   # Material.001: the clearcoated panels are the paint
+                paint = sample(p['coat'], p['UV'][I].mean(1))[:, 0] > 0.5
+                group[paint] = PAINT
+                stats['paint'] = stats.get('paint', 0) + int(paint.sum())
+                col[paint, :, 3] = GLOSS['paint']
+            if wheel or calliper:
+                target = part(BODY, CALLIPER if calliper else WHEEL, corner_of(tri.reshape(-1, 3).mean(0)))
+            else:
+                target = part(BODY)
+            target.add(tri, nrm, group, col, np.zeros((n, 3, 2)))
+            key = 'wheel' if wheel else 'calliper' if calliper else mat
+        stats[key] = stats.get(key, 0) + n
+    return parts, centres, radius, offset, stats, finish_spots(spots), tints
 
 
 def collect_spots(p, groups, spots):
-    """Accumulate the brightly glowing area of each lamp group per side (area-weighted)."""
+    """Accumulate the glowing area of each lamp group per side (area-weighted)."""
     I = p['I']; tri = p['P'][I]
-    e = sample(p['emissive'], p['UV'][I].mean(1))[:, :3].max(1)
     area = np.linalg.norm(np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]), axis=1) / 2
     c = tri.mean(1); n = p['N'][I].mean(1)
     zone = np.where(c[:, 2] > 1.0, 1, np.where(c[:, 2] < -1.0, -1, 0))   # front lamp, mirror, rear lamp
+    side = np.where(np.abs(c[:, 0]) < 0.2, 0, np.sign(c[:, 0]))          # 0: the high-mount stop lamp in the middle
     for g in set(groups.tolist()) - {NONE}:
-        for side, z in [(x, y) for x in (1, -1) for y in (1, 0, -1)]:
-            m = (groups == g) & (e > 0.4) & (zone == z)
-            if g == STOP:
-                if side < 0:
-                    continue
-            else:
-                m &= np.sign(c[:, 0]) == side
-            if not m.any():
-                continue
-            s = spots.setdefault((g, side, z), [np.zeros(3), np.zeros(3), 0.0, []])
+        for key in set(zip(side[groups == g].tolist(), zone[groups == g].tolist())):
+            m = (groups == g) & (side == key[0]) & (zone == key[1])
+            s = spots.setdefault((g,) + key, [np.zeros(3), np.zeros(3), 0.0, []])
             w = area[m]
             s[0] += (c[m] * w[:, None]).sum(0); s[1] += (n[m] * w[:, None]).sum(0); s[2] += w.sum(); s[3].append(c[m])
 
 
 def finish_spots(spots):
     out = []
-    for (g, side, z), (pc, pn, w, pts) in sorted(spots.items()):
+    for (g, _, _), (pc, pn, w, pts) in sorted(spots.items()):
         if w <= 0:
             continue
         centre = pc / w; nrm = pn / (np.linalg.norm(pn) + 1e-12)
@@ -335,13 +353,12 @@ def pack(parts, centres, spots, out):
                 end += 1
             verts = np.array(sorted(used, key=used.get))
             src = first[verts]
-            vp = (P[src] - pivot).astype('<f4')
-            vn = np.clip(np.round(N[src] * 32767), -32767, 32767).astype('<i2')
-            vg = G[src].astype('<u2')
-            vc = np.clip(np.round(C[src] * 255), 0, 255).astype('u1')
-            vu = np.clip(np.round(UV[src] * 65535), 0, 65535).astype('<u2')
             rec = np.zeros(len(verts), dtype=[('p', '<f4', 3), ('n', '<i2', 3), ('g', '<u2'), ('c', 'u1', 4), ('u', '<u2', 2)])
-            rec['p'] = vp; rec['n'] = vn; rec['g'] = vg; rec['c'] = vc; rec['u'] = vu
+            rec['p'] = (P[src] - pivot).astype('<f4')
+            rec['n'] = np.clip(np.round(N[src] * 32767), -32767, 32767).astype('<i2')
+            rec['g'] = G[src].astype('<u2')
+            rec['c'] = np.clip(np.round(C[src] * 255), 0, 255).astype('u1')
+            rec['u'] = np.clip(np.round(UV[src] * 65535), 0, 65535).astype('<u2')
             ib = np.array(idx, dtype='<u2').tobytes()
             ib += b'\0' * ((-len(ib)) % 4)
             blobs.append(struct.pack('<BBBB3fII', q.program, q.motion, q.corner, 0, *pivot.astype(float), len(verts), len(idx)) + rec.tobytes() + ib)
@@ -354,12 +371,43 @@ def pack(parts, centres, spots, out):
     return count, total_tris, len(data)
 
 
-def write_lamp_textures(prims, out):
-    for p in prims:
-        if p['mat'] == 'Light':
-            Image.fromarray((p['base'][:, :, :3] * 255).astype(np.uint8)).save(out / 'lamp_base.png', optimize=True)
-            Image.fromarray((p['emissive'][:, :, :3] * 255).astype(np.uint8)).save(out / 'lamp_glow.png', optimize=True)
-            return
+def tint_mask(uvs, size):
+    """Pixels of the atlas (size = w, h) under the given UV triangles, grown by 2 pixels."""
+    from PIL import ImageDraw, ImageFilter
+    m = Image.new('L', size, 0); d = ImageDraw.Draw(m)
+    for t in uvs:
+        d.polygon([(u * size[0], v * size[1]) for u, v in t], fill=255)
+    return np.asarray(m.filter(ImageFilter.MaxFilter(5))) > 0
+
+
+def write_lamp_textures(prims, tints, out):
+    """lamp_base.png / lamp_glow.png: Material.002 (front plate blanked) | Material.006; the glow map is the same picture
+    (the lamp shader adds it, times the group's brightness, so only lamp triangles light up), recoloured under the
+    turn signals and the high-mount stop lamp."""
+    unit = next(p['base'] for p in prims if p['mat'] == 'Material.002')[..., :3].copy()
+    glows = next(p['base'] for p in prims if p['mat'] == 'Material.006')[..., :3]
+    h, w = unit.shape[:2]
+    x0, y0, x1, y1 = (int(round(f * n)) for f, n in zip(FRONT_PLATE, (w, h, w, h)))
+    unit[y0:y1, x0:x1] = PLATE
+    half = lambda a: Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)).resize((ATLAS, ATLAS), Image.LANCZOS)
+    base = Image.new('RGB', (ATLAS * 2, ATLAS)); glow = Image.new('RGB', (ATLAS * 2, ATLAS))
+    base.paste(half(unit), (0, 0)); base.paste(half(glows * 0.55), (ATLAS, 0))   # an unlit light guide: its colour, dimmed
+    glow.paste(half(unit), (0, 0)); glow.paste(half(glows), (ATLAS, 0))
+    g = np.asarray(glow).astype(np.float64) / 255; b = np.asarray(base).astype(np.float64) / 255
+    keep = np.vstack([t for t, colour in tints if colour is None])
+    for colour in (AMBER, RED):
+        uvs = np.vstack([t for t, c in tints if c == colour])
+        m = tint_mask(uvs, glow.size)
+        hit = m[np.clip((keep.mean(1)[:, 1] * ATLAS).astype(int), 0, ATLAS - 1), np.clip((keep.mean(1)[:, 0] * ATLAS * 2).astype(int), 0, ATLAS * 2 - 1)]
+        if hit.any():
+            raise SystemExit(f'{hit.sum()} other lamp triangles sit in the {colour} area of the glow map')
+        g[m] = g[m].max(1, keepdims=True) * colour
+        if colour == RED:   # the unlit stop lamp: dark red, not the picture's orange
+            b[m] = b[m].max(1, keepdims=True) * colour
+    glow = Image.fromarray((g * 255).astype(np.uint8)); base = Image.fromarray((b * 255).astype(np.uint8))
+    base.save(out / 'lamp_base.png', optimize=True)
+    glow.save(out / 'lamp_glow.png', optimize=True)
+    return [int(v) for v in (x0, y0, x1, y1)]
 
 
 def main():
@@ -368,14 +416,17 @@ def main():
     ap.add_argument('--out', type=Path, default=Path(__file__).resolve().parents[1] / 'apps/dashboard/assets/car3d')
     args = ap.parse_args()
     prims = load(args.model)
-    parts, centres, radius, offset, stats, spots = build(prims)
+    parts, centres, radius, offset, stats, spots, tints = build(prims)
     args.out.mkdir(parents=True, exist_ok=True)
-    count, tris, size = pack(parts, centres, spots, args.out / 'veloster_n.bin')
-    write_lamp_textures(prims, args.out)
+    count, tris, size = pack(parts, centres, spots, args.out / OUT_NAME)
+    plate = write_lamp_textures(prims, tints, args.out)
+    allP = np.vstack([np.concatenate(q.pos).reshape(-1, 3) for q in parts.values()])
     print(json.dumps({'chunks': count, 'triangles': tris, 'bytes': size, 'tyre_radius_m': round(radius, 4),
-                      'wheel_centres_m': {k: [round(float(x), 4) for x in v] for k, v in centres.items()},
+                      'size_m': [round(float(v), 3) for v in np.ptp(allP, 0)],
+                      'wheel_centres_m': {k: [round(float(x), 4) for x in v] for k, v in sorted(centres.items())},
+                      'front_plate_px': plate,
                       'lamp_spots': [[g, [round(float(x), 3) for x in c], round(sz, 3)] for g, c, n, sz in spots],
-                      'triangles_by_material': stats}, indent=1))
+                      'triangles_by_part': stats}, indent=1))
 
 
 if __name__ == '__main__':

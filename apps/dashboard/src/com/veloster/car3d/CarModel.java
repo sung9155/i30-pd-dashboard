@@ -7,8 +7,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * The 내 차 screen's car mesh (assets/car3d/veloster_n.bin, written by scripts/car3d_model.py from the CC BY-NC-SA
- * "2022 Hyundai Veloster N" model by Ddiaz Design). Metres, +Z forward, +Y up, +X the car's left.
+ * The 내 차 screen's car mesh (assets/car3d/i30n.bin, written by scripts/car3d_model.py from the CC BY 4.0
+ * "hyundai i30 n" model by amogusstrikesback2). Metres, +Z forward, +Y up, +X the car's left.
  * No Android: host-tested. Vertex and index data come back in direct buffers ready for glBufferData.
  */
 public final class CarModel {

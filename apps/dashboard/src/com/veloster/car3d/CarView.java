@@ -24,7 +24,7 @@ import javax.microedition.khronos.opengles.GL10;
 /**
  * 내 차: the 3D car over the whole screen, lamps / steering / wheels following the car (CarState), with a
  * HUD on top - back, view presets, the dashboard's car colour (CarPaint), live readout and test buttons that light lamps
- * by hand. The mesh is upstream's Veloster N for now (CarScene.MODEL), labelled as a stand-in on screen.
+ * by hand. The mesh is an i30 N (CarScene.MODEL, CC BY: its credit is on screen).
  * Drag to turn the car around, two fingers to zoom, tap to show / hide the test buttons.
  */
 final class CarView extends FrameLayout implements Runnable {
@@ -257,7 +257,7 @@ final class CarView extends FrameLayout implements Runnable {
             p.setColor(PANEL); c.drawCircle(SWATCH_X, SWATCH_Y, SWATCH_R + 4, p);
             p.setColor(CarPaint.color(paint)); c.drawCircle(SWATCH_X, SWATCH_Y, SWATCH_R, p);
             p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(1.5f); p.setColor(EDGE); c.drawCircle(SWATCH_X, SWATCH_Y, SWATCH_R + 4, p); p.setStyle(Paint.Style.FILL);
-            text(c, UiText.t("임시 모델: 벨로스터 N"), 72, 69, 12, MUTED, Paint.Align.LEFT);   // until an i30 mesh replaces CarScene.MODEL
+            text(c, UiText.t("3D 모델 \"hyundai i30 n\" · amogusstrikesback2 · CC BY 4.0"), 72, 69, 12, MUTED, Paint.Align.LEFT);   // CC BY credit (assets/car3d/LICENSE.txt)
             // message (loading / failure)
             String msg = failure != null ? failure : !loaded ? UiText.t("불러오는 중…") : null;
             if (msg != null) text(c, msg, 400, 250, 18, failure != null ? RED : MUTED, Paint.Align.CENTER);

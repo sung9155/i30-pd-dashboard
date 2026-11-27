@@ -11,7 +11,7 @@ is i30-specific (the Veloster N converter it replaces read a different model).
 What the conversion does, for a Telechips tcc893x (GLES 2.0) at 800x480:
   * metres (the glTF already is), origin at the ground under the middle of the car, +Z forward, +Y up, +X the car's left
   * the model is light (about 31k triangles), so nothing is decimated (only the tail lamp lens is cut finer, to about
-    39k, so its clear patch and its red light apart); it drops the light-beam cones, the flare sprites and the decal
+    39k, so its clear bars and its red light apart); it drops the light-beam cones, the flare sprites and the decal
     with the tail lamp's picture (drawn solid it hid the lens and its clear parts), and both number plates (their
     picture is a game logo) become plate parts the app draws (blank, or the owner's text); the front plate's edges and
     the grille behind it are painted grille black
@@ -21,8 +21,8 @@ What the conversion does, for a Telechips tcc893x (GLES 2.0) at 800x480:
   * the four wheels (rim + tyre: spin + steer) and the callipers (steer only) are separate nodes in the glTF
   * lamp groups: the glow decals by node (brakes = stop, reverse, rear position guides = tail, the bar low in the front
     bumper = turn signal); the lamp units by where they sit and the colour under them (red at the back = tail, the
-    clear patch at the tail lamp's outer end = turn signal, the headlamp's round elements = headlamp). Turn signals as
-    on the owner's i30 PD. The model has no amber lamp: the glow map is recoloured amber on the turn signals' white /
+    tail lamp's lower clear bar = turn signal on the outer part, reversing lamp on the inner part, the inner part's LED
+    row = brake, the headlamp's round elements = headlamp). Rear lamps as on the owner's i30 PD (photos). The model has no amber lamp: the glow map is recoloured amber on the turn signals' white /
     clear texels only (red under the high-mount stop lamp's orange picture); the tail lamp's red glows by its redness,
     its clear parts stay unlit
   * run it again on the same zip and the output is byte for byte the same
@@ -200,9 +200,14 @@ def side_turn(c):
     return np.where(c[:, 0] > 0, TURN_L, TURN_R)
 
 
-# The clear patch at the outer end of the tail lamp picture (Material.002 UV box): the rear turn signal (the owner's
-# i30 PD). Only its white texels are the turn signal; the red around them stays tail / brake lamp.
-TURN_PATCH = (0.38, 0.545, 0.50, 0.64)
+# The tail lamp picture of Material.002, laid out like the owner's i30 PD rear lamps (photos): each lamp is an inner
+# part on the tailgate and an outer part on the body, split by the seam at u = LENS_SEAM_U. Both have the red C light
+# guide (tail lamp). The clear ribbed bar along them (CLEAR_BAND, v range; low on the car: the picture is upside down
+# on the mesh) is the turn signal on the outer part and the reversing lamp on the inner part. The inner part's row of
+# small LEDs (BRAKE_ROW, u0 v0 u1 v1) is the brake lamp. Only white / clear texels of the bar light amber / white.
+LENS_SEAM_U = 0.225
+CLEAR_BAND = (0.495, 0.548)
+BRAKE_ROW = (0.02, 0.553, 0.225, 0.59)
 
 
 def white_px(img):
@@ -285,8 +290,8 @@ def lamp_picture(p):
 def unit_groups(p):
     """Chrome / detail triangles (Material.002) that belong to a lamp unit, from where they sit and the colour under
     them. The round elements in each headlamp are the headlamp. Red at the back is the tail lamp, in the middle up high
-    the high-mount stop lamp; the white outer part of the tail lamp lens is the rear turn signal (the owner's i30 PD);
-    the red reflectors low in the bumper do not light."""
+    the high-mount stop lamp; the tail lamp lens as on the owner's i30 PD (LENS_SEAM_U); the red reflectors low in the
+    bumper do not light."""
     c = part_centres(p); e = tri_colour(p); r, g, b = e.T
     out = np.full(len(c), NONE)
     red = (r > 0.25) & (g < 0.45 * r) & (b < 0.45 * r)
@@ -294,13 +299,17 @@ def unit_groups(p):
     rear = (c[:, 2] < -1.55) & (c[:, 1] > 0.75)
     out[rear & red] = np.where((x < 0.2) & (c[:, 1] > 1.2), STOP, TAIL)[rear & red]
     uvc = p['UV'][p['I']].mean(1)
-    u0, v0, u1, v1 = TURN_PATCH
     lens = tail_lens(p)
-    out[lens] = TAIL   # the whole lens lights as the tail lamp, but for its clear patch
-    inbox = (uvc[:, 0] > u0) & (uvc[:, 0] < u1) & (uvc[:, 1] > v0) & (uvc[:, 1] < v1)
+    out[lens] = TAIL   # the red C light guides (and what else of the lens is red)
+    u0, v0, u1, v1 = BRAKE_ROW
+    brake = lens & (uvc[:, 0] > u0) & (uvc[:, 0] < u1) & (uvc[:, 1] > v0) & (uvc[:, 1] < v1)
+    out[brake] = STOP
     img = atlas_half(p['base'])   # judged on the atlas's own texels, as the glow map is recoloured
-    white = lens & inbox & ((white_share(img, p['UV'][p['I']]) >= 0.5) | white_px(sample(img, uvc)))   # mostly clear, or clear in its middle
-    out[white] = side_turn(c)[white]
+    clear = (white_share(img, p['UV'][p['I']]) >= 0.5) | white_px(sample(img, uvc))   # mostly clear, or clear in its middle
+    bar = lens & clear & (uvc[:, 1] > CLEAR_BAND[0]) & (uvc[:, 1] < CLEAR_BAND[1])
+    outer = bar & (uvc[:, 0] >= LENS_SEAM_U)
+    out[outer] = side_turn(c)[outer]
+    out[bar & ~outer] = REVERSE
     out[(c[:, 2] > 1.75) & (x > 0.5) & (c[:, 1] > 0.6) & (c[:, 1] < 0.85) & (e.max(1) > 0.3)] = HEAD
     return out
 
@@ -504,6 +513,7 @@ def write_lamp_textures(prims, tints, out):
             b[m] = b[m].max(1, keepdims=True) * RED
     # the tail lamp picture's other clear parts do not glow with the tail / stop lamp: only its red does
     lens = np.zeros(g.shape[:2], bool); lens[int(0.47 * ATLAS):int(0.66 * ATLAS), :int(0.5 * ATLAS)] = True
+    lens[int(CLEAR_BAND[0] * ATLAS):int(CLEAR_BAND[1] * ATLAS) + 1, :int(LENS_SEAM_U * ATLAS)] = False   # the reversing bar keeps its white
     sel = lens & ~amber; r = g[sel]
     g[sel] = r * np.clip((r[:, :1] - r[:, 1:].max(1, keepdims=True)) / (r[:, :1] + 1e-6) * 1.5, 0, 1)   # by its redness
     glow = Image.fromarray((g * 255).astype(np.uint8)); base = Image.fromarray((b * 255).astype(np.uint8))

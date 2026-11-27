@@ -374,7 +374,7 @@ final class CarRenderer implements GLSurfaceView.Renderer {
     private static final String ENV_LOOKUP =
         // atan / asin as short polynomials (errors about 1e-5 rad and 7e-5 rad, under a texel of the panorama): the built-ins
         // are long on a mobile GPU, and this runs for every pixel of the body, glass, floor reflection and sky.
-        "float fatan2(float y,float x){ float ax=abs(x),ay=abs(y); float a=min(ax,ay)/max(max(ax,ay),1e-6); float s=a*a;\n" +
+        "float fatan2(float y,float x){ float ax=abs(x),ay=abs(y); float a=min(ax,ay)/max(max(ax,ay),1e-4); float s=a*a;\n" +
         " float r=((-0.0464964749*s+0.15931422)*s-0.327622764)*s*a+a; r=ay>ax?1.57079637-r:r; r=x<0.0?3.14159274-r:r; return y<0.0?-r:r; }\n" +
         "float fasin(float x){ float ax=abs(x); float r=1.57079637-sqrt(1.0-ax)*(1.5707288+ax*(-0.2121144+ax*(0.0742610-0.0187293*ax))); return x<0.0?-r:r; }\n" +
         "vec3 env(sampler2D t, vec3 d){ float u=fatan2(d.x,d.z)*0.159155+0.5; float e=fasin(clamp(d.y,-1.0,1.0))*57.29578;\n" +

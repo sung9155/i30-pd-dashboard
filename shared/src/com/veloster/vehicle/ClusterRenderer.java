@@ -48,7 +48,7 @@ public final class ClusterRenderer {
     /** Every extra screen lets go of its kept bitmaps (see ClusterKit.trim). */
     public void trim(){for(ClusterKit k:extra)if(k!=null)k.trim();}
     /** Background thread: see ClusterKit.warm. layout = ClusterPicker index from 클래식. */
-    public void warm(int layout,VehicleProfile p){if(layout>=3&&layout-3<extra.length&&extra[layout-3]!=null)extra[layout-3].warm(p);}
+    public void warm(int layout,VehicleProfile p,long now){if(layout>=3&&layout-3<extra.length&&extra[layout-3]!=null)extra[layout-3].warm(p,now);}
     public void tick(Telemetry.Sample[] samples,long now){for(ClusterKit k:extra)if(k!=null)k.background(samples,now);}
     /** True when layout (ClusterPicker index from 클래식) already shows the now-playing track. */
     public boolean showsMusic(int layout){return layout>=3&&layout-3<extra.length&&extra[layout-3]!=null&&extra[layout-3].showsMusic();}

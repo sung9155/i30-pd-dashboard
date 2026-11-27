@@ -56,10 +56,10 @@ abstract class ClusterKit {
     private final Object drawLock=new Object();
     /** One frame, without data, into a throwaway bitmap on a background thread (VehicleDash): the first frame on screen then
      *  finds this screen's cached art made and its code warm (아케이드 froze 1.3-1.8 s, 신스웨이브 0.5 s on first sight in the
-     *  car, 2026-11-27). frame() is serialised with it, so opening the screen meanwhile only waits for it. Time base: elapsedRealtime. */
-    final void warm(VehicleProfile profile){
+     *  car, 2026-11-27). frame() is serialised with it, so opening the screen meanwhile only waits for it. now: the dashboard's time base (elapsedRealtime). */
+    final void warm(VehicleProfile profile,long now){
         Bitmap b=bitmap(800,480);
-        try{frame(new Canvas(b),new Telemetry.Sample[0],null,null,profile,android.os.SystemClock.elapsedRealtime(),null);}
+        try{frame(new Canvas(b),new Telemetry.Sample[0],null,null,profile,now,null);}
         catch(RuntimeException e){/* trimmed meanwhile: the screen makes it on sight */}
         finally{b.recycle();}
     }

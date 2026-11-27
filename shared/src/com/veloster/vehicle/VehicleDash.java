@@ -511,8 +511,8 @@ public final class VehicleDash extends View implements Runnable {
         final boolean eco=!ecoHidden(),arcade=(hidden&(1<<ClusterPicker.ARCADE))==0,neon=(hidden&(1<<ClusterPicker.NEON))==0;final VehicleProfile prof=DATA.profile();
         new Thread(new Runnable(){public void run(){android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
             if(eco)try{EcoCluster.warm();}catch(RuntimeException e){/* the draw builds them */}
-            if(arcade)renderer.warm(ClusterPicker.ARCADE,prof);
-            if(neon)renderer.warm(ClusterPicker.NEON,prof);}},"screen-warm").start();}
+            if(arcade)renderer.warm(ClusterPicker.ARCADE,prof,SystemClock.elapsedRealtime());
+            if(neon)renderer.warm(ClusterPicker.NEON,prof,SystemClock.elapsedRealtime());}},"screen-warm").start();}
     public static void resumeStandalone(Activity a){
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
         d.resumed=true;d.artwork.open();d.mediaReceiver.start(a);

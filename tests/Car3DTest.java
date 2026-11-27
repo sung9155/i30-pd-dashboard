@@ -48,6 +48,8 @@ public class Car3DTest {
             spot[s.group] = true;
             if (s.group == CarState.TURN_L) check(s.x > 0, "left turn lamps on the car's left (+X)");
             if (s.group == CarState.TURN_R) check(s.x < 0, "right turn lamps on the car's right");
+            if (s.group == CarState.TURN_L || s.group == CarState.TURN_R)   // the owner's i30 PD: the bumper bar, the tail lamp's outer end
+                check(s.z > 1.5 ? s.y < 0.6f : s.z < -1.5f && Math.abs(s.x) > 0.7f, "turn signal: low front bar or outer tail lamp end " + s.x + "," + s.y + "," + s.z);
             if (s.group == CarState.HEAD) check(s.z > 1.5f && s.nz > 0, "headlamps at the front, facing forward");
             if (s.group == CarState.TAIL || s.group == CarState.STOP) check(s.z < -1.5f, "tail / stop lamps at the back");
         }

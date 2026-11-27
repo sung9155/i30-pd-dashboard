@@ -438,8 +438,8 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         "precision mediump float;\n" + ENV_LOOKUP +
         "uniform sampler2D uSky; varying vec3 vDir;\n" +
         "void main(){ gl_FragColor=vec4(env(uSky,normalize(vDir)),1.0); }\n";
-    /** 19-inch rim (0.241 m) plus its lip; the rim's outer face sits just inside the tyre wall (0.123 m from the hub). */
-    private static final float RIM_RADIUS = 0.247f, RIM_FACE_X = 0.121f;
+    /** The model's 19-inch rim with its lip (0.261 m); the disc sits just outside the rim's outer face (0.120 m from the hub). */
+    private static final float RIM_RADIUS = 0.263f, RIM_FACE_X = 0.122f;
     private static final String RIM_VS =
         "uniform mat4 uMVP; uniform float uX; uniform float uR; attribute vec2 aCorner; varying vec2 vUV;\n" +
         "void main(){ vUV=aCorner; gl_Position=uMVP*vec4(uX,aCorner.y*uR,aCorner.x*uR,1.0); }\n";

@@ -9,11 +9,10 @@ public final class CarScene {
     public static final String[] NAMES = {"스튜디오", "노을", "차고", "야간 도로"};
 
     /**
-     * The car mesh (scripts/car3d_model.py's format). A stand-in: upstream's 2022 Veloster N (CC BY-NC-SA 4.0,
-     * assets/car3d/LICENSE.txt); an i30 mesh converted the same way replaces it here. CarState's tyre radius, rack ratio
-     * and wheelbase belong to the mesh too.
+     * The car mesh (scripts/car3d_model.py's format): the Sketchfab "hyundai i30 n" by amogusstrikesback2 (CC BY 4.0,
+     * assets/car3d/LICENSE.txt). CarState's tyre radius, rack ratio and wheelbase are the owner's i30 PD's.
      */
-    public static final String MODEL = "car3d/veloster_n.bin";
+    public static final String MODEL = "car3d/i30n.bin";
     /** The 360-degree panorama of each backdrop (scripts/car3d_backdrops.py), drawn behind the car and reflected by it. */
     public static final String[] FILES = {"car3d/bg_studio.jpg", "car3d/bg_sunset.jpg", "car3d/bg_garage.jpg", "car3d/bg_night.jpg"};
     /** List swatch: sky, horizon, floor. */

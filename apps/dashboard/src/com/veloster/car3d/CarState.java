@@ -18,12 +18,12 @@ public final class CarState {
     /** Test buttons (bit mask). */
     public static final int TEST_LEFT = 1, TEST_RIGHT = 2, TEST_HAZARD = 4, TEST_TAIL = 8, TEST_HEAD = 16, TEST_STOP = 32,
         TEST_REVERSE = 64, TEST_STEER = 128;
-    /** Steering wheel degrees per road-wheel degree (approximate rack ratio; unverified for the N). */
+    /** Steering wheel degrees per road-wheel degree: an estimate for the i30 PD (about 13:1 is typical), not measured. */
     public static final float STEER_RATIO = 13f;
     /** Front wheel lock, degrees. */
     public static final float MAX_WHEEL_DEG = 38f;
-    /** Tyre radius from the model (235/35 R19: 0.3235 m). */
-    public static final float TYRE_RADIUS_M = 0.3236f;
+    /** The owner's i30 PD tyre, 225/40 R18: 0.2286 + 0.090 = 0.319 m (the model's i30 N tyre is drawn a little larger). */
+    public static final float TYRE_RADIUS_M = 0.319f;
     /** Self-timed blink when only the switch is known (about 80 per minute). */
     public static final long BLINK_PERIOD_MS = 750, BLINK_ON_MS = 400;
 
@@ -55,7 +55,7 @@ public final class CarState {
     /** Flip if the car's lateral G sensor turns out to read + in right-hand bends (sign unverified on the car). */
     public static final float LAT_SIGN = 1f;
     /** Body angle per g (exaggerated a little so it reads on screen) and limits; a 1.6 Hz spring, damping 0.45. */
-    public static final float PITCH_PER_G = 4.5f, ROLL_PER_G = 4.0f, MAX_PITCH = 3.5f, MAX_ROLL = 3.5f, WHEELBASE_M = 2.655f;
+    public static final float PITCH_PER_G = 4.5f, ROLL_PER_G = 4.0f, MAX_PITCH = 3.5f, MAX_ROLL = 3.5f, WHEELBASE_M = 2.650f;
     private static final float OMEGA = 10f, ZETA = 0.45f;
 
     private int lastTests;

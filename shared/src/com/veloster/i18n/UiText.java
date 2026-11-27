@@ -61,6 +61,7 @@ public final class UiText {
         EN.put("2번 인젝터 회로 높음","Injector 2 circuit high");
         EN.put("2번 인젝터 회로 이상","Injector 2 circuit malfunction");
         EN.put("3 × 2 보기","3 x 2 grid");
+        EN.put("3D 모델 \"hyundai i30 n\" · amogusstrikesback2 · CC BY 4.0","3D model \"hyundai i30 n\" · amogusstrikesback2 · CC BY 4.0");
         EN.put("3D 모델·램프·핸들 연동","3D model with live lamps and steering");
         EN.put("3D 모델을 불러오지 못했습니다","Could not load the 3D model");
         EN.put("3D 화면을 그릴 수 없습니다","Cannot draw the 3D view");
@@ -1161,7 +1162,6 @@ public final class UiText {
         EN.put("일시정지","Paused");
         EN.put("읽기 거부","refused");
         EN.put("읽기만 합니다. 고장코드 삭제는 정비소 진단기로 하세요.","Read only. Clear codes with a workshop scan tool.");
-        EN.put("임시 모델: 벨로스터 N","Stand-in model: Veloster N");
         EN.put("잎 1개 = 20점","1 leaf = 20 points");
         EN.put("자동","Auto");
         EN.put("자동 · 가장 가까운 서킷","Auto · nearest circuit");

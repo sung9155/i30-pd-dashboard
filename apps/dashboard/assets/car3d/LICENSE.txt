@@ -1,13 +1,12 @@
-veloster_n.bin, lamp_base.png and lamp_glow.png in this folder are an adaptation of
+i30n.bin, lamp_base.png and lamp_glow.png in this folder are an adaptation of a 3D model:
 
-  "2022 Hyundai Veloster N" (https://sketchfab.com/3d-models/2022-hyundai-veloster-n-d85ea2322d814899ad5905210f2c0e5a)
-  by Ddiaz Design (https://sketchfab.com/ddiaz-design)
-  licensed under CC BY-NC-SA 4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)
+This work is based on "hyundai i30 n" (https://sketchfab.com/3d-models/hyundai-i30-n-90c3bd24390b46299cf01c16d5e8091f) by amogusstrikesback2 (https://sketchfab.com/amogusstrikesback2) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
 
-Changes: converted to metres, engine and under-bonnet parts removed, decimated except the paint (about 406k to 116k triangles),
-base-colour textures baked into vertex colours, wheels and callipers split for steering, lamp triangles sorted into
-lamp groups (scripts/car3d_model.py). Only the lamp texture atlas is kept as images.
+Changes: converted by scripts/car3d_model.py: light-beam cones and lens-flare sprites removed, number plates blanked,
+body / tyre / rim textures baked into vertex colours, body paint marked so the app can recolour it, wheels and callipers
+split for steering, lamp parts sorted into lamp groups, turn-signal and high-mount stop lamp glow recoloured. Only the
+lamp / chrome texture atlas is kept as images (lamp_base.png, lamp_glow.png).
 
-This adaptation is likewise licensed under CC BY-NC-SA 4.0: credit the author, no commercial use, share alike.
-It is not covered by the repository's MIT licence. Hyundai and Veloster N are trademarks of their owner; this is an
-unofficial model.
+The adaptation is likewise offered under CC BY 4.0. It is not covered by the repository's MIT licence. The model's
+description says it comes from a game, so its original rights holder may be someone else; it will be removed on request.
+Hyundai and i30 N are trademarks of their owner; this is an unofficial model.

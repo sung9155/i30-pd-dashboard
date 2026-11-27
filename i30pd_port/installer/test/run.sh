@@ -4,6 +4,9 @@
 # uninstall (☆ put back), and the self-update against fakerelease.py (same version: quiet, tampered: refused, newer: replaced
 # and restarted, the other channel's newer one: ignored, offline: carries on). No network needed.
 # usage: bash run.sh win|mac|linux   (mac and linux both run 설치.command, with I30PD_OS set: this is Git Bash, neither)
+# Outside Git Bash (CI on Linux): no cygpath, and python may be only python3.
+command -v cygpath >/dev/null || cygpath(){ echo "${@: -1}"; }
+command -v python >/dev/null || python(){ python3 "$@"; }
 F="$(cd "$(dirname "$0")" && pwd)"; I="$(dirname "$F")"; WHO="$1"; [ "$WHO" = linux ] && OSV=Linux || OSV=Darwin
 SRV="$F/server"; FW="$(cygpath -w "$F")"
 # fake GitHub releases for every run (never the real one: a newer real installer would replace these files under -Yes).

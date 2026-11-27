@@ -372,7 +372,12 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         " gl_Position=uMVP*vec4(aPos,1.0); }\n";
     /** Panorama lookup by direction: u = azimuth (atan2(x, z) / 2pi + 0.5), v = elevation from +64 (top) to -16 deg. */
     private static final String ENV_LOOKUP =
-        "vec3 env(sampler2D t, vec3 d){ float u=atan(d.x,d.z)*0.159155+0.5; float e=asin(clamp(d.y,-1.0,1.0))*57.29578;\n" +
+        // atan / asin as short polynomials (errors about 1e-5 rad and 7e-5 rad, under a texel of the panorama): the built-ins
+        // are long on a mobile GPU, and this runs for every pixel of the body, glass, floor reflection and sky.
+        "float fatan2(float y,float x){ float ax=abs(x),ay=abs(y); float a=min(ax,ay)/max(max(ax,ay),1e-6); float s=a*a;\n" +
+        " float r=((-0.0464964749*s+0.15931422)*s-0.327622764)*s*a+a; r=ay>ax?1.57079637-r:r; r=x<0.0?3.14159274-r:r; return y<0.0?-r:r; }\n" +
+        "float fasin(float x){ float ax=abs(x); float r=1.57079637-sqrt(1.0-ax)*(1.5707288+ax*(-0.2121144+ax*(0.0742610-0.0187293*ax))); return x<0.0?-r:r; }\n" +
+        "vec3 env(sampler2D t, vec3 d){ float u=fatan2(d.x,d.z)*0.159155+0.5; float e=fasin(clamp(d.y,-1.0,1.0))*57.29578;\n" +
         " return texture2D(t,vec2(u,clamp((64.0-e)/80.0,0.004,0.996))).rgb; }\n";
     /** Shared lighting: hemisphere + key light, the backdrop reflected with Fresnel. */
     private static final String LIGHTING =
@@ -445,15 +450,16 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         " float sh=length(vec2(p.x/1.0,(p.y+0.08)/2.15)); float shadow=mix(0.18,1.0,smoothstep(0.55,1.25,sh));\n" +
         " vec3 c=(f+env(uEnv,vec3(vd.x,-vd.y,vd.z))*refl*fres)*shadow;\n" +
         " float alpha=1.0-smoothstep(uScene>2.5?10.0:6.0,uScene>2.5?28.0:20.0,d);\n" +
+        // Each light pool only while its lamp is on (a uniform test: the same picture, no exp() for a dark lamp).
         " float z=p.y-1.95;\n" +                                                     // headlamp beams ahead of the car
-        " float beam=0.0; if(z>0.0){ float w=0.35+z*0.32; beam=(exp(-pow((p.x-0.66)/w,2.0))+exp(-pow((p.x+0.66)/w,2.0)))*exp(-z*0.28)*smoothstep(0.0,0.7,z); }\n" +
-        " c+=vec3(1.0,0.96,0.86)*beam*0.42*uLamps.x;\n" +
-        " c+=vec3(1.0,0.85,0.6)*pool(p,vec2(0.0,2.3),0.9)*0.05*uLamps.w;\n" +
-        " c+=vec3(1.0,0.06,0.04)*(pool(p,vec2(0.55,-2.25),0.75)+pool(p,vec2(-0.55,-2.25),0.75))*0.16*uLamps.y;\n" +
-        " c+=vec3(0.9,0.95,1.0)*pool(p,vec2(0.0,-2.9),1.1)*0.28*uLamps.z;\n" +
+        " if(uLamps.x>0.001&&z>0.0){ float w=0.35+z*0.32; float beam=(exp(-pow((p.x-0.66)/w,2.0))+exp(-pow((p.x+0.66)/w,2.0)))*exp(-z*0.28)*smoothstep(0.0,0.7,z);\n" +
+        "  c+=vec3(1.0,0.96,0.86)*beam*0.42*uLamps.x; }\n" +
+        " if(uLamps.w>0.001) c+=vec3(1.0,0.85,0.6)*pool(p,vec2(0.0,2.3),0.9)*0.05*uLamps.w;\n" +
+        " if(uLamps.y>0.001) c+=vec3(1.0,0.06,0.04)*(pool(p,vec2(0.55,-2.25),0.75)+pool(p,vec2(-0.55,-2.25),0.75))*0.16*uLamps.y;\n" +
+        " if(uLamps.z>0.001) c+=vec3(0.9,0.95,1.0)*pool(p,vec2(0.0,-2.9),1.1)*0.28*uLamps.z;\n" +
         " vec3 amber=vec3(1.0,0.5,0.04);\n" +
-        " c+=amber*0.22*uTurn.x*(pool(p,vec2(0.85,2.05),0.6)+pool(p,vec2(0.75,-2.05),0.6)+pool(p,vec2(1.25,0.55),0.45));\n" +
-        " c+=amber*0.22*uTurn.y*(pool(p,vec2(-0.85,2.05),0.6)+pool(p,vec2(-0.75,-2.05),0.6)+pool(p,vec2(-1.25,0.55),0.45));\n" +
+        " if(uTurn.x>0.001) c+=amber*0.22*uTurn.x*(pool(p,vec2(0.85,2.05),0.6)+pool(p,vec2(0.75,-2.05),0.6)+pool(p,vec2(1.25,0.55),0.45));\n" +
+        " if(uTurn.y>0.001) c+=amber*0.22*uTurn.y*(pool(p,vec2(-0.85,2.05),0.6)+pool(p,vec2(-0.75,-2.05),0.6)+pool(p,vec2(-1.25,0.55),0.45));\n" +
         " gl_FragColor=vec4(c,alpha); }\n";
     private static final String SKY_VS =
         "uniform mat4 uInvVP; uniform vec3 uEye; attribute vec2 aCorner; varying vec3 vDir;\n" +

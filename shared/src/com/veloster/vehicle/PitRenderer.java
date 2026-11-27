@@ -289,6 +289,7 @@ public final class PitRenderer {
         box(c,SettingsLayout.PANE_L-8,SettingsLayout.TOP,SettingsLayout.PANE_L-7,SettingsLayout.BOTTOM,LINE);
         if(settingsCat==SettingsLayout.SCREENS&&pickSlot<0){drawScreenList(c);return;}
         if(settingsCat==SettingsLayout.FLOAT&&pickSlot<0){drawFloatPane(c);return;}
+        if(settingsCat==SettingsLayout.FONT&&pickSlot<0){drawFontPane(c);return;}
         int cat=pickSlot>=0?SettingsLayout.PICK:settingsCat;float w=SettingsLayout.itemW(cat),h=SettingsLayout.itemH(cat);
         if(pickSlot>=0)text(c,ClusterPicker.MODE_NAMES[pickSlot]+" "+UiText.t("모드 화면"),SettingsLayout.PANE_L,SettingsLayout.TOP+20,16,BLUE,true);
         boolean paneScroll=SettingsLayout.rowScroll(cat);float paneSc=paneScroll?settingsScroll:0;   // the 사운드 pane scrolls: its rows overflow the pane
@@ -377,6 +378,65 @@ public final class PitRenderer {
         if(cat==SettingsLayout.DIAG){   // who made it, under the rows: an APK passed on alone carries no README or LICENSE
             float y=SettingsLayout.top(cat,SettingsLayout.count(cat)-1)+SettingsLayout.itemH(cat)+20;
             fitted(c,UiText.t("i30 PD 포팅")+" · sung9155 · github.com/sung9155/i30-pd-dashboard   "+UiText.t("원작")+" · reikop/veloster-n-dashboard",SettingsLayout.PANE_L+6,y,11,SettingsLayout.PANE_R-SettingsLayout.PANE_L-12,MUTED);}
+    }
+    // --- 글꼴 pane (VehicleDash fills FontView from FontManager; drawn here only) ---
+    /** The rows (names and details already in the display language), each row's own regular typeface when loaded, the set
+     *  row (current), the picked row and its regular / bold for the preview, the first row shown, and the state lines. */
+    public static final class FontView{
+        public String[] names={},details={};public boolean[] usable={};public Typeface[] faces={};public int current=-1,pick=-1,top;
+        public Typeface regular,bold;public boolean scanned,busy,loading,pending,root;public long free=-1;public String currentName="",refusal;
+    }
+    private FontView fontView=new FontView();
+    public void setFonts(FontView v){if(v!=null)fontView=v;}
+    private static final String[] FONT_SAMPLE={"가나다라 i30 PD 계기판","목적지까지 12.4 km","서울특별시 강남구 테헤란로 152","ABCDEFG abcdefg 0123456789"};
+    private static final float[] FONT_SAMPLE_SIZE={26,21,16,16};
+    /** Text in a given typeface, shrunk to width. */
+    private void faceText(Canvas c,String s,Typeface face,boolean fakeBold,float x,float y,float size,float width,int color){
+        paint.setColor(T(color));paint.setTypeface(face!=null?face:Typeface.DEFAULT);paint.setFakeBoldText(fakeBold);paint.setTextSize(size);
+        float m=paint.measureText(s);if(m>width)paint.setTextSize(size*width/m);
+        c.drawText(s,x,y,paint);paint.setFakeBoldText(false);
+    }
+    private void drawFontPane(Canvas c){
+        FontView f=fontView;int n=f.names.length;float L=SettingsLayout.PANE_L,R=SettingsLayout.FL_R,rw=R-L-24;
+        for(int i=0;i<SettingsLayout.FONT_ROWS;i++){
+            int k=f.top+i;if(k>=n)break;
+            boolean sel=k==f.pick,cur=k==f.current,ok=f.usable[k];float t=SettingsLayout.fontRow(i);
+            panel(c,L,t,R-L,SettingsLayout.FL_ROW_H,sel?0xff1c303b:ok?PANEL:0xff08090a,sel?BLUE:LINE);
+            faceText(c,(cur?"● ":"")+f.names[k],f.faces[k],false,L+12,t+22,17,rw,ok?(sel?WHITE:0xffc9d6dc):MUTED);
+            fitted(c,f.details[k],L+12,t+39,11,rw,cur?BLUE:MUTED);
+        }
+        if(!f.scanned)text(c,UiText.t(f.busy?"글꼴을 찾는 중…":"새로고침을 누르면 글꼴을 찾습니다"),L+12,SettingsLayout.TOP+30,14,MUTED,false);
+        boolean up=f.top>0,down=f.top+SettingsLayout.FONT_ROWS<n;
+        chip(c,SettingsLayout.fontBox(SettingsLayout.FONT_UP),"▲",null,false,!up);
+        chip(c,SettingsLayout.fontBox(SettingsLayout.FONT_DOWN),"▼",null,false,!down);
+        chip(c,SettingsLayout.fontBox(SettingsLayout.FONT_SCAN),UiText.t("새로고침"),null,false,f.busy);
+        float hy=SettingsLayout.FB_T+SettingsLayout.FB_H;
+        fitted(c,UiText.t("순정 · 앱에 포함된 글꼴 · 내비에 설치된 글꼴"),L+2,hy+20,11,R-L-4,MUTED);
+        fitted(c,UiText.t("적용하면 재부팅 뒤에 화면에 반영됩니다"),L+2,hy+38,11,R-L-4,MUTED);
+        // the preview of the picked row, in its own regular and bold
+        float PL=SettingsLayout.FP_L,PR=SettingsLayout.PANE_R,top=SettingsLayout.TOP+2,pw=PR-PL-20;
+        panel(c,PL,top,PR-PL,SettingsLayout.FP_B-top,0xff0b0f12,LINE);
+        text(c,UiText.t("미리보기"),PL+10,top+18,11,MUTED,true);
+        boolean picked=f.pick>=0&&f.pick<n;float mid=(PL+PR)/2,my=(top+SettingsLayout.FP_B)/2+5;
+        if(!picked)centered(c,UiText.t("왼쪽에서 글꼴을 고르세요"),mid,my,14,MUTED,false);
+        else if(f.loading)centered(c,UiText.t("불러오는 중…"),mid,my,14,MUTED,false);
+        else if(f.regular==null)centered(c,UiText.t("이 글꼴을 열지 못했습니다"),mid,my,14,MUTED,false);
+        else{float y=top+56;
+            for(int i=0;i<FONT_SAMPLE.length;i++){boolean bold=i==1;
+                faceText(c,FONT_SAMPLE[i],bold&&f.bold!=null?f.bold:f.regular,bold&&f.bold==null,PL+10,y,FONT_SAMPLE_SIZE[i],pw,WHITE);y+=FONT_SAMPLE_SIZE[i]+22;}
+            fitted(c,f.details[f.pick],PL+10,SettingsLayout.FP_B-12,11,pw,MUTED);}
+        // the state: what system_fonts.xml says now, a reboot still owed, the space, and why this head unit is not changed
+        float st=SettingsLayout.FS_T;
+        panel(c,PL,st,PR-PL,SettingsLayout.FS_B-st,PANEL,LINE);
+        if(f.scanned){
+            fitted(c,UiText.t("설정된 글꼴")+"  "+f.currentName,PL+10,st+24,13,pw-60,WHITE);
+            fitted(c,UiText.t(f.pending?"재부팅하면 화면에 반영됩니다":"지금 화면의 글꼴과 같습니다"),PL+10,st+48,12,pw,f.pending?AMBER:MUTED);
+            String line=f.refusal!=null?f.refusal:f.free>=0?String.format(Locale.US,UiText.t("시스템 남은 공간")+" %.1f MB",f.free/1048576.0):"";
+            fitted(c,line,PL+10,st+72,11,pw,f.refusal!=null?AMBER:MUTED);
+        }
+        if(f.busy){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(12);String w=UiText.t("작업 중…");text(c,w,PR-10-paint.measureText(w),st+24,12,BLUE,true);}
+        chip(c,SettingsLayout.fontBox(SettingsLayout.FONT_APPLY),UiText.t("선택한 글꼴 적용"),null,false,!f.scanned||f.refusal!=null||!picked||f.busy);
+        chip(c,SettingsLayout.fontBox(SettingsLayout.FONT_REBOOT),UiText.t("재부팅"),null,f.pending,false);
     }
     // --- 플로팅 pane: preview, switches, button rows, and the cell chooser sheet ---
     private int floatEdit=-1,floatSel,floatEditSig=-1,floatEditGraph,floatEditTab;

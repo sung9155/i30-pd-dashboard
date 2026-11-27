@@ -115,10 +115,26 @@ public final class TabsPreview {
         int[] tl={9,11,13,8,10,6,5};String[] tn={"night","engine","warp","gcircle","drag","8bit","hud"};
         for(int ti=0;ti<tl.length;ti++){rec.setPage(PitRenderer.PAGE_CLASSIC+tl[ti]);save(out,"z_theme_"+tn[ti]+"_copper",rec,model,now,false,false);}
         Theme.select(System.getProperty("preview.theme","n"));   // back to the theme this run renders in
-        String[] cats={"screens","mode","float","theme","paint","lang","rpm","sound","fx","diag"};   // settings (the gear), one shot per category, in SettingsLayout order
+        String[] cats={"screens","mode","float","theme","paint","lang","font","rpm","sound","fx","diag"};   // settings (the gear), one shot per category, in SettingsLayout order
         rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<20));rec.setModeOptions(true,false);rec.setSound(true,0,0,0,SettingsLayout.SOUND_DEFAULT);
         int[] targets={ClusterPicker.F1+2,ClusterPicker.GAUGES,-1};   // SPORT set to the race page, ECO to the gauges
         for(int k=0;k<cats.length;k++){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k],rec,model,now,false,false);}
+        {   // 글꼴: the stock row, the ten fonts inside the app (each name in its own face), one picked; the next page; a refused head unit
+            java.io.File fd=new java.io.File(System.getProperty("preview.root",""),"apps/dashboard/assets/fonts");
+            int n=1+BundledFonts.FONTS.length;PitRenderer.FontView v=new PitRenderer.FontView();
+            v.names=new String[n];v.details=new String[n];v.usable=new boolean[n];v.faces=new android.graphics.Typeface[n];
+            v.names[0]="순정 글꼴 (Mobis · Roboto)";v.details[0]="공장 출고 설정";v.usable[0]=true;
+            for(int i=0;i<BundledFonts.FONTS.length;i++){BundledFonts.Font b=BundledFonts.FONTS[i];v.names[i+1]=b.name;v.usable[i+1]=true;
+                v.details[i+1]="앱에 포함 · "+(b.kind==BundledFonts.HANDWRITING?"손글씨":b.kind==BundledFonts.MYEONGJO?"명조":"고딕")+" · "+(b.bold!=null?"R·B":"R")+" · 한글 전체"+String.format(java.util.Locale.US," · %.1f MB",b.bytes/1048576.0);
+                v.faces[i+1]=android.graphics.Typeface.createFromFile(new java.io.File(fd,b.regular));}
+            v.scanned=true;v.current=0;v.pick=2;v.currentName=v.names[0];v.free=40265318L;v.root=true;
+            v.regular=v.faces[2];v.bold=android.graphics.Typeface.createFromFile(new java.io.File(fd,BundledFonts.FONTS[1].bold));
+            rec.setSettings(SettingsLayout.FONT,"auto",-1,targets);rec.setFonts(v);save(out,"9_settings_font",rec,model,now,false,false);
+            v.top=6;v.pick=8;v.regular=v.faces[8];v.bold=null;v.pending=true;v.busy=true;save(out,"9_settings_font_page2",rec,model,now,false,false);
+            v.top=0;v.pick=0;v.regular=null;v.loading=false;v.busy=false;v.pending=false;v.refusal="확인하지 않은 amossu입니다 (0123456789ab…)";save(out,"9_settings_font_refused",rec,model,now,false,false);
+            v.refusal=null;v.pick=1;v.regular=v.faces[1];v.bold=android.graphics.Typeface.createFromFile(new java.io.File(fd,BundledFonts.FONTS[0].bold));
+            com.veloster.i18n.UiText.configure("en","ko");save(out,"9_settings_font_en",rec,model,now,false,false);com.veloster.i18n.UiText.configure("ko","ko");
+        }
         {   // 플로팅 전체 모양 시안: FORMS 18개를 개요 배경 위에 자동 칸으로 (design overhaul reference)
             int[] FG=FloatPanel.FORMS;
             String[] fs={"card","strip","side","tick","fills","round","dial","twin","bars","pill","gearbox","wedge","shift","vcap","vrpm","tower","hero","diag","music"};

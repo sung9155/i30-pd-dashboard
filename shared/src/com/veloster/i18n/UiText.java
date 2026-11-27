@@ -23,6 +23,8 @@ public final class UiText {
         EN.put(" · 이 기기에서 실행할 수 없음"," - unavailable on this device");
         EN.put(" · 켜면 실제 속도로 표시"," · turn on to show the true speed");
         EN.put(" · 표시 항목"," - Signal");
+        EN.put(" 글꼴로 바꿨습니다. 재부팅해야 화면에 반영됩니다."," is now the system font. Reboot to see it on screen.");
+        EN.put(" 글꼴을 내비 기본 글꼴로 바꿉니다."," becomes the head unit's system font.");
         EN.put(" 실행 실패: "," launch failed: ");
         EN.put(" 전환 요청 완료. 실제 PC 연결은 별도로 확인하세요."," change requested. Verify the actual PC connection separately.");
         EN.put(" 화면이 없거나 현재 앱에서 실행할 수 없습니다."," is unavailable or cannot be opened by this app.");
@@ -32,6 +34,7 @@ public final class UiText {
         EN.put("%d번 칸에 띄울 값","Cell %d shows");
         EN.put("%s · 서울 요금","%s · Seoul fare");
         EN.put("%s 요금","%s fare");
+        EN.put("'내 앱' → 강제 재시작으로 재부팅하세요.","Reboot with My Apps → Restart head unit.");
         EN.put("'내 앱' 열기","Open 'My Apps'");
         EN.put("'내 앱'을 열지 못했습니다.","Could not open 'My Apps'.");
         EN.put("'내 앱'이 설치돼 있지 않습니다.","'My Apps' is not installed.");
@@ -97,6 +100,7 @@ public final class UiText {
         EN.put("AE86 킨콘","AE86 ding-dong");
         EN.put("AMG 스피드웨이","AMG Speedway");
         EN.put("AP 상태 13 확인. IP 주소와 iPhone의 SSID 검색을 다음으로 확인하세요.","AP state 13 confirmed. Next check the IP address and whether the iPhone sees the SSID.");
+        EN.put("Asta Sans (Pleos · 42dot)","Asta Sans (Pleos · 42dot)");
         EN.put("CAN 수신 없음","No CAN data");
         EN.put("CAN 수신 중","CAN receiving");
         EN.put("CAN 통신 버스 오프","CAN communication bus off");
@@ -180,6 +184,7 @@ public final class UiText {
         EN.put("Wi-Fi/AP 상태가 안정된 꺼짐/켜짐 상태가 아닙니다. 변경하지 않았습니다.","Wi-Fi/AP is not in a stable on/off state. No changes were made.");
         EN.put("XY · 잔상 3 s","XY · 3 s afterglow");
         EN.put("e-LSD 수치","e-LSD value");
+        EN.put("i30 PD 내비에서만 바꿉니다","Changed only on the i30 PD head unit");
         EN.put("i30 PD 포팅","i30 PD port");
         EN.put("Λ RPM·속도계","Λ rpm and speed");
         EN.put("− / + 로 조절 · 동전·카세트·차임 · 변속 알림음은 RPM 화면에서","Tap − / + · coin, cassette, chime · shift beeps are set on the RPM screen");
@@ -196,6 +201,8 @@ public final class UiText {
         EN.put("☆ 버튼을 원래 기능으로 되돌렸습니다.","☆ button is back to its previous function.");
         EN.put("가로 띠","Bar");
         EN.put("가로 막대","Row bars");
+        EN.put("가변","variable");
+        EN.put("가변 글꼴은 기본 굵기 하나만 쓰입니다.","A variable font is used at its default weight only.");
         EN.put("가속","Accel");
         EN.put("가속 · 스로틀","Pedal/Thr");
         EN.put("가속 페달","Accelerator");
@@ -256,6 +263,7 @@ public final class UiText {
         EN.put("계속","Continue");
         EN.put("계속 누르세요","Keep holding");
         EN.put("고급유","Premium");
+        EN.put("고딕","sans");
         EN.put("고른 값 게이지","Your chosen gauges");
         EN.put("고속 CAN 통신 버스 이상","High-speed CAN communication bus fault");
         EN.put("고장코드","Trouble codes");
@@ -267,6 +275,7 @@ public final class UiText {
         EN.put("공기유량센서(MAF) 범위·성능 이상","Mass air flow (MAF) sensor range/performance");
         EN.put("공기유량센서(MAF) 회로 낮음","Mass air flow (MAF) sensor circuit low");
         EN.put("공기유량센서(MAF) 회로 높음","Mass air flow (MAF) sensor circuit high");
+        EN.put("공장 출고 설정","Factory setting");
         EN.put("공조 제어기와 통신 끊김","Lost communication with climate control module");
         EN.put("공짜 주행","Free distance");
         EN.put("공회전","Idle");
@@ -293,6 +302,13 @@ public final class UiText {
         EN.put("그래프는 기본 스킨의 카드·띠에서만 고릅니다","Graphs only with the Default skin on a card or bar");
         EN.put("그래프를 길게 눌러 항목 변경","Hold a graph to change its signal");
         EN.put("그린","Green");
+        EN.put("글꼴","Fonts");
+        EN.put("글꼴 목록을 읽지 못했습니다","Could not read the font list");
+        EN.put("글꼴 설정을 다시 읽어 보니 다릅니다","The font settings read back differently");
+        EN.put("글꼴 적용","Apply font");
+        EN.put("글꼴 파일이 없어졌습니다: ","The font file is gone: ");
+        EN.put("글꼴을 바꾸지 못했습니다: ","Could not change the font: ");
+        EN.put("글꼴을 찾는 중…","Looking for fonts…");
         EN.put("급가속","Hard acceleration");
         EN.put("급제동","Hard braking");
         EN.put("기계 연결부 고장","Mechanical linkage failure");
@@ -330,7 +346,11 @@ public final class UiText {
         EN.put("꺼짐","Off");
         EN.put("끄기","Disable");
         EN.put("끔","Off");
+        EN.put("나눔손글씨 붓","Nanum Brush Script");
+        EN.put("나눔손글씨 펜","Nanum Pen Script");
+        EN.put("나눔스퀘어 네오","NanumSquare Neo");
         EN.put("나이트","Night");
+        EN.put("나중에","Later");
         EN.put("남은 거리","Remaining");
         EN.put("낮","Day");
         EN.put("낮 색감 고르기","Choose the day look");
@@ -345,11 +365,14 @@ public final class UiText {
         EN.put("내부 고장","Internal failure");
         EN.put("내부 전자 회로 고장","Internal electronic circuit failure");
         EN.put("내비 빌드","Head unit build");
+        EN.put("내비 시스템 공간이 부족합니다","Not enough system space on the head unit");
         EN.put("내비 안내·전화·음성인식 때 엔진 소리를 줄이거나 멈춤 · 통화는 늘 멈춤","Lower or stop the engine sound for prompts, calls and voice control · calls always stop it");
         EN.put("내비 효과음 · 차에서 무음","Navi effects · silent in car");
         EN.put("내비게이션 시스템을 재시작합니다. 화면·음악·PC 연결이 잠시 끊깁니다. 정차 중에 사용하세요.","Restart the head unit. The display, music and PC connection will be interrupted briefly. Use while parked.");
         EN.put("내비게이션 재시작","Restart head unit");
         EN.put("내비게이션 재시작 요청을 전달했습니다.","Head-unit restart requested.");
+        EN.put("내비를 재부팅할까요? 화면·음악·PC 연결이 잠시 끊깁니다.","Reboot the head unit? The screen, music and PC connection stop for a while.");
+        EN.put("내비에 설치됨","Installed");
         EN.put("냉각 팬 1 제어 회로 이상","Cooling fan 1 control circuit malfunction");
         EN.put("냉각수","Coolant");
         EN.put("냉각수 °C","Coolant °C");
@@ -493,6 +516,11 @@ public final class UiText {
         EN.put("레이스 버저","Race buzzer");
         EN.put("레트로","Retro");
         EN.put("로즈","Rose");
+        EN.put("루트 권한으로 시스템 글꼴 설정(/system/etc/system_fonts.xml)을 바꾸며, 재부팅해야 반영됩니다. 처음 바꾸기 전 설정은 /data/local/tmp/vn-fonts에 보관됩니다.","This changes the system font settings (/system/etc/system_fonts.xml) as root and shows after a reboot. The settings from before the first change are kept in /data/local/tmp/vn-fonts.");
+        EN.put("루트 도구 없음","no root tool");
+        EN.put("루트 실행 도구(amossu)가 없습니다","The root tool (amossu) is missing");
+        EN.put("루트 실행 도구(amossu)를 읽지 못했습니다","Could not read the root tool (amossu)");
+        EN.put("루트 작업이 끝나지 않았습니다: ","The root step did not finish: ");
         EN.put("마리나 블루","Marina Blue");
         EN.put("마젠타","Magenta");
         EN.put("마찰 토크","Friction torque");
@@ -507,6 +535,7 @@ public final class UiText {
         EN.put("메시지 누락","Missing message");
         EN.put("메시지 보호값 이상","Message protection value incorrect");
         EN.put("메시지 카운터 이상","Message counter incorrect");
+        EN.put("명조","serif");
         EN.put("모노","Mono");
         EN.put("모드 색","Mode colour");
         EN.put("모드 화면","Mode screen");
@@ -527,6 +556,7 @@ public final class UiText {
         EN.put("미등","Position lamps");
         EN.put("미디어 소스 · 차에서 무음","Media source · silent in car");
         EN.put("미리 발을 떼면 더 아낍니다","Lift off earlier to save more");
+        EN.put("미리보기","Preview");
         EN.put("미리보기 · 칸을 누르면 값 고르기","Preview · tap a cell to choose its reading");
         EN.put("미사용","Off");
         EN.put("바디 (BCM)","Body (BCM)");
@@ -610,9 +640,13 @@ public final class UiText {
         EN.put("복구","Restore");
         EN.put("복구 후 AP 꺼짐 상태 재확인 실패. 백업 보존.","Could not reconfirm AP off after restoration. Backup retained.");
         EN.put("복구할 시험 백업이 없습니다. 변경하지 않았습니다.","No test backup to restore. No changes were made.");
+        EN.put("복사한 글꼴 파일이 원본과 다릅니다: ","The copied font file differs from the original: ");
         EN.put("복원","Reset");
         EN.put("부드러움 ","Smoothness ");
         EN.put("부산","Busan");
+        EN.put("부산단디고딕","Busan Dandi Gothic");
+        EN.put("부산단디명조","Busan Dandi Myeongjo");
+        EN.put("부산단디손글씨","Busan Dandi Script");
         EN.put("부스트","Boost");
         EN.put("부스트 (계산)","Boost (calc.)");
         EN.put("부스트 bar","Boost bar");
@@ -624,6 +658,7 @@ public final class UiText {
         EN.put("부하 %","Load %");
         EN.put("부하율","LOAD");
         EN.put("분","min");
+        EN.put("불러오는 중…","Loading…");
         EN.put("브레이크","Brake");
         EN.put("브레이크 디스크 과열","Brake disc overheated");
         EN.put("브레이크 스위치","Brake switch");
@@ -665,6 +700,7 @@ public final class UiText {
         EN.put("사선 분할","Slant split");
         EN.put("사선 컷","Cut");
         EN.put("사용","On");
+        EN.put("사용 불가","unusable");
         EN.put("사용 안 함","Off");
         EN.put("사용 안 함 / Off","Off");
         EN.put("사용 연료","Fuel used");
@@ -699,6 +735,8 @@ public final class UiText {
         EN.put("상향등","High beam");
         EN.put("새 기기","New device");
         EN.put("새로 시작","Start fresh");
+        EN.put("새로고침","Refresh");
+        EN.put("새로고침을 누르면 글꼴을 찾습니다","Press Refresh to look for fonts");
         EN.put("색","Colour");
         EN.put("색감","Look");
         EN.put("색감 고르기","Choose a look");
@@ -708,7 +746,9 @@ public final class UiText {
         EN.put("서킷","Circuit");
         EN.put("서킷 선택","Choose circuit");
         EN.put("서킷까지 %s","%s to the circuit");
+        EN.put("서툰이야기 (Poor Story)","Poor Story");
         EN.put("선 그래프","Line");
+        EN.put("선택한 글꼴 적용","Apply selected font");
         EN.put("선택한 칸 · %d번","Chosen cell · %d");
         EN.put("설명 / Help","Help");
         EN.put("설정","Settings");
@@ -718,6 +758,7 @@ public final class UiText {
         EN.put("설정: ","Setting: ");
         EN.put("설정: OFF","Setting: OFF");
         EN.put("설정: ON","Setting: ON");
+        EN.put("설정된 글꼴","Set font");
         EN.put("설정으로 / Back","Back");
         EN.put("설치된 기본 앱 중 외부 실행이 허용된 앱만 표시합니다.","Only installed system apps that allow external launch are shown.");
         EN.put("성능 저하·작동 이상","Reduced performance / incorrect operation");
@@ -741,6 +782,7 @@ public final class UiText {
         EN.put("속도계가 실제보다 %.1f %% 높게 나옴","The speedometer reads %.1f %% high");
         EN.put("속도계가 실제와 같음","The speedometer reads true");
         EN.put("속도를 줄이는 중이에요","Slowing down");
+        EN.put("손글씨","handwriting");
         EN.put("손을 떼면 적용 · 끌면 취소","Applies on release · drag off to cancel");
         EN.put("쇼","Show");
         EN.put("쇼 화면","Show screen");
@@ -749,6 +791,10 @@ public final class UiText {
         EN.put("순간 연료소모","Fuel rate");
         EN.put("순간 연비","Instant economy");
         EN.put("순정","Stock");
+        EN.put("순정 · 앱에 포함된 글꼴 · 내비에 설치된 글꼴","Factory, in-app and installed fonts");
+        EN.put("순정 글꼴 (Mobis · Roboto)","Factory fonts (Mobis · Roboto)");
+        EN.put("순정 글꼴 파일이 없습니다: ","Factory font files are missing: ");
+        EN.put("순정도 이 앱이 쓴 것도 아닌 글꼴 설정이라 바꾸지 않습니다","The font settings are neither the factory ones nor this app's, so nothing is changed");
         EN.put("숫자","Number");
         EN.put("숫자만","Number only");
         EN.put("스로틀","Throttle");
@@ -779,6 +825,7 @@ public final class UiText {
         EN.put("시동 안내 화면 건너뛰기","Skip the start-up notice");
         EN.put("시동 안내 화면: ","Start-up notice: ");
         EN.put("시스템","System");
+        EN.put("시스템 남은 공간","System space free");
         EN.put("시험 접속정보 보기","Show test credentials");
         EN.put("시험 핫스팟 켜기","Test hotspot");
         EN.put("신스웨이브","Synthwave");
@@ -838,6 +885,9 @@ public final class UiText {
         EN.put("앱","Apps");
         EN.put("앱 관리","Manage apps");
         EN.put("앱 화면을 열지 못했습니다. 알림에서 다시 시도하세요.","Could not open My Apps. Try the notification.");
+        EN.put("앱에 든 글꼴 파일이 손상됐습니다: ","A font file inside the app is damaged: ");
+        EN.put("앱에 포함","In the app");
+        EN.put("앱에 포함 · 내비에 설치됨","In the app · installed");
         EN.put("야간","Night");
         EN.put("야간 미니멀","Night minimal");
         EN.put("약 (+3 dB)","Low (+3 dB)");
@@ -962,6 +1012,7 @@ public final class UiText {
         EN.put("왼쪽 지하차도","Underpass left");
         EN.put("왼쪽 출구","Exit left");
         EN.put("왼쪽: 보여 줄 값 · 오른쪽 버튼: 그래프 모양","Left: the reading · right button: the graph");
+        EN.put("왼쪽에서 글꼴을 고르세요","Pick a font on the left");
         EN.put("왼쪽으로 돌아요 · 꽉 잡으세요","Turning left · hold on");
         EN.put("요금 · 정차","Fare · stopped");
         EN.put("요금 · 주행","Fare · moving");
@@ -1046,8 +1097,13 @@ public final class UiText {
         EN.put("응답 없음 (미장착일 수 있음)","no reply (may not be fitted)");
         EN.put("응답이 없습니다.","No answer.");
         EN.put("응답한 제어기가 없습니다. 시동을 켠 상태에서 다시 조회하세요.","No control unit answered. Turn the ignition on and read again.");
+        EN.put("이 글꼴은 적용할 수 없습니다","This font cannot be applied");
+        EN.put("이 글꼴은 한글이 모자라 빠진 글자는 기존 대체 글꼴로 보입니다.","This font lacks some Korean characters; those show in the existing fallback font.");
+        EN.put("이 글꼴을 미리보기로 열지 못했습니다","This font could not be opened for the preview");
+        EN.put("이 글꼴을 열지 못했습니다","This font could not be opened");
         EN.put("이 기기는 페어링을 진행 중입니다.","This device is already pairing.");
         EN.put("이 기기에서 재시작 기능을 사용할 수 없습니다.","Restart is unavailable on this device.");
+        EN.put("이 내비에서는 글꼴을 바꾸지 않습니다","Fonts are not changed on this head unit");
         EN.put("이 내비에서는 앱이 스스로 삭제할 수 없습니다. PC 설치기나 휴대폰 설치 앱의 [삭제]를 쓰세요.","This head unit does not let the app remove itself. Use [Remove] in the PC installer or the phone installer.");
         EN.put("이 시스템에서 바로가기 서비스를 시작할 수 없습니다.","This system cannot start the shortcut service.");
         EN.put("이 제어기 고장코드 지우기","Clear this unit's trouble codes");
@@ -1060,6 +1116,7 @@ public final class UiText {
         EN.put("이모빌라이저 — 키 인증 장치(스마트라) 응답 없음","Immobiliser — key authentication unit (SMARTRA) not responding");
         EN.put("이미 기기를 검색 중입니다.","Discovery is already running.");
         EN.put("이미 내비게이션 재시작을 요청했습니다.","A head-unit restart has already been requested.");
+        EN.put("이미 설정된 글꼴입니다","This font is already set");
         EN.put("이미 페어링된 기기입니다. 실제 연결은 해당 앱에서 진행하세요.","Already paired. Use the relevant app to connect.");
         EN.put("이미 페어링된 기기입니다. 프로필 연결은 해당 앱에서 진행하세요.","Already paired. Connect the required profile from the relevant app.");
         EN.put("이번","This run");
@@ -1067,6 +1124,7 @@ public final class UiText {
         EN.put("이번 주행 연료비","Trip fuel cost");
         EN.put("이번 주행 초기화","Trip reset");
         EN.put("이벤트 후 신호 이상","Signal incorrect after event");
+        EN.put("이서윤체","LeeSeoyun");
         EN.put("이전","Previous");
         EN.put("이전 시험 백업이 남아 있습니다. 먼저 원상복구하세요.","A previous test backup remains. Restore the original settings first.");
         EN.put("이제 ☆ 버튼을 짧게 누르면 계기판이 열립니다.","A short press of ☆ now opens the dashboard.");
@@ -1092,6 +1150,7 @@ public final class UiText {
         EN.put("작동 안 함","No operation");
         EN.put("작동기 고착","Actuator stuck");
         EN.put("작동기 미끄러짐","Actuator slipping");
+        EN.put("작업 중…","Working…");
         EN.put("작은 글씨: 지금 값 · ▲: 최고값 표시 · 이 차에 없는 값은 숨김","Small text: value now · ▲: shows the peak · values this car lacks are hidden");
         EN.put("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌","Small text is the reading now · readings this car lacks are left out");
         EN.put("작은 글씨는 지금 값 · 이 차에 없는 값은 뺌 · ▲ 최고값은 부스트·RPM·온도 등에만","Small text is the reading now · readings this car lacks are left out · ▲ peak on boost, rpm, temperatures and the like");
@@ -1101,6 +1160,9 @@ public final class UiText {
         EN.put("잘못된 부품 장착","Incorrect component installed");
         EN.put("잘못된 통신 데이터 수신","Invalid communication data received");
         EN.put("잠시 기다리세요. 끝나면 이 화면이 닫힙니다.","Please wait. This screen closes when done.");
+        EN.put("재부팅","Reboot");
+        EN.put("재부팅하면 화면에 반영됩니다","Shows on screen after a reboot");
+        EN.put("재부팅하지 못했습니다: ","Could not reboot: ");
         EN.put("재생 중","Playing");
         EN.put("재생 중인 곡 없음","No track playing");
         EN.put("재시작","Restart");
@@ -1119,6 +1181,8 @@ public final class UiText {
         EN.put("저항 낮음","Resistance low");
         EN.put("저항 높음","Resistance high");
         EN.put("저항 범위 벗어남","Resistance out of range");
+        EN.put("적용","Apply");
+        EN.put("적용하면 재부팅 뒤에 화면에 반영됩니다","A font you apply shows after a reboot");
         EN.put("적음","Less");
         EN.put("전기 계통 고장","Electrical failure");
         EN.put("전기·차체","Electrics · body");
@@ -1244,6 +1308,8 @@ public final class UiText {
         EN.put("지금 모양에 입힌 모습 · 누르면 바로 적용","Shown on the current shape · a tap applies it");
         EN.put("지금 속도","Speed now");
         EN.put("지금 연비 ","Now ");
+        EN.put("지금 재부팅","Reboot now");
+        EN.put("지금 화면의 글꼴과 같습니다","Same as the font on screen now");
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
         EN.put("지난 구간","Last stage");
         EN.put("지난 랩","Last");
@@ -1455,6 +1521,7 @@ public final class UiText {
         EN.put("프로그래밍 안 됨","Not programmed");
         EN.put("프로그래밍 이상","Programming fault");
         EN.put("프로그램 메모리 오류","Program memory error");
+        EN.put("프리텐다드 (Pretendard)","Pretendard");
         EN.put("플래티넘 실버","Platinum Silver");
         EN.put("플로팅","Floating");
         EN.put("플로팅 버튼 숨기기","Hide the floating button");
@@ -1464,6 +1531,9 @@ public final class UiText {
         EN.put("하이브리드 구동","Hybrid propulsion");
         EN.put("한 번 더 누르면 초기화","Tap again to reset");
         EN.put("한국어","Korean");
+        EN.put("한글 없음","no Korean");
+        EN.put("한글 일부","some Korean");
+        EN.put("한글 전체","full Korean");
         EN.put("할증","Night");
         EN.put("할증 (심야·시계외)","Surcharge (night, area)");
         EN.put("합계","Total");
@@ -1475,6 +1545,7 @@ public final class UiText {
         EN.put("현대 전용 코드","Hyundai-specific code");
         EN.put("현재 ","Now ");
         EN.put("현재 고장","Current fault");
+        EN.put("현재 글꼴 설정을 읽지 못했습니다","Could not read the current font settings");
         EN.put("현재 기어","Current gear");
         EN.put("현재 재생 소스에서 음악을 제어할 수 없습니다","Playback control is unavailable for this source");
         EN.put("현재 차량 표시 제한으로 N 계기판을 열 수 없습니다.","N Dashboard is unavailable under the current vehicle display restriction.");
@@ -1488,6 +1559,7 @@ public final class UiText {
         EN.put("확대","scaled up");
         EN.put("확인","OK");
         EN.put("확인 불가","Unknown");
+        EN.put("확인하지 않은 amossu입니다","An amossu this app has not checked");
         EN.put("확정","Confirmed");
         EN.put("활성 시험 백업이 없습니다. 기존 핫스팟 접속정보는 차량 설정에서 확인하세요.","No active test backup. Check existing hotspot credentials in the vehicle settings.");
         EN.put("활성화 안 됨","Not activated");

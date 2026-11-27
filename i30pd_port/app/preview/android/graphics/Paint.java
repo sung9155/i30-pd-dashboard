@@ -22,6 +22,7 @@ public class Paint {
     public Shader setShader(Shader s){shader=s;return s;}
     Font file;
     public Typeface setTypeface(Typeface t){bold=t!=null&&t.bold;mono=t!=null&&t.mono;file=t==null?null:t.file;return t;}
+    public void setFakeBoldText(boolean v){}   // the 글꼴 preview's bold for a font without one: not drawn here
     public void setTextScaleX(float v){scaleX=v;}
     public void setTextSkewX(float v){skewX=v;}
     public float measureText(String s){return Canvas.measure(this,s);}

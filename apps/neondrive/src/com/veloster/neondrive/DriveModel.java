@@ -38,8 +38,6 @@ public final class DriveModel {
         /** Parking brake applied, and the eased 0..1 move to the shoulder. */
         public boolean parked;
         public float park;
-        /** 0..1: showroom sweep of the car angles after a few seconds at standstill. */
-        public float showroom;
         /** Trip since the app started: elapsed and moving time (ms), distance (km), top speed (km/h). */
         public double tripMs, movingMs, tripKm;
         public float maxKmh;
@@ -175,7 +173,6 @@ public final class DriveModel {
         if (data && realSpeed < 1f) s.stoppedFor += dt; else s.stoppedFor = 0f;
         s.parked = data && parked;
         s.park += ((s.parked ? 1f : 0f) - s.park) * Math.min(1f, dt * 0.9f);
-        s.showroom += ((s.stoppedFor > SHOWROOM_AFTER_S ? 1f : 0f) - s.showroom) * Math.min(1f, dt * 1.2f);
         if (data) {
             s.tripMs += dt * 1000.0;
             if (realSpeed >= 1f) { s.movingMs += dt * 1000.0; s.tripKm += realSpeed / 3600.0 * dt; }
@@ -210,8 +207,6 @@ public final class DriveModel {
         return g;
     }
 
-    /** Standstill seconds before the showroom sweep starts. */
-    static final float SHOWROOM_AFTER_S = 4f;
 
     /** Demo loop: {throttle, brake, left, right, steering deg (+right), parked}. Every effect shows within 40 s. */
     static float[] demo(long t) {
@@ -223,7 +218,7 @@ public final class DriveModel {
         if (s < 14) return new float[] {0.25f, 0, 1, 0, s < 11.5f ? 0 : -110f, 0}; // signal, then turn left
         if (s < 17.5f) return new float[] {0.25f, 0, 0, 1, s < 15f ? 0 : 110f, 0}; // signal, then turn right
         if (s < 21) return new float[] {0f, 0.55f, 1, 1, 0, 0};     // hazard while stopping
-        if (s < 27) return new float[] {0f, 0.8f, 0, 0, 0, 0};      // waiting at a light: stop card, showroom
+        if (s < 27) return new float[] {0f, 0.8f, 0, 0, 0, 0};      // waiting at a light: stop card
         if (s < 35) return new float[] {0f, 0f, 0, 0, 0, 1};        // parking brake: shoulder, idle scenery
         return new float[] {0.7f, 0, 0, 0, 0, 0};                   // pull away
     }

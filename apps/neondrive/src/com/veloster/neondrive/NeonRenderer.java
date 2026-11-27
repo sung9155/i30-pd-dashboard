@@ -431,9 +431,9 @@ public final class NeonRenderer {
         float night = mixed(Theme.GLOW);
         if (s.lowBeam) glow(c, glowWhite, cx + shiftA, yA, 430 * gs, 120 * gs, 0.16f * night);
         if (s.lamps) glow(c, glowWhite, cx + shiftB, yB, 210 * gs, 50 * gs, 0.08f * night);
-        // Showroom: after a few seconds at standstill the view sweeps slowly across all the angles.
+        // The car faces the way the wheel points; at standstill it stays put (the upstream showroom sweep turned it by
+        // itself after 4 s, which read as a fault in the car, 2026-11-27).
         float angle = -yaw * 35f;
-        if (s.showroom > 0.01f) angle = angle * (1f - s.showroom) + 38f * (float) Math.sin(t * 0.45) * s.showroom;
         if (car == null) return;
         int f = car.frameFor(angle);
         int[] pt = car.points[f];

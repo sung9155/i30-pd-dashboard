@@ -99,7 +99,7 @@ public final class NeonDrivePreview {
             }
             render(renderer, st, new File(dir, (i + 1) + "-" + names[i] + ".png"), 800, 480);
         }
-        // Standstill: waiting at a light (stop card + showroom) and parked (shoulder, idle scenery), night and day.
+        // Standstill: waiting at a light (stop card) and parked (shoulder, idle scenery), night and day.
         String[] idle = {"light-night", "park-night", "light-day", "park-day"};
         for (int i = 0; i < idle.length; i++) {
             NeonRenderer ir = new NeonRenderer(); ir.setCar(SPRITES);

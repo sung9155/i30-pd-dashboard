@@ -224,7 +224,7 @@ public final class NeonDriveTest {
         check(gs.snapshot(9301).gear == 7 && gs.snapshot(9301).gear != DriveSignals.GEAR_R, "gear 7 is not reverse");
         check(DriveModel.demoGear8(0) == 0 && DriveModel.demoGear8(20) == 2 && DriveModel.demoGear8(150) == 7, "demo DCT gears (7-speed)");
         check(DriveModel.demoGear(0) == 0 && DriveModel.demoGear(50) == 3 && DriveModel.demoGear(150) == 6, "demo gears");
-        // Standstill: park brake bit, stop timer, showroom and trip statistics.
+        // Standstill: park brake bit, stop timer and trip statistics.
         DriveSignals pks = new DriveSignals(); DriveModel pm = new DriveModel();
         byte[] cgwPark = {0x03, 0x44, (byte) 0x81, 0x00, (byte) 0xc0, 0, 0, 0x10};
         long pt0 = 20000;
@@ -237,7 +237,7 @@ public final class NeonDriveTest {
         }
         check(pks.snapshot(pt0 + 10050).parkBrake, "CGW1 b7 bit4: park brake");
         check(pst.stoppedFor > 5.5f && pst.stoppedFor < 7f, "stopped for ~6.4 s: " + pst.stoppedFor);
-        check(pst.parked && pst.park > 0.9f && pst.showroom > 0.8f, "parked, at the shoulder, showroom on");
+        check(pst.parked && pst.park > 0.9f, "parked, at the shoulder");
         check(Math.abs(pst.tripKm - 0.072) < 0.003 && Math.abs(pst.maxKmh - 72f) < 0.1f, "trip 72 km/h for 3.6 s = 0.072 km: " + pst.tripKm);
         check(Math.abs(pst.avgKmh() - 72f) < 1.5f, "average uses moving time: " + pst.avgKmh());
         // HUD pixel font: glyph shapes and widths.

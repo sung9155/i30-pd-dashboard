@@ -16,6 +16,7 @@ Nothing outward-facing happens without --publish. Needs git, gh (logged in), JDK
 Overrides: JAVA_HOME, ANDROID_SDK, KEY_DIR (platform.pk8 + platform.x509.pem), RELEASE_ROOT (the checkout to release).
 
   python scripts/release.py installers stable|test --out DIR   # the three PC installer ZIPs, nothing published
+  python scripts/release.py build --out DIR                    # host tests, build, sign, certificate check (CI); nothing published
 
 installers: builds i30pd-installer-windows/mac/linux.zip from i30pd_port/installer with the channel written into
 install.ps1 / 설치.command (the installer checks that same release for a newer installer of itself). Upload them to
@@ -235,6 +236,11 @@ def installers(a):
         print(f"{asset}: {(out / asset).stat().st_size:,} B  sha256 {sha(out / asset)}  ({a.channel})")
 
 
+def build_only(a):
+    out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
+    build(tools(), out, a.name)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     s = p.add_subparsers(dest="cmd", required=True)
@@ -251,8 +257,11 @@ def main():
     ins.add_argument("channel", choices=("stable", "test"))
     ins.add_argument("--out", required=True)
     ins.add_argument("--label", help=argparse.SUPPRESS)   # tests: a different installer version in the ZIP
+    bu = s.add_parser("build")
+    bu.add_argument("--out", required=True)
+    bu.add_argument("--name", default="ci", help="versionName for the APK")
     a = p.parse_args()
-    {"stable": stable, "test": test, "installers": installers}[a.cmd](a)
+    {"stable": stable, "test": test, "installers": installers, "build": build_only}[a.cmd](a)
 
 
 if __name__ == "__main__":

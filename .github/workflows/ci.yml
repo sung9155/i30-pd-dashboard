@@ -1,0 +1,52 @@
+# Every push to beta / main and every pull request: host tests, translations, the dashboard APK built and signed with the
+# public AOSP platform test key (the one the head unit accepts; fetched with pinned hashes, no secrets), My Apps compiled,
+# and the PC installer tests on Linux (mac path too) and Windows. Publishes nothing: releases stay with scripts/release.py.
+name: CI
+on:
+  push:
+    branches: [beta, main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+        with: { packages: 'platforms;android-17 build-tools;34.0.0' }
+      - name: Translations up to date
+        run: python3 scripts/generate_translations.py --check
+      - name: Platform test key
+        run: bash scripts/ci_keys.sh "$RUNNER_TEMP/keys"
+      - name: Host tests, build and sign the dashboard
+        env:
+          ANDROID_SDK: ${{ env.ANDROID_SDK_ROOT }}
+          KEY_DIR: ${{ runner.temp }}/keys
+        run: python3 -X utf8 scripts/release.py build --out build/ci --name "ci-${GITHUB_SHA::7}"
+      - name: Compile My Apps
+        run: |
+          BT="$ANDROID_SDK_ROOT/build-tools/34.0.0"
+          python3 -X utf8 scripts/build.py hub --java "$JAVA_HOME/bin/java" --android-jar "$ANDROID_SDK_ROOT/platforms/android-17/android.jar" \
+            --aapt2 "$BT/aapt2" --r8-jar "$BT/lib/d8.jar" --out build/ci-hub --version-name ci
+      - name: PC installer tests (Linux, mac script)
+        run: |
+          bash i30pd_port/installer/test/run.sh linux
+          bash i30pd_port/installer/test/run.sh mac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-apk
+          path: build/ci/*.apk
+          retention-days: 14
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: PC installer test (Windows)
+        shell: bash
+        run: bash i30pd_port/installer/test/run.sh win

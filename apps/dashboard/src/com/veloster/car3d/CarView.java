@@ -72,7 +72,7 @@ final class CarView extends FrameLayout implements Runnable {
         renderer.setScene(scene);
         loadBackdrop(context.getApplicationContext(), scene);
         renderer.setCamera(yaw, pitch, dist);
-        renderer.setPlate(CarPlate.draw(plateText()));
+        applyPlate();
         gl = new GLSurfaceView(context);
         gl.setEGLContextClientVersion(2);
         gl.setEGLConfigChooser(new CarRenderer.ConfigChooser());
@@ -88,27 +88,19 @@ final class CarView extends FrameLayout implements Runnable {
 
     void setExit(Runnable exit) { onExit = exit; }
 
-    /** The owner's plate text (pit_vehicle_ui, kept by the settings backup with every other preference). */
-    private String plateText() { return getContext().getSharedPreferences("pit_vehicle_ui", 0).getString(CarPlate.PREF, ""); }
+    /** The 넓은 번호판 shown on both plates (PlatePixels.wide, set here or in 설정 → 차량 색), and when it changes the plate
+     *  picture is drawn again. True when it changed. */
+    private String plateShown;
+    private boolean applyPlate() {
+        String t = com.veloster.vehicle.PlatePixels.wide;
+        if (t.equals(plateShown)) return false;
+        plateShown = t; renderer.setPlate(CarPlate.draw(t));
+        return true;
+    }
 
-    /** 번호판: type the plate text (empty = a blank plate); both plates of the car show it. */
+    /** 번호판: the 넓은 번호판 dialog (VehicleDash.plateDialog; blank = "i30 PD"). */
     private void plateDialog() {
-        final android.widget.EditText in = new android.widget.EditText(getContext());
-        in.setSingleLine(true);
-        in.setFilters(new android.text.InputFilter[] {new android.text.InputFilter.LengthFilter(CarPlate.MAX)});
-        in.setText(plateText()); in.setSelection(in.getText().length());
-        in.setHint(UiText.t("예: 12가 3456 · 비우면 빈 번호판"));
-        new android.app.AlertDialog.Builder(getContext()).setTitle(UiText.t("번호판 글자")).setView(in)
-            .setPositiveButton(UiText.t("확인"), new android.content.DialogInterface.OnClickListener() {
-                public void onClick(android.content.DialogInterface d, int w) {
-                    String t = CarPlate.clean(in.getText().toString());
-                    getContext().getSharedPreferences("pit_vehicle_ui", 0).edit().putString(CarPlate.PREF, t).apply();
-                    com.veloster.vehicle.PlatePixels.text = t;   // the pixel cars (아케이드, 네온 드라이브) show it too
-                    renderer.setPlate(CarPlate.draw(t));
-                    gl.requestRender();
-                }
-            })
-            .setNegativeButton(UiText.t("취소"), null).show();
+        com.veloster.vehicle.VehicleDash.plateDialog(getContext(), true, new Runnable() { public void run() { if (applyPlate()) gl.requestRender(); } });
     }
 
     /** The dashboard's car colour; Performance Blue (0) keeps the model's own blue. True when it changed. */
@@ -200,7 +192,7 @@ final class CarView extends FrameLayout implements Runnable {
         }
         renderer.setCamera(yaw, pitch, dist);
         renderer.setState(state);
-        boolean changed = applyPaint() | moving || dragging || pinching || state.animating() || stateChanged();
+        boolean changed = applyPaint() | applyPlate() | moving || dragging || pinching || state.animating() || stateChanged();
         if (changed) gl.requestRender();
         hud.invalidate();
         postDelayed(this, changed || touchDown ? FRAME_MS : IDLE_MS);

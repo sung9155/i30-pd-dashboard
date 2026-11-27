@@ -156,12 +156,12 @@ public class Car3DTest {
             check(im != null && im.getWidth() == 2048 && im.getHeight() == 512, "backdrop panorama " + f);
         }
         check(com.veloster.car3d.CarScene.valid(9) == 0 && com.veloster.car3d.CarScene.valid(3) == 3, "stored scene clamped");
-        // plate text: cleaned, drawn black on a white plate inside its edge; empty = blank
+        // plate text: cleaned, drawn black on a white plate inside its edge; empty = "i30 PD"
         check(com.veloster.car3d.CarPlate.clean("  12\uAC00\t 3456 ").equals("12\uAC00 3456"), "plate text trimmed, one space");
         check(com.veloster.car3d.CarPlate.clean("123456789012345").length() == com.veloster.car3d.CarPlate.MAX, "plate text capped");
         check(com.veloster.car3d.CarPlate.clean(null).isEmpty(), "no text");
         int[] ink = plateInk(com.veloster.car3d.CarPlate.draw("12\uAC00 3456")), none = plateInk(com.veloster.car3d.CarPlate.draw(""));
-        check(none[0] == 0, "blank plate: no letters");
+        check(none[0] > 0 && java.util.Arrays.equals(none, plateInk(com.veloster.car3d.CarPlate.draw("i30 PD"))), "blank plate: i30 PD");
         check(ink[0] > 800 && ink[1] >= 8 && ink[2] <= com.veloster.car3d.CarPlate.W - 8 && ink[3] >= 6 && ink[4] <= com.veloster.car3d.CarPlate.H - 6,
             "12\uAC00 3456: letters on the plate, clear of its edge " + java.util.Arrays.toString(ink));
         check(Math.abs((ink[1] + ink[2]) / 2f - com.veloster.car3d.CarPlate.W / 2f) < 12, "letters centred");

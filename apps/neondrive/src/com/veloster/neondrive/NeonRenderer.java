@@ -30,7 +30,7 @@ public final class NeonRenderer {
     static final float SUN_PAN = 70f;
 
     private Bitmap palm, lamp, carSheet;
-    /** The owner's number for the plate (PlatePixels) at a font pixel a bitmap pixel, and the text it was baked for. */
+    /** The 좁은 번호판 (PlatePixels) at a font pixel a bitmap pixel, and the text it was baked for. */
     private Bitmap plateBmp;
     private String plateShown = "";
     private CarSprite car;
@@ -474,20 +474,19 @@ public final class NeonRenderer {
         drawIdleExhaust(c, s, t, left + pt[4] * k, top + pt[5] * k, left + pt[6] * k, top + pt[7] * k);
     }
 
-    /** The owner's number (내 차 → 번호판; PlatePixels) centred on the frame's plate, dark on the white face, at 2 screen px a
-     *  font pixel (a car pixel is 3, so 5 rows fit the 4-pixel plate with a pixel to spare). Empty: the plate stays blank. */
+    /** The 좁은 번호판 (PlatePixels: "i30 PD" unless set) centred on the frame's plate, dark on the white face, at 2 screen
+     *  px a font pixel (a car pixel is 3, so 5 rows fit the 4-pixel plate with a pixel to spare). Baked once per text. */
     private void drawPlate(Canvas c, int[] pt, float left, float top, float k) {
-        String t = com.veloster.vehicle.PlatePixels.fit(com.veloster.vehicle.PlatePixels.text, com.veloster.vehicle.PlatePixels.NEON);
-        if (t.isEmpty() || pt[12] < 0) return;
+        if (pt[12] < 0) return;
+        String t = com.veloster.vehicle.PlatePixels.shown(com.veloster.vehicle.PlatePixels.narrow);
         if (plateBmp == null || !t.equals(plateShown)) {
             plateShown = t;
-            int w = com.veloster.vehicle.PlatePixels.width(t);
-            int[] px = new int[w * 5];
-            for (int i = 0; i < t.length(); i++) for (int y = 0; y < 5; y++) for (int x = 0; x < 3; x++)
-                if (com.veloster.vehicle.PlatePixels.lit(t.charAt(i), x, y)) px[y * w + i * 4 + x] = 0xff1c2532;
+            int w = Math.max(1, com.veloster.vehicle.PlatePixels.width(t));
             plateBmp = Bitmap.createBitmap(w, 5, Bitmap.Config.ARGB_8888);
-            plateBmp.setPixels(px, 0, w, 0, 0, w, 5);
+            plateBmp.setPixels(com.veloster.vehicle.PlatePixels.pixels(t, 0xff1c2532), 0, w, 0, 0, w, 5);
         }
+        p.setStyle(Paint.Style.FILL); p.setColor(0xffe8e8ec);   // the face whole: turned frames tuck its bottom row under the bumper
+        c.drawRect(left + pt[12] * k, top + pt[14] * k, left + (pt[13] + 1) * k, top + (pt[15] + 1) * k, p);
         float x = Math.round(left + (pt[12] + pt[13] + 1) * k / 2 - plateBmp.getWidth()), y = Math.round(top + (pt[14] + pt[15] + 1) * k / 2 - 5);
         r.set(x, y, x + plateBmp.getWidth() * 2, y + 10);
         pixel.setAlpha(255);

@@ -304,6 +304,8 @@ public final class PitRenderer {
                 case SettingsLayout.THEME:{Theme th=Theme.of(Theme.IDS[i]);sel=th==Theme.current();name=SettingsLayout.THEME_NAMES[i];sub=th.label;swatch=th.accent;swatchBg=th.map(0xff101315);break;}
                 case SettingsLayout.PAINT:
                     if(i==CarPaint.IDS.length){name="8비트 하늘";sub="자동: 와이퍼·외기온·낮 전조등";value=Weather.skyLabel();break;}
+                    if(i>CarPaint.IDS.length){boolean wd=i==SettingsLayout.PAINT_WIDE_PLATE;name=wd?"넓은 번호판 (3D)":"좁은 번호판 (도트 차)";   // the text is the owner's: not translated
+                        value=PlatePixels.shown(wd?PlatePixels.wide:PlatePixels.narrow);break;}
                     {int pi=SettingsLayout.PAINT_ORDER[i];sel=pi==CarPaint.index();name=CarPaint.LABELS[pi];swatch=CarPaint.color(pi);}break;
                 case SettingsLayout.MODE:
                     if(i<SettingsLayout.MODE_FIRST){sel=i==0?modeColor:modeScreen;name=i==0?"모드 색":"모드 화면";

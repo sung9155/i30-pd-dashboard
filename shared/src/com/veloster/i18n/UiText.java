@@ -395,6 +395,7 @@ public final class UiText {
         EN.put("냉각수온 센서 범위·성능 이상","Coolant temperature sensor range/performance");
         EN.put("냉각수온 센서 회로 낮음","Coolant temperature sensor circuit low");
         EN.put("냉각수온 센서 회로 높음","Coolant temperature sensor circuit high");
+        EN.put("넓은 번호판 (3D)","Wide plate (3D)");
         EN.put("네온","Neon");
         EN.put("네온 드라이브","Neon Drive");
         EN.put("네이비","Navy");
@@ -627,7 +628,6 @@ public final class UiText {
         EN.put("번 · "," - ");
         EN.put("번 칸"," cell");
         EN.put("번호판","Plate");
-        EN.put("번호판 글자","Number plate text");
         EN.put("범위","Range");
         EN.put("벨트 프리텐셔너 6회 작동","Seat belt pretensioner activated 6 times");
         EN.put("벨트 프리텐셔너만 작동한 충돌 기록","Crash recorded with only the seat belt pretensioners activated");
@@ -1000,10 +1000,12 @@ public final class UiText {
         EN.put("연하게","Light");
         EN.put("열린 채 고착","Stuck open");
         EN.put("영 수 증","RECEIPT");
+        EN.put("영문·숫자·공백·- 만 · 도트 번호판 폭까지 (숫자 5개 정도)","Letters, digits, space and - only · as wide as the pixel plate (about 5 digits)");
         EN.put("영점·바이어스 이상","Zero point / bias fault");
         EN.put("옆","Side");
         EN.put("옆 세로","Side column");
-        EN.put("예: 12가 3456 · 비우면 빈 번호판","e.g. 12가 3456 · empty = blank plate");
+        EN.put("예: 12가 3456 · 비우면 i30 PD","e.g. your plate as on the car · empty = i30 PD");
+        EN.put("예: I30N · 비우면 i30 PD","e.g. I30N · empty = i30 PD");
         EN.put("예상","PREDICTED");
         EN.put("예상치 못한 작동","Unexpected operation");
         EN.put("예약","Booked");
@@ -1301,6 +1303,7 @@ public final class UiText {
         EN.put("조향각 센서에서 잘못된 데이터 수신","Invalid data received from steering angle sensor");
         EN.put("조향각 센서와 통신 끊김","Lost communication with steering angle sensor");
         EN.put("조회 중…","Reading…");
+        EN.put("좁은 번호판 (도트 차)","Narrow plate (pixel cars)");
         EN.put("종가속","Longitudinal G");
         EN.put("좋습니다","Good");
         EN.put("좌","Left");

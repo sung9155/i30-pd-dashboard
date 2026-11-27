@@ -8,7 +8,7 @@ import android.graphics.Typeface;
 
 /**
  * The 3D car's number plates: the owner's plate text (설정 in the 내 차 screen, "12가 3456") drawn as a white Korean
- * long plate with black letters, one small texture for both plates. Empty text = a blank plate. Only android.graphics:
+ * long plate with black letters, one small texture for both plates. Empty text = "i30 PD". Only android.graphics:
  * host-tested with the preview's Java2D stand-ins.
  */
 public final class CarPlate {
@@ -34,16 +34,16 @@ public final class CarPlate {
         return b.toString().trim();
     }
 
-    /** The plate texture for this text (cleaned): white plate, thin grey edge, black letters as large as fit. */
+    /** The plate texture for this text (cleaned; blank = "i30 PD"): white plate, thin grey edge, black letters as large as fit. */
     public static Bitmap draw(String text) {
         String t = clean(text);
+        if (t.isEmpty()) t = "i30 PD";   // PlatePixels.DEFAULT (shared; this file is host-tested on its own)
         Bitmap bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(bmp);
         c.drawColor(WHITE);
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
         p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(2); p.setColor(EDGE);
         c.drawRoundRect(new RectF(2, 2, W - 2, H - 2), 5, 5, p);
-        if (t.isEmpty()) return bmp;
         p.setStyle(Paint.Style.FILL); p.setColor(INK);
         p.setTypeface(Typeface.DEFAULT_BOLD);
         p.setTextAlign(Paint.Align.CENTER);

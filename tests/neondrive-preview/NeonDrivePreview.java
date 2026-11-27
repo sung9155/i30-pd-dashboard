@@ -177,18 +177,18 @@ public final class NeonDrivePreview {
                 render(sr, st, new File(dir, "time-settings.png"), 800, 480);
             }
         }
-        // The owner's plate (내 차 → 번호판): a Korean plate shows its number; straight, turned, by day on the white car; empty = blank.
-        String[] plates = {"12가 3456", "12가 3456", "12가 3456", ""};
-        String[] plateNames = {"plate-cruise", "plate-steer-left", "plate-day-white", "plate-empty"};
+        // The 좁은 번호판: blank = "i30 PD" (straight and by day on the white car), the owner's text straight and turned.
+        String[] plates = {"I30N", "N-123", "", ""};
+        String[] plateNames = {"plate-I30N", "plate-N-123-steer-left", "plate-default-day-white", "plate-default"};
         for (int i = 0; i < plates.length; i++) {
-            com.veloster.vehicle.PlatePixels.text = plates[i];
+            com.veloster.vehicle.PlatePixels.narrow = plates[i];
             NeonRenderer pr = new NeonRenderer(); pr.setCar(i == 2 ? com.veloster.neondrive.CarSprite.i30(com.veloster.vehicle.CarPaint.body(1)) : SPRITES);
             if (i == 2) pr.setTheme(com.veloster.neondrive.Theme.DAY);
             DriveSignals ps = new DriveSignals(); DriveModel pm = new DriveModel(); Car pc = new Car();
             pc.kmh = 70; pc.pedal = 15; pc.gear = 4; if (i == 1) pc.steerRight = -130;
             render(pr, settle(pm, ps, pc, base + 6_000_000L + i * 10_000L), new File(dir, plateNames[i] + ".png"), 800, 480);
         }
-        com.veloster.vehicle.PlatePixels.text = "";
+        com.veloster.vehicle.PlatePixels.narrow = "";
         // Animated GIF of the demo loop, scaled down to keep the file small.
         NeonRenderer renderer = new NeonRenderer();
         renderer.setCar(SPRITES);

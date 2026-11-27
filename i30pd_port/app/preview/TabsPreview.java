@@ -119,6 +119,8 @@ public final class TabsPreview {
         rec.setPicker(true,true,(1<<2)|(1<<7)|(1<<12)|(1<<20));rec.setModeOptions(true,false);rec.setSound(true,0,0,0,SettingsLayout.SOUND_DEFAULT);
         int[] targets={ClusterPicker.F1+2,ClusterPicker.GAUGES,-1};   // SPORT set to the race page, ECO to the gauges
         for(int k=0;k<cats.length;k++){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k],rec,model,now,false,false);}
+        PlatePixels.wide="12가 3456";PlatePixels.narrow="I30N";   // 차량 색 with both plates set by the owner
+        rec.setSettings(SettingsLayout.PAINT,"auto",-1,targets);save(out,"9_settings_paint_plates",rec,model,now,false,false);PlatePixels.wide="";PlatePixels.narrow="";
         {   // 글꼴: the stock row, the ten fonts inside the app (each name in its own face), one picked; the next page; a refused head unit
             java.io.File fd=new java.io.File(System.getProperty("preview.root",""),"apps/dashboard/assets/fonts");
             int n=1+BundledFonts.FONTS.length;PitRenderer.FontView v=new PitRenderer.FontView();
@@ -196,7 +198,7 @@ public final class TabsPreview {
             FloatPanel.music(null,null);
         }
         com.veloster.i18n.UiText.configure("en","ko");   // English: the longer words must still fit
-        for(int k:new int[]{SettingsLayout.SCREENS,SettingsLayout.FLOAT,SettingsLayout.SOUND}){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k]+"_en",rec,model,now,false,false);}
+        for(int k:new int[]{SettingsLayout.SCREENS,SettingsLayout.FLOAT,SettingsLayout.SOUND,SettingsLayout.PAINT}){rec.setSettings(k,"auto",-1,targets);save(out,"9_settings_"+cats[k]+"_en",rec,model,now,false,false);}
         com.veloster.i18n.UiText.configure("ko","ko");
         rec.setSettings(SettingsLayout.SOUND,"auto",-1,targets);rec.setOrder(null,80);save(out,"9_settings_sound_scrolled",rec,model,now,false,false);   // hints above and below
         rec.setOrder(null,SettingsLayout.maxPaneScroll(SettingsLayout.SOUND));save(out,"9_settings_sound_end",rec,model,now,false,false);   // the last rows
@@ -411,13 +413,13 @@ public final class TabsPreview {
                 ImageIO.write(img,"png",new File(out,pass==0?"9g_cluster_8bit_music.png":pass==1?"9g_cluster_8bit_music_en.png":pass==2?"9g_cluster_8bit_music_scroll.png":pass==3?"9g_cluster_8bit_chase_music.png":"9g_cluster_8bit_chase_music_nocover.png"));}
             ClusterKit.artwork=null;
         }
-        for(String plate:new String[]{"12가 3456","1234"}){   // the owner's plate (내 차 → 번호판) on the Arcade car: a Korean plate shows its number
-            PlatePixels.text=plate;
+        for(String plate:new String[]{"","I30N","N-123"}){   // the 좁은 번호판 on the Arcade car: blank = "i30 PD", two of the owner's
+            PlatePixels.narrow=plate;
             BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
             new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
             new PixelCluster(true).frame(c,model.snapshot(now),model,new DriveStats(),VehicleProfile.PETROL_DCT,now,null);
-            ImageIO.write(img,"png",new File(out,"9g_cluster_8bit_chase_plate_"+plate.replace(" ","").replace("가","ga")+".png"));
-            PlatePixels.text="";}
+            ImageIO.write(img,"png",new File(out,"9g_cluster_8bit_chase_plate_"+(plate.isEmpty()?"default":plate)+".png"));
+            PlatePixels.narrow="";}
         {   // 앞차 피하기 on the Arcade view: parked in P, brake held -> countdown, then playing (wheel right), a crash, game over
             PixelCluster pk=new PixelCluster(true);long t=now;Telemetry.Sample[] q=model.snapshot(now);ClusterKit.artwork=null;
             q[7]=new Telemetry.Sample(0,true,false,true,false,0);q[8]=new Telemetry.Sample(0,false,false,true,false,0);q[Telemetry.GEAR_SELECTOR]=new Telemetry.Sample(0,true,false,true,false,0);

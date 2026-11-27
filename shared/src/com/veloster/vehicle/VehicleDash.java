@@ -367,8 +367,10 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){Theme.select("n");/* Incompatible saved value: open in N. */}
         try{CarPaint.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("car_paint","blue"));}
         catch(ClassCastException e){CarPaint.select("blue");}
-        try{PlatePixels.text=a.getSharedPreferences("pit_vehicle_ui",0).getString("car3d_plate","");}   // 내 차 → 번호판 (car3d.CarPlate.PREF), for the pixel cars
-        catch(ClassCastException e){PlatePixels.text="";}
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);PlatePixels.wide=p.getString(PlatePixels.WIDE_KEY,"");   // 넓은 번호판 (3D), 좁은 번호판 (pixel cars)
+            if(!p.contains(PlatePixels.NARROW_KEY))p.edit().putString(PlatePixels.NARROW_KEY,PlatePixels.migrate(PlatePixels.wide)).apply();   // once: from the one plate saved before the split
+            PlatePixels.narrow=p.getString(PlatePixels.NARROW_KEY,"");}
+        catch(ClassCastException e){PlatePixels.wide="";PlatePixels.narrow="";}
         try{Weather.selectSky(a.getSharedPreferences("pit_vehicle_ui",0).getString("sky_8bit","auto"));}
         catch(ClassCastException e){Weather.selectSky("auto");}
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);modeColor=p.getBoolean("mode_color",false);speedCalOn=p.getBoolean("speed_cal",false);speedCal.restore(p.getFloat("speed_cal_ratio",Float.NaN),p.getInt("speed_cal_samples",0));modeScreen=p.getBoolean("mode_screen",false);
@@ -451,6 +453,31 @@ public final class VehicleDash extends View implements Runnable {
                 ed.commit();}
             c.getSharedPreferences(SettingsBackup.PREFS,0).edit().putBoolean(SettingsBackup.ASKED,true).commit();return true;
         }catch(Exception e){android.util.Log.w("VehicleDash","settings backup not restored: "+e);return false;}
+    }
+    /** 넓은 번호판 (wide: the 3D 내 차 plates, any text up to 10 characters) or 좁은 번호판 (the pixel cars: only what their
+     *  font draws, as wide as their plate): type it, saved in pit_vehicle_ui (so the settings backup keeps it) and shown at
+     *  once; blank = "i30 PD". The 내 차 screen's 번호판 button opens the wide one. after runs on the UI thread once saved. */
+    public static void plateDialog(final android.content.Context c,final boolean wide,final Runnable after){
+        final android.widget.EditText in=new android.widget.EditText(c);
+        in.setSingleLine(true);
+        if(wide)in.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(PlatePixels.WIDE_MAX)});
+        else in.setFilters(new android.text.InputFilter[]{new android.text.InputFilter(){   // drawable characters only, no wider than the plate
+            public CharSequence filter(CharSequence src,int st,int en,android.text.Spanned dst,int ds,int de){
+                String head=dst.subSequence(0,ds).toString(),tail=dst.subSequence(de,dst.length()).toString();StringBuilder b=new StringBuilder();
+                for(int i=st;i<en;i++){char ch=src.charAt(i);if(ch!=' '&&!PlatePixels.drawable(ch))continue;
+                    if(PlatePixels.width(head+b+ch+tail)>PlatePixels.COLS)break;b.append(ch);}
+                return b.length()==en-st?null:b.toString();}}});
+        String cur=wide?PlatePixels.wide:PlatePixels.narrow;
+        in.setText(cur);in.setSelection(in.getText().length());
+        in.setHint(UiText.t(wide?"예: 12가 3456 · 비우면 i30 PD":"예: I30N · 비우면 i30 PD"));
+        android.app.AlertDialog.Builder d=new android.app.AlertDialog.Builder(c).setTitle(UiText.t(wide?"넓은 번호판 (3D)":"좁은 번호판 (도트 차)")).setView(in);
+        if(!wide)d.setMessage(UiText.t("영문·숫자·공백·- 만 · 도트 번호판 폭까지 (숫자 5개 정도)"));
+        d.setPositiveButton(UiText.t("확인"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface di,int w){
+                String t=in.getText().toString().trim().replaceAll("\\s+"," ");if(wide&&t.length()>PlatePixels.WIDE_MAX)t=t.substring(0,PlatePixels.WIDE_MAX).trim();else if(!wide)t=PlatePixels.filter(t);
+                c.getSharedPreferences("pit_vehicle_ui",0).edit().putString(wide?PlatePixels.WIDE_KEY:PlatePixels.NARROW_KEY,t).apply();
+                if(wide)PlatePixels.wide=t;else PlatePixels.narrow=t;
+                if(after!=null)after.run();}})
+            .setNegativeButton(UiText.t("취소"),null).show();
     }
     /** A fresh install (ASKED not set) that finds a backup asks once whether to put it back; with none there is nothing
      *  to ask. Closing the question without an answer leaves it for the next start. */
@@ -905,6 +932,7 @@ public final class VehicleDash extends View implements Runnable {
                 case SettingsLayout.THEME:Theme.select(Theme.IDS[i]);e.putString("theme",Theme.current().id);break;
                 case SettingsLayout.PAINT:
                     if(i==CarPaint.IDS.length){Weather.nextSky();e.putString("sky_8bit",Weather.skyId());break;}   // the sky tile cycles 자동 -> 맑음 -> 흐림
+                    if(i>CarPaint.IDS.length){plateDialog(activity,i==SettingsLayout.PAINT_WIDE_PLATE,new Runnable(){public void run(){invalidate();}});break;}   // the two plate rows
                     CarPaint.select(SettingsLayout.PAINT_ORDER[i]);e.putString("car_paint",CarPaint.id());break;
                 case SettingsLayout.MODE:
                     if(i==SettingsLayout.MODE_COLOR)modeColor=!modeColor;

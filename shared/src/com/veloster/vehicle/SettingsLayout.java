@@ -72,6 +72,8 @@ public final class SettingsLayout {
     public static final String[] CATS={"화면","주행 모드","플로팅","테마","차량 색","언어","글꼴","RPM","엔진 사운드","효과음","진단","완료"};
     /** 차량 색 tiles by colour family, four to a family (two rows of the 2-column grid): white, silver, grey, black | the blues |
      *  red, orange, copper, brown | khaki, purple. Values are CarPaint indexes (its order stays: saved ids and the Arcade cars use it). */
+    /** 차량 색 tiles after the paints: the 8-bit sky, 넓은 번호판 (3D), 좁은 번호판 (pixel cars). */
+    public static final int PAINT_SKY=CarPaint.IDS.length,PAINT_WIDE_PLATE=PAINT_SKY+1,PAINT_NARROW_PLATE=PAINT_SKY+2;
     public static final int[] PAINT_ORDER={1,10,4,3, 0,9,7,5, 2,8,11,6, 13,12};
     /** Display names for Theme.IDS, in that order. */
     public static final String[] THEME_NAMES={"N","레드","와인","코퍼","앰버","샴페인","네이비","람보","그린","세이지","에메랄드","틸","네온","아이스","그라파이트","BMW","나이트","퍼플","마젠타","로즈","모노"};
@@ -90,7 +92,7 @@ public final class SettingsLayout {
 
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
-        switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
+        switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return PAINT_NARROW_PLATE+1;   // after the paints: the 8-bit sky (Weather), then the two plates
             case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_BOOST+1:1;case FX:return FX_VOL+1;case LANG:return LANGS.length;case DIAG:return 7;case FLOAT:return FLOAT_CELL+4;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }

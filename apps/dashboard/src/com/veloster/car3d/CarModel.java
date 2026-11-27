@@ -13,7 +13,8 @@ import java.nio.ByteOrder;
  */
 public final class CarModel {
     public static final int VERSION = 2, STRIDE = 28;
-    public static final int BODY = 0, LAMP = 1, GLASS = 2;
+    /** PLATE: the number plates, UV 0..1 across each plate for the app's plate picture (CarPlate). */
+    public static final int BODY = 0, LAMP = 1, GLASS = 2, PLATE = 3;
     public static final int FIXED = 0, WHEEL = 1, CALLIPER = 2;
     public static final int FL = 0, FR = 1, RL = 2, RR = 3;
 
@@ -62,7 +63,7 @@ public final class CarModel {
                 c.program = in.get() & 255; c.motion = in.get() & 255; c.corner = in.get() & 255; in.get();
                 c.px = in.getFloat(); c.py = in.getFloat(); c.pz = in.getFloat();
                 c.vertices = in.getInt(); c.indices = in.getInt();
-                if (c.program > GLASS || c.motion > CALLIPER || c.corner > RR || c.vertices <= 0 || c.vertices > 65535
+                if (c.program > PLATE || c.motion > CALLIPER || c.corner > RR || c.vertices <= 0 || c.vertices > 65535
                     || c.indices <= 0 || c.indices % 3 != 0) throw new IOException("chunk " + i);
                 c.vertexData = slice(data, in, c.vertices * STRIDE);
                 c.indexData = slice(data, in, c.indices * 2);

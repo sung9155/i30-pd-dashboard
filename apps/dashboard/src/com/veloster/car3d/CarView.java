@@ -72,6 +72,7 @@ final class CarView extends FrameLayout implements Runnable {
         renderer.setScene(scene);
         loadBackdrop(context.getApplicationContext(), scene);
         renderer.setCamera(yaw, pitch, dist);
+        renderer.setPlate(CarPlate.draw(plateText()));
         gl = new GLSurfaceView(context);
         gl.setEGLContextClientVersion(2);
         gl.setEGLConfigChooser(new CarRenderer.ConfigChooser());
@@ -86,6 +87,28 @@ final class CarView extends FrameLayout implements Runnable {
     }
 
     void setExit(Runnable exit) { onExit = exit; }
+
+    /** The owner's plate text (pit_vehicle_ui, kept by the settings backup with every other preference). */
+    private String plateText() { return getContext().getSharedPreferences("pit_vehicle_ui", 0).getString(CarPlate.PREF, ""); }
+
+    /** 번호판: type the plate text (empty = a blank plate); both plates of the car show it. */
+    private void plateDialog() {
+        final android.widget.EditText in = new android.widget.EditText(getContext());
+        in.setSingleLine(true);
+        in.setFilters(new android.text.InputFilter[] {new android.text.InputFilter.LengthFilter(CarPlate.MAX)});
+        in.setText(plateText()); in.setSelection(in.getText().length());
+        in.setHint(UiText.t("예: 12가 3456 · 비우면 빈 번호판"));
+        new android.app.AlertDialog.Builder(getContext()).setTitle(UiText.t("번호판 글자")).setView(in)
+            .setPositiveButton(UiText.t("확인"), new android.content.DialogInterface.OnClickListener() {
+                public void onClick(android.content.DialogInterface d, int w) {
+                    String t = CarPlate.clean(in.getText().toString());
+                    getContext().getSharedPreferences("pit_vehicle_ui", 0).edit().putString(CarPlate.PREF, t).apply();
+                    renderer.setPlate(CarPlate.draw(t));
+                    gl.requestRender();
+                }
+            })
+            .setNegativeButton(UiText.t("취소"), null).show();
+    }
 
     /** The dashboard's car colour; Performance Blue (0) keeps the model's own blue. True when it changed. */
     private boolean applyPaint() {
@@ -215,6 +238,8 @@ final class CarView extends FrameLayout implements Runnable {
     private static final float CHIP_Y = 420, CHIP_H = 46, CHIP_GAP = 8, CHIP_L = 12;
     private static final float BACK_L = 12, BACK_T = 10, BACK_W = 48, BACK_H = 40;
     private static final float BG_X = 458, BG_W = 56, BGL_L = 400, BGL_R = 570;
+    /** 번호판 button, under 배경. */
+    private static final float PLATE_T = 56;
     private static final float PAL_T = 58, PAL_ROW = 44;
     private static float paletteRow(int i) { return PAL_T + 6 + i * PAL_ROW; }
     private static final float VIEW_L = 520, VIEW_T = 10, VIEW_W = 50, VIEW_H = 40, SWATCH_X = 762, SWATCH_Y = 30, SWATCH_R = 18;
@@ -247,6 +272,8 @@ final class CarView extends FrameLayout implements Runnable {
             // backdrop
             panel(c, BG_X, VIEW_T, BG_W, VIEW_H, sceneOpen);
             text(c, UiText.t("배경"), BG_X + BG_W / 2, VIEW_T + 26, 15, WHITE, Paint.Align.CENTER);
+            panel(c, BG_X, PLATE_T, BG_W, VIEW_H, false);
+            fit(c, UiText.t("번호판"), BG_X + BG_W / 2, PLATE_T + 26, BG_W - 8, WHITE);
             // view presets
             for (int i = 0; i < VIEWS.length; i++) {
                 float x = VIEW_L + i * (VIEW_W + 6);
@@ -408,6 +435,7 @@ final class CarView extends FrameLayout implements Runnable {
 
     private boolean onControl(float x, float y) {
         if (sceneOpen && x >= BGL_L && x <= BGL_R && y >= PAL_T && y <= PAL_T + 12 + CarScene.COUNT * PAL_ROW) return true;
+        if (x >= BG_X - 4 && x <= BG_X + BG_W + 4 && y >= PLATE_T - 4 && y <= PLATE_T + VIEW_H + 4) return true;
         return chipsShown && y >= CHIP_Y - 4 || (y <= VIEW_T + VIEW_H + 4 && (x <= BACK_L + BACK_W + 4 || x >= BG_X - 4));
     }
 
@@ -428,6 +456,7 @@ final class CarView extends FrameLayout implements Runnable {
             return;
         }
         if (x >= BG_X && x <= BG_X + BG_W && y >= VIEW_T && y <= VIEW_T + VIEW_H) { sceneOpen = true; return; }
+        if (x >= BG_X && x <= BG_X + BG_W && y >= PLATE_T && y <= PLATE_T + VIEW_H) { plateDialog(); return; }
         if (x >= BACK_L && x <= BACK_L + BACK_W && y >= BACK_T && y <= BACK_T + BACK_H) { if (onExit != null) onExit.run(); return; }
         for (int i = 0; i < VIEWS.length; i++) {
             float vx = VIEW_L + i * (VIEW_W + 6);

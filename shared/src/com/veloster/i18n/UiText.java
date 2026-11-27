@@ -613,6 +613,8 @@ public final class UiText {
         EN.put("버튼은 손을 뗄 때 바뀝니다 · 누른 채 끌면 그대로","A button changes when you lift your finger · drag away to cancel");
         EN.put("번 · "," - ");
         EN.put("번 칸"," cell");
+        EN.put("번호판","Plate");
+        EN.put("번호판 글자","Number plate text");
         EN.put("범위","Range");
         EN.put("벨트 프리텐셔너 6회 작동","Seat belt pretensioner activated 6 times");
         EN.put("벨트 프리텐셔너만 작동한 충돌 기록","Crash recorded with only the seat belt pretensioners activated");
@@ -990,6 +992,7 @@ public final class UiText {
         EN.put("영점·바이어스 이상","Zero point / bias fault");
         EN.put("옆","Side");
         EN.put("옆 세로","Side column");
+        EN.put("예: 12가 3456 · 비우면 빈 번호판","e.g. 12가 3456 · empty = blank plate");
         EN.put("예상","PREDICTED");
         EN.put("예상치 못한 작동","Unexpected operation");
         EN.put("예약","Booked");

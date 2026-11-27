@@ -10,28 +10,32 @@ is i30-specific (the Veloster N converter it replaces read a different model).
 
 What the conversion does, for a Telechips tcc893x (GLES 2.0) at 800x480:
   * metres (the glTF already is), origin at the ground under the middle of the car, +Z forward, +Y up, +X the car's left
-  * the model is light (about 31k triangles), so nothing is decimated (only the tail lamp's lens and picture decal are
-    cut finer, to about 41k, so its outer end can light apart); it drops the light-beam cones and flare sprites, and
-    both number plates (a game logo) are drawn blank
+  * the model is light (about 31k triangles), so nothing is decimated (only the tail lamp lens is cut finer, to about
+    39k, so its clear patch and its red light apart); it drops the light-beam cones, the flare sprites and the decal
+    with the tail lamp's picture (drawn solid it hid the lens and its clear parts), and both number plates (their
+    picture is a game logo) become plate parts the app draws (blank, or the owner's text); the front plate's edges and
+    the grille behind it are painted grille black
   * bakes the body / tyre / rim colours into vertex colours; Material.001's clearcoat map marks the body paint (CarPaint)
   * the chrome / detail parts (grille, badges, lamp units) and the glow decals keep their textures: one lamp atlas,
     Material.002 on the left half, Material.006 (glows) on the right; the glow map is the same picture
   * the four wheels (rim + tyre: spin + steer) and the callipers (steer only) are separate nodes in the glTF
   * lamp groups: the glow decals by node (brakes = stop, reverse, rear position guides = tail, the bar low in the front
     bumper = turn signal); the lamp units by where they sit and the colour under them (red at the back = tail, the
-    outer end of the tail lamp = turn signal, drawn as a clear lens, the headlamp's round elements = headlamp). Turn
-    signals as on the owner's i30 PD. The model has no amber lamp: the glow map is recoloured amber under the turn
-    signals (red under the high-mount stop lamp's orange picture)
+    clear patch at the tail lamp's outer end = turn signal, the headlamp's round elements = headlamp). Turn signals as
+    on the owner's i30 PD. The model has no amber lamp: the glow map is recoloured amber on the turn signals' white /
+    clear texels only (red under the high-mount stop lamp's orange picture); the tail lamp's red glows by its redness,
+    its clear parts stay unlit
   * run it again on the same zip and the output is byte for byte the same
 
 Needs numpy and Pillow (development only; the app just reads the output).
 
 File format (little endian), assets/car3d/i30n.bin:
   "VN3D" u32 version=2, u32 parts
-  per part: u8 program (0 body, 1 lamp, 2 glass), u8 motion (0 fixed, 1 wheel, 2 calliper), u8 corner (0 FL, 1 FR,
+  per part: u8 program (0 body, 1 lamp, 2 glass, 3 number plate), u8 motion (0 fixed, 1 wheel, 2 calliper), u8 corner (0 FL, 1 FR,
             2 RL, 3 RR), u8 0, f32 pivot x y z, u32 vertices, u32 indices, vertices*28 bytes, indices*u16 (padded to 4)
   vertex (28 bytes): f32 x y z, s16 nx ny nz (/32767), u16 lamp group (8 = body paint), u8 r g b a (body: a = gloss, glass: a = opacity),
           u16 u v (/65535)
+  number plates: u v 0..1 across the plate as seen from outside (u to the right, v down), for the app's plate picture
   then u32 spots, per spot: u8 lamp group, 3 x u8 0, f32 x y z, f32 normal x y z, f32 radius (glow halos)
 """
 import argparse
@@ -44,7 +48,7 @@ from PIL import Image
 
 VERSION = 2
 OUT_NAME = 'i30n.bin'
-BODY, LAMP, GLASS = 0, 1, 2
+BODY, LAMP, GLASS, PLATE = 0, 1, 2, 3
 FIXED, WHEEL, CALLIPER = 0, 1, 2
 FL, FR, RL, RR = 0, 1, 2, 3
 # Lamp groups (CarScene.java uses the same numbers).
@@ -58,16 +62,15 @@ GLOSS = {'paint': 1.0, 'Material.001': 0.15, 'Material.002': 0.6, 'Material.003'
 CALLIPER_GLOSS = 0.5
 WINDOW, LENS = (0.02, 0.025, 0.03), (0.9, 0.92, 0.95)
 OPACITY_WINDOW, OPACITY_LENS = 0.62, 0.12
-PLATE = (0.86, 0.87, 0.86)   # blank number plates
+GRILLE = (0.05, 0.05, 0.05)   # the grille's black, under the front plate and on the plate's edges
 # Glow colour where the lamp's own picture has the wrong one: the turn signals (chrome / red pictures) glow amber, the
 # high-mount stop lamp (an orange triangle picture) red.
 AMBER, RED = (1.0, 0.55, 0.08), (1.0, 0.08, 0.05)
-# The outer end of the tail lamp, |x| beyond this: the rear turn signal. On screen the lamp is the glow decal with the
-# lamp's picture (red there); the owner's i30 PD has a white section at that end, so the picture is drawn clear there.
-TURN_REAR_X = 0.705
-CLEAR = 'clear'   # glow-map kind: the tail lamp picture's outer end
-# The front plate inside the grille picture of Material.002 (a game logo): its box, as fractions of the atlas.
-FRONT_PLATE = (164 / 1024, 818 / 1024, 580 / 1024, 910 / 1024)
+# The front plate: a flat face in front of the grille whose picture (a game logo) sits in Material.002 at this UV box;
+# its edges are mapped to a sliver inside the box. The face becomes a number plate part; the box is painted grille black
+# so the edges (and the grille behind the plate) show no light outline.
+FRONT_PLATE_FACE = (0.169, 0.803, 0.568, 0.886)
+FRONT_PLATE = (0.165, 0.799, 0.572, 0.890)
 
 CT = {5120: np.int8, 5121: np.uint8, 5122: np.int16, 5123: np.uint16, 5125: np.uint32, 5126: np.float32}
 NC = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4, 'MAT4': 16}
@@ -162,7 +165,11 @@ def corner_of(c):
 
 
 def dropped(p):
-    """Triangles to leave out: the light-beam cones and the lens-flare sprites in front of the headlamps."""
+    """Triangles to leave out: the light-beam cones and the lens-flare sprites in front of the headlamps, and the decal
+    with the whole tail lamp's picture (in the game it is added on as light; drawn solid it hides the lens behind it,
+    which has the lamp's own picture with its clear parts)."""
+    if p['mat'] == 'Material.006' and 'position_back' in p['node']:
+        return lamp_picture(p)
     if p['mat'] != 'Material.006' or 'front_and_back' not in p['node']:
         return np.zeros(len(p['I']), bool)
     c = part_centres(p)
@@ -193,15 +200,53 @@ def side_turn(c):
     return np.where(c[:, 0] > 0, TURN_L, TURN_R)
 
 
-# The white patch at the outer end of the tail lamp picture (Material.002 UV box): the rear turn signal. Only its white
-# pixels glow amber; the red inside the box stays dark (it is not part of the tail lamp's glow either).
+# The clear patch at the outer end of the tail lamp picture (Material.002 UV box): the rear turn signal (the owner's
+# i30 PD). Only its white texels are the turn signal; the red around them stays tail / brake lamp.
 TURN_PATCH = (0.38, 0.545, 0.50, 0.64)
 
 
+def white_px(img):
+    """Texels that look white / clear (not red, not dark)."""
+    return (img.min(-1) > 0.5 * img.max(-1)) & (img.max(-1) > 0.45)
+
+
+def atlas_half(img):
+    """A picture as it lands in one half of the lamp atlas (ATLAS x ATLAS, RGB 0..1)."""
+    im = Image.fromarray((np.clip(img[..., :3], 0, 1) * 255).astype(np.uint8)).resize((ATLAS, ATLAS), Image.LANCZOS)
+    return np.asarray(im).astype(np.float64) / 255
+
+
+def white_share(img, uv):
+    """Per triangle (uv: n x 3 x 2): the share of its picture that is white (7 points across it)."""
+    w = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1], [4, 1, 1], [1, 4, 1], [1, 1, 4]], float)
+    return white_px(sample(img, np.einsum('kj,njd->nkd', w / w.sum(1, keepdims=True), uv))).mean(1)
+
+
 def tail_lens(p):
-    """Per triangle: part of the tail lamp lens (one piece per side, low on the hatch's corners)."""
-    c = part_centres(p)
-    return (c[:, 2] < -1.55) & (np.abs(c[:, 0]) > 0.5) & (c[:, 1] > 0.75) & (c[:, 1] < 1.2)
+    """Per triangle: part of the tail lamp lens (one piece per side on the hatch's corners, drawn from the tail lamp
+    picture of Material.002; the HYUNDAI letters next to it are not)."""
+    c = part_centres(p); uv = p['UV'][p['I']].mean(1)
+    return (c[:, 2] < -1.55) & (np.abs(c[:, 0]) > 0.5) & (c[:, 1] > 0.75) & (c[:, 1] < 1.2) & (uv[:, 0] < 0.5) & (uv[:, 1] > 0.47) & (uv[:, 1] < 0.66)
+
+
+def plate_face(p):
+    """Per triangle: a number plate: the rear plate (Material.005) or the front plate's face in front of the grille."""
+    if p['mat'] == 'Material.005':
+        return np.ones(len(p['I']), bool)
+    if p['mat'] != 'Material.002' or 'Chrome' not in p['node']:
+        return np.zeros(len(p['I']), bool)
+    t = p['P'][p['I']]; uvc = p['UV'][p['I']].mean(1)
+    n = np.cross(t[:, 1] - t[:, 0], t[:, 2] - t[:, 0]); n /= np.linalg.norm(n, axis=1, keepdims=True) + 1e-12
+    u0, v0, u1, v1 = FRONT_PLATE_FACE
+    return (uvc[:, 0] > u0) & (uvc[:, 0] < u1) & (uvc[:, 1] > v0) & (uvc[:, 1] < v1) & (np.abs(n[:, 2]) > 0.9)
+
+
+def plate_uv(tri):
+    """UVs across a plate as seen from outside it: u to the viewer's right, v down, both 0..1 over the plate."""
+    out = np.array([0, 0, 1.0 if tri[..., 2].mean() > 0 else -1.0]); up = np.array([0, 1.0, 0])
+    right = np.cross(-out, up)
+    s = tri @ right; t = tri @ up
+    return np.stack([(s - s.min()) / np.ptp(s), (t.max() - t) / np.ptp(t)], -1)
 
 
 def split(p, mask, times=2):
@@ -229,23 +274,7 @@ def decal_groups(p):
         return np.full(n, STOP)
     if 'reverse' in node:
         return np.full(n, REVERSE)
-    out = np.where(c[:, 2] > 0, side_turn(c), TAIL)
-    picture = lamp_picture(p)
-    outer = same_picture(p, picture & (np.abs(p['P'][p['I']].mean(1)[:, 0]) > TURN_REAR_X), picture)
-    out[outer] = side_turn(c)[outer]
-    return out
-
-
-def same_picture(p, sel, pool):
-    """sel grown by the pool's triangles drawn over the same part of the picture (the selection's edge, the other side,
-    a second layer), so no other lamp shares the recoloured pixels."""
-    px = np.clip((p['UV'][p['I']].mean(1) * ATLAS).astype(int), 0, ATLAS - 1)
-    while sel.any():
-        more = sel | (pool & tint_mask(p['UV'][p['I'][sel]], (ATLAS, ATLAS), grow=False)[px[:, 1], px[:, 0]])
-        if (more == sel).all():
-            break
-        sel = more
-    return sel
+    return np.where(c[:, 2] > 0, side_turn(c), TAIL)
 
 
 def lamp_picture(p):
@@ -267,9 +296,10 @@ def unit_groups(p):
     uvc = p['UV'][p['I']].mean(1)
     u0, v0, u1, v1 = TURN_PATCH
     lens = tail_lens(p)
-    out[lens] = TAIL   # the whole lens lights as the tail lamp, but for its white patch
-    white = lens & (uvc[:, 0] > u0) & (uvc[:, 0] < u1) & (uvc[:, 1] > v0) & (uvc[:, 1] < v1)
-    white = same_picture(p, white, lens)
+    out[lens] = TAIL   # the whole lens lights as the tail lamp, but for its clear patch
+    inbox = (uvc[:, 0] > u0) & (uvc[:, 0] < u1) & (uvc[:, 1] > v0) & (uvc[:, 1] < v1)
+    img = atlas_half(p['base'])   # judged on the atlas's own texels, as the glow map is recoloured
+    white = lens & inbox & ((white_share(img, p['UV'][p['I']]) >= 0.5) | white_px(sample(img, uvc)))   # mostly clear, or clear in its middle
     out[white] = side_turn(c)[white]
     out[(c[:, 2] > 1.75) & (x > 0.5) & (c[:, 1] > 0.6) & (c[:, 1] < 0.85) & (e.max(1) > 0.3)] = HEAD
     return out
@@ -307,13 +337,20 @@ def build(prims):
 
     stats = {}
     spots = {}
-    tints = []   # (atlas UV triangles, kind): glow map areas to recolour (AMBER, CLEAR, RED; None = keeps its colour)
+    tints = []   # (atlas UV triangles, colour): glow map areas to recolour (None = keeps its colour)
     for p in prims:
         I = p['I'][keep[id(p)]]; P = p['P']; N = p['N']; node = p['node']; mat = p['mat']
         tri = P[I]; nrm = N[I]; n = len(I)
         if not n:
             continue
         wheel = 'Wheel' in node; calliper = 'caliper' in node
+        plate = plate_face(dict(p, I=I))
+        if plate.any():   # number plates: the app draws them (blank, or the owner's plate text)
+            part(PLATE).add(tri[plate], nrm[plate], np.full(int(plate.sum()), NONE), np.ones((int(plate.sum()), 3, 4)), plate_uv(tri[plate]))
+            stats['plate'] = stats.get('plate', 0) + int(plate.sum())
+            I = I[~plate]; tri = P[I]; nrm = N[I]; n = len(I)
+            if not n:
+                continue
         if p['blend']:   # glass: windows and the lamp lenses
             lens = 'Lights' in node
             col = np.tile(list(LENS if lens else WINDOW) + [OPACITY_LENS if lens else OPACITY_WINDOW], (n, 3, 1))
@@ -322,25 +359,23 @@ def build(prims):
         elif mat in ('Material.002', 'Material.006') and not wheel and not calliper:
             # textured in the lamp atlas: Material.002 on the left half, the glow decals on the right
             q = dict(p, I=I)
-            q = split(q, tail_lens(q) if mat == 'Material.002' else lamp_picture(q))
-            I = q['I']; P = q['P']; N = q['N']; tri = P[I]; nrm = N[I]; n = len(I)
+            if mat == 'Material.002':   # the tail lamp lens cut finer: its clear patch and its red light apart
+                q = split(q, tail_lens(q))
+                I = q['I']; P = q['P']; N = q['N']; tri = P[I]; nrm = N[I]; n = len(I)
             groups = decal_groups(q) if mat == 'Material.006' else unit_groups(q)
             uv = q['UV'][I] * [0.5, 1.0] + ([0.5, 0.0] if mat == 'Material.006' else [0.0, 0.0])
             col = np.ones((n, 3, 4))
             part(LAMP).add(tri, nrm, groups, col, uv)
             turn = (groups == TURN_L) | (groups == TURN_R)
             high = (groups == STOP) & (np.abs(tri.mean(1)[:, 0]) < 0.2) & (mat == 'Material.006')
-            picture = turn & (mat == 'Material.006') & (tri.mean(1)[:, 2] < 0)
-            tints += [(uv[turn & ~picture], AMBER), (uv[picture], CLEAR), (uv[high], RED)]
+            tints += [(uv[turn], AMBER), (uv[high], RED)]
             tints.append((uv[(groups != NONE) & ~turn & ~high], None))   # lamps that keep their colour (overlap check)
             collect_spots(q, groups, spots)
             key = 'lamp ' + mat
         else:
             q = dict(p, I=I); uv = corner_uv(q)
             col = np.tile(p['factor'], (n, 3, 1))
-            if mat == 'Material.005':   # the number plate's picture is a game logo: blank plate
-                col[..., :3] = PLATE
-            elif p['base'] is not None:
+            if p['base'] is not None:
                 col = col * sample(p['base'], uv)
             col[..., 3] = CALLIPER_GLOSS if calliper else GLOSS.get(mat, 0.15)
             group = np.full(n, NONE)
@@ -446,28 +481,31 @@ def write_lamp_textures(prims, tints, out):
     glows = next(p['base'] for p in prims if p['mat'] == 'Material.006')[..., :3]
     h, w = unit.shape[:2]
     x0, y0, x1, y1 = (int(round(f * n)) for f, n in zip(FRONT_PLATE, (w, h, w, h)))
-    unit[y0:y1, x0:x1] = PLATE
-    half = lambda a: Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)).resize((ATLAS, ATLAS), Image.LANCZOS)
+    unit[y0:y1, x0:x1] = GRILLE
+    half = lambda a: Image.fromarray((atlas_half(a) * 255).round().astype(np.uint8))
     base = Image.new('RGB', (ATLAS * 2, ATLAS)); glow = Image.new('RGB', (ATLAS * 2, ATLAS))
     base.paste(half(unit), (0, 0)); base.paste(half(glows * 0.55), (ATLAS, 0))   # an unlit light guide: its colour, dimmed
     glow.paste(half(unit), (0, 0)); glow.paste(half(glows), (ATLAS, 0))
     g = np.asarray(glow).astype(np.float64) / 255; b = np.asarray(base).astype(np.float64) / 255
     keep = np.vstack([t for t, colour in tints if colour is None])
-    for colour in (AMBER, CLEAR, RED):
+    kc = keep.mean(1); ky = np.clip((kc[:, 1] * ATLAS).astype(int), 0, ATLAS - 1); kx = np.clip((kc[:, 0] * ATLAS * 2).astype(int), 0, ATLAS * 2 - 1)
+    for colour in (AMBER, RED):
         uvs = np.vstack([t for t, c in tints if c == colour])
-        m = tint_mask(uvs, glow.size)
-        hit = tint_mask(uvs, glow.size, grow=False)[np.clip((keep.mean(1)[:, 1] * ATLAS).astype(int), 0, ATLAS - 1), np.clip((keep.mean(1)[:, 0] * ATLAS * 2).astype(int), 0, ATLAS * 2 - 1)]
+        m = tint_mask(uvs, glow.size); exact = tint_mask(uvs, glow.size, grow=False)
+        if colour == AMBER:   # only the white / clear texels turn amber: a red lens part keeps its red glow
+            m &= white_px(g); exact &= white_px(g)
+        hit = exact[ky, kx]
         if hit.any():
-            raise SystemExit(f'{hit.sum()} other lamp triangles sit in a recoloured area ({colour}) of the glow map')
-        # amber from the white of the picture only (a red lens part stays dark); red from its brightest channel
-        if colour == AMBER:   # amber from the white of the picture only (a red lens part stays dark)
-            g[m] = g[m].min(1, keepdims=True) * AMBER
-        elif colour == CLEAR:   # the tail lamp picture's outer end: amber when lit, a clear lens when off
-            g[m] = g[m].max(1, keepdims=True) * AMBER
-            b[m] = 0.45 + 0.4 * b[m].max(1, keepdims=True) * np.ones(3)
+            raise SystemExit(f'{hit.sum()} other lamp triangles sit in a recoloured area {colour} of the glow map')
+        if colour == AMBER:
+            g[m] = g[m].min(1, keepdims=True) * AMBER; amber = m
         else:   # the high-mount stop lamp: red from its brightest channel, dark red when off (not the picture's orange)
             g[m] = g[m].max(1, keepdims=True) * RED
             b[m] = b[m].max(1, keepdims=True) * RED
+    # the tail lamp picture's other clear parts do not glow with the tail / stop lamp: only its red does
+    lens = np.zeros(g.shape[:2], bool); lens[int(0.47 * ATLAS):int(0.66 * ATLAS), :int(0.5 * ATLAS)] = True
+    sel = lens & ~amber; r = g[sel]
+    g[sel] = r * np.clip((r[:, :1] - r[:, 1:].max(1, keepdims=True)) / (r[:, :1] + 1e-6) * 1.5, 0, 1)   # by its redness
     glow = Image.fromarray((g * 255).astype(np.uint8)); base = Image.fromarray((b * 255).astype(np.uint8))
     base.save(out / 'lamp_base.png', optimize=True)
     glow.save(out / 'lamp_glow.png', optimize=True)

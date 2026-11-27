@@ -1609,5 +1609,8 @@
   "야간 도로": "Night road",
   "차량 신호 없음 · 화면을 누르면 시험 버튼": "No car signal · tap for test buttons",
   "미리보기 · 화면을 누르면 시험 버튼": "Preview · tap for test buttons",
-  "3D 모델 \"hyundai i30 n\" · amogusstrikesback2 · CC BY 4.0": "3D model \"hyundai i30 n\" · amogusstrikesback2 · CC BY 4.0"
+  "3D 모델 \"hyundai i30 n\" · amogusstrikesback2 · CC BY 4.0": "3D model \"hyundai i30 n\" · amogusstrikesback2 · CC BY 4.0",
+  "번호판": "Plate",
+  "번호판 글자": "Number plate text",
+  "예: 12가 3456 · 비우면 빈 번호판": "e.g. 12가 3456 · empty = blank plate"
 }

@@ -11,7 +11,7 @@ public class Paint {
     int color=0xff000000;float width,size=12;Style style=Style.FILL;Cap cap=Cap.BUTT;Align align=Align.LEFT;
     Shader shader;boolean bold,mono;float scaleX=1,skewX=0;
     int flags;
-    public static final int FILTER_BITMAP_FLAG=2;
+    public static final int ANTI_ALIAS_FLAG=1,FILTER_BITMAP_FLAG=2;
     public Paint(int flags){this.flags=flags;}
     public void setColor(int c){color=c;}
     public void setStyle(Style s){style=s;}

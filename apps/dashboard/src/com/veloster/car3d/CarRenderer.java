@@ -39,7 +39,10 @@ final class CarRenderer implements GLSurfaceView.Renderer {
     private CarModel model;
     private Bitmap lampBase, lampGlow;
     private int[] vbo, ibo;
-    private int texBase, texGlow;
+    private int texBase, texGlow, texPlate;
+    /** The number plate picture (CarPlate), uploaded on the GL thread. */
+    private Bitmap plateBmp;
+    private boolean plateUploaded;
     private boolean uploaded;
     private Program body, lamp, glass, floor, halo, rim, sky;
     private FloatBuffer quad;
@@ -56,6 +59,7 @@ final class CarRenderer implements GLSurfaceView.Renderer {
     // ---- state from the UI thread -----------------------------------------------------------------------------
     void setModel(CarModel m, Bitmap base, Bitmap glowMap) { synchronized (lock) { model = m; lampBase = base; lampGlow = glowMap; uploaded = false; } }
     void setState(CarState s) { synchronized (lock) { System.arraycopy(s.glow, 0, glow, 0, glow.length); wheelDeg = s.wheelDeg; rollDeg = s.rollDeg; blur = s.blur; bodyPitch = s.pitchDeg; bodyRoll = s.rollBodyDeg; distance = s.distanceM; } }
+    void setPlate(Bitmap b) { synchronized (lock) { plateBmp = b; plateUploaded = false; } }
     void setScene(int s) { synchronized (lock) { scene = CarScene.valid(s); } }
     void setBackdrop(Bitmap sharp, Bitmap blurred) { synchronized (lock) { skyBmp = sharp; envBmp = blurred; skyUploaded = false; } }
     void setCamera(float yaw, float pitch, float dist) { synchronized (lock) { camera.yaw = yaw; camera.pitch = pitch; camera.dist = dist; } }
@@ -70,7 +74,7 @@ final class CarRenderer implements GLSurfaceView.Renderer {
 
     // ---- GL thread -----------------------------------------------------------------------------------------------
     @Override public void onSurfaceCreated(GL10 unused, EGLConfig config) {
-        synchronized (lock) { uploaded = false; skyUploaded = false; texSky = texEnv = 0; }   // a new context: every buffer and texture is gone
+        synchronized (lock) { uploaded = false; skyUploaded = false; plateUploaded = false; texSky = texEnv = texPlate = 0; }   // a new context: every buffer and texture is gone
         body = new Program(BODY_VS, BODY_FS); lamp = new Program(LAMP_VS, LAMP_FS); glass = new Program(BODY_VS, GLASS_FS);
         floor = new Program(FLOOR_VS, FLOOR_FS); halo = new Program(HALO_VS, HALO_FS); rim = new Program(RIM_VS, RIM_FS); sky = new Program(SKY_VS, SKY_FS);
         quad = ByteBuffer.allocateDirect(8 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
@@ -93,6 +97,10 @@ final class CarRenderer implements GLSurfaceView.Renderer {
             System.arraycopy(glow, 0, g, 0, g.length); System.arraycopy(paint, 0, pc, 0, 3);
             m = model;
             if (m != null && !uploaded) { upload(m, lampBase, lampGlow); uploaded = true; }
+            if (plateBmp != null && !plateUploaded) {
+                if (texPlate != 0) GLES20.glDeleteTextures(1, new int[] {texPlate}, 0);
+                texPlate = texture(plateBmp); plateUploaded = true;
+            }
             if (skyBmp != null && !skyUploaded) {
                 if (texSky != 0) GLES20.glDeleteTextures(2, new int[] {texSky, texEnv}, 0);
                 texSky = panorama(skyBmp); texEnv = panorama(envBmp); skyUploaded = true;
@@ -136,6 +144,12 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         GLES20.glUniform1i(lamp.u("uGlowTex"), 1);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         for (int i = 0; i < m.chunks.length; i++) if (m.chunks[i].program == CarModel.LAMP) drawChunk(lamp, m, i, wd, roll);
+        if (texPlate != 0) {   // number plates: the lamp shader over the plate picture (group 0: never glows)
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texPlate);
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE1); GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texPlate);
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+            for (int i = 0; i < m.chunks.length; i++) if (m.chunks[i].program == CarModel.PLATE) drawChunk(lamp, m, i, wd, roll);
+        }
         // Glass: premultiplied blending, no depth writes.
         GLES20.glEnable(GLES20.GL_BLEND);
         if (bl > 0.01f) drawBlur(m, wd, bl);

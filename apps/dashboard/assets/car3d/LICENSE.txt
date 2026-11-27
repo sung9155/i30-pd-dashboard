@@ -2,11 +2,11 @@ i30n.bin, lamp_base.png and lamp_glow.png in this folder are an adaptation of a 
 
 This work is based on "hyundai i30 n" (https://sketchfab.com/3d-models/hyundai-i30-n-90c3bd24390b46299cf01c16d5e8091f) by amogusstrikesback2 (https://sketchfab.com/amogusstrikesback2) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
 
-Changes: converted by scripts/car3d_model.py: light-beam cones and lens-flare sprites removed, number plates blanked,
-body / tyre / rim textures baked into vertex colours, body paint marked so the app can recolour it, wheels and callipers
-split for steering, lamp parts sorted into lamp groups (tail lamp cut finer, its outer end drawn as a clear lens),
-turn-signal and high-mount stop lamp glow recoloured. Only the lamp / chrome texture atlas is kept as images
-(lamp_base.png, lamp_glow.png).
+Changes: converted by scripts/car3d_model.py: light-beam cones, lens-flare sprites and the tail lamp picture decal
+removed, number plates made plain parts the app draws (front plate edges painted grille black), body / tyre / rim
+textures baked into vertex colours, body paint marked so the app can recolour it, wheels and callipers split for
+steering, lamp parts sorted into lamp groups (tail lamp lens cut finer), turn-signal, tail and high-mount stop lamp
+glow recoloured. Only the lamp / chrome texture atlas is kept as images (lamp_base.png, lamp_glow.png).
 
 The adaptation is likewise offered under CC BY 4.0. It is not covered by the repository's MIT licence. The model's
 description says it comes from a game, so its original rights holder may be someone else; it will be removed on request.

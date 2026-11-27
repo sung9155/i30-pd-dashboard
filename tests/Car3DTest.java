@@ -10,6 +10,17 @@ import java.nio.file.Paths;
 public class Car3DTest {
     static void check(boolean v, String message) { if (!v) throw new AssertionError(message); }
 
+    /** Dark pixels inside the plate's edge: {count, left, right, top, bottom}. */
+    static int[] plateInk(android.graphics.Bitmap b) {
+        int w = b.getWidth(), h = b.getHeight(); int[] px = new int[w * h]; b.getPixels(px, 0, w, 0, 0, w, h);
+        int n = 0, l = w, r = -1, t = h, bo = -1;
+        for (int y = 5; y < h - 5; y++) for (int x = 5; x < w - 5; x++) {
+            int c = px[y * w + x]; if (((c >> 16) & 255) + ((c >> 8) & 255) + (c & 255) > 300) continue;
+            n++; l = Math.min(l, x); r = Math.max(r, x); t = Math.min(t, y); bo = Math.max(bo, y);
+        }
+        return new int[] {n, l, r, t, bo};
+    }
+
     public static void main(String[] args) throws Exception {
         byte[] data = Files.readAllBytes(Paths.get(System.getProperty("vn.root", "."), "apps/dashboard/assets/car3d/i30n.bin"));
         CarModel m = CarModel.parse(data);
@@ -37,6 +48,20 @@ public class Car3DTest {
         }
         for (int k = 0; k < 4; k++) check(wheels[k] == 1 && callipers[k] == 1, "every corner has a wheel and a calliper: " + k);
         check(lamp && glass, "lamp and glass parts present");
+        // number plates: one part, front (in the grille) and rear, UVs across the whole plate
+        int plates = 0; float pf = 0, pr = 0, umin = 9, umax = -9, vmin = 9, vmax = -9;
+        for (CarModel.Chunk c : m.chunks) if (c.program == CarModel.PLATE) {
+            plates++;
+            ByteBuffer v = c.vertexData.duplicate().order(ByteOrder.nativeOrder());
+            for (int i = 0; i < c.vertices; i++) {
+                float z = v.getFloat(i * CarModel.STRIDE + 8), u = (v.getShort(i * CarModel.STRIDE + 24) & 0xffff) / 65535f, w = (v.getShort(i * CarModel.STRIDE + 26) & 0xffff) / 65535f;
+                pf = Math.max(pf, z); pr = Math.min(pr, z);
+                umin = Math.min(umin, u); umax = Math.max(umax, u); vmin = Math.min(vmin, w); vmax = Math.max(vmax, w);
+                check((v.getShort(i * CarModel.STRIDE + 18) & 0xffff) == CarState.NONE, "plates never glow");
+            }
+        }
+        check(plates == 1 && pf > 2.1f && pr < -2.0f, "front and rear plate: " + plates + " " + pf + " " + pr);
+        check(umin == 0 && umax == 1 && vmin == 0 && vmax == 1, "plate UVs span the plate picture");
         check(Math.abs(minY) < 0.01f, "the car stands on y=0");
         check(maxZ - minZ > 4.25f && maxZ - minZ < 4.45f, "length of an i30 hatch (4,340 mm class): " + (maxZ - minZ));
         check(maxX - minX > 1.75f && maxX - minX < 2.15f, "width with mirrors: " + (maxX - minX));
@@ -130,6 +155,15 @@ public class Car3DTest {
             check(im != null && im.getWidth() == 2048 && im.getHeight() == 512, "backdrop panorama " + f);
         }
         check(com.veloster.car3d.CarScene.valid(9) == 0 && com.veloster.car3d.CarScene.valid(3) == 3, "stored scene clamped");
+        // plate text: cleaned, drawn black on a white plate inside its edge; empty = blank
+        check(com.veloster.car3d.CarPlate.clean("  12\uAC00\t 3456 ").equals("12\uAC00 3456"), "plate text trimmed, one space");
+        check(com.veloster.car3d.CarPlate.clean("123456789012345").length() == com.veloster.car3d.CarPlate.MAX, "plate text capped");
+        check(com.veloster.car3d.CarPlate.clean(null).isEmpty(), "no text");
+        int[] ink = plateInk(com.veloster.car3d.CarPlate.draw("12\uAC00 3456")), none = plateInk(com.veloster.car3d.CarPlate.draw(""));
+        check(none[0] == 0, "blank plate: no letters");
+        check(ink[0] > 800 && ink[1] >= 8 && ink[2] <= com.veloster.car3d.CarPlate.W - 8 && ink[3] >= 6 && ink[4] <= com.veloster.car3d.CarPlate.H - 6,
+            "12\uAC00 3456: letters on the plate, clear of its edge " + java.util.Arrays.toString(ink));
+        check(Math.abs((ink[1] + ink[2]) / 2f - com.veloster.car3d.CarPlate.W / 2f) < 12, "letters centred");
         System.out.println("PASS: 3D car mesh (" + m.triangles + " triangles, " + m.chunks.length + " chunks), lamp groups, wheels, lamp and steering logic");
     }
 }

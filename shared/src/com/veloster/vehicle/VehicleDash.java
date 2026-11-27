@@ -383,7 +383,9 @@ public final class VehicleDash extends View implements Runnable {
             hidden=ClusterPicker.valid(p.getInt("cluster_hidden",0));
             order=ClusterPicker.validOrder(parseOrder(p.getString("cluster_order",null)));
             // The order is saved on every screen change, so every install has one: a new default replaces it once.
-            if(p.getInt("cluster_order_v",0)<ClusterPicker.ORDER_VERSION){order=ClusterPicker.defaultOrder();p.edit().putString("cluster_order",orderCsv(order)).putInt("cluster_order_v",ClusterPicker.ORDER_VERSION).apply();}
+            if(p.getInt("cluster_order_v",0)<ClusterPicker.ORDER_VERSION){
+                if(p.getInt("cluster_order_v",0)<3){screen=ClusterPicker.renumber(screen);hidden=ClusterPicker.valid(ClusterPicker.renumberMask(hidden));}   // test builds before v3: WRC was 28
+                order=ClusterPicker.defaultOrder();p.edit().putString("cluster_order",orderCsv(order)).putInt("cluster_order_v",ClusterPicker.ORDER_VERSION).putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).apply();}
         }catch(ClassCastException e){/* Open on Overview, everything shown, for an incompatible saved value. */}
         warmEco();
         applyScreen();

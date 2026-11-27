@@ -82,7 +82,7 @@ final class WrcCluster extends ClusterKit {
         Tbt.State nav=Tbt.current(now);
         if(nav.maneuver){   // the stock navi is guiding: its next point takes the card (the corner list stays below)
             float deg=Tbt.arrow(nav);int note=Math.abs(deg)<20?0:Math.abs(deg)>160?(deg<0?-1:1):(deg<0?-3:3);
-            if(nav.type.contains("U TURN"))uturn(c,cx);else if(note==0)straight(c,cx);else bend(c,cx,note);
+            if(nav.type.contains("U TURN")||nav.label.equals("유턴"))uturn(c,cx);else if(note==0)straight(c,cx);else bend(c,cx,note);
             String d=Tbt.distance(nav.metres);text(c,d.length()>0?d:"—",cx,216,50,INK,Paint.Align.CENTER,num());
             bold(c,t(nav.label),cx,248,20,INK_MUT,Paint.Align.CENTER);
         }

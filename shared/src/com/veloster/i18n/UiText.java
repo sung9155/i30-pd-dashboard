@@ -315,7 +315,9 @@ public final class UiText {
         EN.put("글꼴을 바꾸지 못했습니다: ","Could not change the font: ");
         EN.put("글꼴을 찾는 중…","Looking for fonts…");
         EN.put("급가속","Hard acceleration");
+        EN.put("급우회전","Sharp right");
         EN.put("급제동","Hard braking");
+        EN.put("급좌회전","Sharp left");
         EN.put("기계 연결부 고장","Mechanical linkage failure");
         EN.put("기계식 종","Mechanical bell");
         EN.put("기계적 고장","Mechanical failure");
@@ -562,6 +564,8 @@ public final class UiText {
         EN.put("목적지","Destination");
         EN.put("목적지 근처","Near destination");
         EN.put("목적지 방향","Towards destination");
+        EN.put("목적지 오른쪽","Destination on the right");
+        EN.put("목적지 왼쪽","Destination on the left");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
         EN.put("미니멀","Minimal");
@@ -1000,11 +1004,13 @@ public final class UiText {
         EN.put("예열 플러그 회로 이상","Glow plug circuit malfunction");
         EN.put("오른쪽","Right");
         EN.put("오른쪽 ","Right ");
+        EN.put("오른쪽 갈림길","Keep right");
         EN.put("오른쪽 고가","Overpass right");
         EN.put("오른쪽 뒤 바퀴속도 센서 단선·단락","Right rear wheel speed sensor open or short circuit");
         EN.put("오른쪽 뒤 바퀴속도 센서 범위·성능 이상 (간헐)","Right rear wheel speed sensor range/performance (intermittent)");
         EN.put("오른쪽 뒤 바퀴속도 센서 신호 없음·무효","Right rear wheel speed sensor no signal or invalid signal");
         EN.put("오른쪽 뒤 바퀴속도 센서 회로 이상","Right rear wheel speed sensor circuit malfunction");
+        EN.put("오른쪽 방향","Bear right");
         EN.put("오른쪽 앞 바퀴속도 센서 단선·단락","Right front wheel speed sensor open or short circuit");
         EN.put("오른쪽 앞 바퀴속도 센서 범위·성능 이상 (간헐)","Right front wheel speed sensor range/performance (intermittent)");
         EN.put("오른쪽 앞 바퀴속도 센서 신호 없음·무효","Right front wheel speed sensor no signal or invalid signal");
@@ -1024,11 +1030,13 @@ public final class UiText {
         EN.put("외기온","Outside");
         EN.put("왼쪽","Left");
         EN.put("왼쪽 ","Left ");
+        EN.put("왼쪽 갈림길","Keep left");
         EN.put("왼쪽 고가","Overpass left");
         EN.put("왼쪽 뒤 바퀴속도 센서 단선·단락","Left rear wheel speed sensor open or short circuit");
         EN.put("왼쪽 뒤 바퀴속도 센서 범위·성능 이상 (간헐)","Left rear wheel speed sensor range/performance (intermittent)");
         EN.put("왼쪽 뒤 바퀴속도 센서 신호 없음·무효","Left rear wheel speed sensor no signal or invalid signal");
         EN.put("왼쪽 뒤 바퀴속도 센서 회로 이상","Left rear wheel speed sensor circuit malfunction");
+        EN.put("왼쪽 방향","Bear left");
         EN.put("왼쪽 앞 바퀴속도 센서 단선·단락","Left front wheel speed sensor open or short circuit");
         EN.put("왼쪽 앞 바퀴속도 센서 범위·성능 이상 (간헐)","Left front wheel speed sensor range/performance (intermittent)");
         EN.put("왼쪽 앞 바퀴속도 센서 신호 없음·무효","Left front wheel speed sensor no signal or invalid signal");
@@ -1526,6 +1534,7 @@ public final class UiText {
         EN.put("펄스 부족","Too few pulses");
         EN.put("페달","Pedal");
         EN.put("페달 50% 이하로 충분합니다","Under 50 % pedal is enough");
+        EN.put("페리","Ferry");
         EN.put("페어링","Pair");
         EN.put("페어링 요청 실패: ","Pairing request failed: ");
         EN.put("페어링 요청이 거부되었습니다.","The pairing request was denied.");

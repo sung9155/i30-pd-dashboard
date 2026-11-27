@@ -36,15 +36,45 @@ public final class Tbt {
         String type=field(info,"Display Type");if(type==null)return NONE;
         float dir=num(field(info,"Direction")),dist=num(field(info,"Distance")),dkm=num(field(sub,"distance"));int min=(int)num(field(sub,"minutes"));
         if(!Float.isNaN(dist)&&dist<100&&dist!=Math.floor(dist))dist*=1000;   // a fraction below 100: km, like the SubInfo
-        // The domestic navi sends its own codes, which the firmware's table lacks: "Unknown display type(0x5b)" while
-        // guiding on the car (2026-11-27, Distance in metres: 600 / 800 m, matching the SCC NextTurnDist). Until the
-        // codes are matched to turns, a code with a distance counts as guidance, shown as the next guidance point.
-        boolean kr=type.startsWith("Unknown display type")&&!Float.isNaN(dist)&&dist>0;
+        // Farther from a maneuver the navi sends a "projection icon" (64 and up), which the firmware's DisplayType table
+        // lacks: dumpsys prints "Unknown display type(0x5b)" (seen on the car 2026-11-27 at 600 / 800 m, Distance in metres,
+        // matching the SCC NextTurnDist). The icon numbers are the cluster's own (documented by the Gen5W community, see
+        // icon()); one with a distance counts as guidance. An icon we can't name shows as the next guidance point.
+        int icon=iconCode(type);boolean kr=icon>=0&&!Float.isNaN(dist)&&dist>0;
         boolean active=kr||!(type.startsWith("NO ROUTE")||type.equals("NO INFO")||type.equals("NO SYMBOL")||type.startsWith("Unknown")||type.equals("OFF MAP")||type.equals("OFF ROAD"));
-        String label=kr?"다음 안내":label(type,dir);
+        String label=kr?iconLabel(icon):label(type,dir);
         boolean maneuver=active&&label.length()>0&&!type.startsWith("DIRECTION")&&!type.startsWith("CALC")&&!type.startsWith("RECALC");
         return new State(active,maneuver,type,label,dir,dist,dkm,min,utf16(field(nav,"DestName")));
     }
+    /** The number in "Unknown display type(0x5b)", or -1. */
+    static int iconCode(String t){
+        if(t==null||!t.startsWith("Unknown display type"))return -1;int i=t.indexOf("(0x"),j=t.indexOf(')',i+1);
+        if(i<0||j<0)return -1;try{return Integer.parseInt(t.substring(i+3,j),16);}catch(NumberFormatException e){return -1;}
+    }
+    /** The cluster's projection icons, from the Gen5W community's notes on what the stock navigation sends
+     *  (Open-HMG/hmgapi-wireless-cp-aa, docs/cluster-turns.md; facts only, no code): 65 straight, 66/71 slight right/left,
+     *  67/70 right/left, 68/69 sharp right/left, 72/73 U-turn, 81/82 exit right/left, 86 exit, 96-107 roundabout exits
+     *  (one per 45 degrees, counterclockwise; 192-203 the clockwise twins), 112-114 destination ahead/right/left,
+     *  172-174 fork / keep right / keep left, 176 ferry. Others (83-91 but 86, seen: 84 and 91) are not known yet.
+     *  {label, arrow degrees clockwise from up}; null when unknown. */
+    static Object[] icon(int c){
+        switch(c){
+            case 65:return new Object[]{"직진",0f};
+            case 66:return new Object[]{"오른쪽 방향",45f};case 71:return new Object[]{"왼쪽 방향",-45f};
+            case 67:return new Object[]{"우회전",90f};case 70:return new Object[]{"좌회전",-90f};
+            case 68:return new Object[]{"급우회전",135f};case 69:return new Object[]{"급좌회전",-135f};
+            case 72:case 73:return new Object[]{"유턴",180f};
+            case 81:return new Object[]{"오른쪽 출구",45f};case 82:return new Object[]{"왼쪽 출구",-45f};case 86:return new Object[]{"출구",0f};
+            case 112:return new Object[]{"목적지",0f};case 113:return new Object[]{"목적지 오른쪽",90f};case 114:return new Object[]{"목적지 왼쪽",-90f};
+            case 172:return new Object[]{"갈림길",0f};case 173:return new Object[]{"오른쪽 갈림길",30f};case 174:return new Object[]{"왼쪽 갈림길",-30f};
+            case 176:return new Object[]{"페리",0f};
+        }
+        if(c>=96&&c<=107||c>=192&&c<=203){int k=(c>=192?c-96:c)-96;   // 96 straight on .. 107, about 30 degrees apart in the car's set
+            return new Object[]{"회전교차로",(float)Math.round(k*360/12f)};}
+        return null;
+    }
+    static String iconLabel(int c){Object[] i=icon(c);return i==null?"다음 안내":(String)i[0];}
+
     /** What to do, in a few Korean words, from the firmware's display type (and Direction for a plain turn). */
     static String label(String t,float dir){
         if(t.startsWith("ARRIVED"))return "도착";
@@ -72,7 +102,7 @@ public final class Tbt {
     /** Arrow angle for the screen: degrees clockwise from straight up. */
     public static float arrow(State s){
         String t=s.type;
-        if(t.startsWith("Unknown"))return 0;   // a domestic code: not matched to a turn yet (see parse)
+        if(t.startsWith("Unknown")){Object[] i=icon(iconCode(t));return i==null?0:(Float)i[1];}   // a projection icon (see parse)
         if(t.contains("U TURN"))return 180;
         if(t.equals("FOLLOW STREET")||t.equals("CHANGE LANE"))return 0;
         if(!t.startsWith("TURN")&&!t.startsWith("PREPARE TURN")&&!t.contains("ROUNDABOUT")&&!t.contains("ROUNABOUT")&&!t.startsWith("DIRECTION")){

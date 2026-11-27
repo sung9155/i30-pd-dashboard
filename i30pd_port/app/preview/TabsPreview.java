@@ -84,7 +84,7 @@ public final class TabsPreview {
         for(int i=0;i<layouts.length;i++){rec.setPage(PitRenderer.PAGE_CLASSIC+i);save(out,layouts[i],rec,model,now,false,false);}
         rec.setPicker(true,false,0);save(out,"9_cluster_list",rec,model,now,false,false);rec.setPicker(false,false,0);
         {   // trim (the dashboard out of sight): every screen with kept bitmaps draws the same after letting go of them
-            int[] pages=new int[layouts.length+7];for(int i=0;i<layouts.length;i++)pages[i]=PitRenderer.PAGE_CLASSIC+i;pages[layouts.length]=PitRenderer.PAGE_ECO;pages[layouts.length+1]=PitRenderer.PAGE_TACHO;for(int i=0;i<4;i++)pages[layouts.length+2+i]=PitRenderer.PAGE_TACHO+1+i;pages[layouts.length+6]=PitRenderer.PAGE_CLASSIC;
+            int[] pages=new int[layouts.length+6];for(int i=0;i<layouts.length;i++)pages[i]=PitRenderer.PAGE_CLASSIC+i;pages[layouts.length]=PitRenderer.PAGE_ECO;pages[layouts.length+1]=PitRenderer.PAGE_TACHO;for(int i=0;i<3;i++)pages[layouts.length+2+i]=PitRenderer.PAGE_TACHO+1+i;pages[layouts.length+5]=PitRenderer.PAGE_CLASSIC;
             int bad=0;StringBuilder why=new StringBuilder();
             for(int pg:pages){BufferedImage[] im=new BufferedImage[2];
                 for(int m=0;m<2;m++){if(m==1)rec.trim();rec.setPage(pg);BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
@@ -543,9 +543,9 @@ public final class TabsPreview {
              ImageIO.write(img,"png",new File(out,tcn[i]+".png"));}
         }
         {   // WRC, 아날로그, 네온, 동승자 (the screens after RPM): the replay through PitRenderer, set moments, and no data at all
-         String[] mn={"9s_cluster_wrc","9t_cluster_analog","9u_cluster_neon","9v_cluster_passenger"};
-         for(int i=0;i<4;i++){rec.setPage(PitRenderer.PAGE_TACHO+1+i);for(int f=0;f<6;f++)save(out,mn[i],rec,model,now+f*50L,false,false);}   // a few frames: the needles ease in
-         for(int i=0;i<4;i++){PitRenderer e=new PitRenderer();e.setSymmetric(true);e.setPage(PitRenderer.PAGE_TACHO+1+i);save(out,mn[i]+"_nodata",e,new Telemetry(),now,false,false);}
+         String[] mn={"9s_cluster_wrc","9t_cluster_analog","9u_cluster_neon"};
+         for(int i=0;i<3;i++){rec.setPage(PitRenderer.PAGE_TACHO+1+i);for(int f=0;f<6;f++)save(out,mn[i],rec,model,now+f*50L,false,false);}   // a few frames: the needles ease in
+         for(int i=0;i<3;i++){PitRenderer e=new PitRenderer();e.setSymmetric(true);e.setPage(PitRenderer.PAGE_TACHO+1+i);save(out,mn[i]+"_nodata",e,new Telemetry(),now,false,false);}
          int[] ix={7,0,8,9,10,11,12,Telemetry.STEERING,2,Telemetry.BOOST,Telemetry.OIL_ECU};
          // WRC: a stage four minutes in, three corners behind (3 R, 5 L, 2 R), now in a 4 L at 0.7 G
          {WrcCluster k=new WrcCluster();k.shiftTarget=6000;long t0=now-240000;float[][] seq={{-100,0},{40,0},{0,0},{-170,0},{0,0},{70,0.7f}};   // raw wheel angles: + is a left turn of the wheel
@@ -572,14 +572,6 @@ public final class TabsPreview {
                   new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,now+f*50L,null);}
               ImageIO.write(img,"png",new File(out,"9t_analog_style"+s+".png"));}
          AnalogCluster.style=0;
-         // 동승자: a right-hand bend at 0.5 G with this drive's records behind it
-         {PassengerCluster k=new PassengerCluster();DriveStats d=new DriveStats();long t0=now-20000;
-          for(int f=0;f<400;f++){float la=-0.5f*Math.min(1,f/400f),lo=f<300?0.15f:-0.1f;d.update(t0+f*50L,90,t0+f*50L,4200,0.6f,la,lo,t0+f*50L,90,40);}
-          d.best[0]=7.84f;d.best[2]=6.12f;d.maxSpeed=163;
-          Telemetry.Sample[] q=with(model,now,ix,new float[]{88,4200,4,40,0,-0.5f,-0.1f,60,90,0.6f,96});
-          BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
-          new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,d,VehicleProfile.PETROL_DCT,t0+20000,null);
-          ImageIO.write(img,"png",new File(out,"9v_passenger_corner.png"));}
          rec.setPage(PitRenderer.PAGE_CLASSIC);
         }
         // 수동 screen (the Λ layout, 6MT): {gear, km/h, rpm, clutch, brake bar}; the race and performance pages turn the rpm green on a match

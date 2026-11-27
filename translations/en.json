@@ -1611,5 +1611,14 @@
   "3D 모델 \"hyundai i30 n\" · amogusstrikesback2 · CC BY 4.0": "3D model \"hyundai i30 n\" · amogusstrikesback2 · CC BY 4.0",
   "번호판": "Plate",
   "번호판 글자": "Number plate text",
-  "예: 12가 3456 · 비우면 빈 번호판": "e.g. 12가 3456 · empty = blank plate"
+  "예: 12가 3456 · 비우면 빈 번호판": "e.g. 12가 3456 · empty = blank plate",
+  "오른쪽 방향": "Bear right",
+  "왼쪽 방향": "Bear left",
+  "급우회전": "Sharp right",
+  "급좌회전": "Sharp left",
+  "목적지 오른쪽": "Destination on the right",
+  "목적지 왼쪽": "Destination on the left",
+  "오른쪽 갈림길": "Keep right",
+  "왼쪽 갈림길": "Keep left",
+  "페리": "Ferry"
 }

@@ -10,16 +10,18 @@ is i30-specific (the Veloster N converter it replaces read a different model).
 
 What the conversion does, for a Telechips tcc893x (GLES 2.0) at 800x480:
   * metres (the glTF already is), origin at the ground under the middle of the car, +Z forward, +Y up, +X the car's left
-  * the model is light (about 31k triangles), so nothing is decimated; it drops the light-beam cones and flare sprites,
-    and both number plates (a game logo) are drawn blank
+  * the model is light (about 31k triangles), so nothing is decimated (only the tail lamp's lens and picture decal are
+    cut finer, to about 41k, so its outer end can light apart); it drops the light-beam cones and flare sprites, and
+    both number plates (a game logo) are drawn blank
   * bakes the body / tyre / rim colours into vertex colours; Material.001's clearcoat map marks the body paint (CarPaint)
   * the chrome / detail parts (grille, badges, lamp units) and the glow decals keep their textures: one lamp atlas,
     Material.002 on the left half, Material.006 (glows) on the right; the glow map is the same picture
   * the four wheels (rim + tyre: spin + steer) and the callipers (steer only) are separate nodes in the glTF
-  * lamp groups: the glow decals by node (brakes = stop, reverse, position = tail / front DRL); the lamp units by where
-    they sit and the colour under them (red at the back = tail, the headlamp's inner elements = headlamp). The model has
-    no amber lamp: the turn signals are an estimate (outer headlamp ring, inner upper tail-lamp guide), and the glow map
-    is recoloured amber under them (red under the high-mount stop lamp's orange picture)
+  * lamp groups: the glow decals by node (brakes = stop, reverse, rear position guides = tail, the bar low in the front
+    bumper = turn signal); the lamp units by where they sit and the colour under them (red at the back = tail, the
+    outer end of the tail lamp = turn signal, drawn as a clear lens, the headlamp's round elements = headlamp). Turn
+    signals as on the owner's i30 PD. The model has no amber lamp: the glow map is recoloured amber under the turn
+    signals (red under the high-mount stop lamp's orange picture)
   * run it again on the same zip and the output is byte for byte the same
 
 Needs numpy and Pillow (development only; the app just reads the output).
@@ -60,6 +62,10 @@ PLATE = (0.86, 0.87, 0.86)   # blank number plates
 # Glow colour where the lamp's own picture has the wrong one: the turn signals (chrome / red pictures) glow amber, the
 # high-mount stop lamp (an orange triangle picture) red.
 AMBER, RED = (1.0, 0.55, 0.08), (1.0, 0.08, 0.05)
+# The outer end of the tail lamp, |x| beyond this: the rear turn signal. On screen the lamp is the glow decal with the
+# lamp's picture (red there); the owner's i30 PD has a white section at that end, so the picture is drawn clear there.
+TURN_REAR_X = 0.705
+CLEAR = 'clear'   # glow-map kind: the tail lamp picture's outer end
 # The front plate inside the grille picture of Material.002 (a game logo): its box, as fractions of the atlas.
 FRONT_PLATE = (164 / 1024, 818 / 1024, 580 / 1024, 910 / 1024)
 
@@ -159,7 +165,8 @@ def dropped(p):
     """Triangles to leave out: the light-beam cones and the lens-flare sprites in front of the headlamps."""
     if p['mat'] != 'Material.006' or 'front_and_back' not in p['node']:
         return np.zeros(len(p['I']), bool)
-    return (p['P'][p['I']].mean(1)[:, 2] > 1.5) & (tri_colour(p).max(1) < 0.3)
+    c = part_centres(p)
+    return (c[:, 2] > 1.5) & (c[:, 1] > 0.55)   # in front, every piece but the bar low in the bumper
 
 
 def part_centres(p):
@@ -186,37 +193,85 @@ def side_turn(c):
     return np.where(c[:, 0] > 0, TURN_L, TURN_R)
 
 
+# The white patch at the outer end of the tail lamp picture (Material.002 UV box): the rear turn signal. Only its white
+# pixels glow amber; the red inside the box stays dark (it is not part of the tail lamp's glow either).
+TURN_PATCH = (0.38, 0.545, 0.50, 0.64)
+
+
+def tail_lens(p):
+    """Per triangle: part of the tail lamp lens (one piece per side, low on the hatch's corners)."""
+    c = part_centres(p)
+    return (c[:, 2] < -1.55) & (np.abs(c[:, 0]) > 0.5) & (c[:, 1] > 0.75) & (c[:, 1] < 1.2)
+
+
+def split(p, mask, times=2):
+    """The masked triangles cut into 4 ** times (midpoints), so the lens's white patch and its red can be told apart."""
+    P, N, UV, I = p['P'], p['N'], p['UV'], p['I']
+    keep, cut = I[~mask], I[mask]
+    for _ in range(times):
+        a, b, c = cut[:, 0], cut[:, 1], cut[:, 2]
+        n0 = len(P); k = len(cut)
+        mids = [(a, b), (b, c), (c, a)]
+        P = np.vstack([P] + [(P[x] + P[y]) / 2 for x, y in mids])
+        Nm = [(N[x] + N[y]) for x, y in mids]
+        N = np.vstack([N] + [m / (np.linalg.norm(m, axis=1, keepdims=True) + 1e-12) for m in Nm])
+        UV = np.vstack([UV] + [(UV[x] + UV[y]) / 2 for x, y in mids])
+        ab, bc, ca = n0 + np.arange(k), n0 + k + np.arange(k), n0 + 2 * k + np.arange(k)
+        cut = np.vstack([np.c_[a, ab, ca], np.c_[ab, b, bc], np.c_[ca, bc, c], np.c_[ab, bc, ca]])
+    return dict(p, P=P, N=N, UV=UV, I=np.vstack([keep, cut]))
+
+
 def decal_groups(p):
-    """Glow decals (Material.006): the lamp group from the node; in the tail lamps the inner upper light guide is taken
-    as the turn signal (an estimate: the model has no amber lamp, and where the i30's rear indicator sits in the
-    cluster is not checked)."""
+    """Glow decals (Material.006): the lamp group from the node. The bar low in the front bumper is the turn signal
+    (the owner's i30 PD: that bar blinks); the rear light guides are the tail lamp."""
     c = part_centres(p); n = len(c); node = p['node']
     if 'brakes' in node:
         return np.full(n, STOP)
     if 'reverse' in node:
         return np.full(n, REVERSE)
-    out = np.where(c[:, 2] > 0, POSITION, TAIL)   # position lamps: the front DRL strip, the rear light guides
-    inner_upper = (c[:, 2] < 0) & (np.abs(c[:, 0]) > 0.40) & (np.abs(c[:, 0]) < 0.56) & (c[:, 1] > 0.94)
-    out[inner_upper] = side_turn(c)[inner_upper]
+    out = np.where(c[:, 2] > 0, side_turn(c), TAIL)
+    picture = lamp_picture(p)
+    outer = same_picture(p, picture & (np.abs(p['P'][p['I']].mean(1)[:, 0]) > TURN_REAR_X), picture)
+    out[outer] = side_turn(c)[outer]
     return out
+
+
+def same_picture(p, sel, pool):
+    """sel grown by the pool's triangles drawn over the same part of the picture (the selection's edge, the other side,
+    a second layer), so no other lamp shares the recoloured pixels."""
+    px = np.clip((p['UV'][p['I']].mean(1) * ATLAS).astype(int), 0, ATLAS - 1)
+    while sel.any():
+        more = sel | (pool & tint_mask(p['UV'][p['I'][sel]], (ATLAS, ATLAS), grow=False)[px[:, 1], px[:, 0]])
+        if (more == sel).all():
+            break
+        sel = more
+    return sel
+
+
+def lamp_picture(p):
+    """Per triangle: the rear decal that carries the whole tail lamp's picture (Material.006, right of u 0.62)."""
+    return ('position_back' in p['node']) & (p['UV'][p['I']].mean(1)[:, 0] > 0.62) & (p['P'][p['I']].mean(1)[:, 2] < 0)
 
 
 def unit_groups(p):
     """Chrome / detail triangles (Material.002) that belong to a lamp unit, from where they sit and the colour under
-    them. Each headlamp has three round elements: the inner two are the headlamp, the outer chrome ring is taken as the
-    turn signal (an estimate, like the rear one). Red at the back is the tail lamp, in the middle up high the high-mount
-    stop lamp; the red reflectors low in the bumper do not light."""
+    them. The round elements in each headlamp are the headlamp. Red at the back is the tail lamp, in the middle up high
+    the high-mount stop lamp; the white outer part of the tail lamp lens is the rear turn signal (the owner's i30 PD);
+    the red reflectors low in the bumper do not light."""
     c = part_centres(p); e = tri_colour(p); r, g, b = e.T
     out = np.full(len(c), NONE)
     red = (r > 0.25) & (g < 0.45 * r) & (b < 0.45 * r)
     x = np.abs(c[:, 0])
-    rear = (c[:, 2] < -1.55) & red & (c[:, 1] > 0.75)
-    out[rear] = np.where((x < 0.2) & (c[:, 1] > 1.2), STOP, TAIL)[rear]
-    head = (c[:, 2] > 1.75) & (x > 0.5) & (c[:, 1] > 0.6) & (c[:, 1] < 0.85) & (e.max(1) > 0.3)
-    outer = head & (x > 0.70)
-    out[head & ~outer] = HEAD
-    if 'Chrome' in p['node']:   # the outer ring; the lens decal in front of it shares its picture with the headlamp's
-        out[outer] = side_turn(c)[outer]
+    rear = (c[:, 2] < -1.55) & (c[:, 1] > 0.75)
+    out[rear & red] = np.where((x < 0.2) & (c[:, 1] > 1.2), STOP, TAIL)[rear & red]
+    uvc = p['UV'][p['I']].mean(1)
+    u0, v0, u1, v1 = TURN_PATCH
+    lens = tail_lens(p)
+    out[lens] = TAIL   # the whole lens lights as the tail lamp, but for its white patch
+    white = lens & (uvc[:, 0] > u0) & (uvc[:, 0] < u1) & (uvc[:, 1] > v0) & (uvc[:, 1] < v1)
+    white = same_picture(p, white, lens)
+    out[white] = side_turn(c)[white]
+    out[(c[:, 2] > 1.75) & (x > 0.5) & (c[:, 1] > 0.6) & (c[:, 1] < 0.85) & (e.max(1) > 0.3)] = HEAD
     return out
 
 
@@ -252,7 +307,7 @@ def build(prims):
 
     stats = {}
     spots = {}
-    tints = []   # (atlas UV triangles, colour): glow map areas to recolour
+    tints = []   # (atlas UV triangles, kind): glow map areas to recolour (AMBER, CLEAR, RED; None = keeps its colour)
     for p in prims:
         I = p['I'][keep[id(p)]]; P = p['P']; N = p['N']; node = p['node']; mat = p['mat']
         tri = P[I]; nrm = N[I]; n = len(I)
@@ -267,13 +322,16 @@ def build(prims):
         elif mat in ('Material.002', 'Material.006') and not wheel and not calliper:
             # textured in the lamp atlas: Material.002 on the left half, the glow decals on the right
             q = dict(p, I=I)
+            q = split(q, tail_lens(q) if mat == 'Material.002' else lamp_picture(q))
+            I = q['I']; P = q['P']; N = q['N']; tri = P[I]; nrm = N[I]; n = len(I)
             groups = decal_groups(q) if mat == 'Material.006' else unit_groups(q)
-            uv = p['UV'][I] * [0.5, 1.0] + ([0.5, 0.0] if mat == 'Material.006' else [0.0, 0.0])
+            uv = q['UV'][I] * [0.5, 1.0] + ([0.5, 0.0] if mat == 'Material.006' else [0.0, 0.0])
             col = np.ones((n, 3, 4))
             part(LAMP).add(tri, nrm, groups, col, uv)
             turn = (groups == TURN_L) | (groups == TURN_R)
             high = (groups == STOP) & (np.abs(tri.mean(1)[:, 0]) < 0.2) & (mat == 'Material.006')
-            tints += [(uv[turn], AMBER), (uv[high], RED)]
+            picture = turn & (mat == 'Material.006') & (tri.mean(1)[:, 2] < 0)
+            tints += [(uv[turn & ~picture], AMBER), (uv[picture], CLEAR), (uv[high], RED)]
             tints.append((uv[(groups != NONE) & ~turn & ~high], None))   # lamps that keep their colour (overlap check)
             collect_spots(q, groups, spots)
             key = 'lamp ' + mat
@@ -371,13 +429,13 @@ def pack(parts, centres, spots, out):
     return count, total_tris, len(data)
 
 
-def tint_mask(uvs, size):
-    """Pixels of the atlas (size = w, h) under the given UV triangles, grown by 2 pixels."""
+def tint_mask(uvs, size, grow=True):
+    """Pixels of the atlas (size = w, h) under the given UV triangles, grown by 2 pixels (texture filtering)."""
     from PIL import ImageDraw, ImageFilter
     m = Image.new('L', size, 0); d = ImageDraw.Draw(m)
     for t in uvs:
         d.polygon([(u * size[0], v * size[1]) for u, v in t], fill=255)
-    return np.asarray(m.filter(ImageFilter.MaxFilter(5))) > 0
+    return np.asarray(m.filter(ImageFilter.MaxFilter(5)) if grow else m) > 0
 
 
 def write_lamp_textures(prims, tints, out):
@@ -395,15 +453,21 @@ def write_lamp_textures(prims, tints, out):
     glow.paste(half(unit), (0, 0)); glow.paste(half(glows), (ATLAS, 0))
     g = np.asarray(glow).astype(np.float64) / 255; b = np.asarray(base).astype(np.float64) / 255
     keep = np.vstack([t for t, colour in tints if colour is None])
-    for colour in (AMBER, RED):
+    for colour in (AMBER, CLEAR, RED):
         uvs = np.vstack([t for t, c in tints if c == colour])
         m = tint_mask(uvs, glow.size)
-        hit = m[np.clip((keep.mean(1)[:, 1] * ATLAS).astype(int), 0, ATLAS - 1), np.clip((keep.mean(1)[:, 0] * ATLAS * 2).astype(int), 0, ATLAS * 2 - 1)]
+        hit = tint_mask(uvs, glow.size, grow=False)[np.clip((keep.mean(1)[:, 1] * ATLAS).astype(int), 0, ATLAS - 1), np.clip((keep.mean(1)[:, 0] * ATLAS * 2).astype(int), 0, ATLAS * 2 - 1)]
         if hit.any():
-            raise SystemExit(f'{hit.sum()} other lamp triangles sit in the {colour} area of the glow map')
-        g[m] = g[m].max(1, keepdims=True) * colour
-        if colour == RED:   # the unlit stop lamp: dark red, not the picture's orange
-            b[m] = b[m].max(1, keepdims=True) * colour
+            raise SystemExit(f'{hit.sum()} other lamp triangles sit in a recoloured area ({colour}) of the glow map')
+        # amber from the white of the picture only (a red lens part stays dark); red from its brightest channel
+        if colour == AMBER:   # amber from the white of the picture only (a red lens part stays dark)
+            g[m] = g[m].min(1, keepdims=True) * AMBER
+        elif colour == CLEAR:   # the tail lamp picture's outer end: amber when lit, a clear lens when off
+            g[m] = g[m].max(1, keepdims=True) * AMBER
+            b[m] = 0.45 + 0.4 * b[m].max(1, keepdims=True) * np.ones(3)
+        else:   # the high-mount stop lamp: red from its brightest channel, dark red when off (not the picture's orange)
+            g[m] = g[m].max(1, keepdims=True) * RED
+            b[m] = b[m].max(1, keepdims=True) * RED
     glow = Image.fromarray((g * 255).astype(np.uint8)); base = Image.fromarray((b * 255).astype(np.uint8))
     base.save(out / 'lamp_base.png', optimize=True)
     glow.save(out / 'lamp_glow.png', optimize=True)

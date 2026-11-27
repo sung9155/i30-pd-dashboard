@@ -8,9 +8,8 @@ import java.util.List;
 
 /**
  * Reads stored trouble codes from each ECU through the head unit's diagnostic service, the way the stock telematics
- * (com.hkmc.telematics.hscan DiagManager) does it: UDS 19 02 (or KWP 18 00 FF 00 when an ECU refuses UDS). The
- * only other thing it sends is clear() for one ECU the owner picked: 14 FF FF FF (and, if the ECU wants it, the
- * extended session around it). Never security access (27), never the airbag unit.
+ * (com.hkmc.telematics.hscan DiagManager) does it. READ ONLY: it sends UDS 19 02 (or KWP 18 00 FF 00 when an ECU
+ * refuses UDS) and nothing else; no clear (14), no session change (10), no security access (27).
  * The status mask is FF (every code the ECU keeps, as a scan tool asks), not the stock 0D/0C: 0C (pending or
  * confirmed) hid a C1620-78 a scan tool read on a PD (2026-11-05). An ECU that refuses FF (7F 19 31) is asked again
  * with the stock mask. Every raw reply goes to the log (tag VehicleDash) for the diagnostic record.
@@ -90,31 +89,6 @@ public final class DtcReader {
         return new Result(name,codes,null,null);
     }
 
-    /** The MICOM code of an ECU by its name in ECUS, -1 when unknown. */
-    static int codeOf(String name){for(Object[] e:ECUS)if(e[0].equals(name))return (Integer)e[1];return -1;}
-    /** Whether the owner may clear this ECU's codes from the app: every ECU we read except the airbag unit. */
-    public static boolean clearable(String name){int c=codeOf(name);return c>=0&&c!=ACU;}
-    /** Clears one ECU's stored codes: UDS 14 FF FF FF (all groups). When the ECU says the default session cannot
-     *  (7F 14 7F / 7E / 22), it is asked once more inside the extended session (10 03 ... 10 01). Returns the final
-     *  reply: 54 = cleared, 7F 14 xx = refused (xx the reason), null = no answer. Background thread. */
-    public static byte[] clear(String name) throws Exception {
-        int ecu=codeOf(name);if(!clearable(name))throw new IllegalArgumentException("not clearable: "+name);
-        IBinder svc=(IBinder)Class.forName("android.os.ServiceManager").getMethod("getService",String.class).invoke(null,SERVICE);
-        if(svc==null)throw new IllegalStateException(SERVICE+" not found");
-        DtcReader r=new DtcReader();Binder listener=r.new Listener(),token=new Binder();
-        call(svc,1,listener,token);ObdLive.diagBusy=true;
-        try{
-            byte[] all={0x14,(byte)0xff,(byte)0xff,(byte)0xff};
-            byte[] a=r.ask(svc,ecu,all);log(name,"14 FF FF FF",a);
-            if(a!=null&&a.length>=3&&(a[0]&255)==0x7f&&((a[2]&255)==0x7f||(a[2]&255)==0x7e||(a[2]&255)==0x22)){
-                byte[] s=r.ask(svc,ecu,new byte[]{0x10,0x03});log(name,"10 03",s);
-                if(s!=null&&(s[0]&255)==0x50){a=r.ask(svc,ecu,all);log(name,"14 FF FF FF (extended)",a);}
-                log(name,"10 01",r.ask(svc,ecu,new byte[]{0x10,0x01}));
-            }
-            return a;
-        }finally{try{call(svc,2,listener,token);}finally{ObdLive.diagBusy=false;}}
-    }
-
     /** One request; the positive reply (SID+0x40) or the final negative one (7F SID NRC), null on timeout. */
     private byte[] ask(IBinder svc,int ecu,byte[] request) throws Exception {
         int sid=request[0]&255;
@@ -179,7 +153,7 @@ public final class DtcReader {
         if(reply==null)s.append("no reply");else for(byte x:reply)s.append(String.format("%02X ",x&255));
         android.util.Log.i("VehicleDash","DTC "+ecu+" "+request+": "+s.toString().trim());
     }
-    static String hex(byte[] b){
+    private static String hex(byte[] b){
         StringBuilder s=new StringBuilder();
         for(int i=0;i<b.length&&i<4;i++)s.append(String.format("%02X ",b[i]&255));
         return s.toString().trim();

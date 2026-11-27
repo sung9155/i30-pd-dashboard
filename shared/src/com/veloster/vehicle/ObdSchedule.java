@@ -26,8 +26,11 @@ public final class ObdSchedule {
         public Poll(int ecu,byte[] req,int key,long every,int dropAfter){this.ecu=ecu;this.req=req;this.key=key;this.every=every;this.dropAfter=dropAfter;}
         public boolean active(){return dropAfter==0||misses<dropAfter;}
         /** Dropped on timeouts alone (no reply, "none"): another tester (a DAG3) may hold the ECU, so it is tried again
-         *  once a RETRY_MS; a refusal (7F) means the ECU lacks it and it stays dropped. */
-        public boolean retrying(){return !active()&&"none".equals(bad);}
+         *  once a RETRY_MS. A refusal (7F) from an ECU that never answered it means the ECU lacks it: it stays dropped. One
+         *  that has answered before is tried again too: a refusal there is another tester's reply on the shared channel
+         *  taken for ours (2026-11-27: a DID sweep on the same TCU dropped 01A4 and E001 for the whole drive, so the clutch
+         *  and oil temperatures went blank). */
+        public boolean retrying(){return !active()&&("none".equals(bad)||answered>0);}
         public int dropAfter(){return dropAfter;}
         public int misses(){return misses;}
     }

@@ -34,7 +34,11 @@ public final class ObdScheduleTest {
         ObdSchedule.Poll r=new ObdSchedule.Poll(0x26,new byte[]{0x22,1,(byte)0xA4},1,2000,3);ObdSchedule v=new ObdSchedule(r);
         v.done(r,0,false);v.done(r,2000,false);v.done(r,4000,true);check(r.active()&&r.misses()==0,"an answer resets the miss count");
         r.bad="7F 22 31";v.done(r,6000,false);v.done(r,8000,false);v.done(r,10000,false);
-        check(v.summary().equals("01A4 1/6 7F 22 31 off"),"summary: answered/sent, last bad reply, dropped ("+v.summary()+")");
+        check(v.summary().equals("01A4 1/6 7F 22 31 retry"),"summary: answered/sent, last bad reply; refused after answering: tried again ("+v.summary()+")");
+        check(r.retrying()&&v.next(15999)==null&&v.next(16000)==r,"a refusal after an answer (another tester's reply taken for ours): asked again three periods later");
+        {ObdSchedule.Poll n=new ObdSchedule.Poll(0x27,new byte[]{0x22,(byte)0xED,0x03},0xED03,2000,3);ObdSchedule z=new ObdSchedule(n);
+         n.bad="7F 22 31";z.done(n,0,false);z.done(n,2000,false);z.done(n,4000,false);
+         check(!n.active()&&!n.retrying()&&z.next(1000000)==null&&z.summary().endsWith("off"),"refused and never answered: the ECU lacks it, it stays off ("+z.summary()+")");}
         // timeouts alone (a DAG3 holding the engine) drop it to a retry a minute on; an answer brings it back
         ObdSchedule.Poll w=new ObdSchedule.Poll(0x27,new byte[]{0x22,(byte)0xED,0x03},2,2000,3);ObdSchedule x=new ObdSchedule(w);
         w.bad="none";x.done(w,0,false);x.done(w,2000,false);x.done(w,4000,false);

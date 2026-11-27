@@ -411,6 +411,13 @@ public final class TabsPreview {
                 ImageIO.write(img,"png",new File(out,pass==0?"9g_cluster_8bit_music.png":pass==1?"9g_cluster_8bit_music_en.png":pass==2?"9g_cluster_8bit_music_scroll.png":pass==3?"9g_cluster_8bit_chase_music.png":"9g_cluster_8bit_chase_music_nocover.png"));}
             ClusterKit.artwork=null;
         }
+        for(String plate:new String[]{"12가 3456","1234"}){   // the owner's plate (내 차 → 번호판) on the Arcade car: a Korean plate shows its number
+            PlatePixels.text=plate;
+            BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+            new PitRenderer().draw(c,800,480,false,model,now,0,false,null);
+            new PixelCluster(true).frame(c,model.snapshot(now),model,new DriveStats(),VehicleProfile.PETROL_DCT,now,null);
+            ImageIO.write(img,"png",new File(out,"9g_cluster_8bit_chase_plate_"+plate.replace(" ","").replace("가","ga")+".png"));
+            PlatePixels.text="";}
         {   // 앞차 피하기 on the Arcade view: parked in P, brake held -> countdown, then playing (wheel right), a crash, game over
             PixelCluster pk=new PixelCluster(true);long t=now;Telemetry.Sample[] q=model.snapshot(now);ClusterKit.artwork=null;
             q[7]=new Telemetry.Sample(0,true,false,true,false,0);q[8]=new Telemetry.Sample(0,false,false,true,false,0);q[Telemetry.GEAR_SELECTOR]=new Telemetry.Sample(0,true,false,true,false,0);

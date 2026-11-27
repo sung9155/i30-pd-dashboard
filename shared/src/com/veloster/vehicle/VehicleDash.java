@@ -367,6 +367,8 @@ public final class VehicleDash extends View implements Runnable {
         catch(ClassCastException e){Theme.select("n");/* Incompatible saved value: open in N. */}
         try{CarPaint.select(a.getSharedPreferences("pit_vehicle_ui",0).getString("car_paint","blue"));}
         catch(ClassCastException e){CarPaint.select("blue");}
+        try{PlatePixels.text=a.getSharedPreferences("pit_vehicle_ui",0).getString("car3d_plate","");}   // 내 차 → 번호판 (car3d.CarPlate.PREF), for the pixel cars
+        catch(ClassCastException e){PlatePixels.text="";}
         try{Weather.selectSky(a.getSharedPreferences("pit_vehicle_ui",0).getString("sky_8bit","auto"));}
         catch(ClassCastException e){Weather.selectSky("auto");}
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);modeColor=p.getBoolean("mode_color",false);speedCalOn=p.getBoolean("speed_cal",false);speedCal.restore(p.getFloat("speed_cal_ratio",Float.NaN),p.getInt("speed_cal_samples",0));modeScreen=p.getBoolean("mode_screen",false);

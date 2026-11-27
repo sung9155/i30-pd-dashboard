@@ -586,7 +586,10 @@ final class PixelCluster extends ClusterKit {
     /** "i30 PD" in a 3 x 5 font, 4 columns a glyph (3 for the space). */
     private static final String[] PLATE={"010.111.111...110.110","000.001.101...101.101","010.011.101...110.101","010.001.101...100.101","010.111.111...100.110"};
     private static Bitmap plateText;
-    /** The plate text at 2 screen px a font pixel (half a scene pixel, like the HUD font), centred on the frame's plate. */
+    /** What plateText shows: the owner's number (PlatePixels), or "" for "i30 PD". */
+    private static String plateShown;
+    /** The plate text at 2 screen px a font pixel (half a scene pixel, like the HUD font), centred on the frame's plate:
+     *  the owner's number (내 차 → 번호판) when set, else "i30 PD". Baked again only when the text changes. */
     private void plate(Canvas c,int fi,float x,float y){
         if(plateBox==null){int[][] pb=new int[ArcadeCarFrames.FRAMES.length][];
             for(int i=0;i<pb.length;i++){int[] b={99,-1,99,-1};
@@ -594,8 +597,11 @@ final class PixelCluster extends ClusterKit {
                     if(k==20||k==21){b[0]=Math.min(b[0],xx);b[1]=Math.max(b[1],xx);b[2]=Math.min(b[2],yy);b[3]=Math.max(b[3],yy);}}
                 pb[i]=b;}
             plateBox=pb;}
-        if(plateText==null)plateText=bake(PLATE[0].length(),5,new Art(){public void paint(Canvas b){
-            for(int r=0;r<5;r++)for(int k=0;k<PLATE[r].length();k++)if(PLATE[r].charAt(k)=='1')px(b,k,r,1,1,0xff1c2532);}});
+        final String s=PlatePixels.fit(PlatePixels.text,PlatePixels.ARCADE);
+        if(plateText==null||!s.equals(plateShown)){plateShown=s;   // the old one (20 x 5) is left to the GC: a display list may still hold it
+            plateText=bake(s.isEmpty()?PLATE[0].length():PlatePixels.width(s),5,new Art(){public void paint(Canvas b){
+                for(int r=0;r<5;r++){if(s.isEmpty()){for(int k=0;k<PLATE[r].length();k++)if(PLATE[r].charAt(k)=='1')px(b,k,r,1,1,0xff1c2532);continue;}
+                    for(int i=0;i<s.length();i++)for(int k=0;k<3;k++)if(PlatePixels.lit(s.charAt(i),k,r))px(b,i*4+k,r,1,1,0xff1c2532);}}});}
         int[] b=plateBox[fi];if(b[1]<0)return;
         float cx=(Math.round(x)+(b[0]+b[1]+1)/2f)*4+4,cy=52+(Math.round(y)+(b[2]+b[3]+1)/2f)*4;
         int w=plateText.getWidth()*2;float l=Math.round(cx-w/2f),t=Math.round(cy-5);

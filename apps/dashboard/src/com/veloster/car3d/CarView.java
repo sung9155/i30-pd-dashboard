@@ -103,6 +103,7 @@ final class CarView extends FrameLayout implements Runnable {
                 public void onClick(android.content.DialogInterface d, int w) {
                     String t = CarPlate.clean(in.getText().toString());
                     getContext().getSharedPreferences("pit_vehicle_ui", 0).edit().putString(CarPlate.PREF, t).apply();
+                    com.veloster.vehicle.PlatePixels.text = t;   // the pixel cars (아케이드, 네온 드라이브) show it too
                     renderer.setPlate(CarPlate.draw(t));
                     gl.requestRender();
                 }

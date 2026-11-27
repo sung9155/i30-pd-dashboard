@@ -30,6 +30,9 @@ public final class NeonRenderer {
     static final float SUN_PAN = 70f;
 
     private Bitmap palm, lamp, carSheet;
+    /** The owner's number for the plate (PlatePixels) at a font pixel a bitmap pixel, and the text it was baked for. */
+    private Bitmap plateBmp;
+    private String plateShown = "";
     private CarSprite car;
     private final Bitmap[] skyT = new Bitmap[Theme.COUNT], sunT = new Bitmap[Theme.COUNT], cityT = new Bitmap[Theme.COUNT];
     /** Coast scenery (morning, day): sea and islands band, tropical palms. City (night, sunset): skyline, neon palms, lamps. */
@@ -452,6 +455,7 @@ public final class NeonRenderer {
         int cw = car.cellW, ch = car.cellH;
         spriteRow(c, f, 0, cw, ch, left, top, k, 1f);
         spriteRow(c, f, CarSprite.WHEEL_ROW + (int) (((long) Math.floor(s.wheel)) % CarSprite.WHEEL_PHASES), cw, ch, left, top, k, 1f);
+        drawPlate(c, pt, left, top, k);
         // Lamps: unlit (dark lens) or tail lamps on (medium red, no high-mount stop lamp), following the real switch.
         // Brake: full brightness including the high-mount stop lamp.
         if (s.brake < 0.98f) spriteRow(c, f, s.lamps ? CarSprite.TAIL_ROW : CarSprite.UNLIT_ROW, cw, ch, left, top, k, 1f);
@@ -468,6 +472,26 @@ public final class NeonRenderer {
         if (s.right) { glow(c, glowAmber, rx, ry, 150, 96, 0.85f); glow(c, glowWhite, rx, ry, 22, 12, 0.8f); }
         drawExhaust(c, s, left + pt[4] * k, top + pt[5] * k, left + pt[6] * k, top + pt[7] * k);
         drawIdleExhaust(c, s, t, left + pt[4] * k, top + pt[5] * k, left + pt[6] * k, top + pt[7] * k);
+    }
+
+    /** The owner's number (내 차 → 번호판; PlatePixels) centred on the frame's plate, dark on the white face, at 2 screen px a
+     *  font pixel (a car pixel is 3, so 5 rows fit the 4-pixel plate with a pixel to spare). Empty: the plate stays blank. */
+    private void drawPlate(Canvas c, int[] pt, float left, float top, float k) {
+        String t = com.veloster.vehicle.PlatePixels.fit(com.veloster.vehicle.PlatePixels.text, com.veloster.vehicle.PlatePixels.NEON);
+        if (t.isEmpty() || pt[12] < 0) return;
+        if (plateBmp == null || !t.equals(plateShown)) {
+            plateShown = t;
+            int w = com.veloster.vehicle.PlatePixels.width(t);
+            int[] px = new int[w * 5];
+            for (int i = 0; i < t.length(); i++) for (int y = 0; y < 5; y++) for (int x = 0; x < 3; x++)
+                if (com.veloster.vehicle.PlatePixels.lit(t.charAt(i), x, y)) px[y * w + i * 4 + x] = 0xff1c2532;
+            plateBmp = Bitmap.createBitmap(w, 5, Bitmap.Config.ARGB_8888);
+            plateBmp.setPixels(px, 0, w, 0, 0, w, 5);
+        }
+        float x = Math.round(left + (pt[12] + pt[13] + 1) * k / 2 - plateBmp.getWidth()), y = Math.round(top + (pt[14] + pt[15] + 1) * k / 2 - 5);
+        r.set(x, y, x + plateBmp.getWidth() * 2, y + 10);
+        pixel.setAlpha(255);
+        c.drawBitmap(plateBmp, null, r, pixel);
     }
 
     /** One sprite cell scaled without filtering so the pixels stay crisp. */

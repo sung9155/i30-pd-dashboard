@@ -16,7 +16,8 @@ public final class CarSprite {
     public final float scale;
     /** View angle per frame, degrees: negative shows the right flank (turning right), positive the left. */
     public final int[] angle;
-    /** Per frame, cell pixels: left lamp x,y, right lamp x,y, left pipe x,y, right pipe x,y, car top, car bottom, stop lamp x,y (-1 if none). */
+    /** Per frame, cell pixels: left lamp x,y, right lamp x,y, left pipe x,y, right pipe x,y, car top, car bottom, stop lamp x,y (-1 if none),
+     *  plate face left, right, top, bottom (-1 if none; drawn on by NeonRenderer with PlatePixels). */
     public final int[][] points;
     /** ARGB, (frames * cellW) x (ROWS * cellH). */
     public final int[] pixels;
@@ -54,13 +55,14 @@ public final class CarSprite {
         for (int f = 0; f < n; f++) {
             long[] sum = new long[6];   // left lamp x,y,n, right lamp x,y,n
             long sx = 0, sy = 0, sn = 0;
-            int top = ch, bottom = -1, mid = 0, cnt = 0;
+            int top = ch, bottom = -1, mid = 0, cnt = 0, px0 = cw, px1 = -1, py0 = ch, py1 = -1;
             for (int y = 0; y < ch; y++) for (int x = 0; x < cw; x++) if (ArcadeCarFrames.code(f, x + x0, y + y0) != 0) { mid += x; cnt++; }
             mid = cnt == 0 ? cw / 2 : mid / cnt;
             for (int y = 0; y < ch; y++) for (int x = 0; x < cw; x++) {
                 int k = ArcadeCarFrames.code(f, x + x0, y + y0);
                 if (k == 0) continue;
                 top = Math.min(top, y); bottom = Math.max(bottom, y);
+                if (k == 20 || k == 21) { px0 = Math.min(px0, x); px1 = Math.max(px1, x); py0 = Math.min(py0, y); py1 = Math.max(py1, y); }
                 int[] e = ArcadeCarFrames.CODES[k - 1];
                 int at = f * cw + x;
                 px[at + y * sw] = ArcadeCarFrames.colour(k, b, bh, bd, bs, false, false, false, false);
@@ -75,7 +77,7 @@ public final class CarSprite {
                 }
                 if (turn) px[at + (y + (e[1] < 0 ? 2 : 3) * ch) * sw] = ArcadeCarFrames.colour(k, b, bh, bd, bs, false, true, true, false);
             }
-            int[] p = new int[12];
+            int[] p = new int[16];
             for (int s = 0; s < 2; s++) {
                 long nx = sum[s * 3 + 2];
                 p[s * 2] = nx > 0 ? (int) (sum[s * 3] / nx) : -1; p[s * 2 + 1] = nx > 0 ? (int) (sum[s * 3 + 1] / nx) : -1;
@@ -93,6 +95,7 @@ public final class CarSprite {
             }
             p[8] = top; p[9] = bottom;
             p[10] = sn > 0 ? (int) (sx / sn) : -1; p[11] = sn > 0 ? (int) (sy / sn) : -1;
+            p[12] = px1 < 0 ? -1 : px0; p[13] = px1; p[14] = px1 < 0 ? -1 : py0; p[15] = py1;
             pts[f] = p;
         }
         return new CarSprite(n, cw, ch, 3f, ArcadeCarFrames.YAWS.clone(), pts, px);

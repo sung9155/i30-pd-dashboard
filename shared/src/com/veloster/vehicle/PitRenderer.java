@@ -352,6 +352,9 @@ public final class PitRenderer {
                                 +UiText.t(speedCalOn?" · 실제 속도로 표시 중":" · 켜면 실제 속도로 표시");}}
                     else if(i==2){name="속도 GPS 보정 값 초기화";sub="잰 값을 지우고 처음부터";dim=speedCalSamples==0;}
                     else if(i==3){name="'내 앱' 열기";sub="버튼 숨김: 내 앱 → 계기판에서 숨김";}
+                    else if(i==5){boolean on=usbStatus.equals(UiText.t("설정: ON"));sel=on;name="USB 디버깅";value=on?"ON":"OFF";
+                        sub=usbStatus+" · "+UiText.t("누르면 바꿈 · 켜 있는 동안 USB 카플레이 동글 안 됨");}
+                    else if(i==6){sel=usbAtBoot;name="시동 때 USB 디버깅 켜기";value=usbAtBoot?"켬":"끔";sub="파이·PC 연결용 · 켜 두면 시동마다 USB 카플레이 동글이 안 됨";}
                     else if(i==4){   // what a "no values" report needs, on one row (not a button): app, detected car, CAN, OBD, the head unit's build
                         boolean can=samples[0].valid||samples[7].valid,obd=samples[Telemetry.FUEL_LEVEL].valid||samples[Telemetry.ABS_LOAD].valid||samples[Telemetry.CAT_TEMP].valid;
                         name=appVersion+" · "+UiText.t(profile.fuel==VehicleProfile.Fuel.DIESEL?"디젤":"가솔린")+" · "+UiText.t(profile.trans==VehicleProfile.Trans.MT?"수동 6단":"DCT");
@@ -379,6 +382,9 @@ public final class PitRenderer {
             float y=SettingsLayout.top(cat,SettingsLayout.count(cat)-1)+SettingsLayout.itemH(cat)+20;
             fitted(c,UiText.t("i30 PD 포팅")+" · sung9155 · github.com/sung9155/i30-pd-dashboard   "+UiText.t("원작")+" · reikop/veloster-n-dashboard",SettingsLayout.PANE_L+6,y,11,SettingsLayout.PANE_R-SettingsLayout.PANE_L-12,MUTED);}
     }
+    /** 진단 → USB 디버깅: the port's state (UsbDebugControl.status, read by VehicleDash when the pane opens and after a
+     *  switch) and the start-up option (BootReceiver turns debugging on after a boot when it is set). */
+    public String usbStatus="";public boolean usbAtBoot;
     // --- 글꼴 pane (VehicleDash fills FontView from FontManager; drawn here only) ---
     /** The rows (names and details already in the display language), each row's own regular typeface when loaded, the set
      *  row (current), the picked row and its regular / bold for the preview, the first row shown, and the state lines. */

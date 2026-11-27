@@ -1579,5 +1579,10 @@
   "확인하지 않은 amossu입니다": "An amossu this app has not checked",
   "순정도 이 앱이 쓴 것도 아닌 글꼴 설정이라 바꾸지 않습니다": "The font settings are neither the factory ones nor this app's, so nothing is changed",
   "이 내비에서는 글꼴을 바꾸지 않습니다": "Fonts are not changed on this head unit",
-  "미리보기": "Preview"
+  "미리보기": "Preview",
+  "누르면 바꿈 · 켜 있는 동안 USB 카플레이 동글 안 됨": "Tap to switch · the USB CarPlay dongle does not work while it is on",
+  "시동 때 USB 디버깅 켜기": "USB debugging at start-up",
+  "파이·PC 연결용 · 켜 두면 시동마다 USB 카플레이 동글이 안 됨": "For a Pi or PC · while set, the USB CarPlay dongle stops working at every start",
+  "PC·파이를 adb로 연결하는 모드로 바꿉니다. 켜 있는 동안 USB 카플레이 동글은 안 됩니다. 시동을 껐다 켜면 꺼집니다.": "Switches the port to adb for a PC or Pi. The USB CarPlay dongle does not work while it is on. Turning the ignition off and on turns it off.",
+  "일반 USB 모드로 돌아갑니다. 연결된 PC·파이는 끊깁니다.": "Returns to normal USB mode. A connected PC or Pi is cut off."
 }

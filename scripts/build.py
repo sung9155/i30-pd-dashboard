@@ -59,7 +59,7 @@ def main():
         run("compile-abi", [javac, "-encoding", "UTF-8", "-source", "7", "-target", "7",
                             "-classpath", sdk, "-d", abi, *stubs])
         classpath = os.pathsep.join((str(sdk), str(abi)))
-        sources += sorted(p for p in shared.rglob("*.java") if p.name != "UsbDebugControl.java")
+        sources += sorted(shared.rglob("*.java"))   # with UsbDebugControl: 설정 → 진단 → USB 디버깅 (upstream 665642b did the same)
     else:
         sources.append(shared / "com/veloster/vehicle/UsbDebugControl.java")
         sources += sorted((shared / "com/veloster/i18n").rglob("*.java"))

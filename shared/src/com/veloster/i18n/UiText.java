@@ -164,6 +164,7 @@ public final class UiText {
         EN.put("N 계기판","N Dashboard");
         EN.put("OBD 응답 없음","No OBD answer");
         EN.put("OBD 응답 있음","OBD answering");
+        EN.put("PC·파이를 adb로 연결하는 모드로 바꿉니다. 켜 있는 동안 USB 카플레이 동글은 안 됩니다. 시동을 껐다 켜면 꺼집니다.","Switches the port to adb for a PC or Pi. The USB CarPlay dongle does not work while it is on. Turning the ignition off and on turns it off.");
         EN.put("R · 부스트","R · boost");
         EN.put("RED ALERT · 급제동","RED ALERT · hard braking");
         EN.put("RPM","RPM");
@@ -393,6 +394,7 @@ public final class UiText {
         EN.put("노킹","Knock");
         EN.put("노킹 센서 값은 버스에 없어","No knock-sensor value on the bus:");
         EN.put("누르면 닫기 · 순정 내비 안내","Tap to close · stock navigation guidance");
+        EN.put("누르면 바꿈 · 켜 있는 동안 USB 카플레이 동글 안 됨","Tap to switch · the USB CarPlay dongle does not work while it is on");
         EN.put("누르면 바로 바뀝니다 · 칸 값·스킨은 그대로","Applies at once · cells and skin stay");
         EN.put("누르면 바로 바뀝니다 · 칸 값·크기·투명도는 그대로","Applies at once · cells, size and opacity stay");
         EN.put("누르면 바로 적용","Applies at once");
@@ -822,6 +824,7 @@ public final class UiText {
         EN.put("시계외","out of area");
         EN.put("시계외 %d%%","out of area %d%%");
         EN.put("시계외 없음","no out-of-area rate");
+        EN.put("시동 때 USB 디버깅 켜기","USB debugging at start-up");
         EN.put("시동 안내 화면 건너뛰기","Skip the start-up notice");
         EN.put("시동 안내 화면: ","Start-up notice: ");
         EN.put("시스템","System");
@@ -1132,6 +1135,7 @@ public final class UiText {
         EN.put("인천","Incheon");
         EN.put("인텐스 블루","Intense Blue");
         EN.put("인텐스 카퍼","Intense Copper");
+        EN.put("일반 USB 모드로 돌아갑니다. 연결된 PC·파이는 끊깁니다.","Returns to normal USB mode. A connected PC or Pi is cut off.");
         EN.put("일반 블루투스(Classic)를 사용합니다. BLE 검색과 GPS 데이터 수신 기능은 포함하지 않습니다.","Uses Classic Bluetooth. BLE discovery and GPS data reception are not included.");
         EN.put("일반 설치 앱은 자동 표시됩니다. 목록에서 숨겨도 앱은 삭제되지 않습니다.","Ordinary installed apps appear automatically. Hiding an app does not uninstall it.");
         EN.put("일반유","Regular");
@@ -1485,6 +1489,7 @@ public final class UiText {
         EN.put("틸","Teal");
         EN.put("파랑","Blue");
         EN.put("파워트레인","Powertrain");
+        EN.put("파이·PC 연결용 · 켜 두면 시동마다 USB 카플레이 동글이 안 됨","For a Pi or PC · while set, the USB CarPlay dongle stops working at every start");
         EN.put("파이어리 레드","Fiery Red");
         EN.put("판정 로직상 고장","Algorithm-based failure");
         EN.put("팝 빈도","Pop rate");

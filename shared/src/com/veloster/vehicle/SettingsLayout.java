@@ -91,7 +91,7 @@ public final class SettingsLayout {
     /** Choices in a category's pane (완료 has none). */
     public static int count(int cat){
         switch(cat){case SCREENS:return ClusterPicker.COUNT;case THEME:return Theme.IDS.length;case PAINT:return CarPaint.IDS.length+1;   // the last tile is the 8-bit sky (Weather)
-            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_BOOST+1:1;case FX:return FX_VOL+1;case LANG:return LANGS.length;case DIAG:return 5;case FLOAT:return FLOAT_CELL+4;
+            case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_BOOST+1:1;case FX:return FX_VOL+1;case LANG:return LANGS.length;case DIAG:return 7;case FLOAT:return FLOAT_CELL+4;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
     public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME?3:cat==PAINT?2:1;}
@@ -101,7 +101,8 @@ public final class SettingsLayout {
     /** The 사운드 and RPM panes (the − / + rows) keep a fixed, comfortably tappable row and scroll when the rows overflow; every other pane fits its rows to the height. */
     public static final float SOUND_ROW_H=56;
     public static boolean rowScroll(int cat){return cat==SOUND||cat==RPM;}
-    public static float itemH(int cat){if(rowScroll(cat))return SOUND_ROW_H;int r=Math.max(1,rows(cat));return Math.min(MAX_ITEM_H,(BOTTOM-paneTop(cat)-GAP*(r-1))/r);}
+    public static float itemH(int cat){if(rowScroll(cat))return SOUND_ROW_H;int r=Math.max(1,rows(cat));float b=cat==DIAG?BOTTOM-22:BOTTOM;   // 진단 keeps a line under its rows for the credit
+        return Math.min(MAX_ITEM_H,(b-paneTop(cat)-GAP*(r-1))/r);}
     public static float left(int cat,int i){return PANE_L+(i%cols(cat))*(itemW(cat)+GAP);}
     public static float top(int cat,int i){return paneTop(cat)+(i/cols(cat))*(itemH(cat)+GAP);}
     /** How far a pane can scroll (0 = it fits). The 화면 list and the 사운드 pane overflow; the rest fit. */

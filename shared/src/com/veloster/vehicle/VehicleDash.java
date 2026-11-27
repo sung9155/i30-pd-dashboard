@@ -47,6 +47,30 @@ public final class VehicleDash extends View implements Runnable {
     private int lastMode=-1,modeBack=-1;
     /** Settings category open on the left of the gear's settings (SettingsLayout). */
     private int settingsCat=SettingsLayout.SCREENS;
+    // ---- 진단 → USB 디버깅: '내 앱''s switch (UsbDebugControl) in the dashboard, and the start-up option (BootReceiver) ----
+    private long usbReadAt=Long.MIN_VALUE/2;private boolean usbBusy;
+    private void usbRefresh(){usbReadAt=SystemClock.elapsedRealtime();renderer.usbStatus=UsbDebugControl.status();
+        renderer.usbAtBoot=activity.getSharedPreferences("pit_vehicle_ui",0).getBoolean(com.veloster.dashboard.BootReceiver.USB_AT_BOOT,false);}
+    /** Asks first both ways: ON takes the USB port from the CarPlay dongle, OFF can cut a PC or Pi off. */
+    private void usbAsk(){
+        if(usbBusy)return;usbRefresh();
+        final boolean on=!renderer.usbStatus.equals(UiText.t("설정: ON"));
+        new android.app.AlertDialog.Builder(activity).setTitle(UiText.t("USB 디버깅")+" "+(on?"ON":"OFF"))
+            .setMessage(UiText.t(on?"PC·파이를 adb로 연결하는 모드로 바꿉니다. 켜 있는 동안 USB 카플레이 동글은 안 됩니다. 시동을 껐다 켜면 꺼집니다.":"일반 USB 모드로 돌아갑니다. 연결된 PC·파이는 끊깁니다."))
+            .setPositiveButton(on?"ON":"OFF",new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int w){usbSend(on);}})
+            .setNegativeButton(UiText.t("취소"),null).show();
+    }
+    private void usbSend(final boolean on){
+        usbBusy=true;
+        new Thread(new Runnable(){public void run(){String r;
+            try{r=UsbDebugControl.request(activity,on)?UiText.t("USB 디버깅 ")+(on?"ON":"OFF")+UiText.t(" 전환 요청 완료. 실제 PC 연결은 별도로 확인하세요."):UiText.t("USB 모드 전환 요청이 거부되었습니다.");}
+            catch(Exception ex){r=UiText.t("USB 모드 전환 실패: ")+ex.getClass().getSimpleName();}
+            catch(LinkageError ex){r=UiText.t("USB 모드 전환 실패: ")+ex.getClass().getSimpleName();}
+            final String answer=r;
+            activity.runOnUiThread(new Runnable(){public void run(){usbBusy=false;usbRefresh();invalidate();
+                if(!activity.isFinishing())Toast.makeText(activity,answer,Toast.LENGTH_LONG).show();}});
+        }},"usb-debug").start();
+    }
     private int[] order=ClusterPicker.naturalOrder();   // display order of the screens (header tabs, swipe, settings list)
     private float settingsScroll,lastMoveY;             // vertical scroll of the SCREENS list, and the last touch y for dragging it
     private static String orderCsv(int[] o){StringBuilder s=new StringBuilder();for(int i=0;i<o.length;i++){if(i>0)s.append(',');s.append(o[i]);}return s.toString();}
@@ -722,7 +746,8 @@ public final class VehicleDash extends View implements Runnable {
         renderer.setPicker(picker,editing,hidden);renderer.setOrder(order,settingsScroll);renderer.setScreenDrag(dragRow,dragY);
         renderer.setModeOptions(modeColor,modeScreen);
         if(picker&&editing){renderer.setFloatEdit(floatEdit,floatSel,floatEditSig,floatEditGraph,floatEditTab);renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);renderer.setSound(soundOn,soundRoute,soundEngine,soundExhaust,soundVals);renderer.setBeep(beepOn,beepSound,beepVol,downSounds,downScope);
-            if(settingsCat==SettingsLayout.FONT&&pickSlot<0){if(fontSnap==null&&!fontBusy&&!fontTried)fontScan();renderer.setFonts(fontView());}}
+            if(settingsCat==SettingsLayout.FONT&&pickSlot<0){if(fontSnap==null&&!fontBusy&&!fontTried)fontScan();renderer.setFonts(fontView());}
+            if(settingsCat==SettingsLayout.DIAG&&SystemClock.elapsedRealtime()-usbReadAt>2000)usbRefresh();}   // the port can change under us (Factory Test, '내 앱')
         renderer.setLap(lap);
         renderer.setOverviewLayout(overviewLayout);
         long drawStart=System.nanoTime();
@@ -899,6 +924,8 @@ public final class VehicleDash extends View implements Runnable {
                     if(i==1){speedCalOn=!speedCalOn;e.putBoolean("speed_cal",speedCalOn);break;}
                     if(i==2){speedCal.reset();e.remove("speed_cal_ratio").remove("speed_cal_samples");break;}
                     if(i==4)break;   // the status row: nothing to tap
+                    if(i==5){usbAsk();break;}
+                    if(i==6){renderer.usbAtBoot=!renderer.usbAtBoot;e.putBoolean(com.veloster.dashboard.BootReceiver.USB_AT_BOOT,renderer.usbAtBoot);break;}
                     if(i==3){   // the hub app ('내 앱'); a plain launch, nothing is changed
                         android.content.Intent hub=activity.getPackageManager().getLaunchIntentForPackage("com.veloster.carplayhub");
                         if(hub==null)Toast.makeText(activity,UiText.t("'내 앱'이 설치돼 있지 않습니다."),Toast.LENGTH_SHORT).show();

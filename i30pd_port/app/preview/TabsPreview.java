@@ -554,15 +554,43 @@ public final class TabsPreview {
          for(int i=0;i<3;i++){rec.setPage(PitRenderer.PAGE_TACHO+1+i);for(int f=0;f<6;f++)save(out,mn[i],rec,model,now+f*50L,false,false);}   // a few frames: the needles ease in
          for(int i=0;i<3;i++){PitRenderer e=new PitRenderer();e.setSymmetric(true);e.setPage(PitRenderer.PAGE_TACHO+1+i);save(out,mn[i]+"_nodata",e,new Telemetry(),now,false,false);}
          int[] ix={7,0,8,9,10,11,12,Telemetry.STEERING,2,Telemetry.BOOST,Telemetry.OIL_ECU};
-         // WRC: a stage four minutes in, three corners behind (3 R, 5 L, 2 R), now in a 4 L at 0.7 G
-         {WrcCluster k=new WrcCluster();k.shiftTarget=6000;long t0=now-240000;float[][] seq={{-100,0},{40,0},{0,0},{-170,0},{0,0},{70,0.7f}};   // raw wheel angles: + is a left turn of the wheel
-          BufferedImage img=null;
-          k.background(with(model,now,ix,new float[]{40,3000,2,30,0,0,0,0,92,0.2f,98}),t0);   // moved off four minutes ago
-          for(int f=0;f<=96;f++){long t=now-4800+f*50L;float[] st=seq[Math.min(seq.length-1,f/16)];
-              Telemetry.Sample[] q=with(model,now,ix,new float[]{72,5200,3,64,0,st[1],0.05f,st[0],92,0.9f,98});k.background(q,t);
-              img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
-              new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);}
-          ImageIO.write(img,"png",new File(out,"9s_wrc_corner.png"));}
+         // WRC on a new road, recording: a 3 R and a long 5 L found from the yaw rate (and lateral G), then a straight
+         // (9s_wrc_record), then 3 s into a 4 L (9s_wrc_corner, the live call); GPS fixes northwards for Commute
+         {Commute.store(new MapStore());WrcCluster k=new WrcCluster();k.shiftTarget=6000;
+          int[] iy={7,0,8,9,10,11,12,Telemetry.STEERING,2,Telemetry.BOOST,Telemetry.OIL_ECU,Telemetry.YAW};
+          float[][] seg={{50,0,3},{50,-19,5},{60,0,4},{80,8.5f,15},{70,0,5},{70,12.4f,3}};   // km/h, yaw deg/s (+ left), seconds
+          long total=0;for(float[] q:seg)total+=(long)(q[2]*1000);
+          long t=now-total-2000;double north=0;
+          k.background(with(model,t,iy,new float[]{40,3000,2,30,0,0,0,0,92,0.2f,98,0}),t-240000);   // moved off four minutes ago
+          for(int sI=0;sI<seg.length;sI++){float[] q=seg[sI];
+              for(int f=0;f<q[2]*20;f++){t+=50;north+=q[0]/3.6*0.05;
+                  if(t%1000<50)Commute.fix(37.2+north/110540,127.1,5,q[0],t,t);
+                  float latG=(float)(Math.toRadians(q[1])*q[0]/3.6/9.81);
+                  Telemetry.Sample[] smp=with(model,now,iy,new float[]{q[0],q[0]*70,3,q[1]==0?40:20,0,latG,0.02f,q[1]*6,92,0.6f,98,q[1]});
+                  k.background(smp,t);
+                  boolean shot=(sI==4||sI==5)&&f+1>=q[2]*20;
+                  if(shot){BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+                      new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,smp,model,new DriveStats(),VehicleProfile.PETROL_DCT,t,null);
+                      ImageIO.write(img,"png",new File(out,sI==4?"9s_wrc_record.png":"9s_wrc_corner.png"));}}}}
+         // WRC on a road driven before: the first drive keeps five corners, the second is 600 m in, so the book calls the
+         // next ones (9s_wrc_notes, and in English); with the navi guiding too, its turn joins the calls (9s_wrc_notes_navi)
+         {MapStore mst=new MapStore();Commute.store(mst);long t=now-400000;
+          float[][] notes={{800,3,0,0,0},{1100,-4,1,0,1},{1320,2,0,1,0},{1900,-5,0,0,0},{2400,6,0,0,0}};int ni=0;   // metres, note, long, tightens, caution
+          for(int i=0;i<=240;i++){Commute.fix(37.3+i*12.5/110540,127.1,5,45,t,t);
+              while(ni<notes.length&&Commute.along(t)>=notes[ni][0]){float[] q=notes[ni++];Commute.corner(new PaceNote.Corner(q[0],(int)q[1],q[2]>0,q[3]>0,false,q[4]>0));}
+              t+=1000;}
+          Commute.store(mst);t=now-48000;
+          for(int i=0;i<=48;i++){Commute.fix(37.3+i*12.5/110540,127.1,5,45,t,t);t+=1000;}
+          int[] iy={7,0,8,9,10,11,12,Telemetry.STEERING,2,Telemetry.BOOST,Telemetry.OIL_ECU,Telemetry.YAW};
+          Telemetry.Sample[] smp=with(model,now,iy,new float[]{45,2900,3,25,0,0.02f,0.05f,-2,92,0.3f,98,0.4f});
+          for(int v=0;v<3;v++){WrcCluster k=new WrcCluster();k.shiftTarget=6000;k.background(smp,now-200000);k.background(smp,now);
+              if(v==1)com.veloster.i18n.UiText.configure("en","ko");
+              if(v==2)Tbt.set(Tbt.parse(String.join(String.valueOf((char)10),"Navigation Cluster:","  TBT Info:","    Display Type  = TURN RIGHT","    Direction     = 90.0","    Distance      = 350.0 METER","")),now);
+              BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+              new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,smp,model,new DriveStats(),VehicleProfile.PETROL_DCT,now,null);
+              ImageIO.write(img,"png",new File(out,v==0?"9s_wrc_notes.png":v==1?"9s_wrc_notes_en.png":"9s_wrc_notes_navi.png"));
+              com.veloster.i18n.UiText.configure("ko","ko");Tbt.set(Tbt.NONE,now);}
+          Commute.store(null);}
          // WRC while the stock navi guides (a domestic code, 600 m): the card shows the guidance
          {Tbt.set(Tbt.parse(String.join(String.valueOf((char)10),"Navigation Cluster:","  TBT SubInfo:","    distance      = 2.9 METER","    minutes       = 1","  TBT Info:","    Display Type  = Unknown display type(0x5b)","    Direction     = 0.0","    Distance      = 600.0 METER","")),now);
           rec.setPage(ClusterPicker.page(ClusterPicker.WRC));save(out,"9s_wrc_navi",rec,model,now,false,false);Tbt.set(Tbt.parse(String.join(String.valueOf((char)10),"Navigation Cluster:","  TBT Info:","    Display Type  = U TURN","    Direction     = 270.0","    Distance      = 300.0 METER","")),now);save(out,"9s_wrc_navi_u",rec,model,now,false,false);Tbt.set(Tbt.NONE,now);}
@@ -600,6 +628,8 @@ public final class TabsPreview {
                 new PerformanceRenderer().draw(c,q,null,now,VehicleProfile.PETROL_MT);ImageIO.write(img,"png",new File(out,"x_perf_mt_match.png"));}}
     }
     /** The snapshot with some signals set (received, fresh). */
+    /** A Commute store in memory (the WRC frames' drives). */
+    static final class MapStore implements Commute.Store{final java.util.HashMap<String,String> m=new java.util.HashMap<String,String>();public String get(String k){return m.get(k);}public void put(String k,String v){m.put(k,v);}}
     private static Telemetry.Sample[] with(Telemetry m,long now,int[] idx,float[] val){Telemetry.Sample[] q=m.snapshot(now);for(int i=0;i<idx.length;i++)q[idx[i]]=new Telemetry.Sample(val[i],true,false,true,false,0);return q;}
     private static void feed(Telemetry model,String hex,long now){
         byte[] b=new byte[hex.length()/2];

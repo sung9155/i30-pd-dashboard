@@ -156,6 +156,7 @@ public final class UiText {
         EN.put("G 원","G circle");
         EN.put("G-볼 1.2g","G-ball 1.2g");
         EN.put("G-포스","G-force");
+        EN.put("GPS 기다리는 중","Waiting for GPS");
         EN.put("GPS 끊김","GPS lost");
         EN.put("GPS 랩 타이머","GPS lap timer");
         EN.put("GPS 신호를 기다리는 중","Waiting for GPS");
@@ -326,6 +327,7 @@ public final class UiText {
         EN.put("기기 페어링","Pair device");
         EN.put("기기 페어링 상태를 확인할 수 없습니다.","The pairing state could not be verified.");
         EN.put("기록","Records");
+        EN.put("기록 중","Recording");
         EN.put("기록 지우기","Clear records");
         EN.put("기록실","Records");
         EN.put("기록은 앱을 닫으면 초기화","Records reset when the app closes");
@@ -349,6 +351,7 @@ public final class UiText {
         EN.put("기존 핫스팟 설정을 읽지 못했습니다. 백업 불가로 변경하지 않았습니다.","Could not read the existing hotspot configuration. No backup or changes were made.");
         EN.put("기존 핫스팟이 이미 켜져 있습니다. 설정을 변경하지 않았습니다.","The existing hotspot is already on. No settings were changed.");
         EN.put("긴 비프","Long beep");
+        EN.put("길게","long");
         EN.put("꺼져 있음","Off");
         EN.put("꺼짐","Off");
         EN.put("끄기","Disable");
@@ -359,6 +362,7 @@ public final class UiText {
         EN.put("나이트","Night");
         EN.put("나중에","Later");
         EN.put("남은 거리","Remaining");
+        EN.put("남은 코너 없음","No more corners");
         EN.put("낮","Day");
         EN.put("낮 색감 고르기","Choose the day look");
         EN.put("낮은 차임","Low chime");
@@ -372,6 +376,7 @@ public final class UiText {
         EN.put("내 차","My Car");
         EN.put("내부 고장","Internal failure");
         EN.put("내부 전자 회로 고장","Internal electronic circuit failure");
+        EN.put("내비","Navi");
         EN.put("내비 빌드","Head unit build");
         EN.put("내비 시스템 공간이 부족합니다","Not enough system space on the head unit");
         EN.put("내비 안내·전화·음성인식 때 엔진 소리를 줄이거나 멈춤 · 통화는 늘 멈춤","Lower or stop the engine sound for prompts, calls and voice control · calls always stop it");
@@ -402,6 +407,7 @@ public final class UiText {
         EN.put("노크 센서 회로 이상","Knock sensor circuit malfunction");
         EN.put("노킹","Knock");
         EN.put("노킹 센서 값은 버스에 없어","No knock-sensor value on the bus:");
+        EN.put("노트 만드는 중","Making notes");
         EN.put("누르면 닫기 · 순정 내비 안내","Tap to close · stock navigation guidance");
         EN.put("누르면 바꿈 · 켜 있는 동안 USB 카플레이 동글 안 됨","Tap to switch · the USB CarPlay dongle does not work while it is on");
         EN.put("누르면 바로 바뀝니다 · 칸 값·스킨은 그대로","Applies at once · cells and skin stay");
@@ -427,6 +433,7 @@ public final class UiText {
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
         EN.put("다음 안내","Next guidance");
         EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
+        EN.put("다음에 이 길을 달리면 코너를 미리 불러요","Next time on this road, the corners are called ahead");
         EN.put("다이아 커팅","Diamond cut");
         EN.put("다이얼","Dial");
         EN.put("단","gear");
@@ -1137,6 +1144,8 @@ public final class UiText {
         EN.put("이 글꼴을 열지 못했습니다","This font could not be opened");
         EN.put("이 기기는 페어링을 진행 중입니다.","This device is already pairing.");
         EN.put("이 기기에서 재시작 기능을 사용할 수 없습니다.","Restart is unavailable on this device.");
+        EN.put("이 길은 처음","New road");
+        EN.put("이 길의 노트","Notes for this road");
         EN.put("이 내비에서는 글꼴을 바꾸지 않습니다","Fonts are not changed on this head unit");
         EN.put("이 내비에서는 앱이 스스로 삭제할 수 없습니다. PC 설치기나 휴대폰 설치 앱의 [삭제]를 쓰세요.","This head unit does not let the app remove itself. Use [Remove] in the PC installer or the phone installer.");
         EN.put("이 시스템에서 바로가기 서비스를 시작할 수 없습니다.","This system cannot start the shortcut service.");
@@ -1273,6 +1282,7 @@ public final class UiText {
         EN.put("조수석","Passenger");
         EN.put("조수석 문","Passenger door");
         EN.put("조수석용 G·기록","G and records for the passenger");
+        EN.put("조임","tightens");
         EN.put("조향","Steering");
         EN.put("조향 (MDPS)","Steering (MDPS)");
         EN.put("조향 모터 신호 이상","Steering motor signal fault");
@@ -1300,6 +1310,7 @@ public final class UiText {
         EN.put("주변 기기 검색 중","Searching for nearby devices");
         EN.put("주변 기기 검색을 누르고 연결할 기기를 페어링 모드로 켜주세요.","Tap Find nearby devices and put the device into pairing mode.");
         EN.put("주변 기기를 검색합니다.","Searching for nearby devices.");
+        EN.put("주의","caution");
         EN.put("주인공 + 목록","Hero + list");
         EN.put("주차","Park");
         EN.put("주차 브레이크","Parking brake");
@@ -1347,6 +1358,7 @@ public final class UiText {
         EN.put("지금 재부팅","Reboot now");
         EN.put("지금 화면의 글꼴과 같습니다","Same as the font on screen now");
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
+        EN.put("지난","Last");
         EN.put("지난 구간","Last stage");
         EN.put("지난 랩","Last");
         EN.put("지난 코너","Last corners");
@@ -1453,6 +1465,7 @@ public final class UiText {
         EN.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","When enabled, reboot restores only the shortcut, not the full app screen. Drag the edge button to move it.\n\nIf overlays are denied, the notification remains. If the factory UI also hides notifications, use another entry point. Force-stop may prevent restoration until My Apps is opened again.");
         EN.put("켜짐 (짧게 누르면 계기판)","On (short press opens the dashboard)");
         EN.put("켬","On");
+        EN.put("코너 %d개","%d corners");
         EN.put("코리아 인터내셔널 서킷","Korea International Circuit");
         EN.put("코치","Coach");
         EN.put("코퍼","Copper");
@@ -1554,6 +1567,7 @@ public final class UiText {
         EN.put("표시할 설치 앱이 없습니다. 앱 설치 뒤 다시 열거나 목록 편집에서 선택하세요.","No installed apps to show. Reopen after installing an app or select one in Edit app list.");
         EN.put("표준 코드","standard code");
         EN.put("풀 배기 · 팝앤뱅","Straight pipe · pops");
+        EN.put("풀림","opens");
         EN.put("풀부하 기준","Full-load line");
         EN.put("풀부하에서 점화가 기준선보다","Spark later than the full-load line");
         EN.put("퓨얼 컷","Fuel cut");

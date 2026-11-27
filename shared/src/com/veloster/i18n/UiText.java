@@ -509,6 +509,7 @@ public final class UiText {
         EN.put("디자인","Design");
         EN.put("디젤","Diesel");
         EN.put("디젤 DPF","Diesel DPF");
+        EN.put("디지털","Digital");
         EN.put("디지털 3틱","Digital 3 ticks");
         EN.put("딩","Ding");
         EN.put("라바 오렌지","Lava Orange");
@@ -686,8 +687,6 @@ public final class UiText {
         EN.put("브레이크 진공 펌프 계통 고장","Brake vacuum pump system failure");
         EN.put("브레이크 진공 펌프 릴레이 회로 단선·단락","Brake vacuum pump relay circuit open or short circuit");
         EN.put("브레이크·안전","Brakes · safety");
-        EN.put("브리티시 그린","British green");
-        EN.put("블랙","Black");
         EN.put("블로오프","Blow-off");
         EN.put("블루투스","Bluetooth");
         EN.put("블루투스 기기 검색·페어링","Bluetooth discovery and pairing");
@@ -865,7 +864,6 @@ public final class UiText {
         EN.put("신호 파형 이상","Signal waveform fault");
         EN.put("신호 허용 범위 미만","Signal below allowable range");
         EN.put("신호 허용 범위 초과","Signal above allowable range");
-        EN.put("실버","Silver");
         EN.put("실시간","Live");
         EN.put("실제 속도로 표시","Show the true speed");
         EN.put("실행 가능한 기본 앱이 더 없습니다.","No other system apps are available to open.");
@@ -1455,7 +1453,6 @@ public final class UiText {
         EN.put("크랭크-배기 캠 위치 상관관계 이상","Crankshaft / exhaust camshaft position correlation fault");
         EN.put("크랭크-흡기 캠 위치 상관관계 이상","Crankshaft / intake camshaft position correlation fault");
         EN.put("크롬 원형 바늘","Chrome round dials");
-        EN.put("크림 · 월넛","Cream · walnut");
         EN.put("큰 값 + 목록","Big + list");
         EN.put("클래식","Classic");
         EN.put("클러스터","Cluster");

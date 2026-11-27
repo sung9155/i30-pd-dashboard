@@ -564,6 +564,7 @@ public final class UiText {
         EN.put("목적지 방향","Towards destination");
         EN.put("목표 ","Target ");
         EN.put("문 열림","Door open");
+        EN.put("미니멀","Minimal");
         EN.put("미드나이트 퍼플","Midnight Purple");
         EN.put("미등","Position lamps");
         EN.put("미디어 소스 · 차에서 무음","Media source · silent in car");
@@ -878,6 +879,7 @@ public final class UiText {
         EN.put("아이언 그레이","Iron Grey");
         EN.put("아주 크게","Extra large");
         EN.put("아케이드","Arcade");
+        EN.put("아크","Arc");
         EN.put("안내 때 멈추기","Stop for prompts");
         EN.put("안내 때 줄이기","Lower for prompts");
         EN.put("안내·통화 양보","Give way to prompts and calls");

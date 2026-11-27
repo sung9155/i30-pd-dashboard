@@ -410,12 +410,13 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         "varying vec3 vN; varying vec3 vW; varying vec2 vUV; varying float vK; varying float vG;\n" +
         "void main(){ vec3 n=normalize(vN); vec3 v=normalize(uEye-vW);\n" +
         " vec3 b=texture2D(uBase,vUV).rgb; vec3 e=texture2D(uGlowTex,vUV).rgb;\n" +
-        " vec3 em=e*(0.05+vK*1.9);\n" +
+        " vec3 em=e*(0.05+vK*1.9); float lens=0.75;\n" +
         // Tail and stop lamps (groups 3, 4) as a lit i30 rear lamp (the owner's reference photo, 2026-11-27): the light
-        // guide's core (the glow picture's orange middle) burns pinkish white, white-hot when braking; the rest is red.
+        // guide's core (the glow picture's orange middle) burns near white from the tail lamp on; the rest is a
+        // smoked red, brighter when braking, and the unlit lens is tinted dark like a smoke film (owner's wish).
         " if(vG>2.5&&vG<4.5){ float k=clamp(e.g/max(e.r,0.01)*2.2,0.0,1.0);\n" +
-        "  em=vec3(1.0,0.07,0.05)*e.r*(0.05+vK*1.9)+vec3(0.0,0.8,0.75)*k*e.r*vK*1.6; }\n" +
-        " vec3 c=shade(b*0.75,0.5,n,v)*(1.0-0.5*vK)+em;\n" +
+        "  float a=k*min(1.0,vK*2.2); em=vec3(1.0,0.07,0.05)*e.r*(0.03+vK*1.5)*(1.0-a)+vec3(1.0,0.82,0.78)*e.r*a; lens=0.4; }\n" +
+        " vec3 c=shade(b*lens,0.5,n,v)*(1.0-0.5*vK)+em;\n" +
         " gl_FragColor=vec4(c,1.0); }\n";
     private static final String FLOOR_VS =
         "uniform mat4 uMVP; uniform float uSize; attribute vec2 aCorner; varying vec2 vXZ;\n" +

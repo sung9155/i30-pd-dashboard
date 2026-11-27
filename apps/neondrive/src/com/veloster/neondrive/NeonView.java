@@ -197,7 +197,9 @@ final class NeonView extends View implements Runnable {
         android.util.Log.i("NeonDrive", "DCT signs seen (TCU frame or 7th/8th gear): gear display set to 8-speed DCT (unconfirmed)");
     }
 
+    private final FrameStat stat = new FrameStat("neon");
     protected void onDraw(Canvas canvas) {
+        long t0 = System.nanoTime();
         long now = SystemClock.elapsedRealtime();
         dctAuto();
         applyPaint();
@@ -215,6 +217,7 @@ final class NeonView extends View implements Runnable {
         double nowMin = local.get(java.util.Calendar.HOUR_OF_DAY) * 60 + local.get(java.util.Calendar.MINUTE) + local.get(java.util.Calendar.SECOND) / 60.0;
         renderer.setTheme(Theme.resolve(themeMode, nowMin, sunriseMin, sunsetMin));
         renderer.draw(canvas, getWidth(), getHeight(), s);
+        stat.end(t0);   // the canvas commands; the GPU replays them after, so a low frame count also points there
     }
 
     public boolean onTouchEvent(MotionEvent e) {

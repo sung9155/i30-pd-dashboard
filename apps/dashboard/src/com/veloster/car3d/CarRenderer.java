@@ -88,7 +88,9 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         Matrix.perspectiveM(proj, 0, 36f, width / (float) height, 0.3f, 60f);
     }
 
+    private final com.veloster.neondrive.FrameStat stat = new com.veloster.neondrive.FrameStat("car3d");
     @Override public void onDrawFrame(GL10 unused) {
+        long t0 = System.nanoTime();
         float yaw, pitch, dist, wd, roll, pGloss, bl, road; int sc; boolean pOn; float[] g = new float[CarState.GROUPS]; float[] pc = new float[3];
         CarModel m;
         synchronized (lock) {
@@ -165,6 +167,8 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         drawHalos(m, g, sc);
         GLES20.glDepthMask(true);
         GLES20.glDisable(GLES20.GL_BLEND);
+        GLES20.glFinish();   // the GPU's part too (the frame is drawn only on demand, at most ~30 a second)
+        stat.end(t0);
     }
 
     private void upload(CarModel m, Bitmap base, Bitmap glowMap) {

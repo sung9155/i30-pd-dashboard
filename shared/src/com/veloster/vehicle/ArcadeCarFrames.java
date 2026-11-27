@@ -33,6 +33,21 @@ public final class ArcadeCarFrames {
     private ArcadeCarFrames(){}
     /** Frame index for a yaw in degrees (+ = turning left): the nearest of the 13, clamped. */
     public static int frameFor(float yawDeg){int i=Math.round(yawDeg/STEP)+YAWS.length/2;return Math.max(0,Math.min(YAWS.length-1,i));}
+    /** A code's colour: paint shades b..bs (CarPaint body, highlight, dark side, shadow line), lamps as the hand-drawn rear lit
+     *  them (lp = tail lamps on), amber for a lit turn signal. Codes 20 and 21 are the plate face. */
+    public static int colour(int code,int b,int bh,int bd,int bs,boolean brake,boolean left,boolean right,boolean lp){
+        int[] e=CODES[code-1];
+        if(e[0]==4){if(e[1]<0?left:right)return 0xffffb020;e=CODES[e[2]-1];}
+        if(e[0]==1)return e[1]==0?b:e[1]==1?bh:e[1]==2?bd:bs;
+        if(e[0]==2)return code==20||code==21?0xffe8e8ec:e[1];   // the plate face white (PixelCluster.plate() adds the rim and text)
+        switch(e[1]){   // tail, LED line, high stop lamp, reflector, clear lens
+            case 0:return brake?0xffff3a2a:0xff5a0c14;
+            case 1:return brake?0xffffd0c4:lp?0xffe0323c:0xff7a1a22;
+            case 2:return brake?0xffff4a3a:0xffa01818;
+            case 3:return brake?0xffff3030:0xffa01818;
+            default:return 0xff9a9496;
+        }
+    }
     /** Code (0 empty, else 1-based into CODES) of frame i at column x, row y. */
     public static int code(int i,int x,int y){return ALPHA.indexOf(FRAMES[i].charAt(y*W+x));}
 }

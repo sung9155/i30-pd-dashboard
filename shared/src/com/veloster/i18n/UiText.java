@@ -61,6 +61,9 @@ public final class UiText {
         EN.put("2번 인젝터 회로 높음","Injector 2 circuit high");
         EN.put("2번 인젝터 회로 이상","Injector 2 circuit malfunction");
         EN.put("3 × 2 보기","3 x 2 grid");
+        EN.put("3D 모델·램프·핸들 연동","3D model with live lamps and steering");
+        EN.put("3D 모델을 불러오지 못했습니다","Could not load the 3D model");
+        EN.put("3D 화면을 그릴 수 없습니다","Cannot draw the 3D view");
         EN.put("3단 기어비 불일치","Incorrect 3rd gear ratio");
         EN.put("3단 아래 맞춤 소리","Sound: matched 3 gears down");
         EN.put("3번 실린더 실화 감지","Cylinder 3 misfire detected");
@@ -363,6 +366,7 @@ public final class UiText {
         EN.put("내 앱 버튼 숨김","Hide My apps button");
         EN.put("내 앱 열기 · 길게 끌어서 위치 변경 / My Apps","Open My Apps; drag to move");
         EN.put("내 앱에 표시할 앱","Apps to show in My Apps");
+        EN.put("내 차","My Car");
         EN.put("내부 고장","Internal failure");
         EN.put("내부 전자 회로 고장","Internal electronic circuit failure");
         EN.put("내비 빌드","Head unit build");
@@ -384,8 +388,10 @@ public final class UiText {
         EN.put("냉각수온 센서 회로 낮음","Coolant temperature sensor circuit low");
         EN.put("냉각수온 센서 회로 높음","Coolant temperature sensor circuit high");
         EN.put("네온","Neon");
+        EN.put("네온 드라이브","Neon Drive");
         EN.put("네이비","Navy");
         EN.put("네트워크 통신","Network communication");
+        EN.put("노을","Sunset");
         EN.put("노크 센서 감지 시스템(KSDS) 경고 — 엔진 베어링 손상 의심, 즉시 점검 권장","Knock sensor detection system (KSDS) warning — engine bearing damage suspected, immediate inspection recommended");
         EN.put("노크 센서 범위·성능 이상","Knock sensor range/performance");
         EN.put("노크 센서 회로 낮음","Knock sensor circuit low");
@@ -436,6 +442,7 @@ public final class UiText {
         EN.put("데이터 메모리 오류","Data memory error");
         EN.put("도구","Tools");
         EN.put("도착","Arrived");
+        EN.put("도트 드라이브 화면","Pixel night drive");
         EN.put("돌아가기","Back");
         EN.put("동승석 벨트 버클 스위치 고장","Passenger seat belt buckle switch failure");
         EN.put("동승석 벨트 버클 스위치 단선·전원 단락","Passenger seat belt buckle switch open circuit or short to power");
@@ -488,6 +495,7 @@ public final class UiText {
         EN.put("두 번 · 길고 짧게","Long then short");
         EN.put("두 음 차임","Two-tone chime");
         EN.put("둥글게","Round");
+        EN.put("뒤","Rear");
         EN.put("뒤 오른쪽 공기압","Rear-right pressure");
         EN.put("뒤 오른쪽 타이어 온도","Rear-right tyre temperature");
         EN.put("뒤 오른쪽 휠","Rear-right wheel");
@@ -560,6 +568,7 @@ public final class UiText {
         EN.put("미리 발을 떼면 더 아낍니다","Lift off earlier to save more");
         EN.put("미리보기","Preview");
         EN.put("미리보기 · 칸을 누르면 값 고르기","Preview · tap a cell to choose its reading");
+        EN.put("미리보기 · 화면을 누르면 시험 버튼","Preview · tap for test buttons");
         EN.put("미사용","Off");
         EN.put("바디 (BCM)","Body (BCM)");
         EN.put("바디 (에어백 · 공조 · 편의장치)","Body (airbags · climate control · convenience features)");
@@ -577,6 +586,7 @@ public final class UiText {
         EN.put("밤","Night");
         EN.put("밤 색감 고르기","Choose the night look");
         EN.put("방금 0→100 기록이 나왔어요!","A new 0-100 time!");
+        EN.put("배경","Scene");
         EN.put("배기","Exhaust");
         EN.put("배기 온도 (DPF 앞·산화촉매 앞 묶음)","Exhaust temperatures (before the DPF and the catalyst)");
         EN.put("배기 캠 위상(CVVT) 작동기 회로 이상","Exhaust cam phaser (CVVT) actuator circuit malfunction");
@@ -683,6 +693,7 @@ public final class UiText {
         EN.put("블루투스 접근 권한을 확인할 수 없습니다.","Bluetooth access permission could not be confirmed.");
         EN.put("블루투스 켜짐","Bluetooth is on");
         EN.put("블루투스가 꺼져 있습니다.","Bluetooth is off.");
+        EN.put("비상","Hazard");
         EN.put("비상 위치 도달 불가","Emergency position not reachable");
         EN.put("비작동","Inactive");
         EN.put("비행기 엔진 계기판","Airliner engine display");
@@ -814,6 +825,7 @@ public final class UiText {
         EN.put("스킨 고르기","Choose a skin");
         EN.put("스킨·레이아웃마다 정해진 막대를 씁니다 (그래프 고르기 없음)","Skins and layouts have their own bars (no graph choice)");
         EN.put("스타게이징 블루","Stargazing Blue");
+        EN.put("스튜디오","Studio");
         EN.put("스포츠 머플러","Sport muffler");
         EN.put("시간","time");
         EN.put("시간  ","Time  ");
@@ -851,6 +863,7 @@ public final class UiText {
         EN.put("신호 허용 범위 미만","Signal below allowable range");
         EN.put("신호 허용 범위 초과","Signal above allowable range");
         EN.put("실버","Silver");
+        EN.put("실시간","Live");
         EN.put("실제 속도로 표시","Show the true speed");
         EN.put("실행 가능한 기본 앱이 더 없습니다.","No other system apps are available to open.");
         EN.put("실행 가능한 액티비티가 없습니다: ","No launchable activity: ");
@@ -878,12 +891,14 @@ public final class UiText {
         EN.put("알림만 / Notification only","Notification only");
         EN.put("알림음 음량","Beep volume");
         EN.put("알림음 종류","Beep sound");
+        EN.put("앞","Front");
         EN.put("앞 오른쪽 공기압","Front-right pressure");
         EN.put("앞 오른쪽 타이어 온도","Front-right tyre temperature");
         EN.put("앞 오른쪽 휠","Front-right wheel");
         EN.put("앞 왼쪽 공기압","Front-left pressure");
         EN.put("앞 왼쪽 타이어 온도","Front-left tyre temperature");
         EN.put("앞 왼쪽 휠","Front-left wheel");
+        EN.put("앞바퀴","Front wheels");
         EN.put("앰버","Amber");
         EN.put("앱","Apps");
         EN.put("앱 관리","Manage apps");
@@ -892,6 +907,7 @@ public final class UiText {
         EN.put("앱에 포함","In the app");
         EN.put("앱에 포함 · 내비에 설치됨","In the app · installed");
         EN.put("야간","Night");
+        EN.put("야간 도로","Night road");
         EN.put("야간 미니멀","Night minimal");
         EN.put("약 (+3 dB)","Low (+3 dB)");
         EN.put("얇은 띠","Thin strip");
@@ -971,6 +987,7 @@ public final class UiText {
         EN.put("열린 채 고착","Stuck open");
         EN.put("영 수 증","RECEIPT");
         EN.put("영점·바이어스 이상","Zero point / bias fault");
+        EN.put("옆","Side");
         EN.put("옆 세로","Side column");
         EN.put("예상","PREDICTED");
         EN.put("예상치 못한 작동","Unexpected operation");
@@ -1022,6 +1039,7 @@ public final class UiText {
         EN.put("요레이트","Yaw rate");
         EN.put("요레이트·횡가속도 센서 신호 이상","Yaw rate / lateral acceleration sensor signal fault");
         EN.put("요레이트·횡가속도 센서 전기 계통 이상","Yaw rate / lateral acceleration sensor electrical fault");
+        EN.put("우","Right");
         EN.put("우 방향지시등","Right turn signal");
         EN.put("우주선 워프","Starship warp");
         EN.put("우회전","Turn right");
@@ -1085,6 +1103,7 @@ public final class UiText {
         EN.put("원형 게이지","Round gauges");
         EN.put("원형 게이지는 링이 값을 따라 차오릅니다 (그래프 고르기 없음)","A round gauge fills its ring with the reading (no graph to choose)");
         EN.put("원형 게이지는 테마 색","Round gauges use the theme colours");
+        EN.put("위","Top");
         EN.put("위치를 바꿀 칸","Choose a slot to swap");
         EN.put("유량(오일) 부족","Low fluid (oil) level");
         EN.put("유리 톡","Glass tap");
@@ -1142,6 +1161,7 @@ public final class UiText {
         EN.put("일시정지","Paused");
         EN.put("읽기 거부","refused");
         EN.put("읽기만 합니다. 고장코드 삭제는 정비소 진단기로 하세요.","Read only. Clear codes with a workshop scan tool.");
+        EN.put("임시 모델: 벨로스터 N","Stand-in model: Veloster N");
         EN.put("잎 1개 = 20점","1 leaf = 20 points");
         EN.put("자동","Auto");
         EN.put("자동 · 가장 가까운 서킷","Auto · nearest circuit");
@@ -1262,6 +1282,7 @@ public final class UiText {
         EN.put("조회 중…","Reading…");
         EN.put("종가속","Longitudinal G");
         EN.put("좋습니다","Good");
+        EN.put("좌","Left");
         EN.put("좌 방향지시등","Left turn signal");
         EN.put("좌회전","Turn left");
         EN.put("주변 기기 검색","Find nearby devices");
@@ -1336,9 +1357,11 @@ public final class UiText {
         EN.put("짧은 캡슐","Short pill");
         EN.put("짧은 펄스 · 낮게","Short pulse · low");
         EN.put("차가 멈춘 것을 확인하지 못했습니다. 정차한 뒤 다시 누르세요.","Could not see the car standing. Stop, then tap again.");
+        EN.put("차고","Garage");
         EN.put("차량 계산값","From the car");
         EN.put("차량 색","Car colour");
         EN.put("차량 속도","Vehicle speed");
+        EN.put("차량 신호 없음 · 화면을 누르면 시험 버튼","No car signal · tap for test buttons");
         EN.put("차량 정보를 기다리는 중이에요","Waiting for the car");
         EN.put("차량 표시 상태를 확인하지 못했습니다. N 계기판 버튼으로 다시 열어주세요.","Could not confirm vehicle display status. Try the N Dashboard button again.");
         EN.put("차로 변경","Change lane");
@@ -1547,6 +1570,7 @@ public final class UiText {
         EN.put("핫스팟 요청 실패/시간 초과. 성공으로 판정하지 않습니다. 원상복구하세요.","Hotspot request failed or timed out. Success is not confirmed; restore the original settings.");
         EN.put("항상","Always");
         EN.put("항상 = 플로팅 창에서도","Always = in the floating window too");
+        EN.put("핸들","Steering");
         EN.put("현대 전용 코드","Hyundai-specific code");
         EN.put("현재 ","Now ");
         EN.put("현재 고장","Current fault");
@@ -1578,6 +1602,7 @@ public final class UiText {
         EN.put("효과음 음량","Effects volume");
         EN.put("후드","Hood");
         EN.put("후드 열림","Hood open");
+        EN.put("후진","Reverse");
         EN.put("후진 기어비 불일치","Incorrect reverse gear ratio");
         EN.put("흐림","Overcast");
         EN.put("흡기","Intake");

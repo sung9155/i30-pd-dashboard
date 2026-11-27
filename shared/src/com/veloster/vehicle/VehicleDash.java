@@ -184,8 +184,39 @@ public final class VehicleDash extends View implements Runnable {
                 }},"vn-reboot").start();}})
             .setNegativeButton(UiText.t("나중에"),null).show();
     }
-    /** The back key: true when it closed the open settings (the activity stays), false to let it go back as usual. */
-    public static boolean closeSettings(Activity a){VehicleDash d=current.get();if(d==null||d.activity!=a||!(d.picker&&d.editing))return false;d.closeSettingsNow();return true;}
+    /** The back key: true when it left 내 차 / 네온 드라이브 or closed the open settings (the activity stays), false to let it go back as usual. */
+    public static boolean closeSettings(Activity a){VehicleDash d=current.get();if(d==null||d.activity!=a)return false;
+        if(d.overlayUp()){d.exitOverlay.run();return true;}
+        if(!(d.picker&&d.editing))return false;d.closeSettingsNow();return true;}
+    // ---- 내 차 (com.veloster.car3d) and 네온 드라이브 (com.veloster.neondrive): their own views over the whole dashboard, like
+    // upstream's; fed from DATA (PdSignals). Their back button or the back key returns to the screen before. ----
+    private com.veloster.car3d.CarPage carPage;private com.veloster.neondrive.NeonDrivePage neonPage;
+    private com.veloster.neondrive.PdSignals pdSignals;
+    private int overlayBack=ClusterPicker.OVERVIEW,shownScreen=-1;
+    private static boolean ownView(int s){return s==ClusterPicker.CAR3D||s==ClusterPicker.NEON_DRIVE;}
+    private boolean overlayUp(){return carPage!=null&&carPage.view().getParent()!=null||neonPage!=null&&neonPage.view().getParent()!=null;}
+    private final Runnable exitOverlay=new Runnable(){public void run(){screen=overlayBack==screen||ownView(overlayBack)?ClusterPicker.OVERVIEW:overlayBack;showCluster();invalidate();}};
+    /** Shows the current screen's own view while the dashboard is up and in front, and takes the other one away. */
+    private void syncOverlay(){
+        boolean up=resumed&&getVisibility()==VISIBLE;
+        try{
+            if(pdSignals==null)pdSignals=new com.veloster.neondrive.PdSignals(DATA);
+            boolean car=up&&screen==ClusterPicker.CAR3D,neon=up&&screen==ClusterPicker.NEON_DRIVE;
+            if(car&&carPage==null)carPage=new com.veloster.car3d.CarPage(activity,pdSignals,exitOverlay);
+            if(neon&&neonPage==null)neonPage=new com.veloster.neondrive.NeonDrivePage(activity,pdSignals,exitOverlay);
+            if(carPage!=null){if(!car)carPage.stop();overlay(carPage.view(),car);if(car)carPage.start();}
+            if(neonPage!=null){if(!neon)neonPage.stop();overlay(neonPage.view(),neon);if(neon)neonPage.start();}
+        }catch(RuntimeException e){com.veloster.diagnostics.ErrorLog.record("own_view_page",e);android.util.Log.e("VehicleDash","screen "+screen+" unavailable",e);}
+    }
+    private final Runnable syncLater=new Runnable(){public void run(){syncOverlay();}};
+    private void overlay(View v,boolean on){
+        if(!on){if(v.getParent()!=null)((ViewGroup)v.getParent()).removeView(v);return;}
+        if(v.getParent()==null)((FrameLayout)activity.findViewById(android.R.id.content)).addView(v,new FrameLayout.LayoutParams(-1,-1));
+        v.bringToFront();
+    }
+    /** The G sensor for 내 차: {longitudinal (+ accelerating), lateral} in g, NaN when not received. */
+    public static float[] gSensor(){long now=SystemClock.elapsedRealtime();Telemetry.Sample x=DATA.sample(11,now),y=DATA.sample(12,now);
+        return new float[]{y.valid?y.value:Float.NaN,x.valid?x.value:Float.NaN};}
     private void setSlider(int which,float x){
         if(which==SettingsLayout.F_SIZE)FloatPanel.size=SettingsLayout.sliderStop(SettingsLayout.F_SIZE_BAR,SettingsLayout.F_SIZE_KNOB,SettingsLayout.F_SIZES.length,x);
         else FloatPanel.alpha=SettingsLayout.sliderStop(SettingsLayout.F_ALPHA_BAR,SettingsLayout.F_ALPHA_KNOB,SettingsLayout.F_ALPHAS.length,x);}
@@ -284,6 +315,8 @@ public final class VehicleDash extends View implements Runnable {
     }
     private void showCluster(){
         applyScreen();FloatPanel.screen=screen;
+        if(ownView(screen)&&shownScreen!=screen&&shownScreen>=0&&!ownView(shownScreen))overlayBack=shownScreen;
+        shownScreen=screen;removeCallbacks(syncLater);post(syncLater);   // not inside onDraw (a drive-mode jump changes the screen there)
         activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).putString("cluster_order",orderCsv(order)).apply();
     }
     private VehicleDash(Activity a) { super(a); activity=a; artwork=new ArtworkLoader(a,this);
@@ -443,13 +476,13 @@ public final class VehicleDash extends View implements Runnable {
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
         d.resumed=true;d.artwork.open();d.mediaReceiver.start(a);
         if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}   // let go while out of sight (trim)
-        d.policy(false,"standalone-resume");d.setVisibility(VISIBLE);
+        d.policy(false,"standalone-resume");d.setVisibility(VISIBLE);d.shownScreen=d.screen;d.syncOverlay();
     }
     /** The dashboard is out of sight (only the floating window is up, or the system asks for memory): let go of the screens'
      *  kept bitmaps. Switching screens keeps them, so that stays smooth. */
     public static void trimStandalone(Activity a){VehicleDash d=current.get();boolean go=d!=null&&d.activity==a&&!d.resumed;
         android.util.Log.i("VehicleDash","trim: "+(go?"screens let go":d==null?"no dashboard":d.activity!=a?"other activity":"still resumed"));
-        if(go){d.renderer.trim();d.invalidate();TaxiZones.release();giveBack();}}   // invalidate: no display list may keep a recycled bitmap
+        if(go){d.renderer.trim();d.invalidate();TaxiZones.release();d.carPage=null;d.neonPage=null;giveBack();}}   // invalidate: no display list may keep a recycled bitmap; 내 차 / 네온 드라이브 are already down (pause)
     /** After a trim: collect now, twice (bitmap finalizers run late), so the let-go pixels leave the heap at once; Dalvik hands
      *  free heap pages back to the system by itself after a collection (Android 4.2 has no VMRuntime.trimHeap to force it).
      *  On the V141 emulator: live heap 9.7 MB -> 5.3 MB, the process 13 MB -> about 9 MB once the pages went back. Off the UI thread. */
@@ -462,6 +495,7 @@ public final class VehicleDash extends View implements Runnable {
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
         d.resumed=false;d.touching=false;d.removeCallbacks(d.editHold);backupSave(a);
         d.floatEdit=-1;d.gaugeEditor.dismiss();d.graphEditor.dismiss();if(d.tilePicker!=null)d.tilePicker.dismiss();d.dismissList();d.mediaReceiver.stop();d.artwork.close();
+        d.syncOverlay();
     }
     /** Close the screen list and anything it opened (language chooser). */
     private void dismissList(){picker=false;editing=false;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);fontDrop();}   // every close path: a drag cut off by the lock-out must not leave dragTick running

@@ -11,7 +11,7 @@ import java.io.File;
 import java.io.InputStream;
 
 /** One background decoder with a replaceable pending job; never fetches artwork from a network. */
-final class ArtworkLoader {
+public final class ArtworkLoader {
     private final Context context;
     private final View view;
     private long revision=-1;
@@ -19,9 +19,9 @@ final class ArtworkLoader {
     private MediaState.Snapshot pending;
     private boolean running,closed;
     private volatile Bitmap bitmap;
-    ArtworkLoader(Context c,View v){context=c;view=v;}
-    Bitmap bitmap(){return bitmap;}
-    synchronized void request(MediaState.Snapshot track){
+    public ArtworkLoader(Context c,View v){context=c;view=v;}
+    public Bitmap bitmap(){return bitmap;}
+    public synchronized void request(MediaState.Snapshot track){
         if(closed||track.artworkRevision==revision)return;
         revision=track.artworkRevision;
         String nextKey=track.source+"\n"+track.title;
@@ -31,8 +31,8 @@ final class ArtworkLoader {
         running=true;
         new Thread(new Runnable(){public void run(){decodePending();}},"NMode-artwork").start();
     }
-    synchronized void open(){closed=false;revision=-1;}
-    synchronized void close(){closed=true;pending=null;bitmap=null;revision=-1;}
+    public synchronized void open(){closed=false;revision=-1;}
+    public synchronized void close(){closed=true;pending=null;bitmap=null;revision=-1;}
     private void decodePending(){
         while(true){
             final MediaState.Snapshot track;

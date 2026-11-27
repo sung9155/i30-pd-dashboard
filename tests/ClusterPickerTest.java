@@ -1,21 +1,24 @@
 import com.veloster.vehicle.ClusterPicker;
 
-/** Screen list behind the header tabs: 6 x 5 tiles (the last is the edit button), hidden screens, stepping. */
+/** Screen list behind the header tabs: 6 x 6 tiles (the last is the edit button), hidden screens, stepping. */
 public final class ClusterPickerTest {
     private static int checks;
     private static void check(boolean b,String s){checks++;if(!b)throw new AssertionError(s);}
     public static void main(String[] args){
-        check(ClusterPicker.COUNT==30&&ClusterPicker.NAMES.length==30&&ClusterPicker.DESC.length==30,"30 screens, one name and line each");
+        check(ClusterPicker.COUNT==32&&ClusterPicker.NAMES.length==32&&ClusterPicker.DESC.length==32,"32 screens, one name and line each");
         check(ClusterPicker.NAMES[ClusterPicker.ECO].equals("에코")&&ClusterPicker.NAMES[ClusterPicker.TACHO].equals("RPM")&&ClusterPicker.TACHO==25,"에코, then the RPM screen");
-        check(ClusterPicker.WRC==26&&ClusterPicker.ANALOG==27&&ClusterPicker.NEON==28&&ClusterPicker.PASSENGER==ClusterPicker.COUNT-1&&ClusterPicker.NAMES[ClusterPicker.PASSENGER].equals("동승자"),"WRC, 아날로그, 네온 and 동승자 after it, 동승자 last");
-        check(ClusterPicker.COUNT<=ClusterPicker.SLOTS&&ClusterPicker.COUNT<31,"every screen has a tile, and the hidden mask (bit per screen) fits an int");
+        check(ClusterPicker.WRC==26&&ClusterPicker.ANALOG==27&&ClusterPicker.NEON==28&&ClusterPicker.PASSENGER==29&&ClusterPicker.NAMES[ClusterPicker.PASSENGER].equals("동승자"),"WRC, 아날로그, 네온 and 동승자 after it");
+        check(ClusterPicker.CAR3D==30&&ClusterPicker.NEON_DRIVE==ClusterPicker.COUNT-1&&ClusterPicker.NAMES[ClusterPicker.CAR3D].equals("내 차")&&ClusterPicker.NAMES[ClusterPicker.NEON_DRIVE].equals("네온 드라이브"),"내 차 and 네온 드라이브 last (their own views)");
+        check(ClusterPicker.COUNT<=ClusterPicker.SLOTS&&ClusterPicker.COUNT<=32,"every screen has a tile, and the hidden mask (bit per screen) fits an int");
         check(ClusterPicker.NAMES[ClusterPicker.MANUAL].equals("람다"),"the 람다 (twin Λ) screen before it");
         {int[] old=new int[23];for(int i=0;i<23;i++)old[i]=22-i;int[] o=ClusterPicker.validOrder(old);
-         check(o.length==30&&o[0]==22&&o[22]==0&&o[23]==23&&o[24]==24&&o[25]==25&&o[29]==29,"an order saved with 23 screens keeps its arrangement, the newer screens last");}
+         check(o.length==32&&o[0]==22&&o[22]==0&&o[23]==23&&o[24]==24&&o[25]==25&&o[29]==29&&o[31]==31,"an order saved with 23 screens keeps its arrangement, the newer screens last");}
         {int[] old=new int[22];for(int i=0;i<22;i++)old[i]=21-i;int[] o=ClusterPicker.validOrder(old);
-         check(o.length==30&&o[0]==21&&o[21]==0&&o[22]==22&&o[23]==23&&o[24]==24&&o[25]==25,"an order saved with 22 screens keeps its arrangement, the new screens last");}
+         check(o.length==32&&o[0]==21&&o[21]==0&&o[22]==22&&o[23]==23&&o[24]==24&&o[25]==25,"an order saved with 22 screens keeps its arrangement, the new screens last");}
         {int[] old=new int[26];for(int i=0;i<26;i++)old[i]=25-i;int[] o=ClusterPicker.validOrder(old);
-         check(o.length==30&&o[0]==25&&o[25]==0&&o[26]==26&&o[27]==27&&o[28]==28&&o[29]==29,"an order saved with 26 screens keeps its arrangement, WRC to 동승자 after it");}
+         check(o.length==32&&o[0]==25&&o[25]==0&&o[26]==26&&o[27]==27&&o[28]==28&&o[29]==29,"an order saved with 26 screens keeps its arrangement, WRC to 동승자 after it");}
+        {int[] old=new int[30];for(int i=0;i<30;i++)old[i]=29-i;int[] o=ClusterPicker.validOrder(old);
+         check(o.length==32&&o[0]==29&&o[29]==0&&o[30]==30&&o[31]==31,"an order saved with 30 screens keeps its arrangement, 내 차 and 네온 드라이브 after it");}
         check(ClusterPicker.NAMES[ClusterPicker.OVERVIEW].equals("전체 조망")&&ClusterPicker.NAMES[ClusterPicker.GAUGES].equals("게이지")&&ClusterPicker.NAMES[ClusterPicker.GRAPHS].equals("그래프"),"overview, gauges, graphs first");
         check(ClusterPicker.NAMES[ClusterPicker.F1].equals("F1")&&ClusterPicker.NAMES[ClusterPicker.CLASSIC].equals("클래식"),"then F1, the symmetric pages, the drawn layouts");
         check(ClusterPicker.page(ClusterPicker.F1+1)==1&&ClusterPicker.page(ClusterPicker.CLASSIC)==5&&ClusterPicker.page(ClusterPicker.MANUAL-1)==19&&ClusterPicker.page(ClusterPicker.MANUAL)==20&&ClusterPicker.page(ClusterPicker.ECO)==21&&ClusterPicker.page(ClusterPicker.TACHO)==22&&ClusterPicker.page(ClusterPicker.PASSENGER)==26,"screen after F1 maps to its PitRenderer page (서킷 19, 수동 20)");
@@ -37,14 +40,14 @@ public final class ClusterPickerTest {
         check(ClusterPicker.next(ClusterPicker.COUNT-2,hidden)==0,"and wraps past a hidden last screen");
         check(ClusterPicker.shown(2,hidden)==3&&ClusterPicker.shown(4,hidden)==4,"a hidden saved screen opens the next shown one");
         check(ClusterPicker.toggle(none,6)==(1<<6)&&ClusterPicker.toggle(1<<6,6)==0,"toggle hides and shows");
-        int allButOne=((1<<ClusterPicker.COUNT)-1)&~(1<<9);
+        int allButOne=-1&~(1<<9);   // 32 screens: every bit of the int
         check(ClusterPicker.toggle(allButOne,9)==allButOne,"the last shown screen cannot be hidden");
         check(ClusterPicker.next(9,allButOne)==9,"one shown screen: a tap stays on it");
 
         int[] list=ClusterPicker.slots(hidden,false);
         check(list.length==ClusterPicker.COUNT-3&&list[0]==0&&list[1]==3&&list[list.length-1]==ClusterPicker.COUNT-2,"list shows only the shown screens, in order");
         check(ClusterPicker.slots(hidden,true).length==ClusterPicker.COUNT,"edit mode shows every screen");
-        check(ClusterPicker.valid(-1)==0&&ClusterPicker.valid(1<<ClusterPicker.COUNT)==0&&ClusterPicker.valid((1<<ClusterPicker.COUNT)-1)==0&&ClusterPicker.valid(hidden)==hidden,"bad saved masks show everything");
+        check(ClusterPicker.valid(-1)==0&&ClusterPicker.valid(hidden)==hidden&&ClusterPicker.valid(1<<31)==(1<<31),"hiding every screen shows everything; screen 31 can be hidden");
         // Mode screen, defaults: SPORT -> F1, ECO -> 원래 화면 (stay), NORMAL -> 원래 화면 (stay).
         int[] def=ClusterPicker.MODE_DEFAULT;
         check(def[0]==ClusterPicker.F1&&def[1]==-1&&def[2]==-1,"default mode screens: SPORT opens F1, the rest stay");

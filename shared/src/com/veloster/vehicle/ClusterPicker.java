@@ -2,7 +2,7 @@ package com.veloster.vehicle;
 
 /**
  * Every dashboard screen behind the one screen tab in the header, and the list a long press on it opens: 6 x 5 tiles
- * over the body. The header gear opens it in edit mode, where the last tiles are trouble codes (DIAG), car paint (CAR, the 8-bit views), language (LANG),
+ * over the body (6 x 6 since 내 차 and 네온 드라이브). The header gear opens it in edit mode, where the last tiles are trouble codes (DIAG), car paint (CAR, the 8-bit views), language (LANG),
  * theme (THEME) and 완료 (EDIT). Overview, Gauges, Graphs and F1 are VehicleDash flags; the screens after
  * F1 are PitRenderer pages (page(s)). Hidden screens are a bit mask (bit i = screen i), saved by VehicleDash. A short
  * tap on the tab steps to the next shown screen. No Android: host-tested.
@@ -10,14 +10,16 @@ package com.veloster.vehicle;
 public final class ClusterPicker {
     /** Header tab label per screen (short: the tab is 160 px wide). */
     public static final String[] NAMES={"전체 조망","게이지","그래프","F1","퍼포먼스","레이스","기록","쇼",
-        "클래식","레트로","랠리","택시","80년대","HUD","8비트","아케이드","G 원","야간","드래그","엔진","카세트","워프","서킷","람다","에코","RPM","WRC","아날로그","신스웨이브","동승자"};
+        "클래식","레트로","랠리","택시","80년대","HUD","8비트","아케이드","G 원","야간","드래그","엔진","카세트","워프","서킷","람다","에코","RPM","WRC","아날로그","신스웨이브","동승자","내 차","네온 드라이브"};
     /** Second line on each tile. */
     public static final String[] DESC={"모든 값 한눈에","고른 값 게이지","시간 그래프","F1 스타일 계기판","랩 타이머","변속 표시·음악","주행 기록","쇼 화면",
         "계단 회전 곡선","주황 LCD","흰 네모 숫자","택시 미터기","80년대 디지털","전투기 HUD","8비트 게임","8비트 추격 시점","마찰원","야간 미니멀","드래그 출발 트리",
         "비행기 엔진 계기판","카세트 데크","우주선 워프","GPS 랩 타이머","Λ RPM·속도계","연비·연료비","원형 RPM·다운시프트",
-        "랠리 페이스노트","크롬 원형 바늘","사이버펑크 네온","조수석용 G·기록"};
-    public static final int OVERVIEW=0,GAUGES=1,GRAPHS=2,F1=3,CLASSIC=8,MANUAL=23,ECO=24,TACHO=25,WRC=26,ANALOG=27,NEON=28,PASSENGER=29,COUNT=NAMES.length,COLS=6,SLOTS=30;   // MANUAL: the Λ screen (LambdaCluster), 6MT and 7DCT
-    public static final float LEFT=17,TOP=60,TILE_W=121,TILE_H=76,GAP=8;
+        "랠리 페이스노트","크롬 원형 바늘","사이버펑크 네온","조수석용 G·기록","3D 모델·램프·핸들 연동","도트 드라이브 화면"};
+    public static final int OVERVIEW=0,GAUGES=1,GRAPHS=2,F1=3,CLASSIC=8,MANUAL=23,ECO=24,TACHO=25,WRC=26,ANALOG=27,NEON=28,PASSENGER=29,COUNT=NAMES.length,COLS=6,SLOTS=36;   // MANUAL: the Λ screen (LambdaCluster), 6MT and 7DCT
+    /** Screens that are their own Android views over the dashboard (VehicleDash.syncOverlay), not PitRenderer pages. */
+    public static final int CAR3D=30,NEON_DRIVE=31;
+    public static final float LEFT=17,TOP=60,TILE_W=121,TILE_H=62,GAP=8;
     private ClusterPicker(){}
     /** PitRenderer page of a screen after F1. */
     public static int page(int s){return s-F1;}
@@ -28,7 +30,8 @@ public final class ClusterPicker {
         for(int i=0;i<SLOTS;i++){float l=left(i),t=top(i);if(x>=l&&x<=l+TILE_W&&y>=t&&y<=t+TILE_H)return i;}
         return -1;
     }
-    private static final int ALL=(1<<COUNT)-1;
+    /** Every screen's bit; 32 screens fill the int (1<<32 would wrap to 1). */
+    private static final int ALL=COUNT>=32?-1:(1<<COUNT)-1;
     /** A saved mask, or 0 (all shown) when it is out of range or hides every screen. */
     public static int valid(int hidden){return (hidden&~ALL)!=0||hidden==ALL?0:hidden;}
     /** Natural display order 0..COUNT-1. */

@@ -182,6 +182,7 @@ public final class PitRenderer {
         else if(symmetric&&page==PAGE_TACHO){tacho.shiftTarget=shiftTarget;tacho.frame(c,samples,model,stats,profile,frameTime,null);}
         else if(symmetric&&more(page)!=null){wrc.shiftTarget=neon.shiftTarget=shiftTarget;more(page).frame(c,samples,model,stats,profile,frameTime,null);}
         else if(symmetric&&isCluster(page))clusterRenderer.draw(c,page-PAGE_CLASSIC,samples,frameTime,stats,profile,model,music);
+        else if(symmetric&&ownView(page))ownViewCard(c,page);
         else if(mediaPage)drawCombined(c);else if(cluster)drawCluster(c);else drawDashboard(c);
         // Pages without their own shift light (performance, show, every cluster layout) get the race tab's cue from the same
         // shift target: the page edge blinks red (100 ms, as on the race tab).
@@ -261,7 +262,7 @@ public final class PitRenderer {
         paint.setColor(T(ink));c.drawCircle(cx,cy,8,paint);
         paint.setColor(T(on?0xff233b46:0xff111415));c.drawCircle(cx,cy,3.5f,paint);
     }
-    /** Screen list: 6 x 5 tiles of the shown screens over a dimmed body, the current one outlined. The gear opens settings instead. */
+    /** Screen list: 6 x 6 tiles of the shown screens over a dimmed body, the current one outlined. The gear opens settings instead. */
     private void drawPicker(Canvas c,int cur){
         if(editing){drawSettings(c);return;}
         box(c,0,52,800,480,0xe6040506);
@@ -271,8 +272,8 @@ public final class PitRenderer {
             float l=ClusterPicker.left(i),t=ClusterPicker.top(i),w=ClusterPicker.TILE_W,h=ClusterPicker.TILE_H;
             box(c,l,t,l+w,t+h,s==cur?0xff1c303b:off?0xff08090a:0xff101315);
             if(s==cur){box(c,l,t,l+w,t+3,BLUE);box(c,l,t+h-3,l+w,t+h,BLUE);box(c,l,t,l+3,t+h,BLUE);box(c,l+w-3,t,l+w,t+h,BLUE);}
-            centered(c,UiText.t(ClusterPicker.NAMES[s]),l+w/2,t+35,20,off?MUTED:s==cur?BLUE:WHITE,true);
-            centered(c,UiText.t(ClusterPicker.DESC[s]),l+w/2,t+58,11,MUTED,false);
+            centered(c,UiText.t(ClusterPicker.NAMES[s]),l+w/2,t+29,19,off?MUTED:s==cur?BLUE:WHITE,true);
+            centered(c,UiText.t(ClusterPicker.DESC[s]),l+w/2,t+49,11,MUTED,false);
         }
     }
     /** Settings (the gear): categories on the left, the open category's choices on the right, the chosen ones outlined. */
@@ -363,13 +364,13 @@ public final class PitRenderer {
             }
             box(c,l,t,l+w,t+h,sel?0xff1c303b:dim?0xff08090a:0xff101315);
             if(sel){box(c,l,t,l+w,t+3,BLUE);box(c,l,t+h-3,l+w,t+h,BLUE);box(c,l,t,l+3,t+h,BLUE);box(c,l+w-3,t,l+w,t+h,BLUE);}
-            float tx=l+16;
+            float tx=l+(cat==SettingsLayout.PICK?11:16),ns=cat==SettingsLayout.PICK?16:18;   // PICK: five across (네온 드라이브 fits)
             if(swatch!=0){float s=30,sy=t+(h-s)/2;   // the real colours, not remapped by the current theme
                 paint.setColor(0xff303638);c.drawRect(l+14,sy,l+14+s,sy+s,paint);paint.setColor(swatchBg);c.drawRect(l+15,sy+1,l+13+s,sy+s-1,paint);
                 paint.setColor(swatch);c.drawRect(l+19,sy+5,l+9+s,sy+s-5,paint);tx=l+56;}
             int ink=dim?MUTED:sel?BLUE:WHITE;
-            if(sub==null)text(c,UiText.t(name),tx,t+h/2+7,18,ink,true);
-            else{text(c,UiText.t(name),tx,t+h/2-3,18,ink,true);text(c,UiText.t(sub),tx,t+h/2+17,12,cat==SettingsLayout.SCREENS&&!dim?BLUE:MUTED,cat==SettingsLayout.SCREENS);}
+            if(sub==null)text(c,UiText.t(name),tx,t+h/2+7,ns,ink,true);
+            else{text(c,UiText.t(name),tx,t+h/2-3,ns,ink,true);text(c,UiText.t(sub),tx,t+h/2+17,12,cat==SettingsLayout.SCREENS&&!dim?BLUE:MUTED,cat==SettingsLayout.SCREENS);}
             if(cat==SettingsLayout.RPM&&(i<SettingsLayout.RPM_BEEP||i==SettingsLayout.RPM_BEEP_VOL)||cat==SettingsLayout.SOUND&&i>=SettingsLayout.SOUND_VOLUME&&i<=SettingsLayout.SOUND_LEAD||cat==SettingsLayout.FX&&i==SettingsLayout.FX_VOL){   // value, then − and +
                 float by=t+(h-SettingsLayout.STEP_H)/2;String v=cat==SettingsLayout.FX?SettingsLayout.fxVol+"%":cat==SettingsLayout.SOUND?soundValue(i):i==SettingsLayout.RPM_BEEP_VOL?beepVol+"%":(i==SettingsLayout.RPM_SHIFT?shiftTarget:(int)profile.redline)+" rpm";
                 paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(18);text(c,v,SettingsLayout.stepMinusL()-14-paint.measureText(v),t+h/2+7,18,dim?MUTED:BLUE,true);   // a dimmed row (sound off, no turbo) greys its value and buttons too
@@ -699,8 +700,13 @@ public final class PitRenderer {
             else if(pg==PAGE_TACHO){tacho.shiftTarget=shiftTarget;tacho.frame(c,samples,thModel,stats,profile,frameTime,null);}
             else if(more(pg)!=null){wrc.shiftTarget=neon.shiftTarget=shiftTarget;more(pg).frame(c,samples,thModel,stats,profile,frameTime,null);}
             else if(isCluster(pg))clusterRenderer.draw(c,pg-PAGE_CLASSIC,samples,frameTime,stats,profile,thModel,null);
+            else if(ownView(pg))ownViewCard(c,pg);
         }
     }
+    /** 내 차 and 네온 드라이브 are their own views over this one (VehicleDash.syncOverlay): their name shows until they cover it. */
+    private static boolean ownView(int pg){int s=pg+ClusterPicker.F1;return s==ClusterPicker.CAR3D||s==ClusterPicker.NEON_DRIVE;}
+    private void ownViewCard(Canvas c,int pg){int s=pg+ClusterPicker.F1;
+        centered(c,UiText.t(ClusterPicker.NAMES[s]),400,262,26,WHITE,true);centered(c,UiText.t(ClusterPicker.DESC[s]),400,292,15,MUTED,false);}
     /** Pixel width of a header tab: its label plus side padding, with a sensible minimum. */
     /** Tab widths by label: every page measured all 26 tab labels every frame. ponytail: grows by a language's labels only. */
     private final java.util.HashMap<String,Float> tabW0=new java.util.HashMap<String,Float>();

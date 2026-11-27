@@ -94,7 +94,7 @@ public final class SettingsLayout {
             case MODE:return MODE_FIRST+ClusterPicker.MODES.length;case RPM:return RPM_DOWN1+3;case SOUND:return ENGINE_SOUND?SOUND_BOOST+1:1;case FX:return FX_VOL+1;case LANG:return LANGS.length;case DIAG:return 7;case FLOAT:return FLOAT_CELL+4;
             case PICK:return ClusterPicker.COUNT+1;default:return 0;}
     }
-    public static int cols(int cat){return cat==SCREENS||cat==PICK?4:cat==THEME?3:cat==PAINT?2:1;}
+    public static int cols(int cat){return cat==SCREENS?4:cat==PICK?5:cat==THEME?3:cat==PAINT?2:1;}   // PICK: 33 choices since 내 차 / 네온 드라이브
     private static float paneTop(int cat){return cat==PICK?TOP+TITLE_H:TOP;}
     private static int rows(int cat){return (count(cat)+cols(cat)-1)/cols(cat);}
     public static float itemW(int cat){int n=cols(cat);return (PANE_R-PANE_L-GAP*(n-1))/n;}

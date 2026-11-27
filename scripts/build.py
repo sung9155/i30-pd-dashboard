@@ -60,6 +60,8 @@ def main():
                             "-classpath", sdk, "-d", abi, *stubs])
         classpath = os.pathsep.join((str(sdk), str(abi)))
         sources += sorted(shared.rglob("*.java"))   # with UsbDebugControl: 설정 → 진단 → USB 디버깅 (upstream 665642b did the same)
+        # Neon Drive runs as a dashboard page (NeonDrivePage, fed from the dashboard's data); no standalone app here.
+        sources += sorted((ROOT / "apps/neondrive/src").rglob("*.java"))
     else:
         sources.append(shared / "com/veloster/vehicle/UsbDebugControl.java")
         sources += sorted((shared / "com/veloster/i18n").rglob("*.java"))
@@ -86,7 +88,7 @@ def main():
     if (app / "res").is_dir():
         run("resources", [aapt2, "compile", "--dir", app / "res", "-o", out / "resources.zip"])
         resources = ["--auto-add-overlay", "-R", out / "resources.zip"]
-    if (app / "assets").is_dir():   # dashboard: the fonts offered in 설정 → 글꼴 (BundledFonts)
+    if (app / "assets").is_dir():   # dashboard: the fonts offered in 설정 → 글꼴 (BundledFonts), 내 차's 3D car (car3d)
         resources += ["-A", app / "assets"]
     # --version-name: the release's own name (v1.16.1, test-1120-abc1234) in place of the manifest's, so the installers and
     # the diagnostics can tell which build is on the car. versionCode stays: the head unit refuses a lower one on reinstall.

@@ -624,20 +624,8 @@ final class PixelCluster extends ClusterKit {
                 if(cc!=col||k==0){if(col!=0)px(c,x-run,y,run,1,col);col=k==0?0:cc;run=0;}
                 if(k!=0)run++;}}
     }
-    /** A frame code's colour: paint shades from the CarPaint, lamps as the hand-drawn rear lit them, amber for a turn signal. */
-    private int arcadeColour(int code,boolean brake,boolean left,boolean right,boolean lp){
-        int[] e=ArcadeCarFrames.CODES[code-1];
-        if(e[0]==4){if(e[1]<0?left:right)return AMBER;e=ArcadeCarFrames.CODES[e[2]-1];}
-        if(e[0]==1)return e[1]==0?B:e[1]==1?BH:e[1]==2?BD:BS;
-        if(e[0]==2)return code==20||code==21?0xffe8e8ec:e[1];   // the plate face white (plate() adds the rim and text)
-        switch(e[1]){   // tail, LED line, high stop lamp, reflector, clear lens
-            case 0:return brake?0xffff3a2a:0xff5a0c14;
-            case 1:return brake?0xffffd0c4:lp?0xffe0323c:0xff7a1a22;
-            case 2:return brake?0xffff4a3a:0xffa01818;
-            case 3:return brake?0xffff3030:0xffa01818;
-            default:return 0xff9a9496;
-        }
-    }
+    /** A frame code's colour (ArcadeCarFrames.colour, shared with Neon Drive's i30). */
+    private int arcadeColour(int code,boolean brake,boolean left,boolean right,boolean lp){return ArcadeCarFrames.colour(code,B,BH,BD,BS,brake,left,right,lp);}
 
     // ---- HUD (both views) -----------------------------------------------------------------------------------
     private void hud(Canvas c,String g,float rpm,float boost,float v){

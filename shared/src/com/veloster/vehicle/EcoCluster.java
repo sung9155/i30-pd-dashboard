@@ -282,7 +282,14 @@ final class EcoCluster extends ClusterKit {
     // ---- tailpipe: asphalt phases + the tinted car + coin sprites ----
     private static final float PIPE_X=124,PIPE_Y=176,HY=108,NEAR=192,KD=60;
     private static final int TW=512,TH=64,PH=24,AW=214,AY=132,AH=168;
-    private static Bitmap[] asphalt;private static Bitmap car;private static int carFor;private static Bitmap[] flat,spin;
+    private static volatile Bitmap[] asphalt;private static volatile Bitmap car;private static volatile int carFor;private static Bitmap[] flat,spin;
+    /** Builds the asphalt phases and the painted car off the UI thread (VehicleDash, after CAR loads): done on the first
+     *  draw they froze the first Eco frame for ~3 s in the car (2026-11-27). The draw still builds what is missing. */
+    static void warm(){
+        if(asphalt==null)asphalt=buildAsphalt();
+        Bitmap cs=CAR,ps=PAINT;int paint=CarPaint.body()[0];
+        if(cs!=null&&ps!=null&&(car==null||carFor!=paint)){Bitmap b=tint(cs,ps,paint);car=b;carFor=paint;}
+    }
     private static float coinGain(float x,float gy){float dep=NEAR/Math.max(8,gy-HY),out=Math.max(0,Math.max(L_L-x,x-L_R));return Math.max(.05f,Math.min(1,1/dep)/(1+out/50));}
     private static float groundDy(float y,float ws){float d=Math.max(4,y-HY);return ws*d*d/(NEAR*KD);}
     private void tailpipe(Canvas c,boolean cut,float lph){

@@ -53,8 +53,8 @@ final class CarRenderer implements GLSurfaceView.Renderer {
     private static final float CLEAR_R = 0.035f, CLEAR_G = 0.04f, CLEAR_B = 0.055f;
     /** Halo colour per lamp group. */
     private static final float[][] HALO = {{0, 0, 0}, {1f, 0.97f, 0.9f}, {1f, 0.9f, 0.75f}, {1f, 0.08f, 0.05f}, {1f, 0.05f, 0.04f},
-        {1f, 0.55f, 0.05f}, {1f, 0.55f, 0.05f}, {1f, 1f, 1f}, {0, 0, 0}};
-    private static final float[] HALO_GAIN = {0, 0.75f, 0.25f, 0.45f, 0.8f, 0.9f, 0.9f, 0.35f, 0};
+        {1f, 0.55f, 0.05f}, {1f, 0.55f, 0.05f}, {0.86f, 0.93f, 1f}, {0, 0, 0}};   // reversing: a cool white
+    private static final float[] HALO_GAIN = {0, 0.75f, 0.25f, 0.45f, 0.8f, 0.9f, 0.9f, 0.5f, 0};
 
     // ---- state from the UI thread -----------------------------------------------------------------------------
     void setModel(CarModel m, Bitmap base, Bitmap glowMap) { synchronized (lock) { model = m; lampBase = base; lampGlow = glowMap; uploaded = false; } }

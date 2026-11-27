@@ -166,10 +166,12 @@ def corner_of(c):
 
 def dropped(p):
     """Triangles to leave out: the light-beam cones and the lens-flare sprites in front of the headlamps, and the decal
-    with the whole tail lamp's picture (in the game it is added on as light; drawn solid it hides the lens behind it,
-    which has the lamp's own picture with its clear parts)."""
+    with the whole tail lamp's picture and the reversing strip (in the game they are added on as light; drawn solid they
+    hide the lens behind them, which has the lamp's own picture with its clear parts)."""
     if p['mat'] == 'Material.006' and 'position_back' in p['node']:
         return lamp_picture(p)
+    if p['mat'] == 'Material.006' and 'reverse' in p['node']:   # a flat white strip over the lens's reversing bar
+        return np.ones(len(p['I']), bool)
     if p['mat'] != 'Material.006' or 'front_and_back' not in p['node']:
         return np.zeros(len(p['I']), bool)
     c = part_centres(p)
@@ -208,6 +210,27 @@ def side_turn(c):
 LENS_SEAM_U = 0.225
 CLEAR_BAND = (0.495, 0.548)
 BRAKE_ROW = (0.02, 0.553, 0.225, 0.59)
+# A lit clear bar reads as a lamp, not a paint fill: its glow keeps the lens's own ribbed pattern, is brightest at the
+# bulb and falls off along the bar, and stays below the shader's saturation (glow x 1.9 at full) except at the core.
+# The reversing bulb sits at the bar's inner end (the owner's photo), the turn signal's at the outer end.
+COOL = (0.86, 0.93, 1.0)        # the reversing lamp's white
+REVERSE_HOT_U, REVERSE_FALL = 0.065, 0.06
+TURN_HOT_U, TURN_FALL = 0.44, 0.12
+LIT_GAIN = 0.52
+
+
+def bar_falloff(u, group):
+    """Brightness along a rear clear bar (u: Material.002 UV) for the reversing lamp or the turn signal, 0..1."""
+    if group == REVERSE:
+        return 0.3 + 0.7 * np.exp(-np.maximum(u - REVERSE_HOT_U, 0) / REVERSE_FALL)
+    return 0.45 + 0.55 * np.exp(-np.maximum(TURN_HOT_U - u, 0) / TURN_FALL)
+
+
+def lens_pattern(img, m):
+    """The lens's own ribs / grid under mask m, 0.5..1 (its whiteness, spread between the 10th and 90th percentile)."""
+    v = img[m].min(1)
+    lo, hi = np.percentile(v, 10), np.percentile(v, 90)
+    return 0.5 + 0.5 * np.clip((v - lo) / max(hi - lo, 1e-3), 0, 1)
 
 
 def white_px(img):
@@ -379,7 +402,13 @@ def build(prims):
             high = (groups == STOP) & (np.abs(tri.mean(1)[:, 0]) < 0.2) & (mat == 'Material.006')
             tints += [(uv[turn], AMBER), (uv[high], RED)]
             tints.append((uv[(groups != NONE) & ~turn & ~high], None))   # lamps that keep their colour (overlap check)
-            collect_spots(q, groups, spots)
+            weight = np.ones(n)
+            if mat == 'Material.002':   # the rear bars' halos sit at their bulbs
+                ub = q['UV'][I].mean(1)[:, 0]
+                for grp in (REVERSE, TURN_L, TURN_R):
+                    sel = (groups == grp) & (tri.mean(1)[:, 2] < 0)
+                    weight[sel] = bar_falloff(ub[sel], REVERSE if grp == REVERSE else TURN_L) ** 6
+            collect_spots(q, groups, spots, weight)
             key = 'lamp ' + mat
         else:
             q = dict(p, I=I); uv = corner_uv(q)
@@ -403,10 +432,12 @@ def build(prims):
     return parts, centres, radius, offset, stats, finish_spots(spots), tints
 
 
-def collect_spots(p, groups, spots):
-    """Accumulate the glowing area of each lamp group per side (area-weighted)."""
+def collect_spots(p, groups, spots, weight=None):
+    """Accumulate the glowing area of each lamp group per side (area-weighted, times weight)."""
     I = p['I']; tri = p['P'][I]
     area = np.linalg.norm(np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]), axis=1) / 2
+    if weight is not None:
+        area = area * weight
     c = tri.mean(1); n = p['N'][I].mean(1)
     zone = np.where(c[:, 2] > 1.0, 1, np.where(c[:, 2] < -1.0, -1, 0))   # front lamp, mirror, rear lamp
     side = np.where(np.abs(c[:, 0]) < 0.2, 0, np.sign(c[:, 0]))          # 0: the high-mount stop lamp in the middle
@@ -506,15 +537,20 @@ def write_lamp_textures(prims, tints, out):
         hit = exact[ky, kx]
         if hit.any():
             raise SystemExit(f'{hit.sum()} other lamp triangles sit in a recoloured area {colour} of the glow map')
-        if colour == AMBER:
-            g[m] = g[m].min(1, keepdims=True) * AMBER; amber = m
+        if colour == AMBER:   # the lens's pattern, falling off from the bulb (rear lens: Material.002 half)
+            u = np.broadcast_to(np.arange(g.shape[1])[None, :] / ATLAS, g.shape[:2])[m]
+            fall = np.where(u < 1, bar_falloff(u, TURN_L), 1.0)
+            g[m] = (lens_pattern(g, m) * fall * LIT_GAIN)[:, None] * AMBER; amber = m
         else:   # the high-mount stop lamp: red from its brightest channel, dark red when off (not the picture's orange)
             g[m] = g[m].max(1, keepdims=True) * RED
             b[m] = b[m].max(1, keepdims=True) * RED
     # the tail lamp picture's other clear parts do not glow with the tail / stop lamp: only its red does
     lens = np.zeros(g.shape[:2], bool); lens[int(0.47 * ATLAS):int(0.66 * ATLAS), :int(0.5 * ATLAS)] = True
-    lens[int(CLEAR_BAND[0] * ATLAS):int(CLEAR_BAND[1] * ATLAS) + 1, :int(LENS_SEAM_U * ATLAS)] = False   # the reversing bar keeps its white
-    sel = lens & ~amber; r = g[sel]
+    rev = np.zeros_like(lens); rev[int(CLEAR_BAND[0] * ATLAS):int(CLEAR_BAND[1] * ATLAS) + 1, :int(LENS_SEAM_U * ATLAS)] = True
+    rev &= white_px(g)   # the reversing bar's clear texels: cool white, patterned, brightest at the inner end
+    u = np.broadcast_to(np.arange(g.shape[1])[None, :] / ATLAS, g.shape[:2])[rev]
+    g[rev] = (lens_pattern(g, rev) * bar_falloff(u, REVERSE) * LIT_GAIN)[:, None] * COOL
+    sel = lens & ~amber & ~rev; r = g[sel]
     g[sel] = r * np.clip((r[:, :1] - r[:, 1:].max(1, keepdims=True)) / (r[:, :1] + 1e-6) * 1.5, 0, 1)   # by its redness
     glow = Image.fromarray((g * 255).astype(np.uint8)); base = Image.fromarray((b * 255).astype(np.uint8))
     base.save(out / 'lamp_base.png', optimize=True)

@@ -81,7 +81,7 @@ elif command -v powershell.exe >/dev/null; then
     [ -f "$F/gui.txt" ] || fail "window $1: no result file (window did not open or did not finish)"
     ! grep -q FullyQualifiedErrorId "$F/out.txt" || fail "window $1: PowerShell errors"
   }
-  winrun '' ''; grep -q 'i30 PD 대시보드 설치' "$F/gui.txt" && grep -q '설치기 20' "$F/gui.txt" && [ "$(sed -n 's/^LOG //p' "$F/gui.txt" | tr -d '\r')" -ge 150 ] \
+  winrun '' ''; grep -q 'i30 PD 대시보드 설치' "$F/gui.txt" && grep -q '설치기 20' "$F/gui.txt" && [ "$(sed -n 's/^LOG //p' "$F/gui.txt" | tr -d '\r')" -ge 100 ]   # the squeeze bug left a sliver; a small CI screen gives ~148 \
     || { cat "$F/gui.txt"; fail "W1 window opens (title, version, log box height)"; }
   reset; FAKE_ABSENT=2 winrun install ''
   grep -q '^BANNER ok' "$F/gui.txt" && [ "$(grep -c 'pm install' $F/calls.log)" = 2 ] || { cat "$F/gui.txt"; fail "W2 window install"; }

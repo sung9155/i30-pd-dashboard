@@ -412,10 +412,10 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         " vec3 b=texture2D(uBase,vUV).rgb; vec3 e=texture2D(uGlowTex,vUV).rgb;\n" +
         " vec3 em=e*(0.05+vK*1.9); float lens=0.75;\n" +
         // Tail and stop lamps (groups 3, 4) as a lit i30 rear lamp (the owner's reference photo, 2026-11-27): the light
-        // guide's core (the glow picture's orange middle) is a strong red from the tail lamp on, the rest a deep dark
-        // red, brighter when braking; the unlit lens is tinted dark like a smoke film. No white or pink (owner's wish).
+        // guide's core (the glow picture's orange middle) and the rest a cherry red, brighter when braking; the unlit
+        // lens lightly tinted. No white or pink. The owner picked this look ("체리") from five emulator renders.
         " if(vG>2.5&&vG<4.5){ float k=clamp(e.g/max(e.r,0.01)*2.2,0.0,1.0);\n" +
-        "  float a=k*min(1.0,vK*2.2); em=vec3(0.72,0.025,0.02)*e.r*(0.03+vK*1.3)*(1.0-a)+vec3(1.0,0.09,0.05)*e.r*a*(0.55+0.45*vK); lens=0.4; }\n" +
+        "  float a=k*min(1.0,vK*2.2); em=vec3(0.9,0.06,0.04)*e.r*(0.03+vK*1.6)*(1.0-a)+vec3(1.0,0.16,0.08)*e.r*a*(0.6+0.4*vK); lens=0.6; }\n" +
         " vec3 c=shade(b*lens,0.5,n,v)*(1.0-0.5*vK)+em;\n" +
         " gl_FragColor=vec4(c,1.0); }\n";
     private static final String FLOOR_VS =

@@ -400,17 +400,22 @@ final class CarRenderer implements GLSurfaceView.Renderer {
     private static final String LAMP_VS =
         "uniform mat4 uMVP; uniform mat4 uModel; uniform float uGlow[9];\n" +
         "attribute vec3 aPos; attribute vec3 aNrm; attribute float aGroup; attribute vec4 aCol; attribute vec2 aUV;\n" +
-        "varying vec3 vN; varying vec3 vW; varying vec2 vUV; varying float vK;\n" +
-        "void main(){ vW=(uModel*vec4(aPos,1.0)).xyz; vN=(uModel*vec4(aNrm,0.0)).xyz; vUV=aUV;\n" +
+        "varying vec3 vN; varying vec3 vW; varying vec2 vUV; varying float vK; varying float vG;\n" +
+        "void main(){ vW=(uModel*vec4(aPos,1.0)).xyz; vN=(uModel*vec4(aNrm,0.0)).xyz; vUV=aUV; vG=aGroup;\n" +
         " vK=uGlow[int(aGroup+0.5)]*step(0.5,aGroup);\n" +
         " gl_Position=uMVP*vec4(aPos,1.0); }\n";
     private static final String LAMP_FS =
         "precision mediump float;\n" + LIGHTING +
         "uniform sampler2D uBase; uniform sampler2D uGlowTex;\n" +
-        "varying vec3 vN; varying vec3 vW; varying vec2 vUV; varying float vK;\n" +
+        "varying vec3 vN; varying vec3 vW; varying vec2 vUV; varying float vK; varying float vG;\n" +
         "void main(){ vec3 n=normalize(vN); vec3 v=normalize(uEye-vW);\n" +
         " vec3 b=texture2D(uBase,vUV).rgb; vec3 e=texture2D(uGlowTex,vUV).rgb;\n" +
-        " vec3 c=shade(b*0.75,0.5,n,v)*(1.0-0.5*vK)+e*(0.05+vK*1.9);\n" +
+        " vec3 em=e*(0.05+vK*1.9);\n" +
+        // Tail and stop lamps (groups 3, 4) as a lit i30 rear lamp (the owner's reference photo, 2026-11-27): the light
+        // guide's core (the glow picture's orange middle) burns pinkish white, white-hot when braking; the rest is red.
+        " if(vG>2.5&&vG<4.5){ float k=clamp(e.g/max(e.r,0.01)*2.2,0.0,1.0);\n" +
+        "  em=vec3(1.0,0.07,0.05)*e.r*(0.05+vK*1.9)+vec3(0.0,0.8,0.75)*k*e.r*vK*1.6; }\n" +
+        " vec3 c=shade(b*0.75,0.5,n,v)*(1.0-0.5*vK)+em;\n" +
         " gl_FragColor=vec4(c,1.0); }\n";
     private static final String FLOOR_VS =
         "uniform mat4 uMVP; uniform float uSize; attribute vec2 aCorner; varying vec2 vXZ;\n" +

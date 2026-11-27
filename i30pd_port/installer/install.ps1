@@ -13,9 +13,14 @@
               시험용: -JavaPath <java.exe> -ToolDir <도구 폴더(받기 생략)>
   새 설치기: 시작할 때 이 설치기가 나온 릴리스($InstallerChannel: 안정화 = 최신 정식, 테스트 = 'test')의 설치기 ZIP이 더 새것이면
              묻고 이 폴더의 파일을 바꾼 뒤 같은 인자로 다시 시작한다. 시험용: I30PD_API(릴리스 API 주소, 가짜 서버)
+  창 설치기(gui.ps1)용: -Gui  번호·Enter를 묻지 않고(-Channel이 없으면 안정화) 차를 스스로 기다리며, 줄 단위로 찍고 아래 상태 줄을 낸다.
+              @@STEP <제목>  @@WAIT <초> <안내>  @@ASK <질문>(표준 입력에서 y/n 한 줄을 읽음)  @@FILE <경로>  @@DONE ok|fail <내용>
+              새 설치기는 창의 [업데이트]가 맡는다: -CheckUpdate(더 새것이면 '@@UPDATE <버전>' 한 줄) · -Gui -Update(묻지 않고 바꾼 뒤
+              '@@OPEN <새 창 설치기.cmd>'). -Gui일 때 시작할 때의 새 설치기 확인은 건너뛴다.
 #>
 param([string]$AdbPath, [string]$ApkBase, [string]$Channel, [switch]$Yes, [switch]$Uninstall, [switch]$Diag,
-      [switch]$BootFast, [switch]$BootFastRemove, [string]$JavaPath, [string]$ToolDir)
+      [switch]$BootFast, [switch]$BootFastRemove, [string]$JavaPath, [string]$ToolDir,
+      [switch]$Gui, [switch]$CheckUpdate, [switch]$Update)
 
 # 'Continue' (not 'Stop'): adb writes its progress to stderr, and under 'Stop' a native
 # command's stderr turns into a terminating error (NativeCommandError) that aborts the
@@ -40,6 +45,7 @@ function CellWidth([char]$ch){
   return 1
 }
 function Fit([string]$m, [int]$max = 0){
+  if($Gui){ return ,@($m) }   # 창 설치기가 줄을 직접 나눈다
   if($max -le 0){ $max = 78; try { $w = [Console]::WindowWidth; if($w -ge 40){ $max = $w - 2 } } catch {} }
   $out = New-Object System.Collections.Generic.List[string]
   $indent = ''; if($m -match '^( +)'){ $indent = $Matches[1] + '  ' }   # 이어지는 줄은 원래 들여쓰기 + 2칸
@@ -65,7 +71,7 @@ function Write-Host {
   foreach($part in ([string]$Object -split "`r?`n")){ foreach($l in (Fit $part)){ Microsoft.PowerShell.Utility\Write-Host $l @p } }
 }
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-27b'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-27c'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $InstallerChannel = 'stable'   # 이 설치기가 나온 곳: stable = 최신 정식 릴리스, test = 'test' 사전 배포. ZIP을 만들 때 scripts/release.py installers가 적는다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
@@ -110,14 +116,17 @@ $Log = Join-Path $LogDir ("install_{0}.log" -f (Get-Date -Format yyyyMMdd_HHmmss
 
 function Log($m){ Add-Content -LiteralPath $Log -Value $m -Encoding UTF8 }   # 기록 파일에만 (문제 제보용)
 function Note($m,[string]$c='Gray'){ Write-Host $m -ForegroundColor $c; Log $m }
-function Head($m){ $t = Get-Date -Format HH:mm:ss; Write-Host ''; Write-Host "$m   [$t]" -ForegroundColor Cyan; Log "== $m == $t" }
+function Head($m){ $t = Get-Date -Format HH:mm:ss; Write-Host ''; if($Gui){ Write-Host "@@STEP $m" }; Write-Host "$m   [$t]" -ForegroundColor Cyan; Log "== $m == $t" }
 function Die($m,$code){
   Write-Host ''; Write-Host $m -ForegroundColor Red; Log "ERROR: $m"
   Write-Host "기록 파일: $Log" -ForegroundColor Yellow
   Write-Host '문제를 알릴 때 이 기록 파일을 함께 보내 주세요.' -ForegroundColor Yellow
-  if(-not $Yes){ try { Start-Process explorer.exe "/select,`"$Log`"" } catch {} }
+  if($Gui){ Write-Host "@@FILE $Log"; Write-Host ('@@DONE fail ' + ([string]$m -split "`r?`n")[0]) }
+  elseif(-not $Yes){ try { Start-Process explorer.exe "/select,`"$Log`"" } catch {} }
   exit $code
 }
+function Done([string]$m = ''){ if($Gui){ Write-Host (("@@DONE ok $m").TrimEnd()) }; exit 0 }   # 창 설치기: 완료 칸에 $m
+function Cancel(){ Note '사용자 취소.' Yellow; if($Gui){ Write-Host '@@DONE fail 사용자 취소' }; exit 1 }
 function UsbOffNote(){
   Note 'USB 디버깅 끄기: 시동을 껐다 켜면 저절로 꺼집니다. 바로 끄려면 Factory Test에서  0A 01 → 65 00 → 0A 02' Gray
   Note "  (또는 '내 앱' → USB 디버깅 → OFF). 끄면 노트북 연결이 끊깁니다." Gray
@@ -131,7 +140,11 @@ function Mask([string]$t){
   if($env:USERPROFILE){ $t = $t.Replace($env:USERPROFILE,'%USERPROFILE%') }
   return $t
 }
-function Ask($m){ if($Yes){ return $true }; $r = Read-Host "$m [Y/n]"; return ($r -eq '' -or $r -match '^[Yy]') }
+# -Gui: 창 설치기가 예/아니오 창을 띄우고 답 한 줄(y/n)을 표준 입력으로 보낸다. 답이 없으면(창이 닫힘) 아니오.
+# 답 앞의 ASCII 아닌 글자는 뗀다: 콘솔 입력 인코딩이 UTF-8인 Windows에서 BOM이 붙어 '예'가 '아니오'로 읽힌 일이 있다(원작 a2f08a1).
+function Ask($m){
+  if($Gui){ Write-Host "@@ASK $m"; $r = (([string][Console]::In.ReadLine()) -replace '^[^\x21-\x7E]+', '').Trim(); Log "$m → $r"; return ($r -match '^[Yy]') }
+  if($Yes){ return $true }; $r = Read-Host "$m [Y/n]"; return ($r -eq '' -or $r -match '^[Yy]') }
 function Adb([Parameter(ValueFromRemainingArguments=$true)]$a){
   $o = & $script:adbExe @a 2>&1 | Out-String
   Add-Content -LiteralPath $Log -Value ("> adb " + ($a -join ' ') + "`n" + $o) -Encoding UTF8
@@ -144,6 +157,7 @@ function AdbWait([int]$sec,[string]$what,[string[]]$a){
   $line = ($a | ForEach-Object { if($_ -match '\s'){ '"' + $_ + '"' } else { $_ } }) -join ' '
   Log "> adb $line  (최대 ${sec}초)"
   $p = Start-Process -FilePath $script:adbExe -ArgumentList $line -NoNewWindow -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
+  if($Gui){ Write-Host "@@WAIT 0 $what" }
   Write-Host "  $what " -NoNewline
   $t0 = Get-Date; $shown = 0
   while(-not $p.WaitForExit(1000)){
@@ -183,18 +197,21 @@ Note "기록: $Log" DarkGray
 # 다시 시작한다. 인터넷이 없거나 무엇이든 틀리면 지금 설치기로 계속한다(platform-tools·APK 등 다른 파일은 건드리지 않는다).
 function SelfUpdate(){
   if($env:I30PD_UPDATED){ return }   # 방금 바꿔 다시 시작한 것
-  $ch = $(if($InstallerChannel -eq 'test'){ '테스트' } else { '안정화' })
+  if($Gui -and -not $Update){ return }   # 창 설치기: 창의 [업데이트] 단추가 맡는다
+  # 창의 [업데이트](-Update): 무엇이든 틀리면 멈춰 창에 알린다. 창이 뜰 때의 확인(-CheckUpdate): 조용히 끝낸다.
+  function Skip($m){ if($Update){ Die $m 2 }; if($CheckUpdate){ exit 0 } }
+  $ch =$(if($InstallerChannel -eq 'test'){ '테스트' } else { '안정화' })
   $up = Join-Path $LogDir 'update'; $zip = Join-Path $up 'installer.zip'; $dir = Join-Path $up 'new'
   try {
     try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072 } catch {}   # TLS 1.2 on older Windows
     $which = $(if($InstallerChannel -eq 'test'){ 'tags/test' } else { 'latest' })
     $r = Invoke-WebRequest -Uri "$Api/$which" -UseBasicParsing -TimeoutSec 8 -Headers @{ 'User-Agent' = 'i30pd-installer' } -ErrorAction Stop
     $a = @(([Text.Encoding]::UTF8.GetString($r.RawContentStream.ToArray()) | ConvertFrom-Json).assets | Where-Object { $_.name -eq 'i30pd-installer-windows.zip' })[0]
-    if(-not $a){ Log "새 설치기 확인: 릴리스($which)에 Windows 설치기 ZIP 없음"; return }
+    if(-not $a){ Log "새 설치기 확인: 릴리스($which)에 Windows 설치기 ZIP 없음"; Skip "릴리스($ch)에 Windows 설치기 ZIP이 없습니다."; return }
     Remove-Item -Recurse -Force -LiteralPath $up -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force -Path $up | Out-Null
     Invoke-WebRequest -Uri $a.browser_download_url -OutFile $zip -UseBasicParsing -TimeoutSec 60 -ErrorAction Stop
-  } catch { Log "새 설치기 확인 못 함: $($_.Exception.Message)"; return }
+  } catch { Log "새 설치기 확인 못 함: $($_.Exception.Message)"; Skip "새 설치기를 받지 못했습니다(인터넷 확인): $($_.Exception.Message)"; return }
   $v = $null; $bad = $null
   try {
     $len = (Get-Item -LiteralPath $zip).Length; $sha = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLower()
@@ -208,11 +225,12 @@ function SelfUpdate(){
       else { $bad = 'install.ps1에서 버전을 읽지 못함' }
     }
   } catch { $bad = "ZIP을 풀지 못함($($_.Exception.Message))" }
-  if($bad){ Note "새 설치기($ch)를 받았지만 확인이 맞지 않아 쓰지 않습니다: $bad. 지금 설치기로 계속합니다." Yellow; return }
+  if($bad){ Skip "받은 새 설치기($ch)의 확인이 맞지 않아 쓰지 않습니다: $bad"; Note "새 설치기($ch)를 받았지만 확인이 맞지 않아 쓰지 않습니다: $bad. 지금 설치기로 계속합니다." Yellow; return }
   Log "새 설치기 확인($which): $v, 지금 $InstallerVersion"
   if([string]::CompareOrdinal($v, $InstallerVersion) -le 0){ return }
+  if($CheckUpdate){ Write-Host "@@UPDATE $v"; exit 0 }
   Note "새 설치기가 나왔습니다: $v ($ch, 지금 쓰는 것 $InstallerVersion)" Yellow
-  if(-not (Ask '새 설치기로 바꾸고 다시 시작할까요? (아니오: 지금 설치기로 계속)')){ Log '새 설치기: 바꾸지 않음'; return }
+  if(-not $Update -and -not (Ask '새 설치기로 바꾸고 다시 시작할까요? (아니오: 지금 설치기로 계속)')){ Log '새 설치기: 바꾸지 않음'; return }
   try {
     # 내용이 같은 파일은 건드리지 않는다: 설치.cmd는 cmd가 실행 중에도 다음 줄을 다시 읽는다. install.ps1은 이미 다 읽어 둔 상태라 바꿔도 된다.
     foreach($f in (Get-ChildItem -LiteralPath $dir -File)){
@@ -220,7 +238,12 @@ function SelfUpdate(){
       if((Test-Path -LiteralPath $dst) -and (Get-FileHash -LiteralPath $dst).Hash -eq (Get-FileHash -LiteralPath $f.FullName).Hash){ continue }
       Copy-Item -LiteralPath $f.FullName -Destination $dst -Force -ErrorAction Stop
     }
-  } catch { Note "새 설치기로 바꾸지 못했습니다($($_.Exception.Message)). 지금 설치기로 계속합니다." Yellow; return }
+  } catch { if($Update){ Die "새 설치기로 바꾸지 못했습니다($($_.Exception.Message))." 2 }; Note "새 설치기($v)로 바꾸지 못했습니다($($_.Exception.Message)). 지금 설치기로 계속합니다." Yellow; return }
+  if($Update){   # 창: 새 창 설치기를 열게 알리고 끝낸다(이 창은 닫힌다)
+    Note "새 설치기($v)로 바꿨습니다." Green
+    $w = Join-Path $ROOT '창 설치기.cmd'; if(Test-Path -LiteralPath $w){ Write-Host "@@OPEN $w" }
+    Done '새 설치기를 엽니다.'
+  }
   Note "새 설치기($v)로 바꿨습니다. 다시 시작합니다." Green
   $env:I30PD_UPDATED = '1'
   $argv = @(); foreach($k in $Bound.Keys){ if($Bound[$k] -is [switch]){ if($Bound[$k]){ $argv += "-$k" } } else { $argv += "-$k"; $argv += [string]$Bound[$k] } }
@@ -228,6 +251,8 @@ function SelfUpdate(){
   exit $LASTEXITCODE
 }
 SelfUpdate
+if($CheckUpdate){ exit 0 }
+if($Update){ Note '이미 최신 설치기입니다.' Green; Done '이미 최신 설치기입니다.' }
 
 # --- adb 찾기/받기 ------------------------------------------------------------
 Head '1) adb 준비'
@@ -297,7 +322,7 @@ function ShowNotes($rel,[string]$url){
 if(-not $Uninstall -and -not $Diag -and -not $BootFast -and -not $BootFastRemove -and -not $ApkBase){
   $Rel = @{ stable = (ReleaseInfo 'latest' $false); test = (ReleaseInfo 'tags/test' $true) }
   if($Channel -ne 'stable' -and $Channel -ne 'test'){
-    if($Yes){ $Channel = 'stable' } else {
+    if($Yes -or $Gui){ $Channel = 'stable' } else {
       Head '받을 버전'
       Note ('  1) 안정화 (권장)' + $(if($Rel.stable){ " $($Rel.stable.title)" }) + ' — 실차에서 확인된 버전') Gray
       Note ('  2) 테스트' + $(if($Rel.test){ " $($Rel.test.title)" }) + ' — 새 기능, 아직 실차 검증 전. 문제가 있으면 안정화로 다시 설치하면 됩니다') Gray
@@ -345,7 +370,7 @@ Note '  (1) 설정 → 시스템 정보 → 저장 공간 화면' Gray
 Note '  (2) 내용 영역 좌하단 모서리 5회 탭 → 우하단 모서리 1회 탭 (엔지니어 모드)' Gray
 Note '  (3) 암호 입력 → Diagnosis → Factory Test 에서  0A 01 → 65 01 → 0A 02  전송' Gray
 Note '  (4) USB 케이블 연결' Gray
-if(-not $Yes){ Read-Host '위 단계가 끝나고 USB를 연결했으면 Enter' | Out-Null }
+if(-not $Yes -and -not $Gui){ Read-Host '위 단계가 끝나고 USB를 연결했으면 Enter' | Out-Null }
 
 Head '3) 차 연결 확인'
 & $script:adbExe start-server *> $null
@@ -393,10 +418,11 @@ $hinted = $null
 # 기다리는 동안 같은 안내를 5초마다 다시 찍지 않는다: 바뀔 때만 새 줄, 같으면 그 줄 끝의 경과 초만 고친다.
 $script:waitMsg = $null; $waitT0 = Get-Date
 function Wait($m,[string]$c='Gray'){
+  if($Gui){ if($m -ne $script:waitMsg){ Log $m; $script:waitMsg = $m }; Write-Host ("@@WAIT {0} {1}" -f [int]((Get-Date) - $waitT0).TotalSeconds, $m); return }
   if($m -ne $script:waitMsg){ if($script:waitMsg){ Write-Host '' }; Log $m; $script:waitMsg = $m }
   Write-Host ("`r{0}  {1}초 " -f $m, [int]((Get-Date) - $waitT0).TotalSeconds) -NoNewline -ForegroundColor $c
 }
-function WaitEnd(){ if($script:waitMsg){ Write-Host ''; $script:waitMsg = $null } }
+function WaitEnd(){ if($script:waitMsg){ if(-not $Gui){ Write-Host '' }; $script:waitMsg = $null } }
 while(-not $serial){
   $dl = & $script:adbExe devices -l 2>&1 | Out-String
   Add-Content -LiteralPath $Log -Value $dl -Encoding UTF8
@@ -441,6 +467,7 @@ while(-not $serial){
   $tries++
   # 5초 간격으로 1분. 사람이 할 일이 남았으면(드라이버 지정, 차 화면 허용) 3분까지 기다린다.
   $limit = if($hinted -eq 'driver' -or $dl -match 'unauthorized'){ 36 } else { 12 }
+  if($Gui){ $limit = 60 }   # 창 설치기: Enter로 준비를 알리지 않으므로 차 화면 단계를 할 시간까지 5분 기다린다
   if($tries -ge $limit){
     WaitEnd
     # 못 찾음: 마지막 상태를 한눈에 요약한다(자세한 시간순 기록은 기록 파일에).
@@ -502,8 +529,8 @@ if($Diag){
   [IO.File]::WriteAllText($out, (Mask $sb.ToString()), (New-Object Text.UTF8Encoding $true))
   Note "만든 파일: $out" Green
   Note '문제를 알릴 때 이 파일을 보내 주세요. 증상(언제, 어떤 화면에서, 무엇이)도 함께 알려 주세요.' White
-  if(-not $Yes){ Start-Process explorer.exe "/select,`"$out`"" }
-  UsbOffNote; exit 0
+  if($Gui){ Write-Host "@@FILE $out" } elseif(-not $Yes){ Start-Process explorer.exe "/select,`"$out`"" }
+  UsbOffNote; Done '진단 기록 파일을 만들었습니다([파일 보기]).'
 }
 # --- 시동 안내 화면 1초: 되돌리기 · 설치 (위 $SysUiKnown 설명 참고) -----------------------------------------
 function SysUiPath(){ ((Adb '-s' $serial 'shell' 'pm' 'path' 'com.android.systemui') -replace '\s','') -replace '^package:','' }
@@ -512,13 +539,13 @@ $BootHint = '내비가 응답하지 않습니다. 차 화면에 확인 창이 �
 if($BootFastRemove){
   Head '시동 안내 화면 원래대로'
   $p = SysUiPath
-  if($p -notmatch '^/data/app/'){ Note "이미 순정입니다 ($p)." Green; UsbOffNote; exit 0 }
+  if($p -notmatch '^/data/app/'){ Note "이미 순정입니다 ($p)." Green; UsbOffNote; Done '이미 순정입니다.' }
   $o = AdbWait 90 '되돌리는 중' @('-s',$serial,'uninstall','com.android.systemui')
   if($null -eq $o){ Stuck '시동 안내 되돌리기' $BootHint }
   $p = SysUiPath
   if($p -match '^/system/'){
     Note '되돌림 완료: 다음 시동부터 순정(10초 뒤 닫힘)입니다. 화면 위 상태 표시줄이 잠깐 다시 그려질 수 있습니다.' Green
-    UsbOffNote; exit 0 }
+    UsbOffNote; Done '시동 안내 화면을 원래대로 되돌렸습니다.' }
   Die "되돌리지 못했습니다 (지금: $p):`n$("$o".Trim())" 1
 }
 if($BootFast){
@@ -529,11 +556,11 @@ if($BootFast){
   $p = SysUiPath
   if($p -match '^/data/app/'){
     $vc = SysUiCode
-    if($vc -eq '18'){ Note '이미 설치돼 있습니다(시동 안내 1초). 되돌리려면 설치기 5번.' Green; UsbOffNote; exit 0 }
+    if($vc -eq '18'){ Note '이미 설치돼 있습니다(시동 안내 1초). 되돌리려면 설치기 5번.' Green; UsbOffNote; Done '이미 설치돼 있습니다(시동 안내 1초).' }
     Die "SystemUI에 이미 다른 업데이트가 깔려 있습니다($p, versionCode $vc). 손대지 않고 멈춥니다." 1
   }
   if($p -notmatch '^/system/app/HKMC_SystemUI\.apk$'){ Die "순정 SystemUI 위치가 예상과 다릅니다($p). 손대지 않고 멈춥니다." 1 }
-  if(-not (Ask '진행할까요?')){ Note '사용자 취소.' Yellow; exit 1 }
+  if(-not (Ask '진행할까요?')){ Cancel }
   try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072 } catch {}   # TLS 1.2 on older Windows
   $cf = Join-Path $LogDir 'bootfast'; $cap = Join-Path $cf 'cap'; $outApk = Join-Path $cf 'SystemUI-1s.apk'
   function BootClean(){ Remove-Item -Recurse -Force -LiteralPath $cap,$outApk -ErrorAction SilentlyContinue }   # Hyundai code: never left on this PC
@@ -612,7 +639,7 @@ if($BootFast){
   Note '시동을 완전히 끄고(문을 잠가 내비가 꺼질 때까지) 다시 켜면 그때부터 안내 화면이 약 1초 뒤 닫힙니다.' Green
   Note '후방 카메라·검은 화면이 먼저 떠 있으면 그게 끝난 뒤 1초입니다(순정 동작).' Gray
   Note '되돌리기: 설치기 5번(시동 안내 화면 원래대로). 내비 소프트웨어 업데이트 전에 꼭 되돌리세요.' Yellow
-  UsbOffNote; exit 0
+  UsbOffNote; Done '시동을 완전히 껐다 켜면 안내 화면이 약 1초 뒤 닫힙니다.'
 }
 
 if($build -eq $LowBuild){
@@ -621,7 +648,7 @@ if($build -eq $LowBuild){
   Note '블루링크 내비 2024-02 빌드 — 설치와 값이 확인된 빌드입니다.' DarkGray
 } elseif($build -and $build -ne $VerifiedBuild -and -not $Uninstall -and -not $BootFast -and -not $BootFastRemove){   # BootFast checks the SystemUI files themselves   # removing needs no "values may be wrong" question
   Note "주의: 검증된 빌드($VerifiedBuild)와 다릅니다. 값이 틀릴 수 있습니다." Yellow
-  if(-not (Ask '그래도 계속할까요?')){ Note '사용자 취소.' Yellow; exit 1 }
+  if(-not (Ask '그래도 계속할까요?')){ Cancel }
 }
 
 # --- 삭제 모드 --------------------------------------------------------------
@@ -656,7 +683,7 @@ if($Uninstall){
   }
   if($sysUiKept){ Note '앱 삭제 완료. 시동 안내 화면 1초만 남아 있습니다(설치기 5번으로 되돌리기).' Green }
   else { Note '삭제 완료. 순정 상태로 돌아갔습니다.' Green }
-  UsbOffNote; exit 0
+  UsbOffNote; Done $(if($sysUiKept){ '앱을 지웠습니다. 시동 안내 화면 1초는 남아 있습니다(5번으로 되돌리기).' } else { '삭제 완료. 순정 상태로 돌아갔습니다.' })
 }
 
 # --- 설치 -------------------------------------------------------------------
@@ -703,4 +730,4 @@ Write-Host ''
 Note "완료! 차 화면 '내 앱'에서  바로가기 버튼 → 버튼 + 알림 → 저장  을 고르면" Green
 Note "노트북 없이 가장자리 '계기판' 버튼으로 대시보드가 열립니다." Green
 UsbOffNote
-exit 0
+Done "차 화면에 '내 앱'이 열립니다."

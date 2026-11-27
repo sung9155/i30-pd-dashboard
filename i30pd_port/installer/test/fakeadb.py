@@ -4,6 +4,7 @@ import sys,os,shutil
 # FAKE_GONE=1: the cable comes out before the uninstall (uninstall and pm path answer with adb's error).
 # FAKE_CAP=<dir>: the car's /system/app/HKMC_SystemUI.* and /system/framework/*.odex (a capture, for 시동 안내 1초);
 # inst/com.android.systemui.apk = the SystemUI update is installed (versionCode 18), else the stock one (17).
+# FAKE_BUILD=<build>: another navi build (the installer asks whether to go on).
 d=os.path.dirname(os.path.abspath(__file__));st=os.path.join(d,'star.txt');a=sys.argv[1:]
 inst=os.path.join(d,'inst');tmp=os.path.join(d,'tmp');os.makedirs(inst,exist_ok=True);os.makedirs(tmp,exist_ok=True)
 open(os.path.join(d,'calls.log'),'a',encoding='utf-8').write(' '.join(a)+'\n')
@@ -33,7 +34,7 @@ elif a[0]=='shell':
     c=a[1:]
     if c[:1]==['getprop']:
         k=c[1] if len(c)>1 else ''
-        print({'ro.product.name':'pd_kr','ro.product.device':'daudioplus_kr','ro.build.version.incremental':'eng.vmadmin.20260114.084130',
+        print({'ro.product.name':'pd_kr','ro.product.device':'daudioplus_kr','ro.build.version.incremental':os.environ.get('FAKE_BUILD','eng.vmadmin.20260114.084130'),
                'persist.sys.key.custom':star,'sys.usb.state':'adb'}.get(k,''))
     elif c[:3]==['service','call','com.hkmc.micom.mode']:
         if os.environ.get('FAKE_STUCK')!='1':open(st,'w').write(c[-1])

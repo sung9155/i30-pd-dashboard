@@ -12,11 +12,15 @@
 #              시험용: --java <java> --tool-dir <도구 폴더(받기 생략)>
 # 새 설치기: 시작할 때 이 설치기가 나온 릴리스(INSTALLER_CHANNEL: 안정화 = 최신 정식, 테스트 = 'test')의 설치기 ZIP이 더 새것이면
 #            묻고 이 폴더의 파일을 바꾼 뒤 같은 인자로 다시 시작한다. 시험용: I30PD_API(릴리스 API 주소, 가짜 서버)
+# 맥 창 설치기(mac/gui.js)용: --gui  번호·Enter를 묻지 않고(--channel이 없으면 안정화) 차를 스스로 기다리며, 줄 단위로 찍고 상태 줄을 낸다.
+#              @@STEP <제목>  @@WAIT <초> <안내>  @@ASK <질문>(표준 입력에서 y/n 한 줄을 읽음)  @@FILE <경로>  @@DONE ok|fail <내용>
+#              새 설치기는 창의 [업데이트]가 맡는다: --check-update(더 새것이면 '@@UPDATE <버전>' 한 줄) · --gui --update(묻지 않고 바꾼 뒤
+#              '@@OPEN <새 창 설치기.command>'). --gui일 때 시작할 때의 새 설치기 확인은 건너뛴다.
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"; ME="$(basename "$0")"; ARGS=("$@")   # ARGS: 새 설치기로 다시 시작할 때 그대로 넘긴다
 # OS: Darwin(맥) / Linux. I30PD_OS로 바꿀 수 있다(시험 도구가 Windows Git Bash에서 리눅스 경로를 돌릴 때).
 OS="${I30PD_OS:-$(uname -s)}"; [ "$OS" = Darwin ] || OS=Linux
-INSTALLER_VERSION='2026-11-27b'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+INSTALLER_VERSION='2026-11-27c'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 INSTALLER_CHANNEL='stable'   # 이 설치기가 나온 곳: stable = 최신 정식 릴리스, test = 'test' 사전 배포. ZIP을 만들 때 scripts/release.py installers가 적는다.
 VERIFIED_BUILD='eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 LOW_BUILD='eng.vmadmin.20260114.084725'        # 블루링크 없는 D-Audio Plus LOW — 2026-10-31 실차 설치·동작 확인
@@ -30,7 +34,7 @@ RELEASES='https://github.com/sung9155/i30-pd-dashboard/releases'
 API="${I30PD_API:-https://api.github.com/repos/sung9155/i30-pd-dashboard/releases}"; API="${API%/}"   # I30PD_API: 시험용
 APK_BASE=''
 APKS='dashboard-i30pd-platform.apk myapps-i30pd-platform.apk'
-ADB=''; YES=''; UNINSTALL=''; CHANNEL=''; DIAG=''; BOOT_FAST=''; BOOT_REMOVE=''; JAVA_PATH=''; TOOL_DIR=''
+ADB=''; YES=''; UNINSTALL=''; CHANNEL=''; DIAG=''; BOOT_FAST=''; BOOT_REMOVE=''; JAVA_PATH=''; TOOL_DIR=''; GUI=''; CHECK_UPDATE=''; UPDATE=''
 while [ $# -gt 0 ]; do
   case "$1" in
     --adb) ADB="$2"; shift ;;
@@ -43,6 +47,9 @@ while [ $# -gt 0 ]; do
     --boot-fast-remove) BOOT_REMOVE=1 ;;
     --java) JAVA_PATH="$2"; shift ;;
     --tool-dir) TOOL_DIR="$2"; shift ;;
+    --gui) GUI=1 ;;
+    --check-update) CHECK_UPDATE=1 ;;
+    --update) UPDATE=1 ;;
   esac
   shift
 done
@@ -80,16 +87,27 @@ reveal() { if [ "$OS" = Darwin ]; then open -R "$1" 2>/dev/null
 os_name() { if [ "$OS" = Darwin ]; then echo "macOS $(sw_vers -productVersion 2>/dev/null)"
             else (. /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-Linux}"); fi; }
 note() { printf '%s\n' "$1"; log "$1"; }
-head_() { local t; t="$(date +%H:%M:%S)"; printf '\n\033[36m%s   [%s]\033[0m\n' "$1" "$t"; log "== $1 == $t"; }
+head_() { local t; t="$(date +%H:%M:%S)"; [ -n "$GUI" ] && printf '@@STEP %s
+' "$1"; printf '\n\033[36m%s   [%s]\033[0m\n' "$1" "$t"; log "== $1 == $t"; }
 ok()   { printf '\033[32m%s\033[0m\n' "$1"; printf '%s\n' "$1" >> "$LOG"; }
 warn() { printf '\033[33m%s\033[0m\n' "$1"; printf '%s\n' "$1" >> "$LOG"; }
-finish() { [ -z "$YES" ] && { echo; read -r -p '창을 닫으려면 Enter' _; }; exit "$1"; }
+# finish <코드> [창 완료 칸에 쓸 말]
+finish() { if [ -n "$GUI" ]; then if [ "$1" = 0 ]; then printf '@@DONE ok%s
+' "${2:+ $2}"; else printf '@@DONE fail %s
+' "${2:-사용자 취소}"; fi; exit "$1"; fi
+          [ -z "$YES" ] && { echo; read -r -p '창을 닫으려면 Enter' _; }; exit "$1"; }
 die()  { printf '\n\033[31m%s\033[0m\n' "$1"; log "ERROR: $1"
          warn "기록 파일: $LOG"
          warn '문제를 알릴 때 이 기록 파일을 함께 보내 주세요.'
+         [ -n "$GUI" ] && { printf '@@FILE %s
+' "$LOG"; finish "$2" "$(printf '%s
+' "$1" | head -1)"; }
          [ -z "$YES" ] && reveal "$LOG"
          finish "$2"; }
-ask()  { [ -n "$YES" ] && return 0; read -r -p "$1 [Y/n] " r; case "$r" in ''|[Yy]*) return 0 ;; *) return 1 ;; esac; }
+# --gui: 창이 예/아니오 창을 띄우고 답 한 줄(y/n)을 표준 입력으로 보낸다. 답이 없으면(창이 닫힘) 아니오.
+ask()  { if [ -n "$GUI" ]; then printf '@@ASK %s
+' "$1"; r=''; read -r r; log "$1 → $r"; case "$r" in [Yy]*) return 0 ;; *) return 1 ;; esac; fi
+         [ -n "$YES" ] && return 0; read -r -p "$1 [Y/n] " r; case "$r" in ''|[Yy]*) return 0 ;; *) return 1 ;; esac; }
 usb_off() { note 'USB 디버깅 끄기: 시동을 껐다 켜면 저절로 꺼집니다. 바로 끄려면 Factory Test에서  0A 01 → 65 00 → 0A 02'
             note "  (또는 '내 앱' → USB 디버깅 → OFF). 끄면 노트북 연결이 끊깁니다."; }
 # 진단 기록에서 사람을 가릴 수 있는 것: MAC 주소, 휴대폰 번호, 메일 주소, adb 기기 번호, 경로 속 사용자 이름($HOME). perl은 macOS·데비안 계열 기본, 바이트 단위(ASCII 패턴만이라 충분).
@@ -102,6 +120,8 @@ adb_wait() {
   local sec="$1" what="$2" f="$LOGDIR/adb_out.txt" t=0 pid; shift 2
   log "> adb $*  (최대 ${sec}초)"
   "$ADB" "$@" > "$f" 2>&1 & pid=$!
+  [ -n "$GUI" ] && printf '@@WAIT 0 %s
+' "$what"
   printf '  %s ' "$what"
   while kill -0 $pid 2>/dev/null; do
     sleep 1; t=$((t + 1)); [ $((t % 5)) -eq 0 ] && printf '\033[90m%ss\033[0m ' $t
@@ -146,35 +166,47 @@ a and print(a[0]["size"], a[0].get("digest") or "-", a[0]["browser_download_url"
 }
 self_update() {
   [ -n "$I30PD_UPDATED" ] && return 0   # 방금 바꿔 다시 시작한 것
-  command -v curl >/dev/null || return 0
+  [ -n "$GUI" ] && [ -z "$UPDATE" ] && return 0   # 창 설치기: 창의 [업데이트] 단추가 맡는다
+  command -v curl >/dev/null || { skip_ 'curl이 없습니다.'; return 0; }
   local ch=안정화 which=latest main=install.sh asset=i30pd-installer-linux.zip up="$LOGDIR/update" meta v='' bad='' f n
   [ "$INSTALLER_CHANNEL" = test ] && { ch=테스트; which=tags/test; }
   [ "$OS" = Darwin ] && { main=설치.command; asset=i30pd-installer-mac.zip; }
   rm -rf "$up"; mkdir -p "$up/new"
-  curl -fsS --max-time 8 -H 'User-Agent: i30pd-installer' -o "$up/release.json" "$API/$which" 2>>"$LOG" || { log "새 설치기 확인 못 함($which)"; return 0; }
-  meta="$(asset_meta "$up/release.json" "$asset")"; [ -n "$meta" ] || { log "새 설치기 확인: 릴리스($which)에 $asset 없음(또는 읽지 못함)"; return 0; }
+  curl -fsS --max-time 8 -H 'User-Agent: i30pd-installer' -o "$up/release.json" "$API/$which" 2>>"$LOG" || { log "새 설치기 확인 못 함($which)"; skip_ '새 설치기를 받지 못했습니다(인터넷 확인).'; return 0; }
+  meta="$(asset_meta "$up/release.json" "$asset")"; [ -n "$meta" ] || { log "새 설치기 확인: 릴리스($which)에 $asset 없음(또는 읽지 못함)"; skip_ "릴리스($ch)에 $asset 이 없습니다."; return 0; }
   set -- $meta   # 크기 digest 주소
-  curl -fsSL --connect-timeout 15 --max-time 60 -o "$up/installer.zip" "$3" 2>>"$LOG" || { log "새 설치기 받기 실패: $3"; return 0; }
+  curl -fsSL --connect-timeout 15 --max-time 60 -o "$up/installer.zip" "$3" 2>>"$LOG" || { log "새 설치기 받기 실패: $3"; skip_ '새 설치기를 받지 못했습니다(인터넷 확인).'; return 0; }
   if [ "$(wc -c < "$up/installer.zip" | tr -d ' ')" != "$1" ]; then bad='크기가 릴리스 정보와 다름'
   elif [ "$2" != - ] && [ "$2" != "sha256:$(sha_ "$up/installer.zip")" ]; then bad='SHA-256이 릴리스 정보와 다름'
   elif ! { if command -v unzip >/dev/null; then unzip -qo "$up/installer.zip" -d "$up/new"; else python3 -I -m zipfile -e "$up/installer.zip" "$up/new"; fi; } >>"$LOG" 2>&1; then bad='ZIP을 풀지 못함'
   elif [ ! -f "$up/new/$main" ]; then bad="ZIP에 $main 이 없음"
   else v="$(sed -n "s/^INSTALLER_VERSION='\([0-9]\{4\}-[0-9][0-9]-[0-9][0-9][^']*\)'.*/\1/p" "$up/new/$main" | head -1)"; [ -n "$v" ] || bad="$main 에서 버전을 읽지 못함"; fi
-  if [ -n "$bad" ]; then warn "새 설치기($ch)를 받았지만 확인이 맞지 않아 쓰지 않습니다: $bad. 지금 설치기로 계속합니다."; return 0; fi
+  if [ -n "$bad" ]; then skip_ "받은 새 설치기($ch)의 확인이 맞지 않아 쓰지 않습니다: $bad"; warn "새 설치기($ch)를 받았지만 확인이 맞지 않아 쓰지 않습니다: $bad. 지금 설치기로 계속합니다."; return 0; fi
   log "새 설치기 확인($which): $v, 지금 $INSTALLER_VERSION"
   { [ "$v" != "$INSTALLER_VERSION" ] && [ "$(printf '%s\n%s\n' "$v" "$INSTALLER_VERSION" | LC_ALL=C sort | tail -1)" = "$v" ]; } || return 0
+  [ -n "$CHECK_UPDATE" ] && { printf '@@UPDATE %s
+' "$v"; exit 0; }
   warn "새 설치기가 나왔습니다: $v ($ch, 지금 쓰는 것 $INSTALLER_VERSION)"
-  ask '새 설치기로 바꾸고 다시 시작할까요? (아니오: 지금 설치기로 계속)' || { log '새 설치기: 바꾸지 않음'; return 0; }
+  [ -n "$UPDATE" ] || ask '새 설치기로 바꾸고 다시 시작할까요? (아니오: 지금 설치기로 계속)' || { log '새 설치기: 바꾸지 않음'; return 0; }
   # bash는 실행 중인 스크립트를 읽어 가며 돌아서 덮어쓰면 안 된다: 옆에 쓴 뒤 mv로 이름만 바꾼다(지금 도는 옛 파일은 끝까지 그대로).
   for f in "$up/new"/*; do
     n="$(basename "$f")"
     { cp "$f" "$ROOT/.$n.new" && chmod +x "$ROOT/.$n.new" && mv -f "$ROOT/.$n.new" "$ROOT/$n"; } 2>>"$LOG" \
-      || { rm -f "$ROOT/.$n.new"; warn "새 설치기로 바꾸지 못했습니다($ROOT). 지금 설치기로 계속합니다."; return 0; }
+      || { rm -f "$ROOT/.$n.new"; skip_ "새 설치기로 바꾸지 못했습니다($ROOT)."; warn "새 설치기로 바꾸지 못했습니다($ROOT). 지금 설치기로 계속합니다."; return 0; }
   done
+  if [ -n "$UPDATE" ]; then   # 창: 새 창 설치기를 열게 알리고 끝낸다(이 앱은 닫힌다)
+    ok "새 설치기($v)로 바꿨습니다."; [ -f "$ROOT/창 설치기.command" ] && printf '@@OPEN %s
+' "$ROOT/창 설치기.command"
+    finish 0 '새 설치기를 엽니다.'
+  fi
   ok "새 설치기($v)로 바꿨습니다. 다시 시작합니다."
   I30PD_UPDATED=1 exec bash "$ROOT/$main" "${ARGS[@]}"
 }
+# 창의 [업데이트](--update): 무엇이든 틀리면 멈춰 창에 알린다. 창이 뜰 때의 확인(--check-update): 조용히 끝낸다.
+skip_() { [ -n "$UPDATE" ] && die "$1" 2; [ -n "$CHECK_UPDATE" ] && exit 0; return 0; }
 self_update
+[ -n "$CHECK_UPDATE" ] && exit 0
+[ -n "$UPDATE" ] && { ok '이미 최신 설치기입니다.'; finish 0 '이미 최신 설치기입니다.'; }
 
 # --- adb 찾기/받기 ------------------------------------------------------------
 head_ '1) adb 준비'
@@ -278,7 +310,7 @@ show_notes() {   # $1 = rel_info 결과, $2 = 전체 노트 주소
 if [ -z "$UNINSTALL$DIAG$BOOT_FAST$BOOT_REMOVE" ] && [ -z "$APK_BASE" ]; then
   REL_S="$(rel_info latest 0)"; REL_T="$(rel_info tags/test 1)"
   if [ "$CHANNEL" != stable ] && [ "$CHANNEL" != test ]; then
-    if [ -n "$YES" ]; then CHANNEL=stable; else
+    if [ -n "$YES$GUI" ]; then CHANNEL=stable; else
       head_ '받을 버전'
       note "  1) 안정화 (권장)${REL_S:+ $(printf '%s\n' "$REL_S" | head -1)} — 실차에서 확인된 버전"
       note "  2) 테스트${REL_T:+ $(printf '%s\n' "$REL_T" | head -1)} — 새 기능, 아직 실차 검증 전. 문제가 있으면 안정화로 다시 설치하면 됩니다"
@@ -317,16 +349,18 @@ note '  (2) 내용 영역 좌하단 모서리 5회 탭 → 우하단 모서리 1
 note '  (3) 암호 입력 → Diagnosis → Factory Test 에서  0A 01 → 65 01 → 0A 02  전송'
 if [ "$OS" = Darwin ]; then note '  (4) USB 케이블 연결 (USB-C 맥이면 USB-A 어댑터 필요)'
 else note '  (4) USB 케이블 연결 (데이터가 되는 케이블. 라즈베리파이는 USB-A 포트에)'; fi
-[ -z "$YES" ] && read -r -p '위 단계가 끝나고 USB를 연결했으면 Enter ' _
+[ -z "$YES$GUI" ] && read -r -p '위 단계가 끝나고 USB를 연결했으면 Enter ' _
 
 head_ '3) 차 연결 확인'
 "$ADB" start-server >/dev/null 2>&1
 SERIAL=''; tries=0
 # 기다리는 동안 같은 안내를 5초마다 다시 찍지 않는다: 바뀔 때만 새 줄, 같으면 그 줄 끝의 경과 초만 고친다.
 WAIT_MSG=''; WAIT_T0=$(date +%s)
-wait_() { if [ "$1" != "$WAIT_MSG" ]; then [ -n "$WAIT_MSG" ] && echo; log "$1"; WAIT_MSG="$1"; fi
+wait_() { if [ -n "$GUI" ]; then [ "$1" != "$WAIT_MSG" ] && { log "$1"; WAIT_MSG="$1"; }; printf '@@WAIT %s %s
+' $(( $(date +%s) - WAIT_T0 )) "$1"; return; fi
+          if [ "$1" != "$WAIT_MSG" ]; then [ -n "$WAIT_MSG" ] && echo; log "$1"; WAIT_MSG="$1"; fi
           printf '\r\033[%sm%s  %s초 \033[0m' "${2:-0}" "$1" $(( $(date +%s) - WAIT_T0 )); }
-wait_end() { [ -n "$WAIT_MSG" ] && echo; WAIT_MSG=''; }
+wait_end() { [ -n "$WAIT_MSG" ] && [ -z "$GUI" ] && echo; WAIT_MSG=''; }
 udev_fix() {
   warn '이 PC가 USB 장치(차)를 읽을 권한이 없습니다(리눅스 udev 규칙 없음).'
   note '  /etc/udev/rules.d/51-i30pd.rules 에 차(VID 18d1, PID d00d) 한 줄만 넣으면 됩니다. 다른 기기는 건드리지 않습니다.'
@@ -352,6 +386,7 @@ while [ -z "$SERIAL" ]; do
   tries=$((tries + 1))
   # 5초 간격으로 1분. 차 화면에서 허용을 눌러야 하는 상태면 3분까지 기다린다.
   limit=12; printf '%s' "$dl" | grep -q unauthorized && limit=36
+  [ -n "$GUI" ] && limit=60   # 창 설치기: Enter로 준비를 알리지 않으므로 차 화면 단계를 할 시간까지 5분 기다린다
   if [ $tries -ge $limit ]; then
     wait_end
     # 못 찾음: 이 PC가 본 USB 장치 목록을 기록에 남긴다(차가 USB에 아예 안 나타났는지 가르는 근거).
@@ -428,8 +463,9 @@ if [ -n "$DIAG" ]; then
   } | mask > "$out"
   ok "만든 파일: $out"
   note '문제를 알릴 때 이 파일을 보내 주세요. 증상(언제, 어떤 화면에서, 무엇이)도 함께 알려 주세요.'
-  [ -z "$YES" ] && reveal "$out"
-  usb_off; finish 0
+  if [ -n "$GUI" ]; then printf '@@FILE %s
+' "$out"; elif [ -z "$YES" ]; then reveal "$out"; fi
+  usb_off; finish 0 '진단 기록 파일을 만들었습니다([파일 보기]).'
 fi
 # --- 시동 안내 화면 1초: 되돌리기 · 설치 (위 SYSUI_KNOWN 설명 참고) -----------------------------------------
 sysui_path() { adb_ -s "$SERIAL" shell pm path com.android.systemui | tr -d '\r\n ' | sed 's/^package://'; }
@@ -438,10 +474,10 @@ BOOT_HINT='내비가 응답하지 않습니다. 차 화면에 확인 창이 떠 
 if [ -n "$BOOT_REMOVE" ]; then
   head_ '시동 안내 화면 원래대로'
   p="$(sysui_path)"
-  case "$p" in /data/app/*) ;; *) ok "이미 순정입니다 ($p)."; usb_off; finish 0 ;; esac
+  case "$p" in /data/app/*) ;; *) ok "이미 순정입니다 ($p)."; usb_off; finish 0 '이미 순정입니다.' ;; esac
   adb_wait 90 '되돌리는 중' -s "$SERIAL" uninstall com.android.systemui || stuck '시동 안내 되돌리기' "$BOOT_HINT"
   p="$(sysui_path)"
-  case "$p" in /system/*) ok '되돌림 완료: 다음 시동부터 순정(10초 뒤 닫힘)입니다. 화면 위 상태 표시줄이 잠깐 다시 그려질 수 있습니다.'; usb_off; finish 0 ;; esac
+  case "$p" in /system/*) ok '되돌림 완료: 다음 시동부터 순정(10초 뒤 닫힘)입니다. 화면 위 상태 표시줄이 잠깐 다시 그려질 수 있습니다.'; usb_off; finish 0 '시동 안내 화면을 원래대로 되돌렸습니다.' ;; esac
   die "되돌리지 못했습니다 (지금: $p):
 $OUT" 1
 fi
@@ -453,7 +489,7 @@ if [ -n "$BOOT_FAST" ]; then
   p="$(sysui_path)"
   case "$p" in
     /data/app/*) vc="$(sysui_code)"
-      [ "$vc" = 18 ] && { ok '이미 설치돼 있습니다(시동 안내 1초). 되돌리려면 설치기 5번.'; usb_off; finish 0; }
+      [ "$vc" = 18 ] && { ok '이미 설치돼 있습니다(시동 안내 1초). 되돌리려면 설치기 5번.'; usb_off; finish 0 '이미 설치돼 있습니다(시동 안내 1초).'; }
       die "SystemUI에 이미 다른 업데이트가 깔려 있습니다($p, versionCode $vc). 손대지 않고 멈춥니다." 1 ;;
     /system/app/HKMC_SystemUI.apk) ;;
     *) die "순정 SystemUI 위치가 예상과 다릅니다($p). 손대지 않고 멈춥니다." 1 ;;
@@ -542,7 +578,7 @@ $io" 1
   ok '시동을 완전히 끄고(문을 잠가 내비가 꺼질 때까지) 다시 켜면 그때부터 안내 화면이 약 1초 뒤 닫힙니다.'
   note '후방 카메라·검은 화면이 먼저 떠 있으면 그게 끝난 뒤 1초입니다(순정 동작).'
   warn '되돌리기: 설치기 5번(시동 안내 화면 원래대로). 내비 소프트웨어 업데이트 전에 꼭 되돌리세요.'
-  usb_off; finish 0
+  usb_off; finish 0 '시동을 완전히 껐다 켜면 안내 화면이 약 1초 뒤 닫힙니다.'
 fi
 
 if [ "$build" = "$LOW_BUILD" ]; then
@@ -592,7 +628,7 @@ $u" 1
   done
   if [ -n "$SYSUI_KEPT" ]; then ok '앱 삭제 완료. 시동 안내 화면 1초만 남아 있습니다(설치기 5번으로 되돌리기).'
   else ok '삭제 완료. 순정 상태로 돌아갔습니다.'; fi
-  usb_off; finish 0
+  usb_off; finish 0 "$([ -n "$SYSUI_KEPT" ] && echo '앱을 지웠습니다. 시동 안내 화면 1초는 남아 있습니다(5번으로 되돌리기).' || echo '삭제 완료. 순정 상태로 돌아갔습니다.')"
 fi
 
 # --- 설치 -------------------------------------------------------------------
@@ -635,4 +671,4 @@ echo
 ok "완료! 차 화면 '내 앱'에서  바로가기 버튼 → 버튼 + 알림 → 저장  을 고르면"
 ok "노트북 없이 가장자리 '계기판' 버튼으로 대시보드가 열립니다."
 usb_off
-finish 0
+finish 0 "차 화면에 '내 앱'이 열립니다."

@@ -199,9 +199,11 @@ def test(a):
 INST = ROOT / "i30pd_port/installer"
 ZIPS = {   # asset: (name in the ZIP, file in i30pd_port/installer, mode) — the layout of the ZIPs released so far
     "i30pd-installer-windows.zip": [("설치.cmd", "설치.cmd", 0o777), ("삭제.cmd", "삭제.cmd", 0o777), ("진단기록.cmd", "진단기록.cmd", 0o777),
-                                    ("install.ps1", "install.ps1", 0o666), ("알수없는장치_해결.pdf", "알수없는장치_해결.pdf", 0o666)],
+                                    ("install.ps1", "install.ps1", 0o666), ("창 설치기.cmd", "창 설치기.cmd", 0o777), ("gui.ps1", "gui.ps1", 0o666),
+                                    ("알수없는장치_해결.pdf", "알수없는장치_해결.pdf", 0o666)],
     "i30pd-installer-mac.zip": [("설치.command", "설치.command", 0o755), ("삭제.command", "삭제.command", 0o755),
-                                ("진단기록.command", "진단기록.command", 0o755)],
+                                ("진단기록.command", "진단기록.command", 0o755),
+                                ("창 설치기.command", "mac/창 설치기.command", 0o755), ("gui.js", "mac/gui.js", 0o644)],
     "i30pd-installer-linux.zip": [("install.sh", "설치.command", 0o755), ("uninstall.sh", "linux/uninstall.sh", 0o755),
                                   ("diag.sh", "linux/diag.sh", 0o755)],
 }
@@ -209,8 +211,10 @@ ZIPS = {   # asset: (name in the ZIP, file in i30pd_port/installer, mode) — th
 
 def stamp(data, src, channel, label):
     """Write the channel (and, for tests, a version) into install.ps1 / 설치.command; refuse a file with the wrong line endings."""
-    if src == "install.ps1" and not (data.startswith(b"\xef\xbb\xbf") and b"\r\n" in data):
-        sys.exit("install.ps1 must be UTF-8 with BOM and CRLF (Windows PowerShell 5.1 reads Korean only then).")
+    if src.endswith(".ps1") and not (data.startswith(b"\xef\xbb\xbf") and b"\r\n" in data):
+        sys.exit(src + " must be UTF-8 with BOM and CRLF (Windows PowerShell 5.1 reads Korean only then).")
+    if src.endswith(".cmd") and b"\r\n" not in data:
+        sys.exit(src + " must have CRLF line endings (cmd.exe misreads LF-only batch files).")
     if src.endswith(".command") or src.endswith(".sh"):
         if b"\r" in data:
             sys.exit(src + " has CR line endings; bash would fail on it.")

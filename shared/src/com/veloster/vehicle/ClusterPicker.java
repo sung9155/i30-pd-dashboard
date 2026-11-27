@@ -16,7 +16,7 @@ public final class ClusterPicker {
         "계단 회전 곡선","주황 LCD","흰 네모 숫자","택시 미터기","80년대 디지털","전투기 HUD","8비트 게임","8비트 추격 시점","마찰원","야간 미니멀","드래그 출발 트리",
         "비행기 엔진 계기판","카세트 데크","우주선 워프","GPS 랩 타이머","Λ RPM·속도계","연비·연료비","원형 RPM·다운시프트",
         "크롬 원형 바늘","사이버펑크 네온","랠리 페이스노트","3D 모델·램프·핸들 연동","도트 드라이브 화면"};
-    public static final int OVERVIEW=0,GAUGES=1,GRAPHS=2,F1=3,CLASSIC=8,MANUAL=23,ECO=24,TACHO=25,ANALOG=26,NEON=27,WRC=28,COUNT=NAMES.length,COLS=6,SLOTS=36;   // MANUAL: the Λ screen (LambdaCluster), 6MT and 7DCT
+    public static final int OVERVIEW=0,GAUGES=1,GRAPHS=2,F1=3,CLASSIC=8,ARCADE=15,MANUAL=23,ECO=24,TACHO=25,ANALOG=26,NEON=27,WRC=28,COUNT=NAMES.length,COLS=6,SLOTS=36;   // MANUAL: the Λ screen (LambdaCluster), 6MT and 7DCT
     /** Screens that are their own Android views over the dashboard (VehicleDash.syncOverlay), not PitRenderer pages. */
     public static final int CAR3D=29,NEON_DRIVE=30;   // 29 was 동승자 until 2026-11-27 (removed)
     public static final float LEFT=17,TOP=60,TILE_W=121,TILE_H=62,GAP=8;

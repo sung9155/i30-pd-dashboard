@@ -49,8 +49,19 @@ abstract class ClusterKit {
     protected boolean themed;
 
     final void frame(Canvas c,Telemetry.Sample[] samples,Telemetry m,DriveStats stats,VehicleProfile profile,long frameTime,MediaState.Snapshot track){
+        synchronized(drawLock){
         music=track;s=samples;model=m;st=stats;if(profile!=null)prof=profile;now=frameTime;
-        c.save();c.clipRect(0,52,800,480);draw(c);c.restore();   // never paint over the header
+        c.save();c.clipRect(0,52,800,480);draw(c);c.restore();}   // never paint over the header
+    }
+    private final Object drawLock=new Object();
+    /** One frame, without data, into a throwaway bitmap on a background thread (VehicleDash): the first frame on screen then
+     *  finds this screen's cached art made and its code warm (아케이드 froze 1.3-1.8 s, 신스웨이브 0.5 s on first sight in the
+     *  car, 2026-11-27). frame() is serialised with it, so opening the screen meanwhile only waits for it. Time base: elapsedRealtime. */
+    final void warm(VehicleProfile profile){
+        Bitmap b=bitmap(800,480);
+        try{frame(new Canvas(b),new Telemetry.Sample[0],null,null,profile,android.os.SystemClock.elapsedRealtime(),null);}
+        catch(RuntimeException e){/* trimmed meanwhile: the screen makes it on sight */}
+        finally{b.recycle();}
     }
     /** Every dashboard frame on every page (ClusterRenderer.tick), so running totals keep counting off-screen. */
     final void background(Telemetry.Sample[] samples,long frameTime){s=samples;now=frameTime;tick();}

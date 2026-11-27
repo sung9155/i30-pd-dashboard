@@ -385,7 +385,7 @@ public final class VehicleDash extends View implements Runnable {
             // The order is saved on every screen change, so every install has one: a new default replaces it once.
             if(p.getInt("cluster_order_v",0)<ClusterPicker.ORDER_VERSION){order=ClusterPicker.defaultOrder();p.edit().putString("cluster_order",orderCsv(order)).putInt("cluster_order_v",ClusterPicker.ORDER_VERSION).apply();}
         }catch(ClassCastException e){/* Open on Overview, everything shown, for an incompatible saved value. */}
-        if(!ecoHidden())warmEco();
+        warmEco();
         applyScreen();
         setVisibility(GONE); }
     /** Hands the saved sound choices to the audio thread. */
@@ -506,11 +506,17 @@ public final class VehicleDash extends View implements Runnable {
     }
     /** Eco's big bitmaps on a background thread, so the first Eco frame does not build them. */
     private boolean ecoHidden(){return (hidden&(1<<ClusterPicker.ECO))!=0;}
-    private static void warmEco(){new Thread(new Runnable(){public void run(){android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);try{EcoCluster.warm();}catch(RuntimeException e){/* the draw builds them */}}},"eco-warm").start();}
+    /** Eco's big bitmaps, then one off-screen frame of 아케이드 and 신스웨이브 (shown ones only), on a background thread. */
+    private void warmEco(){
+        final boolean eco=!ecoHidden(),arcade=(hidden&(1<<ClusterPicker.ARCADE))==0,neon=(hidden&(1<<ClusterPicker.NEON))==0;final VehicleProfile prof=DATA.profile();
+        new Thread(new Runnable(){public void run(){android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
+            if(eco)try{EcoCluster.warm();}catch(RuntimeException e){/* the draw builds them */}
+            if(arcade)renderer.warm(ClusterPicker.ARCADE,prof);
+            if(neon)renderer.warm(ClusterPicker.NEON,prof);}},"screen-warm").start();}
     public static void resumeStandalone(Activity a){
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
         d.resumed=true;d.artwork.open();d.mediaReceiver.start(a);
-        if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}if(!d.ecoHidden())warmEco();   // let go while out of sight (trim)
+        if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}d.warmEco();   // let go while out of sight (trim)
         d.policy(false,"standalone-resume");d.setVisibility(VISIBLE);d.shownScreen=d.screen;d.syncOverlay();
     }
     /** The dashboard is out of sight (only the floating window is up, or the system asks for memory): let go of the screens'

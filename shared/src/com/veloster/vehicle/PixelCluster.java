@@ -66,6 +66,7 @@ final class PixelCluster extends ClusterKit {
     private final Bitmap[] sideCar=new Bitmap[48],cityStrip=new Bitmap[3],hillStrip=new Bitmap[3],heartBmp=new Bitmap[9];
     private Bitmap beam,highBeam;
     private float pxScale=4,pxTop=52;
+    private static final int BD_M=8;private Bitmap backdrop;private Canvas backdropCanvas;   // Arcade backdrop at scene scale (chaseScene)
     private interface Art{void paint(Canvas c);}
     /** Paints art once into a bitmap at 1 pixel per scene pixel. */
     private Bitmap bake(int w,int h,Art a){Bitmap b=bitmap(w,h);float s=pxScale,t=pxTop;pxScale=1;pxTop=0;a.paint(new Canvas(b));pxScale=s;pxTop=t;return b;}
@@ -155,7 +156,7 @@ final class PixelCluster extends ClusterKit {
             px(c,runX,runY-runH+1,1,runH,col);
         }
     }
-    private void put(Canvas c,Bitmap b,float x,float y){int xi=Math.round(x),yi=Math.round(y);blit(c,b,0,0,b.getWidth(),b.getHeight(),xi*4,52+yi*4,(xi+b.getWidth())*4,52+(yi+b.getHeight())*4);}
+    private void put(Canvas c,Bitmap b,float x,float y){int xi=Math.round(x),yi=Math.round(y);blit(c,b,0,0,b.getWidth(),b.getHeight(),xi*pxScale,pxTop+yi*pxScale,(xi+b.getWidth())*pxScale,pxTop+(yi+b.getHeight())*pxScale);}
     /** Repeats a horizontal strip across the 200-pixel scene, scrolled by off. */
     private void strip(Canvas c,Bitmap b,float off,float y){int w=b.getWidth();float o=((off%w)+w)%w;for(float x=-o;x<200;x+=w)put(c,b,x,y);}
     private int phase;
@@ -421,6 +422,7 @@ final class PixelCluster extends ClusterKit {
     }
     private final Bitmap[] cityChase=new Bitmap[3];
     @Override void trim(){
+        backdrop=recycle(backdrop);backdropCanvas=null;
         recycle(sideCar);recycle(cityStrip);recycle(hillStrip);recycle(heartBmp);recycle(cityChase);beam=recycle(beam);highBeam=recycle(highBeam);
         recycle(ditherCache);recycle(textCache);recycle(arcadeCar);plateText=recycle(plateText);recycle(trafficCar);
     }
@@ -455,6 +457,13 @@ final class PixelCluster extends ClusterKit {
     // ---- chase view -----------------------------------------------------------------------------------------
     private void chaseScene(Canvas c,float lat,float lon,float bump,boolean brake,boolean left,boolean right,float boost,float rpm){
         int hz=Math.round(46-lon*7+bump),bottom=107;
+        // The backdrop (sky to speed lines, ~400 one-pixel rects a frame) goes into a 200 x 108 bitmap at scene scale, then one
+        // 4x nearest blit: every rect is snapped to the scene grid, so it is the same picture with one GPU draw instead of
+        // ~400 (Arcade drew 36-56 ms a frame in the car, 2026-11-27). The car, traffic and weather stay on the screen canvas.
+        final Canvas screen=c;float ps=pxScale,pt=pxTop;
+        // 8 scene px of margin each side and 4 below: a crash shake (up to 7 px) shows what lies past the edges, as before.
+        if(backdrop==null){backdrop=bitmap(200+2*BD_M,bottom+1+4);backdropCanvas=new Canvas(backdrop);backdropCanvas.translate(BD_M,0);}
+        backdrop.eraseColor(0);c=backdropCanvas;pxScale=1;pxTop=0;
         int[] sky=SKY_CHASE[phase];float bh=hz/(float)sky.length;
         for(int i=0;i<sky.length;i++)px(c,0,i*bh,200,bh+1,sky[i]);
         boolean clear=!Weather.overcast(wx);
@@ -508,6 +517,8 @@ final class PixelCluster extends ClusterKit {
             float t=((now/40+i*11)%36)/36f,dx=i%2==0?-1:1,dy=0.18f+(i/2)*0.22f,n=(float)Math.hypot(dx,dy),r=16+t*t*140,len=2+t*12;
             int col=t<0.2f||t>0.8f?0xff5a5a6a:0xff9a9eaa;   // dim at both ends instead of a fade
             for(int j=0;j<len;j++)px(c,100+dx/n*(r+j),hz+dy/n*(r+j),1,1,col);}
+        pxScale=ps;pxTop=pt;c=screen;
+        blit(c,backdrop,0,0,backdrop.getWidth(),backdrop.getHeight(),-BD_M*pxScale,pxTop,(backdrop.getWidth()-BD_M)*pxScale,pxTop+backdrop.getHeight()*pxScale);
         if(game.on()){traffic(c,hz,bottom,rowX,rowW);flying(c,hz,bottom,rowX,rowW);}
         rear(c,lat,bump,brake,left,right,boost,rpm);
         precip(c,frameDt,hz);

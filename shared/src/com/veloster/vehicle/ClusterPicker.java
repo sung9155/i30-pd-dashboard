@@ -34,15 +34,21 @@ public final class ClusterPicker {
     private static final int ALL=COUNT>=32?-1:(1<<COUNT)-1;
     /** A saved mask, or 0 (all shown) when it is out of range or hides every screen. */
     public static int valid(int hidden){return (hidden&~ALL)!=0||hidden==ALL?0:hidden;}
-    /** Natural display order 0..COUNT-1. */
+    /** Natural display order 0..COUNT-1 (screen numbers; the convenience calls below and host tests). */
     public static int[] naturalOrder(){int[] o=new int[COUNT];for(int i=0;i<COUNT;i++)o[i]=i;return o;}
-    /** A saved order repaired to a permutation of 0..COUNT-1 (natural when it is missing or malformed). An order saved
+    /** Default display order (2026-11-27): related screens together — everyday, shift / RPM, track and timing, rally,
+     *  retro and themes, then the games and the screens you go into (아케이드, 네온 드라이브, 내 차) last. */
+    private static final int[] DEFAULT_ORDER={0,1,2,8,26,17,24,11, 25,23,5,3, 4,22,18,16,6, 10,28, 9,12,20,19,13,27,21,7, 14,15,30,29};
+    /** Bump when DEFAULT_ORDER changes: a saved order from before is replaced by it once (VehicleDash). */
+    public static final int ORDER_VERSION=2;
+    public static int[] defaultOrder(){return DEFAULT_ORDER.clone();}
+    /** A saved order repaired to a permutation of 0..COUNT-1 (the default when it is missing or malformed). An order saved
      *  before screens were added keeps its arrangement, with the new screens after it. */
     public static int[] validOrder(int[] o){
         if(o!=null&&o.length<COUNT){int[] w=new int[COUNT];System.arraycopy(o,0,w,0,o.length);for(int i=o.length;i<COUNT;i++)w[i]=i;o=w;}
-        if(o==null||o.length!=COUNT)return naturalOrder();
+        if(o==null||o.length!=COUNT)return defaultOrder();
         boolean[] seen=new boolean[COUNT];
-        for(int s:o){if(s<0||s>=COUNT||seen[s])return naturalOrder();seen[s]=true;}
+        for(int s:o){if(s<0||s>=COUNT||seen[s])return defaultOrder();seen[s]=true;}
         int[] c=new int[COUNT];System.arraycopy(o,0,c,0,COUNT);return c;
     }
     private static int pos(int[] order,int screen){for(int i=0;i<order.length;i++)if(order[i]==screen)return i;return 0;}

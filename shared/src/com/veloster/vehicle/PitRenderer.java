@@ -61,7 +61,7 @@ public final class PitRenderer {
     private int hidden;
     /** Screen list over the body while open, its edit mode and the hidden screens (VehicleDash owns the gesture). */
     public void setPicker(boolean open,boolean edit,int hiddenScreens){picker=open;editing=edit;hidden=hiddenScreens;}
-    private int[] order=ClusterPicker.naturalOrder();
+    private int[] order=ClusterPicker.defaultOrder();
     private float settingsScroll;
     public void setOrder(int[] o,float scroll){order=o;settingsScroll=scroll;}
     /** Drive-mode options shown on their edit tiles: accent colour by mode, screen by mode. */

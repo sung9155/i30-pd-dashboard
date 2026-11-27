@@ -71,6 +71,11 @@ public final class ClusterPickerTest {
             m=ClusterPicker.move(o.clone(),3,0);check(m[0]==d&&m[1]==a&&m[2]==b&&m[3]==c,"move: position 3 dropped at the top");
             m=ClusterPicker.move(o.clone(),2,2);check(java.util.Arrays.equals(m,o),"move: same place keeps the order");
             m=ClusterPicker.move(o.clone(),0,o.length+5);check(java.util.Arrays.equals(m,o),"move: out of range keeps the order");}
+        {int[] d=ClusterPicker.defaultOrder();boolean[] seen=new boolean[ClusterPicker.COUNT];boolean perm=d.length==ClusterPicker.COUNT;
+         for(int s:d){perm&=s>=0&&s<ClusterPicker.COUNT&&!seen[s];if(perm)seen[s]=true;}
+         check(perm,"default order lists every screen once");
+         check(java.util.Arrays.equals(ClusterPicker.validOrder(null),d),"no saved order: the default");
+         int n=d.length;check(d[0]==ClusterPicker.OVERVIEW&&d[n-1]==ClusterPicker.CAR3D&&d[n-2]==ClusterPicker.NEON_DRIVE&&d[n-3]==15,"overview first; 아케이드, 네온 드라이브, 내 차 (screens you go into) last");}
         System.out.println("PASS "+checks+" cluster picker checks");
     }
 }

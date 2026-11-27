@@ -71,7 +71,7 @@ public final class VehicleDash extends View implements Runnable {
                 if(!activity.isFinishing())Toast.makeText(activity,answer,Toast.LENGTH_LONG).show();}});
         }},"usb-debug").start();
     }
-    private int[] order=ClusterPicker.naturalOrder();   // display order of the screens (header tabs, swipe, settings list)
+    private int[] order=ClusterPicker.defaultOrder();   // display order of the screens (header tabs, swipe, settings list)
     private float settingsScroll,lastMoveY;             // vertical scroll of the SCREENS list, and the last touch y for dragging it
     private static String orderCsv(int[] o){StringBuilder s=new StringBuilder();for(int i=0;i<o.length;i++){if(i>0)s.append(',');s.append(o[i]);}return s.toString();}
     private static int[] parseOrder(String s){if(s==null||s.length()==0)return null;String[] p=s.split(",");int[] o=new int[p.length];try{for(int i=0;i<p.length;i++)o[i]=Integer.parseInt(p[i].trim());}catch(NumberFormatException e){return null;}return o;}
@@ -382,6 +382,8 @@ public final class VehicleDash extends View implements Runnable {
             screen=v>=0&&v<ClusterPicker.COUNT?v:ClusterPicker.OVERVIEW;
             hidden=ClusterPicker.valid(p.getInt("cluster_hidden",0));
             order=ClusterPicker.validOrder(parseOrder(p.getString("cluster_order",null)));
+            // The order is saved on every screen change, so every install has one: a new default replaces it once.
+            if(p.getInt("cluster_order_v",0)<ClusterPicker.ORDER_VERSION){order=ClusterPicker.defaultOrder();p.edit().putString("cluster_order",orderCsv(order)).putInt("cluster_order_v",ClusterPicker.ORDER_VERSION).apply();}
         }catch(ClassCastException e){/* Open on Overview, everything shown, for an incompatible saved value. */}
         applyScreen();
         setVisibility(GONE); }

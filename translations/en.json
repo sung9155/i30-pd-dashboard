@@ -1639,5 +1639,7 @@
   "왼쪽 갈림길": "Keep left",
   "페리": "Ferry",
   "길안내 띠": "Guidance band",
-  "순정 내비 안내 중 모든 화면 위 · 끄면 WRC 칸에만": "Over every screen while the stock navi guides · off: only in the WRC card"
+  "순정 내비 안내 중 모든 화면 위 · 끄면 WRC 칸에만": "Over every screen while the stock navi guides · off: only in the WRC card",
+  "오른쪽 진출": "Exit right",
+  "왼쪽 진출": "Exit left"
 }

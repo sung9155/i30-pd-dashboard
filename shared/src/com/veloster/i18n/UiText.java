@@ -1027,6 +1027,7 @@ public final class UiText {
         EN.put("오른쪽 앞 바퀴속도 센서 신호 없음·무효","Right front wheel speed sensor no signal or invalid signal");
         EN.put("오른쪽 앞 바퀴속도 센서 회로 이상","Right front wheel speed sensor circuit malfunction");
         EN.put("오른쪽 지하차도","Underpass right");
+        EN.put("오른쪽 진출","Exit right");
         EN.put("오른쪽 출구","Exit right");
         EN.put("오른쪽으로 돌아요 · 꽉 잡으세요","Turning right · hold on");
         EN.put("오실로","Scope");
@@ -1053,6 +1054,7 @@ public final class UiText {
         EN.put("왼쪽 앞 바퀴속도 센서 신호 없음·무효","Left front wheel speed sensor no signal or invalid signal");
         EN.put("왼쪽 앞 바퀴속도 센서 회로 이상","Left front wheel speed sensor circuit malfunction");
         EN.put("왼쪽 지하차도","Underpass left");
+        EN.put("왼쪽 진출","Exit left");
         EN.put("왼쪽 출구","Exit left");
         EN.put("왼쪽: 보여 줄 값 · 오른쪽 버튼: 그래프 모양","Left: the reading · right button: the graph");
         EN.put("왼쪽에서 글꼴을 고르세요","Pick a font on the left");

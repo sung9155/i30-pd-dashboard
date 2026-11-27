@@ -55,7 +55,10 @@ public final class Tbt {
      *  (Open-HMG/hmgapi-wireless-cp-aa, docs/cluster-turns.md; facts only, no code): 65 straight, 66/71 slight right/left,
      *  67/70 right/left, 68/69 sharp right/left, 72/73 U-turn, 81/82 exit right/left, 86 exit, 96-107 roundabout exits
      *  (one per 45 degrees, counterclockwise; 192-203 the clockwise twins), 112-114 destination ahead/right/left,
-     *  172-174 fork / keep right / keep left, 176 ferry. Others (83-91 but 86, seen: 84 and 91) are not known yet.
+     *  172-174 fork / keep right / keep left, 176 ferry. From our car's logs (2026-11-27, the navi engine's own
+     *  [PE02] lines and the dumps): 84 a right-hand exit / ramp (closer in it became UNDERPASS LEFT with Direction 90,
+     *  the road to the right beside the underpass), 91 a left-hand one (SCC NextTurnType 3 = a left maneuver); their exact
+     *  names are in the navi engine on the map SD (libExSLNavi), not in the firmware images. Others in 83-91: unknown.
      *  {label, arrow degrees clockwise from up}; null when unknown. */
     static Object[] icon(int c){
         switch(c){
@@ -65,6 +68,7 @@ public final class Tbt {
             case 68:return new Object[]{"급우회전",135f};case 69:return new Object[]{"급좌회전",-135f};
             case 72:case 73:return new Object[]{"유턴",180f};
             case 81:return new Object[]{"오른쪽 출구",45f};case 82:return new Object[]{"왼쪽 출구",-45f};case 86:return new Object[]{"출구",0f};
+            case 84:return new Object[]{"오른쪽 진출",45f};case 91:return new Object[]{"왼쪽 진출",-45f};   // seen on the car, side from the logs
             case 112:return new Object[]{"목적지",0f};case 113:return new Object[]{"목적지 오른쪽",90f};case 114:return new Object[]{"목적지 왼쪽",-90f};
             case 172:return new Object[]{"갈림길",0f};case 173:return new Object[]{"오른쪽 갈림길",30f};case 174:return new Object[]{"왼쪽 갈림길",-30f};
             case 176:return new Object[]{"페리",0f};

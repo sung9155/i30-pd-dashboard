@@ -30,8 +30,12 @@ public final class TbtTest {
         Tbt.State sl=Tbt.parse(dump("Unknown display type(0x47)","0.0","500.0","2.9","1",company));   // icon 71: slight left
         check(sl.label.equals("왼쪽 방향")&&Tbt.arrow(sl)==-45,"projection icon 71: slight left");
         check(Tbt.parse(dump("Unknown display type(0x51)","0.0","900.0","2.9","1",company)).label.equals("오른쪽 출구"),"icon 81: exit right");
-        Tbt.State kr=Tbt.parse(dump("Unknown display type(0x5b)","0.0","600.0","2.9","1",company));   // icon 91, seen on the car 2026-11-27: not known yet
-        check(kr.active&&kr.maneuver&&kr.metres==600&&Tbt.arrow(kr)==0&&kr.label.equals("다음 안내"),"domestic code with a distance: guidance");
+        Tbt.State kr=Tbt.parse(dump("Unknown display type(0x5b)","0.0","600.0","2.9","1",company));   // icon 91, seen on the car 2026-11-27
+        check(kr.active&&kr.maneuver&&kr.metres==600&&Tbt.arrow(kr)==-45&&kr.label.equals("왼쪽 진출"),"icon 91: a left-hand exit / ramp");
+        Tbt.State r84=Tbt.parse(dump("Unknown display type(0x54)","0.0","400.0","2.9","1",company));
+        check(r84.label.equals("오른쪽 진출")&&Tbt.arrow(r84)==45,"icon 84: a right-hand exit / ramp");
+        Tbt.State unk=Tbt.parse(dump("Unknown display type(0x55)","0.0","400.0","2.9","1",company));
+        check(unk.active&&unk.label.equals("다음 안내")&&Tbt.arrow(unk)==0,"an icon we can't name: guidance, straight arrow");
         check(!Tbt.parse(dump("Unknown display type(0x5b)","0.0","0.0","0.0","0","")).active,"domestic code without a distance: none");
         check(Tbt.parse("garbage").active==false&&Tbt.parse(null)==Tbt.NONE,"unreadable text");
         Tbt.set(left,1000);check(Tbt.current(2000)==left&&Tbt.current(1000+7000)==Tbt.NONE,"a stale reading drops");

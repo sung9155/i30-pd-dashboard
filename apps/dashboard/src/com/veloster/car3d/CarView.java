@@ -453,7 +453,7 @@ final class CarView extends FrameLayout implements Runnable {
         if (x >= BACK_L && x <= BACK_L + BACK_W && y >= BACK_T && y <= BACK_T + BACK_H) { if (onExit != null) onExit.run(); return; }
         for (int i = 0; i < VIEWS.length; i++) {
             float vx = VIEW_L + i * (VIEW_W + 6);
-            if (x >= vx && x <= vx + VIEW_W && y >= VIEW_T && y <= VIEW_T + VIEW_H) { yaw = VIEWS[i][0]; pitch = VIEWS[i][1]; dist = VIEWS[i][2]; return; }
+            if (x >= vx && x <= vx + VIEW_W && y >= VIEW_T && y <= VIEW_T + VIEW_H) { yaw = VIEWS[i][0]; pitch = VIEWS[i][1]; dist = VIEWS[i][2]; gl.requestRender(); return; }   // redraw now: with no car signal nothing else asks for a frame
         }
         if (Math.hypot(x - SWATCH_X, y - SWATCH_Y) <= SWATCH_R + 8) return;   // the colour is the dashboard's (설정 → 차 색)
         if (chipsShown && y >= CHIP_Y && y <= CHIP_Y + CHIP_H) {

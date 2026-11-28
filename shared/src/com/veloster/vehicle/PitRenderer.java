@@ -44,10 +44,10 @@ public final class PitRenderer {
     private final TachoCluster tacho=new TachoCluster();
     private final WrcCluster wrc=new WrcCluster();private final NeonCluster neon=new NeonCluster();
     /** The screens after RPM, in ClusterPicker order (WRC, 아날로그, 신스웨이브): drawn here like 에코 and RPM. */
-    private final ClusterKit[] more={new AnalogCluster(),neon,wrc};
+    private final ClusterKit[] more={new AnalogCluster(),neon,wrc,new MaintenanceCluster()};
     /** Background thread (VehicleDash): the screens that build a lot on first sight draw once off screen (ClusterKit.warm). */
     public void warm(int screen,VehicleProfile p,long now){if(screen==ClusterPicker.ARCADE)clusterRenderer.warm(screen-ClusterPicker.CLASSIC,p,now);else if(screen==ClusterPicker.NEON)neon.warm(p,now);}   // ClusterPicker order: 아날로그, 신스웨이브, WRC
-    private ClusterKit more(int pg){int s=pg+ClusterPicker.F1;return s==ClusterPicker.ANALOG?more[0]:s==ClusterPicker.NEON?more[1]:s==ClusterPicker.WRC?more[2]:null;}
+    private ClusterKit more(int pg){int s=pg+ClusterPicker.F1;return s==ClusterPicker.ANALOG?more[0]:s==ClusterPicker.NEON?more[1]:s==ClusterPicker.WRC?more[2]:s==ClusterPicker.MAINT?more[3]:null;}
     private final ShowRenderer showRenderer=new ShowRenderer();
     private final ClusterRenderer clusterRenderer=new ClusterRenderer();
     public static final int PAGE_PERFORMANCE=1,PAGE_RACE=2,PAGE_RECORDS=3,PAGE_SHOW=4,PAGE_CLASSIC=5,PAGE_RETRO=6,PAGE_RALLY=7;

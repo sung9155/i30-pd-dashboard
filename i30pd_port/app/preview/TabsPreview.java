@@ -551,6 +551,23 @@ public final class TabsPreview {
              new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),pf,now+i*1000,null);
              ImageIO.write(img,"png",new File(out,tcn[i]+".png"));}
         }
+        {   // 정비 (screen 30): an in-memory store with a few records around the replay's odometer, each tab, Korean and English
+         final java.util.HashMap<String,String> mk=new java.util.HashMap<String,String>();
+         MaintItems.Store mst=new MaintItems.Store(){public String get(String k){String x=mk.get(k);return x==null?"":x;}public void put(String k,String x){mk.put(k,x);}};
+         int odo=Math.round(model.sample(Telemetry.ODOMETER,now).value),today=MaintItems.today();
+         MaintItems.Rec r=new MaintItems.Rec();r.km=odo-7660;r.date=MaintItems.addMonths(today,-5);MaintItems.save(mst,MaintItems.Id.OIL,r);
+         r=new MaintItems.Rec();r.km=odo-11200;r.date=MaintItems.addMonths(today,-13);MaintItems.save(mst,MaintItems.Id.CABIN,r);
+         r=new MaintItems.Rec();r.km=odo-3000;r.date=MaintItems.addMonths(today,-3);r.dot=2324;MaintItems.save(mst,MaintItems.Id.TIRE_REPLACE,r);
+         r=new MaintItems.Rec();r.date=MaintItems.addMonths(today,-40);MaintItems.save(mst,MaintItems.Id.BATTERY,r);
+         r=new MaintItems.Rec();r.km=odo-9500;MaintItems.save(mst,MaintItems.Id.TIRE_ROTATE,r);
+         MaintItems.setFirstRegDate(mst,20180301);mst.put("maint_dtc_count","0");mst.put("maint_dtc_date",String.valueOf(today));
+         MaintenanceCluster.store=mst;
+         String[] mtn={"9v_maint_change","9v_maint_tires","9v_maint_status"};
+         for(int lang=0;lang<2;lang++)for(int i=0;i<3;i++){MaintenanceCluster.tab=i;if(lang==1)com.veloster.i18n.UiText.configure("en","en");
+             rec.setPage(ClusterPicker.page(ClusterPicker.MAINT));save(out,mtn[i]+(lang==1?"_en":""),rec,model,now+i*1000L+lang*5000L,false,false);}
+         com.veloster.i18n.UiText.configure("ko","ko");
+         MaintenanceCluster.store=null;MaintenanceCluster.tab=0;PitRenderer e=new PitRenderer();e.setSymmetric(true);e.setPage(ClusterPicker.page(ClusterPicker.MAINT));save(out,"9v_maint_empty",e,new Telemetry(),now,false,false);
+        }
         {   // WRC, 아날로그, 네온, 동승자 (the screens after RPM): the replay through PitRenderer, set moments, and no data at all
          String[] mn={"9t_cluster_analog","9u_cluster_neon","9s_cluster_wrc"};
          for(int i=0;i<3;i++){rec.setPage(PitRenderer.PAGE_TACHO+1+i);for(int f=0;f<6;f++)save(out,mn[i],rec,model,now+f*50L,false,false);}   // a few frames: the needles ease in

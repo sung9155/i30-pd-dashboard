@@ -115,6 +115,7 @@ public final class UiText {
         EN.put("DCT 01A5 짝수단","DCT 01A5, even gears");
         EN.put("DCT 01A5 홀수단","DCT 01A5, odd gears");
         EN.put("DCT 값 확인용 (01A5)","DCT value to check (01A5)");
+        EN.put("DCT 오일","DCT oil");
         EN.put("DCT 잔량 후보 (확인용)","DCT life candidates (to check)");
         EN.put("DCT 잔량 후보 A 짝수단","DCT clutch life candidate A, even gears");
         EN.put("DCT 잔량 후보 A 홀수단","DCT clutch life candidate A, odd gears");
@@ -222,6 +223,8 @@ public final class UiText {
         EN.put("가장자리 버튼 + 알림","Floating + notification");
         EN.put("가장자리 버튼 + 알림 / Floating + notification","Floating + notification");
         EN.put("가장자리 버튼을 표시할 수 없어 알림 바로가기를 유지합니다. 시스템의 다른 앱 위 표시 권한을 확인하세요.","The floating button could not be shown. The notification remains. Check permission to display over other apps.");
+        EN.put("가혹","Severe");
+        EN.put("가혹 근거","Severe-use evidence");
         EN.put("각진","Square");
         EN.put("갈림길","Fork");
         EN.put("감시 회로(워치독) 오류","Monitoring circuit (watchdog) error");
@@ -231,6 +234,7 @@ public final class UiText {
         EN.put("강제 재시작","Restart head unit");
         EN.put("개"," full");
         EN.put("개발자 설정","Developer options");
+        EN.put("개월"," mo");
         EN.put("거리","Distance");
         EN.put("거리  ","Dist  ");
         EN.put("거리 %d m × ","Distance %d m × ");
@@ -245,7 +249,9 @@ public final class UiText {
         EN.put("게이지를 길게 눌러 항목 · 모양 · 위치 편집","Hold a gauge to edit its signal, style or position");
         EN.put("게이트웨이와 통신 끊김","Lost communication with gateway");
         EN.put("경고","Warning");
+        EN.put("경고등 꺼짐","Lamp off");
         EN.put("경고등 요청","Warning lamp requested");
+        EN.put("경고등 켜짐","Lamp on");
         EN.put("경과 초","seconds");
         EN.put("경기","Gyeonggi");
         EN.put("경남","Gyeongnam");
@@ -271,13 +277,18 @@ public final class UiText {
         EN.put("고급유","Premium");
         EN.put("고딕","sans");
         EN.put("고른 값 게이지","Your chosen gauges");
+        EN.put("고부하","High load");
+        EN.put("고속","High speed");
         EN.put("고속 CAN 통신 버스 이상","High-speed CAN communication bus fault");
         EN.put("고장코드","Trouble codes");
+        EN.put("고장코드 · 경고등","Trouble codes · lamp");
         EN.put("고장코드 읽기","Read trouble codes");
         EN.put("고장코드 조회","Trouble codes");
         EN.put("고장코드 지우기","Clear trouble codes");
         EN.put("곡이 나오면 라벨에 적힙니다","The playing track shows on the label");
         EN.put("곧 출발","Get ready");
+        EN.put("공기압 (psi)","Pressure (psi)");
+        EN.put("공기압 보충","Air top-up");
         EN.put("공기유량센서(MAF) 범위·성능 이상","Mass air flow (MAF) sensor range/performance");
         EN.put("공기유량센서(MAF) 회로 낮음","Mass air flow (MAF) sensor circuit low");
         EN.put("공기유량센서(MAF) 회로 높음","Mass air flow (MAF) sensor circuit high");
@@ -297,6 +308,8 @@ public final class UiText {
         EN.put("관성","Inertia");
         EN.put("광장","Square");
         EN.put("광주","Gwangju");
+        EN.put("교체 뒤","Since change");
+        EN.put("교환","Service");
         EN.put("구간 시간","Stage time");
         EN.put("구간 아래에서 가속하면 측정","starts when you accelerate through the range");
         EN.put("구간 진행 중","Stage running");
@@ -308,6 +321,8 @@ public final class UiText {
         EN.put("그래프는 기본 스킨의 카드·띠에서만 고릅니다","Graphs only with the Default skin on a card or bar");
         EN.put("그래프를 길게 눌러 항목 변경","Hold a graph to change its signal");
         EN.put("그린","Green");
+        EN.put("근거 부족","Too little seen");
+        EN.put("근거 부족 · 일반 주기 적용","Too little seen · normal intervals");
         EN.put("글꼴","Fonts");
         EN.put("글꼴 목록을 읽지 못했습니다","Could not read the font list");
         EN.put("글꼴 설정을 다시 읽어 보니 다릅니다","The font settings read back differently");
@@ -327,14 +342,17 @@ public final class UiText {
         EN.put("기기 페어링","Pair device");
         EN.put("기기 페어링 상태를 확인할 수 없습니다.","The pairing state could not be verified.");
         EN.put("기록","Records");
+        EN.put("기록 없음 · 눌러서 입력","No record · tap to enter");
         EN.put("기록 중","Recording");
         EN.put("기록 지우기","Clear records");
+        EN.put("기록됨","Recorded");
         EN.put("기록실","Records");
         EN.put("기록은 앱을 닫으면 초기화","Records reset when the app closes");
         EN.put("기본","Default");
         EN.put("기본 %,d원 (%.1f km)","Base %,d won (%.1f km)");
         EN.put("기본 배치로 복원","Reset layout");
         EN.put("기본 파랑","N blue");
+        EN.put("기본값 · 바꿀 수 있음","Defaults · changeable");
         EN.put("기본값으로 되돌리기","Back to the default");
         EN.put("기본앱","Built-in apps");
         EN.put("기본요금 %.1f km","Base %.1f km");
@@ -364,6 +382,7 @@ public final class UiText {
         EN.put("나중에","Later");
         EN.put("남은 거리","Remaining");
         EN.put("남은 코너 없음","No more corners");
+        EN.put("남음","left");
         EN.put("낮","Day");
         EN.put("낮 색감 고르기","Choose the day look");
         EN.put("낮은 차임","Low chime");
@@ -396,11 +415,13 @@ public final class UiText {
         EN.put("냉각수온 센서 범위·성능 이상","Coolant temperature sensor range/performance");
         EN.put("냉각수온 센서 회로 낮음","Coolant temperature sensor circuit low");
         EN.put("냉각수온 센서 회로 높음","Coolant temperature sensor circuit high");
+        EN.put("냉간 시동","Cold starts");
         EN.put("넓은 번호판 (3D)","Wide plate (3D)");
         EN.put("네온","Neon");
         EN.put("네온 드라이브","Neon Drive");
         EN.put("네이비","Navy");
         EN.put("네트워크 통신","Network communication");
+        EN.put("년","y");
         EN.put("노을","Sunset");
         EN.put("노크 센서 감지 시스템(KSDS) 경고 — 엔진 베어링 손상 의심, 즉시 점검 권장","Knock sensor detection system (KSDS) warning — engine bearing damage suspected, immediate inspection recommended");
         EN.put("노크 센서 범위·성능 이상","Knock sensor range/performance");
@@ -425,6 +446,7 @@ public final class UiText {
         EN.put("눌러서 계기판과 앱 목록 열기","Tap to open the dashboard and your app list");
         EN.put("눌러서 사용·미사용","Tap to turn on/off");
         EN.put("눌러서 삭제","Hold to remove");
+        EN.put("눌러서 입력","Tap to enter");
         EN.put("눌러서 화면 고르기","Tap to choose a screen");
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
         EN.put("다른 칸과 위치 바꾸기","Swap with another slot");
@@ -515,6 +537,8 @@ public final class UiText {
         EN.put("뒤 왼쪽 타이어 온도","Rear-left tyre temperature");
         EN.put("뒤 왼쪽 휠","Rear-left wheel");
         EN.put("뒤로","Back");
+        EN.put("뒤오","RR");
+        EN.put("뒤왼","RL");
         EN.put("드래그","Drag");
         EN.put("드래그 출발 트리","Drag start tree");
         EN.put("디자인","Design");
@@ -546,6 +570,7 @@ public final class UiText {
         EN.put("루트 작업이 끝나지 않았습니다: ","The root step did not finish: ");
         EN.put("마리나 블루","Marina Blue");
         EN.put("마젠타","Magenta");
+        EN.put("마지막 보충","Last top-up");
         EN.put("마찰 토크","Friction torque");
         EN.put("마찰원","Friction circle");
         EN.put("막대","Bar");
@@ -644,6 +669,7 @@ public final class UiText {
         EN.put("변속·구동","Transmission");
         EN.put("변속기","Transmission");
         EN.put("변속기 (TCU)","Transmission (TCU)");
+        EN.put("변속기 오일","Gearbox oil");
         EN.put("변속기 오일 온도 센서 범위·성능 이상","Transmission oil temperature sensor range/performance");
         EN.put("변속기 오일 온도 센서 회로 낮음","Transmission oil temperature sensor circuit low");
         EN.put("변속기 오일 온도 센서 회로 높음","Transmission oil temperature sensor circuit high");
@@ -699,7 +725,10 @@ public final class UiText {
         EN.put("브레이크 압력 센서 전기 계통 이상","Brake pressure sensor electrical fault");
         EN.put("브레이크 진공 펌프 계통 고장","Brake vacuum pump system failure");
         EN.put("브레이크 진공 펌프 릴레이 회로 단선·단락","Brake vacuum pump relay circuit open or short circuit");
+        EN.put("브레이크 패드 뒤","Brake pads rear");
+        EN.put("브레이크 패드 앞","Brake pads front");
         EN.put("브레이크·안전","Brakes · safety");
+        EN.put("브레이크액","Brake fluid");
         EN.put("블로오프","Blow-off");
         EN.put("블루투스","Bluetooth");
         EN.put("블루투스 기기 검색·페어링","Bluetooth discovery and pairing");
@@ -758,6 +787,7 @@ public final class UiText {
         EN.put("산화촉매 앞 배기 온도","Exhaust temperature before the catalyst");
         EN.put("상승 2음","Rising 2 tones");
         EN.put("상승 3음","Rising tones");
+        EN.put("상태","Status");
         EN.put("상태 새로 확인","Refresh status");
         EN.put("상태 확인 실패: ","Status check failed: ");
         EN.put("상향등","High beam");
@@ -802,6 +832,7 @@ public final class UiText {
         EN.put("센서 기준 전압 B 회로 이상","Sensor reference voltage B circuit malfunction");
         EN.put("센서 전원 전압 이상 (조향: 토크 센서 전원)","Sensor supply voltage fault (steering: torque sensor supply)");
         EN.put("소리 반응 속도","Sound response");
+        EN.put("소모품 · 교환 주기","Wear items · intervals");
         EN.put("속도","Speed");
         EN.put("속도 GPS 보정 값 초기화","Reset the GPS speed correction");
         EN.put("속도 km/h","Speed km/h");
@@ -855,6 +886,8 @@ public final class UiText {
         EN.put("시동 때 USB 디버깅 켜기","USB debugging at start-up");
         EN.put("시동 안내 화면 건너뛰기","Skip the start-up notice");
         EN.put("시동 안내 화면: ","Start-up notice: ");
+        EN.put("시동 전","Before start");
+        EN.put("시동 직후","After start");
         EN.put("시스템","System");
         EN.put("시스템 남은 공간","System space free");
         EN.put("시험 접속정보 보기","Show test credentials");
@@ -891,6 +924,7 @@ public final class UiText {
         EN.put("아이스","Ice");
         EN.put("아이언 그레이","Iron Grey");
         EN.put("아주 크게","Extra large");
+        EN.put("아직 잡힌 값 없음","Not caught yet");
         EN.put("아케이드","Arcade");
         EN.put("아크","Arc");
         EN.put("안내 때 멈추기","Stop for prompts");
@@ -915,6 +949,8 @@ public final class UiText {
         EN.put("앞 왼쪽 타이어 온도","Front-left tyre temperature");
         EN.put("앞 왼쪽 휠","Front-left wheel");
         EN.put("앞바퀴","Front wheels");
+        EN.put("앞오","FR");
+        EN.put("앞왼","FL");
         EN.put("앰버","Amber");
         EN.put("앱","Apps");
         EN.put("앱 관리","Manage apps");
@@ -922,6 +958,8 @@ public final class UiText {
         EN.put("앱에 든 글꼴 파일이 손상됐습니다: ","A font file inside the app is damaged: ");
         EN.put("앱에 포함","In the app");
         EN.put("앱에 포함 · 내비에 설치됨","In the app · installed");
+        EN.put("앱이 본 거리","Distance seen");
+        EN.put("앱이 켜져 있던 동안 센 값","Counted while the app ran");
         EN.put("야간","Night");
         EN.put("야간 도로","Night road");
         EN.put("야간 미니멀","Night minimal");
@@ -939,6 +977,8 @@ public final class UiText {
         EN.put("에어백 제어기 코딩 오류","Airbag control unit coding error");
         EN.put("에어백 제어기 코딩 횟수 초과","Airbag control unit coding count exceeded");
         EN.put("에어백 제어기와 통신 끊김","Lost communication with airbag control module");
+        EN.put("에어컨 필터","Cabin filter");
+        EN.put("에어클리너","Air filter");
         EN.put("에코","Eco");
         EN.put("에코 동전 소리","Eco coin sound");
         EN.put("에코 점수","Eco score");
@@ -971,6 +1011,7 @@ public final class UiText {
         EN.put("엔진 회전 주파수 = RPM ÷ 60","Crank frequency = RPM ÷ 60");
         EN.put("엔진 회전수","Engine speed");
         EN.put("엔진·변속기·제동·조향·에어백·바디 (읽기만)","Engine, transmission, brakes, steering, airbag, body (read only)");
+        EN.put("엔진오일 · 필터","Engine oil · filter");
         EN.put("엔진음","Engine mix");
         EN.put("여러 실린더 / 무작위 실화 감지","Multiple cylinder / random misfire detected");
         EN.put("역대","All-time");
@@ -997,6 +1038,7 @@ public final class UiText {
         EN.put("연료 펌프 제어 회로 낮음","Fuel pump control circuit low");
         EN.put("연료 펌프 제어 회로 높음","Fuel pump control circuit high");
         EN.put("연료 펌프 제어 회로 단선","Fuel pump control circuit open");
+        EN.put("연료필터","Fuel filter");
         EN.put("연비·연료비","Economy · fuel cost");
         EN.put("연타 · 5번","Rapid · 5 taps");
         EN.put("연하게","Light");
@@ -1013,6 +1055,7 @@ public final class UiText {
         EN.put("예약","Booked");
         EN.put("예열 플러그 제어 모듈 회로 이상","Glow plug control module circuit malfunction");
         EN.put("예열 플러그 회로 이상","Glow plug circuit malfunction");
+        EN.put("오도미터 확인 필요","Check the odometer");
         EN.put("오른쪽","Right");
         EN.put("오른쪽 ","Right ");
         EN.put("오른쪽 갈림길","Keep right");
@@ -1170,6 +1213,7 @@ public final class UiText {
         EN.put("이미 페어링된 기기입니다. 프로필 연결은 해당 앱에서 진행하세요.","Already paired. Connect the required profile from the relevant app.");
         EN.put("이번","This run");
         EN.put("이번 랩 / 지난 랩","this lap / last lap");
+        EN.put("이번 주기 저압 경고","Low-pressure warnings this period");
         EN.put("이번 주행 연료비","Trip fuel cost");
         EN.put("이번 주행 초기화","Trip reset");
         EN.put("이벤트 후 신호 이상","Signal incorrect after event");
@@ -1181,6 +1225,8 @@ public final class UiText {
         EN.put("인천","Incheon");
         EN.put("인텐스 블루","Intense Blue");
         EN.put("인텐스 카퍼","Intense Copper");
+        EN.put("일"," d");
+        EN.put("일반","Normal");
         EN.put("일반 USB 모드로 돌아갑니다. 연결된 PC·파이는 끊깁니다.","Returns to normal USB mode. A connected PC or Pi is cut off.");
         EN.put("일반 블루투스(Classic)를 사용합니다. BLE 검색과 GPS 데이터 수신 기능은 포함하지 않습니다.","Uses Classic Bluetooth. BLE discovery and GPS data reception are not included.");
         EN.put("일반 설치 앱은 자동 표시됩니다. 목록에서 숨겨도 앱은 삭제되지 않습니다.","Ordinary installed apps appear automatically. Hiding an app does not uninstall it.");
@@ -1213,12 +1259,14 @@ public final class UiText {
         EN.put("재부팅","Reboot");
         EN.put("재부팅하면 화면에 반영됩니다","Shows on screen after a reboot");
         EN.put("재부팅하지 못했습니다: ","Could not reboot: ");
+        EN.put("재생","Regens");
         EN.put("재생 중","Playing");
         EN.put("재생 중인 곡 없음","No track playing");
         EN.put("재시작","Restart");
         EN.put("재시작 요청 실패: ","Restart request failed: ");
         EN.put("재시작 요청이 취소되었습니다.","Restart request cancelled.");
         EN.put("잰 값을 지우고 처음부터","Forget the measurement and start over");
+        EN.put("저속 · 정체 평균","Slow · traffic avg");
         EN.put("저속 시간","Slow time");
         EN.put("저장","Save");
         EN.put("저장 / Save","Save");
@@ -1265,11 +1313,15 @@ public final class UiText {
         EN.put("점화 시기","Spark timing");
         EN.put("점화·노킹 모니터","Spark & knock monitor");
         EN.put("점화시기","Timing");
+        EN.put("점화플러그","Spark plugs");
         EN.put("접지 단락","Short to ground");
         EN.put("접지 단락 또는 단선","Short to ground or open circuit");
+        EN.put("정기검사","Inspection");
         EN.put("정렬·조정 이상","Alignment / adjustment incorrect");
+        EN.put("정비","Service");
         EN.put("정상","Normal");
         EN.put("정속 주행","Steady cruise");
+        EN.put("정지","Stops");
         EN.put("정지 유지 · 곧 트리 시작","Hold still · tree starting");
         EN.put("정차 · 공회전 ","Stopped · idle ");
         EN.put("정차 상태에서 확인하세요. 이 화면을 여는 것만으로 무선 설정은 바뀌지 않습니다.","Check while parked. Opening this screen alone does not change wireless settings.");
@@ -1284,6 +1336,7 @@ public final class UiText {
         EN.put("제어기 간 통신 링크 이상","Communication link fault between control modules");
         EN.put("제어기 내부(하드웨어) 고장","Control unit internal (hardware) failure");
         EN.put("제어기가 거부했습니다.","The unit refused.");
+        EN.put("제조","Made");
         EN.put("제주","Jeju");
         EN.put("조수석","Passenger");
         EN.put("조수석 문","Passenger door");
@@ -1306,6 +1359,7 @@ public final class UiText {
         EN.put("조향각 센서(SAS) CAN 신호 끊김","Steering angle sensor (SAS) CAN signal lost");
         EN.put("조향각 센서에서 잘못된 데이터 수신","Invalid data received from steering angle sensor");
         EN.put("조향각 센서와 통신 끊김","Lost communication with steering angle sensor");
+        EN.put("조회 기록 없음","Not read yet");
         EN.put("조회 중…","Reading…");
         EN.put("좁은 번호판 (도트 차)","Narrow plate (pixel cars)");
         EN.put("종가속","Longitudinal G");
@@ -1363,12 +1417,15 @@ public final class UiText {
         EN.put("지금 속도","Speed now");
         EN.put("지금 연비 ","Now ");
         EN.put("지금 재부팅","Reboot now");
+        EN.put("지금 조회","Read now");
         EN.put("지금 화면의 글꼴과 같습니다","Same as the font on screen now");
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
         EN.put("지난","Last");
         EN.put("지난 구간","Last stage");
+        EN.put("지난 뒤","Since");
         EN.put("지난 랩","Last");
         EN.put("지난 코너","Last corners");
+        EN.put("지남","Past");
         EN.put("지령 위치 도달 불가","Commanded position not reachable");
         EN.put("지연 보정","Latency compensation");
         EN.put("지우기","Clear");
@@ -1384,6 +1441,7 @@ public final class UiText {
         EN.put("진단 서비스에 연결하지 못했습니다.","Could not connect to the diagnostic service.");
         EN.put("진하게","Solid");
         EN.put("짝수단","Even");
+        EN.put("짧은 주행","Short trips");
         EN.put("짧은 캡슐","Short pill");
         EN.put("짧은 펄스 · 낮게","Short pulse · low");
         EN.put("차가 멈춘 것을 확인하지 못했습니다. 정차한 뒤 다시 누르세요.","Could not see the car standing. Stop, then tap again.");
@@ -1427,12 +1485,14 @@ public final class UiText {
         EN.put("최고 부스트","Peak boost");
         EN.put("최고 부스트 순간","At peak boost");
         EN.put("최고 속도","Top speed");
+        EN.put("최고 온도","Max temp");
         EN.put("최고 횡G","Peak lat G");
         EN.put("최근","last");
         EN.put("최근 2분","Last 2 min");
         EN.put("최근 30초","Last 30 s");
         EN.put("최근 60초","Last 60 s");
         EN.put("최대 횡G","Max lat G");
+        EN.put("최초 등록일","First registration");
         EN.put("축소","scaled down");
         EN.put("출구","Exit");
         EN.put("출력 (계산)","Power (calc.)");
@@ -1473,6 +1533,7 @@ public final class UiText {
         EN.put("켜짐 (짧게 누르면 계기판)","On (short press opens the dashboard)");
         EN.put("켬","On");
         EN.put("코너 %d개","%d corners");
+        EN.put("코드 없음","No codes");
         EN.put("코리아 인터내셔널 서킷","Korea International Circuit");
         EN.put("코치","Coach");
         EN.put("코퍼","Copper");
@@ -1507,7 +1568,9 @@ public final class UiText {
         EN.put("타이어 공기압","Tire pressure");
         EN.put("타이어 공기압 (4바퀴 묶음)","Tyre pressures (all four)");
         EN.put("타이어 공기압 낮음","Low tire pressure");
+        EN.put("타이어 교체","Tyre change");
         EN.put("타이어 온도","Tire temp");
+        EN.put("타이어 위치 교환","Tyre rotation");
         EN.put("타코","Tacho");
         EN.put("태백 스피드웨이","Taebaek Speedway");
         EN.put("택시","Taxi");
@@ -1636,6 +1699,7 @@ public final class UiText {
         EN.put("후드 열림","Hood open");
         EN.put("후진","Reverse");
         EN.put("후진 기어비 불일치","Incorrect reverse gear ratio");
+        EN.put("휠 얼라인먼트","Wheel alignment");
         EN.put("흐림","Overcast");
         EN.put("흡기","Intake");
         EN.put("흡기 온도","Intake temperature");

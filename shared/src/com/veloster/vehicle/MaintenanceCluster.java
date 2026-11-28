@@ -93,7 +93,7 @@ final class MaintenanceCluster extends ClusterKit {
                 dp.right=t("재생")+" "+u.dpfRegens+t("회")+(u.dpfRegens>0?" · "+t("평균")+String.format(Locale.US," %,d km",Math.round(span/u.dpfRegens)):"");rows.add(dp);}
             Row e1=new Row();e1.name=t("가혹 근거");float seen=Float.isNaN(odo)||Float.isNaN(u.odoAtOil)||odo<=u.odoAtOil?Float.NaN:(float)(100*u.seenKm/(odo-u.odoAtOil));
             e1.right=t("엔진")+String.format(Locale.US," %.0f h",u.engineS/3600)+" · "+t("공회전")+" "+pct(u.idleS,u.engineS)+" · "+t("앱이 본 거리")+" "+fmt("%.0f %%",seen);rows.add(e1);
-            Row e2=new Row();e2.name="";e2.right=t("짧은 주행")+" "+pct(u.shortStarts,Math.max(0,u.starts-1))+" · "+t("냉간 시동")+" "+u.coldStarts+" · "+t("고속")+" "+pct(u.highSpeedKm,u.movingKm)+" · "+t("고부하")+" "+pct(u.highLoadS,u.engineS);rows.add(e2);}
+            Row e2=new Row();e2.name="";e2.right=t("짧은 주행")+" "+pct(u.shortStarts,u.judgedStarts)+" · "+t("냉간 시동")+" "+u.coldStarts+" · "+t("고속")+" "+pct(u.highSpeedKm,u.movingKm)+" · "+t("고부하")+" "+pct(u.highLoadS,u.engineS);rows.add(e2);}
     }
     /** MaintJudge's reason ("짧은 주행 62 %") with its label in the screen's language. */
     private static String reason(String r){for(String l:new String[]{"짧은 주행","공회전","저속 · 정체 평균","정지","고속","고부하"})if(r.startsWith(l))return t(l)+r.substring(l.length());return r;}

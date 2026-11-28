@@ -36,13 +36,13 @@ public final class MaintLogTest {
         reset();run(s(2000,60),300,false);MaintLog.flush();MaintLog.attach(STORE);   // the app restarted mid-drive
         run(s(2000,60),300,false);u=MaintLog.sinceOil();
         check(u.starts==1,"restartMidDriveSameStart: still one start ("+u.starts+")");close((float)u.movingKm,10,0.3f,"restart keeps the km");
-        run(s(0,0),120,false);run(s(2000,60),60,false);u=MaintLog.sinceOil();
-        check(u.starts==2&&u.shortStarts==0,"the 10 km drive across the restart is not short");
+        run(s(0,0),200,false);run(s(2000,60,Telemetry.ENGINE_RUNTIME,5),60,false);u=MaintLog.sinceOil();
+        check(u.starts==2&&u.shortStarts==0&&u.judgedStarts==1,"the 10 km drive across the restart is not short");
 
         reset();
-        for(int k=0;k<3;k++){run(s(2000,60),180,false);run(s(0,0),120,false);}   // three 3 km drives
-        u=MaintLog.sinceOil();check(u.starts==3&&u.shortStarts==2,"two finished 3 km drives are short ("+u.starts+"/"+u.shortStarts+")");
-        reset();run(s(2000,60,Telemetry.AMBIENT,-5),720,false);run(s(0,0),120,false);run(s(2000,60),10,false);
+        for(int k=0;k<3;k++){run(s(2000,60,Telemetry.ENGINE_RUNTIME,5),180,false);run(s(0,0),200,false);}   // three 3 km drives, each seen from its start
+        u=MaintLog.sinceOil();check(u.starts==3&&u.shortStarts==2&&u.judgedStarts==2,"two finished 3 km drives are short ("+u.starts+"/"+u.shortStarts+"/"+u.judgedStarts+")");
+        reset();run(s(2000,60,Telemetry.AMBIENT,-5),720,false);run(s(0,0),200,false);run(s(2000,60,Telemetry.ENGINE_RUNTIME,5),10,false);
         u=MaintLog.sinceOil();check(u.shortStarts==1,"12 km at -5 °C is short (16 km rule)");
 
         reset();run(s(900,0,2,25),300,false);u=MaintLog.sinceOil();
@@ -67,6 +67,20 @@ public final class MaintLogTest {
         reset();run(s(2000,60,Telemetry.ODOMETER,95000),5,false);
         check(MaintLog.sinceOil().odoAtOil==95000,"no oil record yet: the first odometer seen is where the counting began");
         MaintLog.oilChanged(96000);run(s(2000,60,Telemetry.ODOMETER,96500),5,false);check(MaintLog.sinceOil().odoAtOil==96000,"an oil record is not overwritten");
+        // Review fixes: a restart with a stale save is the same drive; a drive after rpm went missing is a new start;
+        // a drive's length comes from the odometer when it is known (the app may have seen only its end).
+        reset();run(s(2000,60),70,false);   // a save happened at 60 s
+        run(s(2000,60),25,false);MaintLog.attach(STORE);wall+=40000;now+=40000;   // a crash, no flush; back 40 s later
+        run(s(2000,60),30,false);check(MaintLog.sinceOil().starts==1,"restart after a stale save: still one start ("+MaintLog.sinceOil().starts+")");
+        reset();run(s(2000,60),60,false);
+        for(int i=0;i<3000;i++){now+=100;wall+=100;MaintLog.tick(s(Float.NaN,Float.NaN),now,wall);}   // 5 min with no rpm at all
+        run(s(2000,60),30,false);check(MaintLog.sinceOil().starts==2,"rpm missing for 5 min, then running: a new start ("+MaintLog.sinceOil().starts+")");
+        reset();now=40*60000;   // the dashboard opened 40 min after the head unit came up, no engine run time: the drive's start was not seen
+        run(s(2000,60,Telemetry.ODOMETER,1027),180,false);run(s(0,0,Telemetry.ODOMETER,1030),200,false);run(s(2000,60,Telemetry.ENGINE_RUNTIME,5,Telemetry.ODOMETER,1030),5,false);
+        check(MaintLog.sinceOil().shortStarts==0&&MaintLog.sinceOil().judgedStarts==0,"a drive seen only at its end is not judged short");
+        reset();run(s(2000,60,Telemetry.ENGINE_RUNTIME,5,Telemetry.ODOMETER,1000),20,false);   // seen from the start at 1,000 km, then a 2 min gap in ticks
+        now+=120000;wall+=120000;run(s(2000,60,Telemetry.ODOMETER,1028),120,false);run(s(0,0,Telemetry.ODOMETER,1030),200,false);run(s(2000,60,Telemetry.ENGINE_RUNTIME,5),5,false);
+        check(MaintLog.sinceOil().shortStarts==0&&MaintLog.sinceOil().judgedStarts==1,"its length by the odometer (30 km), not the 2 km the app saw");
         System.out.println("PASS "+n+" maintenance log checks");
     }
 }

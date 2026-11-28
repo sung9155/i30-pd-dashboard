@@ -11,14 +11,14 @@ public final class MaintJudgeTest {
     static int n;
     static void check(boolean ok,String what){n++;if(!ok)throw new AssertionError(what);}
     static MaintLog.Usage plain(){MaintLog.Usage u=new MaintLog.Usage();u.odoAtOil=90000;u.seenKm=u.movingKm=3000;u.movingS=3000/50.0*3600;
-        u.engineS=u.movingS*1.1;u.idleS=u.engineS*0.05;u.starts=21;u.shortStarts=2;u.stops=600;u.highSpeedKm=100;u.highLoadS=u.engineS*0.02;return u;}
+        u.engineS=u.movingS*1.1;u.idleS=u.engineS*0.05;u.starts=21;u.judgedStarts=20;u.shortStarts=2;u.stops=600;u.highSpeedKm=100;u.highLoadS=u.engineS*0.02;return u;}
     static MaintItems.Left left(float km,int days){MaintItems.Left l=new MaintItems.Left();l.recorded=true;l.km=km;l.days=days;l.overdue=km<0||days!=Integer.MIN_VALUE&&days<0;return l;}
 
     public static void main(String[] a){
         float odo=95000;
         MaintJudge.Verdict v=MaintJudge.judge(MaintJudge.Mode.AUTO,plain(),odo);
         check(!v.severe&&!v.insufficient,"ordinary driving: normal ("+v.reason+")");
-        MaintLog.Usage u=plain();u.starts=9;u.shortStarts=5;v=MaintJudge.judge(MaintJudge.Mode.AUTO,u,odo);
+        MaintLog.Usage u=plain();u.starts=9;u.judgedStarts=8;u.shortStarts=5;v=MaintJudge.judge(MaintJudge.Mode.AUTO,u,odo);
         check(v.severe&&v.reason.contains("짧은 주행")&&v.reason.contains("62"),"5 of 8 finished starts short: severe ("+v.reason+")");
         u=plain();u.idleS=u.engineS*0.31;v=MaintJudge.judge(MaintJudge.Mode.AUTO,u,odo);check(v.severe&&v.reason.contains("공회전"),"idle 31 %: severe");
         u=plain();u.movingS=u.movingKm/18*3600;v=MaintJudge.judge(MaintJudge.Mode.AUTO,u,odo);check(v.severe&&v.reason.contains("km/h"),"average 18 km/h: severe ("+v.reason+")");
@@ -28,7 +28,7 @@ public final class MaintJudgeTest {
         u=plain();u.seenKm=u.movingKm=200;v=MaintJudge.judge(MaintJudge.Mode.AUTO,u,91000);
         check(!v.severe&&v.insufficient&&v.reason.contains("근거 부족"),"200 of 1,000 km seen: too little, normal");
         check(MaintJudge.judge(MaintJudge.Mode.AUTO,plain(),Float.NaN).insufficient,"no odometer: too little");
-        u=plain();u.starts=9;u.shortStarts=9;
+        u=plain();u.starts=9;u.judgedStarts=8;u.shortStarts=8;
         check(!MaintJudge.judge(MaintJudge.Mode.NORMAL,u,odo).severe&&MaintJudge.judge(MaintJudge.Mode.SEVERE,plain(),odo).severe,"일반 / 가혹 chosen by hand ignore the driving");
 
         HashMap<String,String> m=new HashMap<String,String>();final HashMap<String,String> mm=m;

@@ -21,7 +21,7 @@ final class MaintDialogs {
         if(parked(sp))return false;
         Toast.makeText(a,UiText.t("정차 중에만 입력할 수 있습니다"),Toast.LENGTH_SHORT).show();return true;}
 
-    static void item(final Activity a,final MaintItems.Store s,final MaintItems.Id id,final float odo,final Runnable after){
+    static void item(final Activity a,final MaintItems.Store s,final MaintItems.Id id,final float odo,final boolean severe,final Runnable after){
         final boolean dateOnly=id==MaintItems.Id.BRAKE_FLUID||id==MaintItems.Id.WIPER||id==MaintItems.Id.TIRE_AIR||id==MaintItems.Id.BATTERY;
         if(id==MaintItems.Id.INSPECTION){dateDialog(a,UiText.t("다음 정기검사일"),MaintItems.load(s,id).date,new DateSink(){public void set(int d){
             MaintItems.Rec r=MaintItems.load(s,id);r.date=d;MaintItems.save(s,id,r);MaintJudge.recorded(s,id);after.run();}});return;}
@@ -32,7 +32,7 @@ final class MaintDialogs {
                 if(id==MaintItems.Id.TIRE_REPLACE){dotDialog(a,s,r,id,after);return;}
                 record(s,id,r);after.run();}
             else if(w==1)enter(a,s,id,odo,after);
-            else if(w==2)interval(a,s,id,after);
+            else if(w==2)interval(a,s,id,severe,after);
             else new AlertDialog.Builder(a).setMessage(UiText.t("이 항목의 교환 기록을 지웁니다.")).setNegativeButton(UiText.t("취소"),null)
                 .setPositiveButton(UiText.t("지우기"),new DialogInterface.OnClickListener(){public void onClick(DialogInterface d2,int w2){
                     MaintItems.Rec r=MaintItems.load(s,id);r.km=-1;r.date=0;r.dot=0;MaintItems.save(s,id,r);MaintJudge.recorded(s,id);after.run();}}).show();
@@ -68,17 +68,20 @@ final class MaintDialogs {
             public void onClick(DialogInterface d,int w){record(s,id,r);after.run();}})
             .setPositiveButton(UiText.t("확인"),new DialogInterface.OnClickListener(){public void onClick(DialogInterface d,int w){r.dot=parseInt(dot.getText().toString(),0);record(s,id,r);after.run();}}).show();
     }
-    private static void interval(final Activity a,final MaintItems.Store s,final MaintItems.Id id,final Runnable after){
+    /** Prefilled with the interval in use (가혹's default under 가혹); an untouched field stays the default (not pinned). */
+    private static void interval(final Activity a,final MaintItems.Store s,final MaintItems.Id id,final boolean severe,final Runnable after){
         final MaintItems.Rec cur=MaintItems.load(s,id);
-        final EditText km=num(a,"km",String.valueOf(cur.everyKm>=0?cur.everyKm:MaintItems.defaultKm(id,false)));
-        final EditText mo=num(a,UiText.t("개월"),String.valueOf(cur.everyMo>=0?cur.everyMo:MaintItems.defaultMonths(id,false)));
+        final int useKm=cur.everyKm>=0?cur.everyKm:MaintItems.defaultKm(id,severe),useMo=cur.everyMo>=0?cur.everyMo:MaintItems.defaultMonths(id,severe);
+        final EditText km=num(a,"km",String.valueOf(useKm));
+        final EditText mo=num(a,UiText.t("개월"),String.valueOf(useMo));
         new AlertDialog.Builder(a).setTitle(UiText.t("주기 바꾸기")+" · "+UiText.t(MaintenanceCluster.name(id)))
             .setView(column(a,UiText.t("km마다 (0 = 거리 없음)"),km,UiText.t("개월마다 (0 = 기간 없음)"),mo))
             .setNeutralButton(UiText.t("기본값으로"),new DialogInterface.OnClickListener(){public void onClick(DialogInterface d,int w){
                 MaintItems.Rec r=MaintItems.load(s,id);r.everyKm=-1;r.everyMo=-1;MaintItems.save(s,id,r);after.run();}})
             .setNegativeButton(UiText.t("취소"),null)
             .setPositiveButton(UiText.t("확인"),new DialogInterface.OnClickListener(){public void onClick(DialogInterface d,int w){
-                MaintItems.Rec r=MaintItems.load(s,id);r.everyKm=Math.max(0,parseInt(km.getText().toString(),0));r.everyMo=Math.max(0,parseInt(mo.getText().toString(),0));
+                MaintItems.Rec r=MaintItems.load(s,id);int k=Math.max(0,parseInt(km.getText().toString(),useKm)),m=Math.max(0,parseInt(mo.getText().toString(),useMo));
+                if(k!=useKm)r.everyKm=k;if(m!=useMo)r.everyMo=m;
                 MaintItems.save(s,id,r);after.run();}}).show();
     }
     interface DateSink { void set(int yyyymmdd); }

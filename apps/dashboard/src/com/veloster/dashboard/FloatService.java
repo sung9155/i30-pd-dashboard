@@ -95,7 +95,8 @@ public final class FloatService extends Service implements Runnable {
         boolean changed=flipped|(FloatPanel.shape!=FloatPanel.OFF&&FloatPanel.tick(FloatPanel.count,FloatPanel.size,VehicleDash.floatSamples(FloatPanel.count),VehicleDash.profileNow(),android.os.SystemClock.elapsedRealtime()));
         String ds=FloatPanel.dnSource;if(ds!=null&&!ds.equals(mDnSource)){mDnSource=ds;android.util.Log.i("NDashboard","Float day/night source: "+ds+" night="+com.veloster.vehicle.DayNight.HOLD.night);}
         VehicleDash.floatUp=panel!=null;VehicleDash.chimeTick();VehicleDash.shiftTick();VehicleDash.soundTick();
-        {String mt=VehicleDash.maintTick();if(mt!=null&&!DashboardActivity.resumed)maintBanner(mt);}   // 정비: counted here too; the reminder over the navi
+        {String mt=VehicleDash.maintTick();if(mt!=null&&!DashboardActivity.resumed)maintPendingText=mt;   // 정비: counted here too; the reminder over the navi,
+         if(maintPendingText!=null&&!DashboardActivity.resumed&&!VehicleDash.rearCamera()){maintBanner(maintPendingText);maintPendingText=null;VehicleDash.maintBanner=null;}}   // never over the camera
         if(panel!=null){if(changed||FloatPanel.gliding(now0)){panel.invalidate();if(changed)mInval++;}   // drawn only when it would look different: nothing to composite over the navi at a steady reading
             long now=android.os.SystemClock.elapsedRealtime();
             if(FloatPanel.hideButton&&(!hideSent||now-hideSentAt>=HIDE_REPEAT_MS)){hide(true);hideSentAt=now;}
@@ -169,7 +170,7 @@ public final class FloatService extends Service implements Runnable {
         try{sendBroadcast(new Intent(HIDE_ACTION).setPackage(HUB).putExtra("hide",on));}catch(RuntimeException ignored){/* 내 앱 not installed */}
     }
     /** 정비 reminder while only the floating window is up: one line at the top for 6 s; a tap opens 정비 on the dashboard. */
-    private android.widget.TextView maintView;
+    private android.widget.TextView maintView;private String maintPendingText;
     private void maintBanner(String text){
         if(maintView!=null||windows==null)return;
         final android.widget.TextView t=new android.widget.TextView(this);t.setText(text);t.setTextColor(0xffffb84d);t.setTextSize(18);

@@ -197,7 +197,9 @@ public final class PitRenderer {
         else if(graphLayout==null&&gaugeLayout==null){if(page!=ClusterPicker.WRC-ClusterPicker.F1||tbtBig)drawTbt(c,Tbt.current(frameTime));else tbtShown=false;}   // the navigation's next turn, over every page (WRC: in its pace-note card)
         else if(graphLayout==null&&!mediaPage && music!=null && music.notice && !showsMusic())drawMedia(c,true);
         if(cluster&&!picker&&gaugeLayout==null&&graphLayout==null&&mediaToggleShown())drawArtworkToggle(c);
-        {String mb=VehicleDash.maintBanner;if(!picker&&mb!=null&&frameTime<VehicleDash.maintBannerUntil){   // 정비 reminder, 6 s; a tap opens 정비 (VehicleDash)
+        {String mb=VehicleDash.maintBanner;   // 정비 reminder: 6 s from the first frame it can be seen (not over the list, the camera or 내 차 / 네온 드라이브); a tap opens 정비 (VehicleDash)
+         if(mb!=null&&VehicleDash.maintBannerUntil==0&&!picker&&!VehicleDash.rearCamera()&&!ownView(page))VehicleDash.maintBannerUntil=frameTime+6000;
+         if(!picker&&mb!=null&&frameTime<VehicleDash.maintBannerUntil){
             box(c,16,VehicleDash.BANNER_T,784,VehicleDash.BANNER_B,0xf00b0f12);box(c,16,VehicleDash.BANNER_T,22,VehicleDash.BANNER_B,MAINT_AMBER);
             text(c,mb,34,VehicleDash.BANNER_T+28,19,MAINT_AMBER,true);}}
         c.restore();

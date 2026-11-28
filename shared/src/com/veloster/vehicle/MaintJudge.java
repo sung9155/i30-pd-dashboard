@@ -29,7 +29,7 @@ public final class MaintJudge {
         if(m==Mode.SEVERE){v.severe=true;return v;}
         float span=odoKm-u.odoAtOil;
         if(Float.isNaN(span)||span<MIN_SPAN_KM||u.seenKm<SEEN_SHARE*span){v.insufficient=true;v.reason="근거 부족";return v;}
-        int finished=u.starts-1;
+        int finished=u.judgedStarts;   // starts the app saw from the engine start (MaintLog)
         if(finished>0&&u.shortStarts>=SHORT*finished)return severe(v,"짧은 주행 "+pct(u.shortStarts,finished));
         if(u.engineS>0&&u.idleS>=IDLE*u.engineS)return severe(v,"공회전 "+pct(u.idleS,u.engineS));
         if(u.movingS>0&&u.movingKm/(u.movingS/3600)<SLOW_KMH)return severe(v,String.format(Locale.US,"저속 · 정체 평균 %.0f km/h",u.movingKm/(u.movingS/3600)));

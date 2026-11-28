@@ -388,7 +388,10 @@ public final class VehicleDash extends View implements Runnable {
             // v3 -> v4 (정비 30, WRC 31) keeps the owner's order: WRC renumbered, 정비 after 택시.
             if(ov<ClusterPicker.ORDER_VERSION){
                 if(ov<3){screen=ClusterPicker.renumber(screen);hidden=ClusterPicker.valid(ClusterPicker.renumberMask(hidden));order=ClusterPicker.defaultOrder();}   // test builds before v3: WRC was 28
-                else{screen=ClusterPicker.renumber4(screen);hidden=ClusterPicker.valid(ClusterPicker.renumberMask4(hidden));order=ClusterPicker.validOrder(ClusterPicker.migrateOrder4(savedOrder));}
+                else{screen=ClusterPicker.renumber4(screen);hidden=ClusterPicker.valid(ClusterPicker.renumberMask4(hidden));order=ClusterPicker.validOrder(ClusterPicker.migrateOrder4(savedOrder));
+                    SharedPreferences.Editor me=p.edit();   // the drive-mode screens are screen numbers too (SPORT -> WRC stays WRC)
+                    for(int k=0;k<modeTargets.length;k++){modeTargets[k]=ClusterPicker.renumber4(modeTargets[k]);me.putInt("mode_screen_"+ClusterPicker.MODE_NAMES[k].toLowerCase(java.util.Locale.US),modeTargets[k]);}
+                    me.apply();}
                 p.edit().putString("cluster_order",orderCsv(order)).putInt("cluster_order_v",ClusterPicker.ORDER_VERSION).putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).apply();}
         }catch(ClassCastException e){/* Open on Overview, everything shown, for an incompatible saved value. */}
         warmEco();
@@ -870,7 +873,7 @@ public final class VehicleDash extends View implements Runnable {
     // from this loop and the floating window's (MaintLog counts a drive once), a reminder once per start.
     private static volatile MaintItems.Store maintStore;
     private static int maintCheckedStarts=-1;
-    static volatile String maintBanner;static volatile long maintBannerUntil;
+    public static volatile String maintBanner;static volatile long maintBannerUntil;
     static final float BANNER_T=56,BANNER_B=98;
     public static void maintAttach(android.content.Context c){
         if(maintStore!=null)return;
@@ -880,9 +883,12 @@ public final class VehicleDash extends View implements Runnable {
     }
     /** Both loops (this view's frames, the floating window's ticks): counts the drive, and once per start, after the first
      *  odometer, returns the reminder text for what is due (MaintJudge.due), else null. */
+    private static long maintLastTick=Long.MIN_VALUE;
     public static String maintTick(){
         MaintItems.Store st=maintStore;if(st==null)return null;
-        long now=SystemClock.elapsedRealtime();Telemetry.Sample[] s=DATA.snapshot(now);MaintLog.tick(s,now,System.currentTimeMillis());
+        long now=SystemClock.elapsedRealtime();
+        if(maintLastTick!=Long.MIN_VALUE&&now>=maintLastTick&&now-maintLastTick<250)return null;   // MaintLog keeps 200 ms anyway: no snapshot per frame
+        maintLastTick=now;Telemetry.Sample[] s=DATA.snapshot(now);MaintLog.tick(s,now,System.currentTimeMillis());
         int starts=MaintLog.total().starts;Telemetry.Sample odo=s[Telemetry.ODOMETER];
         if(starts==maintCheckedStarts||!odo.valid||!(odo.value>0))return null;
         maintCheckedStarts=starts;
@@ -895,7 +901,7 @@ public final class VehicleDash extends View implements Runnable {
         MaintItems.Id id=due.get(0);MaintItems.Left l=lefts.get(id);
         String what=l.overdue?UiText.t("지남"):!Float.isNaN(l.km)&&l.km<=1000?String.format(java.util.Locale.US,"%,d km ",Math.round(l.km))+UiText.t("남음"):l.days+UiText.t("일")+" "+UiText.t("남음");
         String text=UiText.t("정비")+": "+UiText.t(MaintItems.label(id))+" "+what+(due.size()>1?" · "+UiText.t("외")+" "+(due.size()-1)+UiText.t("개"):"");
-        maintBanner=text;maintBannerUntil=now+6000;
+        maintBanner=text;maintBannerUntil=0;   // 0 = not shown yet: PitRenderer starts the 6 s on the first frame it can be seen
         android.util.Log.i("VehicleDash","Maintenance reminder: "+due);
         return text;
     }
@@ -910,7 +916,7 @@ public final class VehicleDash extends View implements Runnable {
         long now=SystemClock.elapsedRealtime();if(MaintDialogs.refuse(activity,DATA.sample(7,now)))return;
         Telemetry.Sample o=DATA.sample(Telemetry.ODOMETER,now);float odo=o.valid&&o.value>0?o.value:Float.NaN;
         Runnable after=new Runnable(){public void run(){invalidate();}};
-        if(id!=null)MaintDialogs.item(activity,st,id,odo,after);
+        if(id!=null){boolean sev=MaintJudge.judge(MaintJudge.mode(st),MaintLog.sinceOil(),odo).severe&&MaintItems.hasSevere(id);MaintDialogs.item(activity,st,id,odo,sev,after);}
         else if(act==MaintenanceCluster.ACT_MODE){MaintJudge.Verdict vd=MaintJudge.judge(MaintJudge.Mode.AUTO,MaintLog.sinceOil(),odo);
             MaintDialogs.mode(activity,st,UiText.t("자동 판단")+": "+UiText.t(vd.insufficient?"근거 부족":vd.severe?"가혹":"일반"),after);}
         else if(act==MaintenanceCluster.ACT_FIRST_REG){final MaintItems.Store s2=st;final Runnable done=after;

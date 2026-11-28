@@ -36,8 +36,10 @@ public final class MaintItemsTest {
         check(Float.isNaN(l.km)&&l.days==214&&!l.odoBad,"odometer not received: km —, time still counts");
         l=MaintItems.left(Id.OIL,rec(90000,20260101),false,89000,20260601,0);
         check(l.odoBad&&Float.isNaN(l.km)&&!l.overdue,"odometer below the record: flagged, no km");
+        check(l.ahead,"odometer below the record: the record is ahead (a typo there, or the odometer)");
         l=MaintItems.left(Id.OIL,rec(90000,20260101),false,0,20260601,0);
         check(l.odoBad&&Float.isNaN(l.km),"odometer 0: flagged");
+        check(!l.ahead,"odometer 0: not the record's doing");
 
         l=MaintItems.left(Id.COOLANT,new MaintItems.Rec(),false,150000,20260601,20180301);
         check(l.recorded&&Math.round(l.km)==50000&&l.days==639,"coolant, factory fill from the first registration: 200,000 km / 120 months "+l.km+" "+l.days);
@@ -56,6 +58,8 @@ public final class MaintItemsTest {
         l=MaintItems.left(Id.ALIGNMENT,rec(90000,20260101),false,97660,20260601,0);
         check(l.recorded&&Math.round(l.since)==7660&&Float.isNaN(l.km)&&!l.overdue,"no interval: km since only");
 
+        check(MaintItems.dotAgeMonths(1030,20260601)==-1&&MaintItems.dotAgeMonths(5426,20260601)==-1&&MaintItems.dotAgeMonths(2226,20260601)==0,"a DOT from the future or week 54 is not a DOT; this week's is 0 months");
+        check(MaintItems.kmAhead(98001,98000)&&!MaintItems.kmAhead(98000,98000.4f)&&!MaintItems.kmAhead(99000,Float.NaN)&&!MaintItems.kmAhead(-1,98000),"a typed km above the odometer is refused; unknown odometer or no km is not");
         check(Math.abs(MaintItems.dotAgeMonths(2324,20260601)-24)<=1,"DOT 2324 (week 23 of 2024) is about 24 months old: "+MaintItems.dotAgeMonths(2324,20260601));
         check(MaintItems.ageMonths(20230601,20260601)==36,"battery age 36 months");
 

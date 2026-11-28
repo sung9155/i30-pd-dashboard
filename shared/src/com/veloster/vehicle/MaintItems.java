@@ -80,8 +80,9 @@ public final class MaintItems {
     public static int firstRegDate(Store s){return s==null?0:num(s.get("maint_first_reg"),0);}
     public static void setFirstRegDate(Store s,int yyyymmdd){s.put("maint_first_reg",String.valueOf(yyyymmdd));}
 
-    /** What is left. km / days: negative = past due; NaN / MIN_VALUE = not counted. since = km since the record. */
-    public static final class Left { public boolean recorded,overdue,odoBad;public float km=Float.NaN,since=Float.NaN,fraction=Float.NaN;
+    /** What is left. km / days: negative = past due; NaN / MIN_VALUE = not counted. since = km since the record.
+     *  odoBad: no km can be counted (odometer 0, or below the record: then ahead, as the record may be the typo). */
+    public static final class Left { public boolean recorded,overdue,odoBad,ahead;public float km=Float.NaN,since=Float.NaN,fraction=Float.NaN;
         public int days=Integer.MIN_VALUE; }
 
     public static Left left(Id id,Rec r,boolean severe,float odoKm,int today,int firstReg){
@@ -96,7 +97,7 @@ public final class MaintItems {
         if(baseKm<0&&baseDate<=0)return l;
         l.recorded=true;
         boolean odoOk=!Float.isNaN(odoKm)&&odoKm>0;
-        if(baseKm>=0&&odoOk&&odoKm<baseKm){l.odoBad=true;odoOk=false;}
+        if(baseKm>=0&&odoOk&&odoKm<baseKm){l.odoBad=true;l.ahead=true;odoOk=false;}
         else if(baseKm>=0&&!Float.isNaN(odoKm)&&odoKm<=0)l.odoBad=true;
         float fk=Float.NaN,fd=Float.NaN;
         if(baseKm>=0&&odoOk){l.since=odoKm-baseKm;
@@ -109,14 +110,17 @@ public final class MaintItems {
         return l;
     }
 
+    /** A typed record km above what the odometer reads now (known): a typo, refused at input. */
+    public static boolean kmAhead(int km,float odoKm){return km>=0&&!Float.isNaN(odoKm)&&odoKm>0&&km>odoKm+0.5f;}
     /** Next periodic inspection on or after today: 4 years from the first registration, then every 2. */
     static int inspectionDue(int firstReg,int today){int due=addMonths(firstReg,48);while(due<today)due=addMonths(due,24);return due;}
 
+    /** Months since the tyre was made; -1 = not a DOT (week outside 1–53, or a week still to come). */
     public static int dotAgeMonths(int dot,int today){   // wwyy: week ww of 20yy
-        int week=dot/100,yy=dot%100;if(week<1||week>53)return -1;
+        int week=dot/100,yy=dot%100;if(dot<=0||week<1||week>53)return -1;
         GregorianCalendar c=cal(2000+yy,1,1);c.add(Calendar.DAY_OF_YEAR,(week-1)*7);
         int made=c.get(Calendar.YEAR)*10000+(c.get(Calendar.MONTH)+1)*100+c.get(Calendar.DAY_OF_MONTH);
-        return ageMonths(made,today);}
+        return Math.max(-1,ageMonths(made,today));}
     public static int ageMonths(int date,int today){
         int m=(today/10000-date/10000)*12+(today/100%100-date/100%100);if(today%100<date%100)m--;return m;}
 

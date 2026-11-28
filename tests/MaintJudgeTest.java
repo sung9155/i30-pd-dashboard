@@ -45,6 +45,10 @@ public final class MaintJudgeTest {
         l.put(Id.OIL,left(-20,90));check(MaintJudge.due(l,s,20260610).contains(Id.OIL),"turning overdue: told");
         check(MaintJudge.due(l,s,20260616).isEmpty()&&MaintJudge.due(l,s,20260617).contains(Id.OIL),"overdue: again after 7 days, not 6");
         MaintJudge.recorded(s,Id.OIL);l.put(Id.OIL,left(900,300));check(MaintJudge.due(l,s,20260618).contains(Id.OIL),"a new record starts the bands over");
+        // The head unit's date gone back (clock not set yet): nothing is told and nothing forgotten until it is right again.
+        l.put(Id.OIL,left(900,10));check(MaintJudge.due(l,s,20260619).isEmpty(),"still soon: quiet");
+        l.put(Id.OIL,left(900,4000));l.put(Id.AIR,left(30000,-5));check(MaintJudge.due(l,s,20150101).isEmpty(),"date gone back: nothing told");
+        l.put(Id.OIL,left(900,10));l.put(Id.AIR,left(30000,Integer.MIN_VALUE));check(MaintJudge.due(l,s,20260620).isEmpty(),"date right again: the band was not forgotten");
         System.out.println("PASS "+n+" maintenance judge checks");
     }
 }

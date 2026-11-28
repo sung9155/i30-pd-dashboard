@@ -48,7 +48,11 @@ final class MaintDialogs {
     private static String ymd(int d){return d<=0?"":String.format(Locale.US,"%04d%02d%02d",d/10000,d/100%100,d%100);}
     private static int parseInt(String t,int dflt){try{return t.trim().length()==0?dflt:Integer.parseInt(t.trim());}catch(NumberFormatException e){return dflt;}}
 
-    private static void enter(final Activity a,final MaintItems.Store s,final MaintItems.Id id,float odo,final Runnable after){
+    /** A DOT typed into the field: 0 when empty, -1 (and a toast) when it is not one. */
+    private static int dot(Activity a,EditText e){String t=e.getText().toString().trim();if(t.length()==0)return 0;
+        int v=parseInt(t,-1);if(MaintItems.dotAgeMonths(v,MaintItems.today())>=0)return v;
+        Toast.makeText(a,UiText.t("DOT를 확인하세요 (주 01–53 + 연도 두 자리)"),Toast.LENGTH_SHORT).show();return -1;}
+    private static void enter(final Activity a,final MaintItems.Store s,final MaintItems.Id id,final float odo,final Runnable after){
         final MaintItems.Rec cur=MaintItems.load(s,id);
         final EditText km=num(a,UiText.t("교환 때 주행거리 km"),cur.km>=0?String.valueOf(cur.km):Float.isNaN(odo)?"":String.valueOf(Math.round(odo)));
         final EditText date=num(a,"yyyymmdd",ymd(cur.date>0?cur.date:MaintItems.today()));
@@ -58,7 +62,8 @@ final class MaintDialogs {
         new AlertDialog.Builder(a).setTitle(UiText.t(MaintenanceCluster.name(id))).setView(v).setNegativeButton(UiText.t("취소"),null)
             .setPositiveButton(UiText.t("확인"),new DialogInterface.OnClickListener(){public void onClick(DialogInterface d,int w){
                 MaintItems.Rec r=MaintItems.load(s,id);r.km=parseInt(km.getText().toString(),-1);r.date=MaintItems.parseDate(date.getText().toString());
-                if(id==MaintItems.Id.TIRE_REPLACE)r.dot=parseInt(dot.getText().toString(),0);
+                if(id==MaintItems.Id.TIRE_REPLACE){int v=dot(a,dot);if(v<0)return;r.dot=v;}
+                if(MaintItems.kmAhead(r.km,odo)){Toast.makeText(a,UiText.t("지금 주행거리보다 큽니다")+String.format(Locale.US," (%,d km)",Math.round(odo)),Toast.LENGTH_SHORT).show();return;}
                 if(r.km<0&&r.date<=0){Toast.makeText(a,UiText.t("주행거리나 날짜 중 하나는 넣어야 합니다"),Toast.LENGTH_SHORT).show();return;}
                 record(s,id,r);after.run();}}).show();
     }
@@ -66,7 +71,7 @@ final class MaintDialogs {
         final EditText dot=num(a,UiText.t("DOT 4자리 (주·연, 예 2324)"),"");
         new AlertDialog.Builder(a).setTitle(UiText.t("타이어 DOT")).setView(column(a,UiText.t("타이어 옆면 DOT 끝 4자리 (비워도 됨)"),dot)).setNegativeButton(UiText.t("건너뛰기"),new DialogInterface.OnClickListener(){
             public void onClick(DialogInterface d,int w){record(s,id,r);after.run();}})
-            .setPositiveButton(UiText.t("확인"),new DialogInterface.OnClickListener(){public void onClick(DialogInterface d,int w){r.dot=parseInt(dot.getText().toString(),0);record(s,id,r);after.run();}}).show();
+            .setPositiveButton(UiText.t("확인"),new DialogInterface.OnClickListener(){public void onClick(DialogInterface d,int w){r.dot=Math.max(0,dot(a,dot));record(s,id,r);after.run();}}).show();   // not a DOT: the change is still recorded, without it
     }
     /** Prefilled with the interval in use (가혹's default under 가혹); an untouched field stays the default (not pinned). */
     private static void interval(final Activity a,final MaintItems.Store s,final MaintItems.Id id,final boolean severe,final Runnable after){

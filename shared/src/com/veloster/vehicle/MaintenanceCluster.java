@@ -12,7 +12,9 @@ import java.util.Locale;
  * 정비 (screen 30): three tabs — 교환 (service items with km / time left), 타이어 (rotation, replacement with the DOT age,
  * air, alignment, the four pressures), 상태 (battery, inspection, first registration, trouble codes and lamp, clutch, DPF,
  * and what 자동 judged from). A tap on a row asks VehicleDash for its dialog (pendingEdit / pendingAction): input is
- * Android dialogs, parked only. The rows are worked out once a second; the frame only draws them.
+ * Android dialogs, parked only. The rows are worked out once a second; the frame only draws them (VehicleDash draws this
+ * page four times a second: nothing on it moves). Bars: the theme's colour, amber from 10 % left or once the reminder
+ * would speak (MaintJudge.band), the danger colour and a warning mark when past.
  */
 final class MaintenanceCluster extends ClusterKit {
     { themed=true; }
@@ -27,6 +29,7 @@ final class MaintenanceCluster extends ClusterKit {
 
     private static final int BG=0xff040506,PANEL=0xff101315,TRACK=0xff1d2326,WHITE=0xffe1edf2,MUTED=0xff91a5ae,BLUE=0xffa4d9ef,AMBER=0xffffb84d,GREEN=0xff3ddc84;
     private static final String[] TABS={"교환","타이어","상태"};
+    static final float LOW=0.10f;   // of the interval left: the bar turns amber
     static final float TAB_L=16,TAB_T=58,TAB_W=118,TAB_H=36,CHIP_T=102,CHIP_H=28,ROW_T=138,ROW_H=30,BAR_L=250,BAR_R=470;
 
     /** One drawn row: label, the bar fraction (NaN = none), the right text and its colour, and what a tap opens. */
@@ -55,6 +58,8 @@ final class MaintenanceCluster extends ClusterKit {
             text(c,r.name,TAB_L,y+21,16,WHITE,Paint.Align.LEFT,android.graphics.Typeface.DEFAULT);
             if(!Float.isNaN(r.fraction)){round(c,BAR_L,y+11,BAR_R,y+19,4,TRACK);
                 float w=(BAR_R-BAR_L)*clamp(r.fraction,0,1);if(w>1)round(c,BAR_L,y+11,BAR_L+w,y+19,4,r.color);}
+            if(r.warn){float x=BAR_R+16,m=y+15;path.reset();path.moveTo(x,m-9);path.lineTo(x+10,m+8);path.lineTo(x-10,m+8);path.close();poly(c,danger());   // drawn, not the ⚠ glyph: the head unit's fonts may lack it
+                bold(c,"!",x,m+6,12,BG,Paint.Align.CENTER);}
             bold(c,r.right,784,y+21,15,r.warn?danger():r.color==AMBER?AMBER:WHITE,Paint.Align.RIGHT);}
         text(c,foot,TAB_L,470,12,MUTED,Paint.Align.LEFT,android.graphics.Typeface.DEFAULT);
     }
@@ -110,10 +115,11 @@ final class MaintenanceCluster extends ClusterKit {
             int m=MaintItems.ageMonths(rec.date,today);r.right=t("교체 뒤")+" "+years(m);if(m>=48)r.warn=true;else if(m>=36)r.color=AMBER;return r;}
         if(id==MaintItems.Id.TIRE_AIR){r.right=rec.date>0?t("마지막 보충")+" "+date(rec.date):t("기록 없음 · 눌러서 입력");if(rec.date<=0)r.color=MUTED;return r;}
         if(!l.recorded){r.right=t("기록 없음 · 눌러서 입력");r.color=MUTED;return r;}
-        if(l.odoBad){r.right=t("오도미터 확인 필요");r.color=AMBER;return r;}
+        if(l.odoBad){r.right=t(l.ahead?"기록이 주행거리보다 큼 · 눌러서 확인":"오도미터 확인 필요");r.color=AMBER;return r;}   // ahead: the record may be the typo
         StringBuilder b=new StringBuilder();
         if(id==MaintItems.Id.TIRE_REPLACE){if(!Float.isNaN(l.since))b.append(t("교체 뒤")).append(String.format(Locale.US," %,d km",Math.round(l.since)));
-            if(rec.dot>0){int m=MaintItems.dotAgeMonths(rec.dot,today);b.append(b.length()>0?" · ":"").append(t("제조")).append(' ').append(years(m));if(m>=72)r.warn=true;else if(m>=60)r.color=AMBER;}
+            int m=MaintItems.dotAgeMonths(rec.dot,today);
+            if(m>=0){b.append(b.length()>0?" · ":"").append(t("제조")).append(' ').append(years(m));if(m>=72)r.warn=true;else if(m>=60)r.color=AMBER;}
             r.right=b.length()==0?t("기록됨"):b.toString();return r;}
         if(Float.isNaN(l.km)&&l.days==Integer.MIN_VALUE){r.right=Float.isNaN(l.since)?t("기록됨"):t("지난 뒤")+String.format(Locale.US," %,d km",Math.round(l.since));return r;}
         r.fraction=l.fraction;
@@ -122,7 +128,7 @@ final class MaintenanceCluster extends ClusterKit {
             if(l.days!=Integer.MIN_VALUE&&l.days<0)b.append(' ').append(span(-l.days));
         }else{if(!Float.isNaN(l.km))b.append(String.format(Locale.US,"%,d km",Math.round(l.km)));
             if(l.days!=Integer.MIN_VALUE)b.append(b.length()>0?" · ":"").append(span(l.days));b.append(' ').append(t("남음"));
-            if(MaintJudge.band(id,l)==MaintJudge.Band.SOON)r.color=AMBER;else r.color=BLUE;}
+            if(MaintJudge.band(id,l)==MaintJudge.Band.SOON||l.fraction<=LOW)r.color=AMBER;else r.color=BLUE;}
         r.right=b.toString();return r;
     }
     private static String span(int days){return days>=60?(days/30)+t("개월"):days+t("일");}

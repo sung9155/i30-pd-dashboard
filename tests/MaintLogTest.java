@@ -8,7 +8,8 @@ public final class MaintLogTest {
     static int n;
     static void check(boolean ok,String what){n++;if(!ok)throw new AssertionError(what);}
     static final HashMap<String,String> kept=new HashMap<String,String>();
-    static final MaintItems.Store STORE=new MaintItems.Store(){public String get(String k){String v=kept.get(k);return v==null?"":v;}public void put(String k,String v){kept.put(k,v);}};
+    static int puts;
+    static final MaintItems.Store STORE=new MaintItems.Store(){public String get(String k){String v=kept.get(k);return v==null?"":v;}public void put(String k,String v){puts++;kept.put(k,v);}};
     static long now,wall;
     static void reset(){kept.clear();now=100000;wall=1700000000000L;MaintLog.attach(STORE);}
     /** A sample array with the given signals valid (rpm 0, speed 7, coolant 2 ...); the rest not received. */
@@ -81,6 +82,31 @@ public final class MaintLogTest {
         reset();run(s(2000,60,Telemetry.ENGINE_RUNTIME,5,Telemetry.ODOMETER,1000),20,false);   // seen from the start at 1,000 km, then a 2 min gap in ticks
         now+=120000;wall+=120000;run(s(2000,60,Telemetry.ODOMETER,1028),120,false);run(s(0,0,Telemetry.ODOMETER,1030),200,false);run(s(2000,60,Telemetry.ENGINE_RUNTIME,5),5,false);
         check(MaintLog.sinceOil().shortStarts==0&&MaintLog.sinceOil().judgedStarts==1,"its length by the odometer (30 km), not the 2 km the app saw");
+        // Minor fixes. One write a minute, none while nothing changes (it was three rewrites of the settings file a minute).
+        reset();puts=0;run(s(2000,60),600,false);check(puts>=9&&puts<=11,"10 min of driving: one write a minute ("+puts+")");
+        MaintLog.flush();puts=0;for(int i=0;i<3000;i++){now+=100;wall+=100;MaintLog.tick(s(Float.NaN,Float.NaN),now,wall);}
+        check(puts==0,"5 min with nothing changing: no write ("+puts+")");
+        MaintLog.attach(STORE);check(MaintLog.sinceOil().engineS>590,"the one-key save reads back");
+        kept.clear();kept.put("maint_since_oil","100.0,0,0,0,0,0,0,1,0,0,0,0,0,0,NaN,95000.0,NaN,NaN,0;");kept.put("maint_total","200.0,0,0,0,0,0,0,1,0,0,0,0,0,0,NaN,NaN,NaN,NaN,0;");kept.put("maint_open","0,NaN,NaN");
+        MaintLog.attach(STORE);check(MaintLog.sinceOil().engineS==100&&MaintLog.total().engineS==200&&MaintLog.sinceOil().odoAtOil==95000,"the three keys of the first test build still read");
+        // A past oil change typed in, or its km corrected: what was counted wholly after it stays.
+        reset();run(s(2000,60,Telemetry.ODOMETER,98000),600,false);MaintLog.oilChanged(95000);
+        check(MaintLog.sinceOil().engineS>590&&MaintLog.sinceOil().odoAtOil==95000,"a change before the counting began keeps the evidence ("+MaintLog.sinceOil().engineS+")");
+        MaintLog.oilChanged(95500);check(MaintLog.sinceOil().engineS>590&&MaintLog.sinceOil().odoAtOil==95500,"correcting its km keeps it too");
+        MaintLog.flush();MaintLog.attach(STORE);MaintLog.oilChanged(95400);check(MaintLog.sinceOil().engineS>590,"also after a restart");
+        run(s(2000,60,Telemetry.ODOMETER,98010),5,false);MaintLog.oilChanged(98010);
+        check(MaintLog.sinceOil().engineS==0&&MaintLog.sinceOil().odoAtOil==98010,"a change after the counting began starts over");
+        // The same rest voltage is not kept twice (a start with no new reading).
+        reset();run(s(0,0,Telemetry.BAT_VOLTAGE,12.6f),40,false);run(s(800,0),5,false);
+        for(int i=0;i<3000;i++){now+=100;wall+=100;MaintLog.tick(s(Float.NaN,Float.NaN),now,wall);}
+        run(s(800,0),5,false);u=MaintLog.sinceOil();
+        check(u.starts==2&&u.restHistory.length==1,"a second start with no new rest reading adds nothing ("+u.restHistory.length+")");
+        // The head unit's clock set mid-drive (GPS time) is not a new start; across a restart the saved wall time still decides.
+        reset();run(s(2000,60),60,false);wall+=600000;run(s(2000,60),30,false);
+        check(MaintLog.sinceOil().starts==1,"clock set 10 min forward mid-drive: same start ("+MaintLog.sinceOil().starts+")");
+        wall-=3600000;run(s(2000,60),30,false);check(MaintLog.sinceOil().starts==1,"clock set an hour back mid-drive: same start ("+MaintLog.sinceOil().starts+")");
+        MaintLog.flush();MaintLog.attach(STORE);wall+=600000;now+=600000;run(s(2000,60),30,false);
+        check(MaintLog.sinceOil().starts==2,"the app back 10 min later: a new start");
         System.out.println("PASS "+n+" maintenance log checks");
     }
 }

@@ -1726,5 +1726,8 @@
   "기본값으로": "Defaults",
   "날짜를 yyyymmdd로 넣으세요": "Enter the date as yyyymmdd",
   "자동 (주행 기록으로 판단)": "Auto (from driving)",
-  "가혹 (비포장 · 견인 · 영업용 등)": "Severe (unpaved, towing, commercial …)"
+  "가혹 (비포장 · 견인 · 영업용 등)": "Severe (unpaved, towing, commercial …)",
+  "기록이 주행거리보다 큼 · 눌러서 확인": "Record above the odometer · tap to check",
+  "지금 주행거리보다 큽니다": "Above the odometer now",
+  "DOT를 확인하세요 (주 01–53 + 연도 두 자리)": "Check the DOT (week 01–53 + two-digit year)"
 }

@@ -126,6 +126,7 @@ public final class UiText {
         EN.put("DCT 클러치 온도 (홀·짝 묶음)","DCT clutch temperatures (odd · even)");
         EN.put("DCT 홀수단 클러치 온도","DCT odd-gear clutch temperature");
         EN.put("DOT 4자리 (주·연, 예 2324)","DOT 4 digits (week, year, e.g. 2324)");
+        EN.put("DOT를 확인하세요 (주 01–53 + 연도 두 자리)","Check the DOT (week 01–53 + two-digit year)");
         EN.put("DPF (차압·온도·재생 묶음)","DPF (pressure · temperature · regeneration)");
         EN.put("DPF 막힘 (매연 축적)","DPF clogged (soot accumulation)");
         EN.put("DPF 막힘 (재 축적)","DPF clogged (ash accumulation)");
@@ -354,6 +355,7 @@ public final class UiText {
         EN.put("기록됨","Recorded");
         EN.put("기록실","Records");
         EN.put("기록은 앱을 닫으면 초기화","Records reset when the app closes");
+        EN.put("기록이 주행거리보다 큼 · 눌러서 확인","Record above the odometer · tap to check");
         EN.put("기본","Default");
         EN.put("기본 %,d원 (%.1f km)","Base %,d won (%.1f km)");
         EN.put("기본 배치로 복원","Reset layout");
@@ -1437,6 +1439,7 @@ public final class UiText {
         EN.put("지금 연비 ","Now ");
         EN.put("지금 재부팅","Reboot now");
         EN.put("지금 조회","Read now");
+        EN.put("지금 주행거리보다 큽니다","Above the odometer now");
         EN.put("지금 화면의 글꼴과 같습니다","Same as the font on screen now");
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
         EN.put("지난","Last");

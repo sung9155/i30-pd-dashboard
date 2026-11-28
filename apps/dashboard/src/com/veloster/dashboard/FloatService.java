@@ -96,7 +96,7 @@ public final class FloatService extends Service implements Runnable {
         String ds=FloatPanel.dnSource;if(ds!=null&&!ds.equals(mDnSource)){mDnSource=ds;android.util.Log.i("NDashboard","Float day/night source: "+ds+" night="+com.veloster.vehicle.DayNight.HOLD.night);}
         VehicleDash.floatUp=panel!=null;VehicleDash.chimeTick();VehicleDash.shiftTick();VehicleDash.soundTick();
         {String mt=VehicleDash.maintTick();if(mt!=null&&!DashboardActivity.resumed)maintPendingText=mt;   // 정비: counted here too; the reminder over the navi,
-         if(maintPendingText!=null&&!DashboardActivity.resumed&&!VehicleDash.rearCamera()){maintBanner(maintPendingText);maintPendingText=null;VehicleDash.maintBanner=null;}}   // never over the camera
+         if(maintPendingText!=null&&!DashboardActivity.resumed&&!VehicleDash.rearCamera()){maintBanner(maintPendingText);maintPendingText=null;com.veloster.vehicle.PitRenderer.maintBanner=null;}}   // never over the camera
         if(panel!=null){if(changed||FloatPanel.gliding(now0)){panel.invalidate();if(changed)mInval++;}   // drawn only when it would look different: nothing to composite over the navi at a steady reading
             long now=android.os.SystemClock.elapsedRealtime();
             if(FloatPanel.hideButton&&(!hideSent||now-hideSentAt>=HIDE_REPEAT_MS)){hide(true);hideSentAt=now;}

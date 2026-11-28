@@ -560,6 +560,8 @@ public final class TabsPreview {
          r=new MaintItems.Rec();r.km=odo-3000;r.date=MaintItems.addMonths(today,-3);r.dot=2324;MaintItems.save(mst,MaintItems.Id.TIRE_REPLACE,r);
          r=new MaintItems.Rec();r.date=MaintItems.addMonths(today,-40);MaintItems.save(mst,MaintItems.Id.BATTERY,r);
          r=new MaintItems.Rec();r.km=odo-9500;MaintItems.save(mst,MaintItems.Id.TIRE_ROTATE,r);
+         r=new MaintItems.Rec();r.km=odo-37000;MaintItems.save(mst,MaintItems.Id.AIR,r);   // 3,000 of 40,000 km left: under 10 %, amber before the reminder's 1,000 km
+         r=new MaintItems.Rec();r.km=odo+900;MaintItems.save(mst,MaintItems.Id.SPARK,r);   // a record above the odometer
          MaintItems.setFirstRegDate(mst,20180301);mst.put("maint_dtc_count","0");mst.put("maint_dtc_date",String.valueOf(today));
          MaintenanceCluster.store=mst;
          String[] mtn={"9v_maint_change","9v_maint_tires","9v_maint_status"};

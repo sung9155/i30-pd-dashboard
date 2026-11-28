@@ -785,6 +785,7 @@ public final class VehicleDash extends View implements Runnable {
             if(graphs)delay=250;
             else if(symmetric&&page==PitRenderer.PAGE_PERFORMANCE&&lap.state()==LapTimer.RUNNING)delay=33;
             else if(symmetric&&page==PitRenderer.PAGE_ECO)delay=EcoCluster.animating||EcoCluster.holding?40:250;   // 25 frames a second while anything moves; still: 4
+            else if(symmetric&&page==ClusterPicker.page(ClusterPicker.MAINT))delay=250;   // 정비: rows worked out once a second, nothing moves (a tap redraws at once)
             else if(symmetric&&page==PitRenderer.PAGE_RECORDS)delay=100;   // the live run timer shows tenths; nothing else moves
             else if(symmetric&&page>=PitRenderer.PAGE_RACE)delay=pace(50);  // shift blink, upshift pop, live run timers
             else if(!(cluster&&media&&!gauges) && mediaState.snapshot(now).notice)delay=16;
@@ -873,8 +874,6 @@ public final class VehicleDash extends View implements Runnable {
     // from this loop and the floating window's (MaintLog counts a drive once), a reminder once per start.
     private static volatile MaintItems.Store maintStore;
     private static int maintCheckedStarts=-1;
-    public static volatile String maintBanner;static volatile long maintBannerUntil;
-    static final float BANNER_T=56,BANNER_B=98;
     public static void maintAttach(android.content.Context c){
         if(maintStore!=null)return;
         final SharedPreferences p=c.getApplicationContext().getSharedPreferences("pit_vehicle_ui",0);
@@ -901,7 +900,7 @@ public final class VehicleDash extends View implements Runnable {
         MaintItems.Id id=due.get(0);MaintItems.Left l=lefts.get(id);
         String what=l.overdue?UiText.t("지남"):!Float.isNaN(l.km)&&l.km<=1000?String.format(java.util.Locale.US,"%,d km ",Math.round(l.km))+UiText.t("남음"):l.days+UiText.t("일")+" "+UiText.t("남음");
         String text=UiText.t("정비")+": "+UiText.t(MaintItems.label(id))+" "+what+(due.size()>1?" · "+UiText.t("외")+" "+(due.size()-1)+UiText.t("개"):"");
-        maintBanner=text;maintBannerUntil=0;   // 0 = not shown yet: PitRenderer starts the 6 s on the first frame it can be seen
+        PitRenderer.maintBanner=text;PitRenderer.maintBannerUntil=0;   // 0 = not shown yet: PitRenderer starts the 6 s on the first frame it can be seen
         android.util.Log.i("VehicleDash","Maintenance reminder: "+due);
         return text;
     }
@@ -965,8 +964,8 @@ public final class VehicleDash extends View implements Runnable {
         if(header.up(event.getEventTime())){touching=false;return true;}   // a strip scroll is never a tap
         boolean tap=touching && Math.abs(x-downX)<16 && Math.abs(y-downY)<16;
         touching=false;
-        if(tap&&!blocked&&!picker&&maintBanner!=null&&SystemClock.elapsedRealtime()<maintBannerUntil&&y>=BANNER_T&&y<=BANNER_B&&downY>=BANNER_T&&downY<=BANNER_B){   // the 정비 reminder opens 정비
-            maintBannerUntil=0;screen=ClusterPicker.MAINT;showCluster();invalidate();return true;}
+        if(tap&&!blocked&&!picker&&PitRenderer.maintBanner!=null&&SystemClock.elapsedRealtime()<PitRenderer.maintBannerUntil&&y>=PitRenderer.BANNER_T&&y<=PitRenderer.BANNER_B&&downY>=PitRenderer.BANNER_T&&downY<=PitRenderer.BANNER_B){   // the 정비 reminder opens 정비
+            PitRenderer.maintBannerUntil=0;PitRenderer.maintBanner=null;screen=ClusterPicker.MAINT;showCluster();invalidate();return true;}
         if(tap&&!blocked&&HeaderTabs.gear(x,y)&&HeaderTabs.gear(downX,downY)){   // gear: edit the screen list, again to close it
             boolean open=!(picker&&editing);picker=open;editing=open;if(open)showCluster();invalidate();return true;
         }

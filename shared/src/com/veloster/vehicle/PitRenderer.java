@@ -197,11 +197,11 @@ public final class PitRenderer {
         else if(graphLayout==null&&gaugeLayout==null){if(page!=ClusterPicker.WRC-ClusterPicker.F1||tbtBig)drawTbt(c,Tbt.current(frameTime));else tbtShown=false;}   // the navigation's next turn, over every page (WRC: in its pace-note card)
         else if(graphLayout==null&&!mediaPage && music!=null && music.notice && !showsMusic())drawMedia(c,true);
         if(cluster&&!picker&&gaugeLayout==null&&graphLayout==null&&mediaToggleShown())drawArtworkToggle(c);
-        {String mb=VehicleDash.maintBanner;   // 정비 reminder: 6 s from the first frame it can be seen (not over the list, the camera or 내 차 / 네온 드라이브); a tap opens 정비 (VehicleDash)
-         if(mb!=null&&VehicleDash.maintBannerUntil==0&&!picker&&!VehicleDash.rearCamera()&&!ownView(page))VehicleDash.maintBannerUntil=frameTime+6000;
-         if(!picker&&mb!=null&&frameTime<VehicleDash.maintBannerUntil){
-            box(c,16,VehicleDash.BANNER_T,784,VehicleDash.BANNER_B,0xf00b0f12);box(c,16,VehicleDash.BANNER_T,22,VehicleDash.BANNER_B,MAINT_AMBER);
-            text(c,mb,34,VehicleDash.BANNER_T+28,19,MAINT_AMBER,true);}}
+        {String mb=maintBanner;   // 정비 reminder: 6 s from the first frame it can be seen (not over the list, the camera or 내 차 / 네온 드라이브); a tap opens 정비 (VehicleDash)
+         if(mb!=null&&maintBannerUntil==0&&!picker&&!model.rearCamera()&&!ownView(page))maintBannerUntil=frameTime+6000;
+         if(!picker&&mb!=null&&frameTime<maintBannerUntil){
+            box(c,16,BANNER_T,784,BANNER_B,0xf00b0f12);box(c,16,BANNER_T,22,BANNER_B,MAINT_AMBER);
+            text(c,mb,34,BANNER_T+28,19,MAINT_AMBER,true);}}
         c.restore();
     }
     // Page background and header strip, painted into two bitmaps and repainted only when they change. On Android 4.2's
@@ -730,6 +730,9 @@ public final class PitRenderer {
         paint.setColor(T(0xcc91a5ae));c.drawPath(shape.kept(),paint);
     }
     private static final int MAINT_AMBER=0xffffb84d;   // the 정비 reminder band
+    /** The reminder (VehicleDash.maintTick sets it; until 0 = not shown yet). Kept here, not in VehicleDash: this class draws on a PC too. */
+    public static volatile String maintBanner;static volatile long maintBannerUntil;
+    static final float BANNER_T=56,BANNER_B=98;
     private void box(Canvas c,float l,float t,float r,float b,int color){paint.setColor(T(color));c.drawRect(l,t,r,b,paint);}
     private void panel(Canvas c,float x,float y,float w,float h,int fill,int edge){
         if(ThemeShapes.cell(c,paint,shape,cellRect,x,y,x+w,y+h,T(fill),T(edge)))return;

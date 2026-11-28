@@ -11,7 +11,8 @@ import java.util.Map;
  * average moving speed < 20 km/h or ≥ 2 stops a km, ≥ 20 % of the distance at 140 km/h or more, ≥ 15 % of engine time at
  * high load. When the app saw under 30 % of the odometer's distance since then, it does not judge: 일반 intervals.
  * Reminders: an item is told once on entering 다가옴 (≤ 1,000 km or ≤ 14 days; inspection ≤ 30 days), once on turning
- * 지남, then every 7 days while it stays past; a new record starts it over. No Android: host-tested.
+ * 지남, then every 7 days while it stays past; a new record starts it over. With the head unit's date not set (before
+ * 2026) nothing is told and nothing forgotten. No Android: host-tested.
  */
 public final class MaintJudge {
     private MaintJudge(){}
@@ -41,6 +42,7 @@ public final class MaintJudge {
     private static Verdict severe(Verdict v,String why){v.severe=true;v.reason=why;return v;}
     private static String pct(double part,double whole){return (int)Math.floor(100*part/whole)+" %";}
 
+    static final int CLOCK_FLOOR=20260101;   // no date before the app's own year is a real one
     public enum Band { NONE, SOON, OVERDUE }
     public static Band band(MaintItems.Id id,MaintItems.Left l){
         if(l==null||!l.recorded)return Band.NONE;
@@ -56,6 +58,7 @@ public final class MaintJudge {
     /** The items to announce now (see the class comment); remembers what it told in the store. */
     public static List<MaintItems.Id> due(Map<MaintItems.Id,MaintItems.Left> lefts,MaintItems.Store s,int today){
         List<MaintItems.Id> out=new ArrayList<MaintItems.Id>();
+        if(today<CLOCK_FLOOR)return out;
         for(Map.Entry<MaintItems.Id,MaintItems.Left> e:lefts.entrySet()){
             MaintItems.Id id=e.getKey();Band b=band(id,e.getValue());int was=num(s.get(key(id,"band"))),told=num(s.get(key(id,"told")));
             boolean tell=b!=Band.NONE&&(b.ordinal()!=was||b==Band.OVERDUE&&told>0&&MaintItems.daysBetween(told,today)>=7);

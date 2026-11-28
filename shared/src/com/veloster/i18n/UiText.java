@@ -188,8 +188,11 @@ public final class UiText {
         EN.put("USB 디버깅 OFF 명령을 보냈습니다(엔지니어 모드 Factory Test 0A 01 → 65 00 → 0A 02와 같은 명령). PC 연결이 끊기지 않으면 시동을 다시 거세요.","USB debugging OFF sent (the same command as Engineer Mode Factory Test 0A 01 → 65 00 → 0A 02). If the PC stays connected, restart the engine.");
         EN.put("USB 디버깅 ON 명령을 보냈습니다(엔지니어 모드 Factory Test와 같은 명령). 몇 초 뒤 PC를 연결하세요. 내비게이션을 재시작하면 일반 USB(CarPlay)로 돌아갑니다.","USB debugging ON sent (the same command as Engineer Mode Factory Test). Connect the PC in a few seconds. Restarting the head unit returns to normal USB (CarPlay).");
         EN.put("USB 디버깅 · 시동 안내 건너뛰기 · 블루투스 등","USB debugging · skip the start-up notice · Bluetooth and more");
+        EN.put("USB 메모리를 확인하는 중…","Checking USB sticks…");
         EN.put("USB 모드 전환 실패: ","USB mode request failed: ");
         EN.put("USB 모드 전환 요청이 거부되었습니다.","The USB mode request was denied.");
+        EN.put("USB 업데이트","USB update");
+        EN.put("USB 업데이트 파일을 쓸 수 없습니다.","The USB update files cannot be used.");
         EN.put("V6 트윈터보","V6 twin-turbo");
         EN.put("V8 크로스플레인","V8 cross-plane");
         EN.put("V8 플랫플레인","V8 flat-plane");
@@ -826,6 +829,7 @@ public final class UiText {
         EN.put("상태 확인 실패: ","Status check failed: ");
         EN.put("상향등","High beam");
         EN.put("새 기기","New device");
+        EN.put("새 업데이트가 있는 USB 메모리가 없습니다.\nUSB 메모리 맨 위에 i30-update 폴더를 넣고 다시 꽂으세요.","No USB stick with a newer update.\nPut the i30-update folder at the top of a USB stick and plug it in again.");
         EN.put("새로 시작","Start fresh");
         EN.put("새로고침","Refresh");
         EN.put("새로고침을 누르면 글꼴을 찾습니다","Press Refresh to look for fonts");
@@ -852,7 +856,11 @@ public final class UiText {
         EN.put("설정: ON","Setting: ON");
         EN.put("설정된 글꼴","Set font");
         EN.put("설정으로 / Back","Back");
+        EN.put("설치","Install");
+        EN.put("설치 화면에서 [설치]를 누르세요.","Tap Install on the installer screen.");
         EN.put("설치된 기본 앱 중 외부 실행이 허용된 앱만 표시합니다.","Only installed system apps that allow external launch are shown.");
+        EN.put("설치하는 동안 계기판과 내 앱이 잠시 닫힙니다.","The dashboard and My Apps close for a moment while installing.");
+        EN.put("설치하는 중…","Installing…");
         EN.put("성능 저하·작동 이상","Reduced performance / incorrect operation");
         EN.put("세로 단수","Gear column");
         EN.put("세로 띠","Column");
@@ -1004,6 +1012,10 @@ public final class UiText {
         EN.put("얇은 띠","Thin strip");
         EN.put("언어","Language");
         EN.put("언어 설정을 저장하지 못했습니다.","Could not save the language setting.");
+        EN.put("업데이트","Update");
+        EN.put("업데이트 완료","Update complete");
+        EN.put("업데이트를 설치할까요?","Install the update?");
+        EN.put("업데이트하지 못했습니다.","The update failed.");
         EN.put("없음","none");
         EN.put("에메랄드","Emerald");
         EN.put("에어백 (ACU)","Airbag (ACU)");

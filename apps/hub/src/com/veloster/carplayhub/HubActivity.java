@@ -201,6 +201,7 @@ public final class HubActivity extends Activity {
         card(tools,UiText.t("USB 디버깅"),CARD,LINE,TXT,46,1,new Runnable(){public void run(){usbDebug();}});
         card(tools,UiText.t("블루투스"),CARD,LINE,TXT,46,1,new Runnable(){public void run(){openBluetooth();}});
         card(tools,UiText.t("엔지니어링"),CARD,LINE,TXT,46,1,new Runnable(){public void run(){openEngineering();}});
+        card(content,UiText.t("USB 업데이트"),CARD,LINE,TXT,46,0,new Runnable(){public void run(){startActivity(new Intent(HubActivity.this,UsbUpdateActivity.class));}});
         card(content,UiText.t("강제 재시작"),0,RED,RED,46,0,new Runnable(){public void run(){confirmReboot();}});
         if(count==0)text(UiText.t("표시할 설치 앱이 없습니다. 앱 설치 뒤 다시 열거나 목록 편집에서 선택하세요."));
         heading(right,UiText.t("설정"));

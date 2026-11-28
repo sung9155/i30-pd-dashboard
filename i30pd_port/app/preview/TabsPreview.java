@@ -570,6 +570,10 @@ public final class TabsPreview {
          for(int lang=0;lang<2;lang++)for(int i=0;i<3;i++){MaintenanceCluster.tab=i;if(lang==1)com.veloster.i18n.UiText.configure("en","en");
              rec.setPage(ClusterPicker.page(ClusterPicker.MAINT));save(out,mtn[i]+(lang==1?"_en":""),rec,model,now+i*1000L+lang*5000L,false,false);}
          com.veloster.i18n.UiText.configure("ko","ko");
+         // every 교환 item recorded: the cards shrink to one line
+         int k=0;for(MaintItems.Id id:MaintItems.Id.values())if(id.ordinal()<MaintItems.Id.TIRE_ROTATE.ordinal()&&MaintItems.load(mst,id).km<0){
+             r=new MaintItems.Rec();r.km=odo-2000-1500*k;r.date=MaintItems.addMonths(today,-1-k);MaintItems.save(mst,id,r);k++;}
+         MaintenanceCluster.tab=0;rec.setPage(ClusterPicker.page(ClusterPicker.MAINT));save(out,"9v_maint_full",rec,model,now+20000L,false,false);
          MaintenanceCluster.store=null;MaintenanceCluster.tab=0;PitRenderer e=new PitRenderer();e.setSymmetric(true);e.setPage(ClusterPicker.page(ClusterPicker.MAINT));save(out,"9v_maint_empty",e,new Telemetry(),now,false,false);
         }
         {   // WRC, 아날로그, 네온, 동승자 (the screens after RPM): the replay through PitRenderer, set moments, and no data at all

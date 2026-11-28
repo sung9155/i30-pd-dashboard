@@ -33,7 +33,9 @@ public final class UiText {
         EN.put("%d번 칸 값","Cell %d value");
         EN.put("%d번 칸에 띄울 값","Cell %d shows");
         EN.put("%s · 서울 요금","%s · Seoul fare");
+        EN.put("%s 남음","%s left");
         EN.put("%s 요금","%s fare");
+        EN.put("%s 지남","%s over");
         EN.put("'내 앱' → 강제 재시작으로 재부팅하세요.","Reboot with My Apps → Restart head unit.");
         EN.put("'내 앱' 열기","Open 'My Apps'");
         EN.put("'내 앱'을 열지 못했습니다.","Could not open 'My Apps'.");
@@ -292,6 +294,7 @@ public final class UiText {
         EN.put("고장코드 조회","Trouble codes");
         EN.put("고장코드 지우기","Clear trouble codes");
         EN.put("곡이 나오면 라벨에 적힙니다","The playing track shows on the label");
+        EN.put("곧 챙길 것","Due soon");
         EN.put("곧 출발","Get ready");
         EN.put("공기압 (psi)","Pressure (psi)");
         EN.put("공기압 보충","Air top-up");
@@ -317,6 +320,8 @@ public final class UiText {
         EN.put("교체 뒤","Since change");
         EN.put("교환","Service");
         EN.put("교환 때 주행거리 km","Odometer at the change, km");
+        EN.put("교환 주기","Intervals");
+        EN.put("교환했어요","Changed it");
         EN.put("구간 시간","Stage time");
         EN.put("구간 아래에서 가속하면 측정","starts when you accelerate through the range");
         EN.put("구간 진행 중","Stage running");
@@ -341,6 +346,7 @@ public final class UiText {
         EN.put("급우회전","Sharp right");
         EN.put("급제동","Hard braking");
         EN.put("급좌회전","Sharp left");
+        EN.put("급한 순서","Most urgent first");
         EN.put("기계 연결부 고장","Mechanical linkage failure");
         EN.put("기계식 종","Mechanical bell");
         EN.put("기계적 고장","Mechanical failure");
@@ -349,13 +355,16 @@ public final class UiText {
         EN.put("기기 페어링","Pair device");
         EN.put("기기 페어링 상태를 확인할 수 없습니다.","The pairing state could not be verified.");
         EN.put("기록","Records");
+        EN.put("기록 · 측정","Records · readings");
         EN.put("기록 없음 · 눌러서 입력","No record · tap to enter");
         EN.put("기록 중","Recording");
         EN.put("기록 지우기","Clear records");
         EN.put("기록됨","Recorded");
         EN.put("기록실","Records");
         EN.put("기록은 앱을 닫으면 초기화","Records reset when the app closes");
+        EN.put("기록이 주행거리보다 큼","Record above odometer");
         EN.put("기록이 주행거리보다 큼 · 눌러서 확인","Record above the odometer · tap to check");
+        EN.put("기록하기","Record");
         EN.put("기본","Default");
         EN.put("기본 %,d원 (%.1f km)","Base %,d won (%.1f km)");
         EN.put("기본 배치로 복원","Reset layout");
@@ -392,6 +401,7 @@ public final class UiText {
         EN.put("날짜 (yyyymmdd)","Date (yyyymmdd)");
         EN.put("날짜를 yyyymmdd로 넣으세요","Enter the date as yyyymmdd");
         EN.put("남은 거리","Remaining");
+        EN.put("남은 거리가 여기 보여요","what is left shows here");
         EN.put("남은 코너 없음","No more corners");
         EN.put("남음","left");
         EN.put("낮","Day");
@@ -459,6 +469,7 @@ public final class UiText {
         EN.put("눌러서 삭제","Hold to remove");
         EN.put("눌러서 입력","Tap to enter");
         EN.put("눌러서 화면 고르기","Tap to choose a screen");
+        EN.put("눌러서 확인","tap to check");
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
         EN.put("다른 칸과 위치 바꾸기","Swap with another slot");
         EN.put("다시 조회","Read again");
@@ -466,6 +477,7 @@ public final class UiText {
         EN.put("다운시프트 맞춤 소리가 나는 화면 · 누르면 바뀜","Where the downshift match sounds play · tap to change");
         EN.put("다음","Next");
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
+        EN.put("다음 교환","Next change");
         EN.put("다음 안내","Next guidance");
         EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
         EN.put("다음 정기검사일","Next inspection date");
@@ -582,7 +594,9 @@ public final class UiText {
         EN.put("루트 작업이 끝나지 않았습니다: ","The root step did not finish: ");
         EN.put("마리나 블루","Marina Blue");
         EN.put("마젠타","Magenta");
+        EN.put("마지막 교환 시점을 넣으면","and enter its last change:");
         EN.put("마지막 보충","Last top-up");
+        EN.put("마지막 조회","Last read");
         EN.put("마찰 토크","Friction torque");
         EN.put("마찰원","Friction circle");
         EN.put("막대","Bar");
@@ -936,6 +950,8 @@ public final class UiText {
         EN.put("아이스","Ice");
         EN.put("아이언 그레이","Iron Grey");
         EN.put("아주 크게","Extra large");
+        EN.put("아직 기록이 없어요","No records yet");
+        EN.put("아직 기록이 없어요 · 눌러서 입력","No record yet · tap to enter");
         EN.put("아직 잡힌 값 없음","Not caught yet");
         EN.put("아케이드","Arcade");
         EN.put("아크","Arc");
@@ -1067,6 +1083,8 @@ public final class UiText {
         EN.put("예약","Booked");
         EN.put("예열 플러그 제어 모듈 회로 이상","Glow plug control module circuit malfunction");
         EN.put("예열 플러그 회로 이상","Glow plug circuit malfunction");
+        EN.put("오늘 · 지금 주행거리로 기록","Today · at the odometer now");
+        EN.put("오늘 교환한 것으로 기록할까요?","Record it as changed today?");
         EN.put("오늘 교환함","Done today");
         EN.put("오도미터 확인 필요","Check the odometer");
         EN.put("오도미터를 아직 받지 못했습니다","No odometer yet");
@@ -1086,6 +1104,7 @@ public final class UiText {
         EN.put("오른쪽 지하차도","Underpass right");
         EN.put("오른쪽 진출","Exit right");
         EN.put("오른쪽 출구","Exit right");
+        EN.put("오른쪽 항목을 눌러","Tap an item on the right");
         EN.put("오른쪽으로 돌아요 · 꽉 잡으세요","Turning right · hold on");
         EN.put("오실로","Scope");
         EN.put("오실로스코프","Oscilloscope");
@@ -1338,6 +1357,7 @@ public final class UiText {
         EN.put("정기검사","Inspection");
         EN.put("정렬·조정 이상","Alignment / adjustment incorrect");
         EN.put("정비","Service");
+        EN.put("정비 기록","Service records");
         EN.put("정상","Normal");
         EN.put("정속 주행","Steady cruise");
         EN.put("정지","Stops");
@@ -1387,6 +1407,7 @@ public final class UiText {
         EN.put("좌","Left");
         EN.put("좌 방향지시등","Left turn signal");
         EN.put("좌회전","Turn left");
+        EN.put("주기","Every");
         EN.put("주기 바꾸기","Change interval");
         EN.put("주변 기기 검색","Find nearby devices");
         EN.put("주변 기기 검색 중","Searching for nearby devices");
@@ -1442,6 +1463,7 @@ public final class UiText {
         EN.put("지금 재부팅","Reboot now");
         EN.put("지금 조회","Read now");
         EN.put("지금 주행거리보다 큽니다","Above the odometer now");
+        EN.put("지금 챙길 것","Due now");
         EN.put("지금 화면의 글꼴과 같습니다","Same as the font on screen now");
         EN.put("지금은 연료를 안 씁니다","No fuel being used");
         EN.put("지난","Last");
@@ -1469,6 +1491,7 @@ public final class UiText {
         EN.put("짧은 주행","Short trips");
         EN.put("짧은 캡슐","Short pill");
         EN.put("짧은 펄스 · 낮게","Short pulse · low");
+        EN.put("차 상태","Car status");
         EN.put("차가 멈춘 것을 확인하지 못했습니다. 정차한 뒤 다시 누르세요.","Could not see the car standing. Stop, then tap again.");
         EN.put("차고","Garage");
         EN.put("차량 계산값","From the car");
@@ -1595,6 +1618,7 @@ public final class UiText {
         EN.put("타이어 공기압 (4바퀴 묶음)","Tyre pressures (all four)");
         EN.put("타이어 공기압 낮음","Low tire pressure");
         EN.put("타이어 교체","Tyre change");
+        EN.put("타이어 기록","Tyre records");
         EN.put("타이어 옆면 DOT 끝 4자리 (비워도 됨)","Last 4 digits of the DOT on the sidewall (optional)");
         EN.put("타이어 온도","Tire temp");
         EN.put("타이어 위치 교환","Tyre rotation");

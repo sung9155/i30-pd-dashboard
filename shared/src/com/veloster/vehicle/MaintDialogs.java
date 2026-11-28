@@ -21,16 +21,26 @@ final class MaintDialogs {
         if(parked(sp))return false;
         Toast.makeText(a,UiText.t("정차 중에만 입력할 수 있습니다"),Toast.LENGTH_SHORT).show();return true;}
 
+    /** 정비's big card button (교환했어요): asks once, then records it as the list's 오늘 교환함 does. */
+    static void done(final Activity a,final MaintItems.Store s,final MaintItems.Id id,final float odo,final Runnable after){
+        int d=MaintItems.today();String when=String.format(Locale.US,"%04d-%02d-%02d",d/10000,d/100%100,d%100)+(Float.isNaN(odo)?"":String.format(Locale.US," · %,d km",Math.round(odo)));
+        new AlertDialog.Builder(a).setTitle(UiText.t(MaintenanceCluster.name(id))).setMessage(UiText.t("오늘 교환한 것으로 기록할까요?")+"\n"+when)
+            .setNegativeButton(UiText.t("취소"),null).setPositiveButton(UiText.t("기록하기"),new DialogInterface.OnClickListener(){public void onClick(DialogInterface x,int w){today(a,s,id,odo,after);}}).show();
+    }
+    /** Changed today, at the odometer now (a date only for the items kept by date when the odometer is not in yet). */
+    private static void today(Activity a,MaintItems.Store s,MaintItems.Id id,float odo,Runnable after){
+        boolean dateOnly=id==MaintItems.Id.BRAKE_FLUID||id==MaintItems.Id.WIPER||id==MaintItems.Id.TIRE_AIR||id==MaintItems.Id.BATTERY;
+        if(Float.isNaN(odo)&&!dateOnly){Toast.makeText(a,UiText.t("오도미터를 아직 받지 못했습니다"),Toast.LENGTH_SHORT).show();return;}
+        int km=Float.isNaN(odo)?-1:Math.round(odo);MaintItems.Rec r=MaintItems.load(s,id);r.km=km;r.date=MaintItems.today();
+        if(id==MaintItems.Id.TIRE_REPLACE){dotDialog(a,s,r,id,after);return;}
+        record(s,id,r);after.run();
+    }
     static void item(final Activity a,final MaintItems.Store s,final MaintItems.Id id,final float odo,final boolean severe,final Runnable after){
-        final boolean dateOnly=id==MaintItems.Id.BRAKE_FLUID||id==MaintItems.Id.WIPER||id==MaintItems.Id.TIRE_AIR||id==MaintItems.Id.BATTERY;
         if(id==MaintItems.Id.INSPECTION){dateDialog(a,UiText.t("다음 정기검사일"),MaintItems.load(s,id).date,new DateSink(){public void set(int d){
             MaintItems.Rec r=MaintItems.load(s,id);r.date=d;MaintItems.save(s,id,r);MaintJudge.recorded(s,id);after.run();}});return;}
         String[] acts={UiText.t("오늘 교환함"),UiText.t("직접 입력"),UiText.t("주기 바꾸기"),UiText.t("기록 지우기")};
         new AlertDialog.Builder(a).setTitle(UiText.t(MaintenanceCluster.name(id))).setItems(acts,new DialogInterface.OnClickListener(){public void onClick(DialogInterface d,int w){
-            if(w==0){if(Float.isNaN(odo)&&!dateOnly){Toast.makeText(a,UiText.t("오도미터를 아직 받지 못했습니다"),Toast.LENGTH_SHORT).show();return;}
-                int km=Float.isNaN(odo)?-1:Math.round(odo);MaintItems.Rec r=MaintItems.load(s,id);r.km=km;r.date=MaintItems.today();
-                if(id==MaintItems.Id.TIRE_REPLACE){dotDialog(a,s,r,id,after);return;}
-                record(s,id,r);after.run();}
+            if(w==0)today(a,s,id,odo,after);
             else if(w==1)enter(a,s,id,odo,after);
             else if(w==2)interval(a,s,id,severe,after);
             else new AlertDialog.Builder(a).setMessage(UiText.t("이 항목의 교환 기록을 지웁니다.")).setNegativeButton(UiText.t("취소"),null)

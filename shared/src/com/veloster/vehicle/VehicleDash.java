@@ -917,8 +917,9 @@ public final class VehicleDash extends View implements Runnable {
         MaintItems.Store st=maintStore;if(st==null||id==null&&act==0)return;
         long now=SystemClock.elapsedRealtime();if(MaintDialogs.refuse(activity,DATA.sample(7,now)))return;
         Telemetry.Sample o=DATA.sample(Telemetry.ODOMETER,now);float odo=o.valid&&o.value>0?o.value:Float.NaN;
-        Runnable after=new Runnable(){public void run(){invalidate();}};
-        if(id!=null){boolean sev=MaintJudge.judge(MaintJudge.mode(st),MaintLog.sinceOil(),odo).severe&&MaintItems.hasSevere(id);MaintDialogs.item(activity,st,id,odo,sev,after);}
+        Runnable after=new Runnable(){public void run(){MaintenanceCluster.stale=true;invalidate();}};
+        if(id!=null&&act==MaintenanceCluster.ACT_DONE)MaintDialogs.done(activity,st,id,odo,after);
+        else if(id!=null){boolean sev=MaintJudge.judge(MaintJudge.mode(st),MaintLog.sinceOil(),odo).severe&&MaintItems.hasSevere(id);MaintDialogs.item(activity,st,id,odo,sev,after);}
         else if(act==MaintenanceCluster.ACT_MODE){MaintJudge.Verdict vd=MaintJudge.judge(MaintJudge.Mode.AUTO,MaintLog.sinceOil(),odo);
             MaintDialogs.mode(activity,st,UiText.t("자동 판단")+": "+UiText.t(vd.insufficient?"근거 부족":vd.severe?"가혹":"일반"),after);}
         else if(act==MaintenanceCluster.ACT_FIRST_REG){final MaintItems.Store s2=st;final Runnable done=after;

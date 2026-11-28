@@ -382,7 +382,7 @@ public final class VehicleDash extends View implements Runnable {
             SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);
             int v=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);
             screen=v>=0&&v<ClusterPicker.COUNT?v:ClusterPicker.OVERVIEW;
-            hidden=ClusterPicker.valid(p.getInt("cluster_hidden",0));fav=ClusterPicker.validFav(p.getInt("cluster_fav",ClusterPicker.FAV_DEFAULT));
+            hidden=ClusterPicker.valid(p.getInt("cluster_hidden",0));
             int[] savedOrder=parseOrder(p.getString("cluster_order",null));int ov=p.getInt("cluster_order_v",0);
             order=ClusterPicker.validOrder(savedOrder);
             // The order is saved on every screen change, so every install has one. Before v3 a new default replaced it once;
@@ -394,6 +394,8 @@ public final class VehicleDash extends View implements Runnable {
                     for(int k=0;k<modeTargets.length;k++){modeTargets[k]=ClusterPicker.renumber4(modeTargets[k]);me.putInt("mode_screen_"+ClusterPicker.MODE_NAMES[k].toLowerCase(java.util.Locale.US),modeTargets[k]);}
                     me.apply();}
                 p.edit().putString("cluster_order",orderCsv(order)).putInt("cluster_order_v",ClusterPicker.ORDER_VERSION).putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).apply();}
+            // The favourites line (2026-11-28): none saved = under the 7th screen switched on, of the order as it is now
+            fav=p.contains("cluster_fav")?ClusterPicker.validFav(p.getInt("cluster_fav",ClusterPicker.FAV_DEFAULT)):ClusterPicker.defaultFav(order,hidden);
         }catch(ClassCastException e){/* Open on Overview, everything shown, for an incompatible saved value. */}
         warmEco();
         applyScreen();

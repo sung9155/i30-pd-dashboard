@@ -23,7 +23,7 @@ public final class HeaderTabs {
     private int current=-1;           // tab index of the current screen, or -1
     private float scroll,startScroll,downX,lastX,speed,flingV;   // speed: finger px/ms; flingV: scroll px/ms while coasting
     private long lastT,flingT;
-    private int snapped=-1;           // screen whose tab was last brought into view
+    private int snapped=-1,snappedAt=-1;   // screen whose tab was last brought into view, and where its tab was then
     private boolean tracking,dragging;
 
     /** PitRenderer sets the shown screens, their widths and which one is current, each frame. */
@@ -31,8 +31,8 @@ public final class HeaderTabs {
         ids=screenIds;w=widths;current=currentIndex;
         scrollTo(scroll);                      // clamp to the new content
         int cur=current>=0&&current<ids.length?ids[current]:-1;
-        if(cur>=0&&cur!=snapped){              // a new current screen: bring its tab fully into view, once
-            snapped=cur;flingV=0;
+        if(cur>=0&&(cur!=snapped||current!=snappedAt)){   // a new current screen, or its tab moved (it left the favourites: now last): bring it fully into view, once
+            snapped=cur;snappedAt=current;flingV=0;
             float l=xRel(current),r=l+w[current];
             if(l<0)scrollTo(scroll+l);else if(r>RIGHT-LEFT)scrollTo(scroll+r-(RIGHT-LEFT));
         }

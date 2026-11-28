@@ -40,6 +40,10 @@ public final class HeaderTabsTest {
         check(!h.flinging()&&h.scroll()<=h.maxScroll(),"the coast stops, clamped");
         h.down(300,20);check(!h.flinging(),"touching stops a coast");
         h.move(250,20,5000);h.move(250,20,5300);check(h.up(5300)&&!h.flinging(),"a drag that ends at rest does not coast");
+        {HeaderTabs t=new HeaderTabs();int[] a=new int[12];float[] aw=new float[12];for(int i=0;i<12;i++){a[i]=i;aw[i]=90;}
+         t.setTabs(a,aw,0);   // screen 0 on show, first tab
+         int[] b=new int[12];for(int i=0;i<11;i++)b[i]=i+1;b[11]=0;t.setTabs(b,aw,11);   // it left the favourites: now the last tab
+         check(t.x(11)+aw[11]<=HeaderTabs.RIGHT+0.5f,"the same screen moved to the strip's end is brought into view");}
         // 2026-11-28: the clock left of the strip (no logo), then the strip, then three 44 px buttons: list, gear, home
         float gx=HeaderTabs.GEAR_L+HeaderTabs.GEAR_W/2,gy=HeaderTabs.TOP+HeaderTabs.H/2;
         check(HeaderTabs.gear(gx,gy)&&!HeaderTabs.gear(gx,60)&&!HeaderTabs.gear(130,gy),"gear button hits only itself");

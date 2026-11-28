@@ -1,11 +1,10 @@
 package com.veloster.vehicle;
 
 /**
- * Every dashboard screen behind the one screen tab in the header, and the list a long press on it opens: 6 x 5 tiles
- * over the body (6 x 6 since 내 차 and 네온 드라이브). The header gear opens it in edit mode, where the last tiles are trouble codes (DIAG), car paint (CAR, the 8-bit views), language (LANG),
- * theme (THEME) and 완료 (EDIT). Overview, Gauges, Graphs and F1 are VehicleDash flags; the screens after
- * F1 are PitRenderer pages (page(s)). Hidden screens are a bit mask (bit i = screen i), saved by VehicleDash. A short
- * tap on the tab steps to the next shown screen. No Android: host-tested.
+ * Every dashboard screen: the header strip's favourites (the screens above the settings' line, see rows), and the list
+ * the header's list button (or a long press on the strip) opens: 6 x 6 tiles over the body (grid). Overview, Gauges,
+ * Graphs and F1 are VehicleDash flags; the screens after F1 are PitRenderer pages (page(s)). Screens switched off are a
+ * bit mask (bit i = screen i): on neither the strip nor the list. Saved by VehicleDash. No Android: host-tested.
  */
 public final class ClusterPicker {
     /** Header tab label per screen (short: the tab is 160 px wide). */
@@ -27,6 +26,13 @@ public final class ClusterPicker {
     public static final int LINE=-1,FAV_DEFAULT=7;
     /** A saved count of favourites: at least one, at most every screen. */
     public static int validFav(int f){return Math.max(1,Math.min(COUNT,f));}
+    /** Where the line goes when none is saved (the update that brought it, a new install): under the 7th screen that is
+     *  switched on, so screens an owner switched off do not use up the strip; with fewer on, under the last of them. */
+    public static int defaultFav(int[] order,int hidden){
+        order=validOrder(order);int on=0,last=0;
+        for(int i=0;i<COUNT;i++)if((hidden&(1<<order[i]))==0){last=i;if(++on==FAV_DEFAULT)break;}
+        return validFav(last+1);
+    }
     public static int[] rows(int[] order,int fav){
         order=validOrder(order);fav=validFav(fav);int[] r=new int[COUNT+1];
         System.arraycopy(order,0,r,0,fav);r[fav]=LINE;System.arraycopy(order,fav,r,fav+1,COUNT-fav);return r;

@@ -277,12 +277,13 @@ public final class PitRenderer {
         box(c,cx-8,cy,cx+8,cy+10,MUTED);box(c,cx-2.5f,cy+3,cx+2.5f,cy+10,0xff111415);
     }
     private static final int STAR=0xffffc83d,OWN_TILE=0xff17141f;   // a favourite's star; the list's tiles that are not dashboards
-    private final Path starPath=unitStar();
-    private static Path unitStar(){Path s=new Path();
-        for(int i=0;i<10;i++){double a=-Math.PI/2+i*Math.PI/5;float r=i%2==0?1:0.42f,x=(float)Math.cos(a)*r,y=(float)Math.sin(a)*r;if(i==0)s.moveTo(x,y);else s.lineTo(x,y);}
-        s.close();return s;}
-    /** Drawn, not the ★ glyph: the head unit's fonts may lack it. */
-    private void star(Canvas c,float cx,float cy,float r,int color){c.save();c.translate(cx,cy);c.scale(r,r);paint.setStyle(Paint.Style.FILL);paint.setColor(T(color));c.drawPath(starPath,paint);c.restore();}
+    /** Drawn, not the ★ glyph: the head unit's fonts may lack it. Built at its size (Android 4.2's GPU renderer rasterises
+     *  a path at its own size and stretches it under a canvas scale: a unit star would blur). */
+    private void star(Canvas c,float cx,float cy,float r,int color){
+        paint.setStyle(Paint.Style.FILL);paint.setColor(T(color));shape.reset();
+        for(int i=0;i<10;i++){double a=-Math.PI/2+i*Math.PI/5;float q=i%2==0?r:r*0.42f,x=cx+(float)Math.cos(a)*q,y=cy+(float)Math.sin(a)*q;if(i==0)shape.moveTo(x,y);else shape.lineTo(x,y);}
+        shape.close();c.drawPath(shape.kept(),paint);
+    }
     /** Gear (HeaderTabs.GEAR_L): opens the settings; lit while they are open. */
     private void gearButton(Canvas c,boolean on){
         float x=HeaderTabs.GEAR_L,cx=x+HeaderTabs.GEAR_W/2,cy=HeaderTabs.TOP+HeaderTabs.H/2;int ink=on?BLUE:MUTED;
@@ -662,7 +663,8 @@ public final class PitRenderer {
             if(drag&&p==dragRow){box(c,L,t+4,R,t+rh-4,0xff08090a);continue;}   // the lifted row's empty place
             screenRow(c,p,ord.length,ord[p],t,0,false);
         }
-        if(drag){int to=SettingsLayout.dropRow(dragY,settingsScroll);float ly=top+(to>dragRow?to+1:to)*rh-settingsScroll;
+        if(drag){int to=SettingsLayout.dropRow(dragY,settingsScroll);if(ord[dragRow]==ClusterPicker.LINE&&to==0)to=1;   // the line lands under the first screen
+            float ly=top+(to>dragRow?to+1:to)*rh-settingsScroll;
             box(c,L,ly-2,R,ly+1,BLUE);   // where it lands
             screenRow(c,dragRow,ord.length,ord[dragRow],dragY-rh/2,8,true);}
         c.restore();
@@ -715,7 +717,7 @@ public final class PitRenderer {
         float by=t+(rh-SettingsLayout.SBTN_W)/2;
         topBtn(c,SettingsLayout.topBtnL()+dx,by,p>0);
         moveBtn(c,SettingsLayout.upBtnL()+dx,by,true,p>0);
-        moveBtn(c,SettingsLayout.downBtnL()+dx,by,false,p<n-1);
+        moveBtn(c,SettingsLayout.downBtnL()+dx,by,false,p<n-1&&!(p==0&&fav==1));   // the only favourite stays above the line
     }
     private void moveBtn(Canvas c,float x,float y,boolean up,boolean on){
         float w=SettingsLayout.SBTN_W;box(c,x,y,x+w,y+w,on?0xff16232b:0xff0c0e10);

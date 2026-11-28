@@ -109,6 +109,10 @@ public final class ClusterPickerTest {
          int hid=1<<d[0];g=ClusterPicker.grid(d,hid);check(g[0]==d[1]&&g[28]==-1&&g[30]==M,"a screen switched off is not in the list");
          int few=-1;for(int i=0;i<10;i++)few&=~(1<<d[i]);few&=~(1<<C3);g=ClusterPicker.grid(d,few);   // ten shown (d[0..9] holds 정비) and 내 차
          check(g[8]>=0&&g[9]==-1&&g[12]==M&&g[13]==C3&&g[14]==-1,"few screens: the own row comes right under the dashboards ("+g[9]+","+g[12]+","+g[13]+")");
+         check(ClusterPicker.defaultFav(d,0)==7,"nothing saved: the line after the 7th screen");
+         {int on=-1;for(int i:new int[]{3,9,12,20,25})on&=~(1<<d[i]);   // an owner who kept five screens, spread over the order
+          check(ClusterPicker.defaultFav(d,on)==26&&ClusterPicker.bar(d,on,ClusterPicker.defaultFav(d,on)).length==5,"fewer than 7 switched on: all of them stay on the strip, the line right under the last (row 26)");
+          int off=(1<<d[0])|(1<<d[4]);check(ClusterPicker.defaultFav(d,off)==9&&ClusterPicker.bar(d,off,9).length==7,"switched-off screens do not use up the 7");}
          check(ClusterPicker.own(M)&&ClusterPicker.own(C3)&&ClusterPicker.own(ND)&&!ClusterPicker.own(ClusterPicker.WRC),"own kind: 정비, 내 차, 네온 드라이브");}
         System.out.println("PASS "+checks+" cluster picker checks");
     }

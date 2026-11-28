@@ -79,6 +79,7 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         floor = new Program(FLOOR_VS, FLOOR_FS); halo = new Program(HALO_VS, HALO_FS); rim = new Program(RIM_VS, RIM_FS); sky = new Program(SKY_VS, SKY_FS);
         quad = ByteBuffer.allocateDirect(8 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
         quad.put(new float[] {-1, -1, 1, -1, -1, 1, 1, 1}); rewind(quad);
+        skyGrid = skyGrid();
         GLES20.glClearColor(CLEAR_R, CLEAR_G, CLEAR_B, 1);
     }
 
@@ -121,11 +122,9 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE2); GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texEnv);   // reflections, every program
         GLES20.glActiveTexture(GLES20.GL_TEXTURE3); GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texSky);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        drawSky();
-        drawFloor(g, sc, road);
-        if (m == null) return;
         GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glDepthFunc(GLES20.GL_LEQUAL);
+        if (m == null) { GLES20.glDepthMask(false); drawSky(); drawFloor(g, sc, road); GLES20.glDepthMask(true); return; }
         GLES20.glDepthMask(true);
         GLES20.glDisable(GLES20.GL_BLEND);
         // Opaque body, then lamps.
@@ -152,6 +151,11 @@ final class CarRenderer implements GLSurfaceView.Renderer {
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             for (int i = 0; i < m.chunks.length; i++) if (m.chunks[i].program == CarModel.PLATE) drawChunk(lamp, m, i, wd, roll);
         }
+        // The backdrop and floor after the opaque car, depth-tested without writing: the pixels the car covers are never
+        // shaded (they were drawn and then overdrawn before, a third of the screen with the heaviest shaders).
+        GLES20.glDepthMask(false);
+        drawSky();
+        drawFloor(g, sc, road);
         // Glass: premultiplied blending, no depth writes.
         GLES20.glEnable(GLES20.GL_BLEND);
         if (bl > 0.01f) drawBlur(m, wd, bl);
@@ -262,18 +266,36 @@ final class CarRenderer implements GLSurfaceView.Renderer {
 
     /** The backdrop panorama over the whole screen: each pixel looks it up by its view direction (texture unit 3). */
     private void drawSky() {
-        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
         GLES20.glDisable(GLES20.GL_BLEND);
         if (!Matrix.invertM(invVP, 0, vp, 0)) return;
         sky.use();
         GLES20.glUniformMatrix4fv(sky.u("uInvVP"), 1, false, invVP, 0);
         GLES20.glUniform3f(sky.u("uEye"), eye[0], eye[1], eye[2]);
+        GLES20.glUniform1f(sky.u("uYaw0"), (float) Math.atan2(-eye[0], -0.1f - eye[2]));   // azimuth the camera looks along
         GLES20.glUniform1i(sky.u("uSky"), 3);
-        quadDraw(sky);
+        int a = sky.a("aCorner");
+        GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0);
+        GLES20.glEnableVertexAttribArray(a);
+        GLES20.glVertexAttribPointer(a, 2, GLES20.GL_FLOAT, false, 0, rewind(skyGrid));
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, SKY_COLS * SKY_ROWS * 6);
+        GLES20.glDisableVertexAttribArray(a);
+    }
+
+    /** The backdrop as a grid over the screen: the panorama coordinates are worked out per vertex (atan / asin), not per
+     *  pixel; across 58 degrees of view the mapping is smooth enough for a 20 x 12 grid. */
+    private static final int SKY_COLS = 20, SKY_ROWS = 12;
+    private FloatBuffer skyGrid;
+    private static FloatBuffer skyGrid() {
+        FloatBuffer b = ByteBuffer.allocateDirect(SKY_COLS * SKY_ROWS * 12 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        for (int r = 0; r < SKY_ROWS; r++) for (int c = 0; c < SKY_COLS; c++) {
+            float x0 = -1 + 2f * c / SKY_COLS, x1 = -1 + 2f * (c + 1) / SKY_COLS, y0 = -1 + 2f * r / SKY_ROWS, y1 = -1 + 2f * (r + 1) / SKY_ROWS;
+            b.put(new float[] {x0, y0, x1, y0, x0, y1, x0, y1, x1, y0, x1, y1});
+        }
+        rewind(b);
+        return b;
     }
 
     private void drawFloor(float[] g, int sc, float road) {
-        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
         GLES20.glEnable(GLES20.GL_BLEND);   // the floor fades out into the panorama's own ground far away
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
         floor.use();
@@ -461,13 +483,18 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         " if(uTurn.x>0.001) c+=amber*0.22*uTurn.x*(pool(p,vec2(0.85,2.05),0.6)+pool(p,vec2(0.75,-2.05),0.6)+pool(p,vec2(1.25,0.55),0.45));\n" +
         " if(uTurn.y>0.001) c+=amber*0.22*uTurn.y*(pool(p,vec2(-0.85,2.05),0.6)+pool(p,vec2(-0.75,-2.05),0.6)+pool(p,vec2(-1.25,0.55),0.45));\n" +
         " gl_FragColor=vec4(c,alpha); }\n";
+    /** Per vertex: the view direction to panorama u (unwrapped around the camera's own azimuth uYaw0, so it never jumps
+     *  across the seam inside the view; the texture repeats in u) and v. */
     private static final String SKY_VS =
-        "uniform mat4 uInvVP; uniform vec3 uEye; attribute vec2 aCorner; varying vec3 vDir;\n" +
-        "void main(){ vec4 q=uInvVP*vec4(aCorner,1.0,1.0); vDir=q.xyz/q.w-uEye; gl_Position=vec4(aCorner,0.999,1.0); }\n";
+        "uniform mat4 uInvVP; uniform vec3 uEye; uniform float uYaw0; attribute vec2 aCorner; varying vec2 vUV;\n" +
+        "void main(){ vec4 q=uInvVP*vec4(aCorner,1.0,1.0); vec3 d=normalize(q.xyz/q.w-uEye);\n" +
+        " float da=atan(d.x,d.z)-uYaw0; da-=6.2831853*floor((da+3.1415927)/6.2831853);\n" +
+        " float e=asin(clamp(d.y,-1.0,1.0))*57.29578;\n" +
+        " vUV=vec2((uYaw0+da)*0.159155+0.5,clamp((64.0-e)/80.0,0.004,0.996)); gl_Position=vec4(aCorner,0.999,1.0); }\n";
     private static final String SKY_FS =
-        "precision mediump float;\n" + ENV_LOOKUP +
-        "uniform sampler2D uSky; varying vec3 vDir;\n" +
-        "void main(){ gl_FragColor=vec4(env(uSky,normalize(vDir)),1.0); }\n";
+        "precision mediump float;\n" +
+        "uniform sampler2D uSky; varying vec2 vUV;\n" +
+        "void main(){ gl_FragColor=vec4(texture2D(uSky,vUV).rgb,1.0); }\n";
     /** The model's 19-inch rim with its lip (0.261 m); the disc sits just outside the rim's outer face (0.120 m from the hub). */
     private static final float RIM_RADIUS = 0.263f, RIM_FACE_X = 0.122f;
     private static final String RIM_VS =

@@ -145,7 +145,7 @@ public final class PitRenderer {
     private float numeric(String prefix){int i=index(prefix);return i>=0&&i<samples.length&&samples[i].valid?Telemetry.displayValue(i,samples[i].value):0;}
     private boolean changed(String prefix){int i=index(prefix);return i>=0&&i<samples.length&&samples[i].changed;}
     // Signals past the PREFIX list (e.g. THROTTLE_POS) are read by index.
-    private String valueAt(int i){if(i<0||i>=samples.length||!samples[i].valid)return "—";return String.format(Locale.US,"%.1f",Telemetry.displayValue(i,samples[i].value));}
+    private String valueAt(int i){if(i<0||i>=samples.length||!samples[i].valid)return "—";return Fmt.f("%.1f",Telemetry.displayValue(i,samples[i].value));}
     private float numericAt(int i){return i>=0&&i<samples.length&&samples[i].valid?Telemetry.displayValue(i,samples[i].value):0;}
     // Accelerator pedal (signal 9, PV_AV_CAN) is how deep the pedal is pressed; the throttle plate
     // (THROTTLE_POS, TPS) is the actual valve opening. Both are shown; the bar tracks the pedal.
@@ -215,7 +215,7 @@ public final class PitRenderer {
     private Bitmap body,head;private int bodyKey,headKey;
     /** The dashboard went out of sight: the page and header bitmaps, the screen list's previews and every screen's kept
      *  bitmaps go (about 9 MB after a visit to 에코, RPM and 서킷), and come back as each is drawn again. UI thread. */
-    public void trim(){body=ClusterKit.recycle(body);head=ClusterKit.recycle(head);ClusterKit.recycle(thumbs);eco.trim();tacho.trim();for(ClusterKit k:more)k.trim();clusterRenderer.trim();}
+    public void trim(){body=ClusterKit.recycle(body);head=ClusterKit.recycle(head);ClusterKit.recycle(thumbs);eco.trim();tacho.trim();mtSport.trim();for(ClusterKit k:more)k.trim();clusterRenderer.trim();KeyPath.clear();}   // mtSport and the kept shapes too (upstream db3dc11)
     private static Bitmap canvasBitmap(Bitmap old,int w,int h){
         if(old!=null&&old.getWidth()==w&&old.getHeight()==h){old.eraseColor(0);return old;}
         return Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);
@@ -847,7 +847,7 @@ public final class PitRenderer {
         if(!tbtBand){tbtShown=false;tbtBig=false;return;}
         if(!s.active)tbtBig=false;
         tbtShown=s.maneuver||tbtBig&&s.active;if(!tbtShown)return;
-        String dist=Tbt.distance(s.metres),left=(Float.isNaN(s.destKm)?"":String.format(Locale.US,"%.1f km",s.destKm))+(s.minutes>=0?" · "+s.minutes+UiText.t("분"):"");
+        String dist=Tbt.distance(s.metres),left=(Float.isNaN(s.destKm)?"":Fmt.f("%.1f km",s.destKm))+(s.minutes>=0?" · "+s.minutes+UiText.t("분"):"");
         float deg=Tbt.arrow(s);
         if(!tbtBig){
             panel(c,18,TBT_T,764,TBT_B-TBT_T,0xf0101a20,BLUE);
@@ -1046,7 +1046,7 @@ public final class PitRenderer {
         String[] n={UiText.t("홀수단"),UiText.t("짝수단")};
         for(int k=0;k<2;k++){float v=clutchT(Telemetry.DCT_LIFE_A_ODD+k),ty=y+48+k*26;
             text(c,n[k],x+10,ty,12,MUTED,false);
-            String s=Float.isNaN(v)?"—":String.format(Locale.US,"%.1f",v);paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(17);
+            String s=Float.isNaN(v)?"—":Fmt.f("%.1f",v);paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(17);
             text(c,s,x+w-12-paint.measureText(s),ty,17,BLUE,true);}
         text(c,UiText.t("잔량인지 확인 중 · 주행거리와 함께 알려 주세요"),x+10,y+88,9,MUTED,false);
     }
@@ -1132,7 +1132,7 @@ public final class PitRenderer {
                 text(c,corners[n],l,t,10,MUTED,false);
                 text(c,value(PREFIX[i+n]),l+20,t,20,BLUE,true);
                 float tt=samples[Telemetry.TIRE_TEMP_FL+n].value;
-                if(samples[Telemetry.TIRE_TEMP_FL+n].valid&&!Float.isNaN(tt))text(c,String.format(Locale.US,"%.0f°",tt),l+47,t,10,MUTED,false);
+                if(samples[Telemetry.TIRE_TEMP_FL+n].valid&&!Float.isNaN(tt))text(c,Fmt.f("%.0f°",tt),l+47,t,10,MUTED,false);
             }
             text(c,"psi",x+10,y+88,11,MUTED,false);
         }else{

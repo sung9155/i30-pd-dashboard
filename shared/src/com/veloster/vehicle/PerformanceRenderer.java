@@ -125,7 +125,7 @@ public final class PerformanceRenderer {
         float gx=v(11),gy=v(12);boolean ok=!Float.isNaN(gx)&&!Float.isNaN(gy);
         float k=ok?Telemetry.pinG(gx,gy,1.2f)/1.2f:0,x=ok?gx*k*rad:0,y=ok?gy*k*rad:0;   // braking (-) up, as the body is thrown   // pinned to the rim, not to the square around it
         p.setColor(T(0x55ff4059));c.drawCircle(cx+x,cy+y,12,p);p.setColor(T(RED));c.drawCircle(cx+x,cy+y,7,p);
-        text(c,ok?String.format(Locale.US,"%.2f g",(float)Math.sqrt(gx*gx+gy*gy)):"— g",RR-14,B1-14,15,TEXT,Paint.Align.RIGHT);
+        text(c,ok?Fmt.f("%.2f g",(float)Math.sqrt(gx*gx+gy*gy)):"— g",RR-14,B1-14,15,TEXT,Paint.Align.RIGHT);
     }
     /** Overview typeface (Typeface.DEFAULT) throughout. */
     private void text(Canvas c,String t,float x,float y,float size,int color,Paint.Align align){

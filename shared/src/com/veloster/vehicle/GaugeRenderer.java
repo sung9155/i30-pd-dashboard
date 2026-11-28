@@ -41,7 +41,7 @@ public final class GaugeRenderer {
         if(i==Telemetry.DPF_SINCE_KM||i==Telemetry.DPF_AVG_KM)return 1000;if(i==Telemetry.YAW)return 50;if(i==Telemetry.SHIFT_HINT)return 7;if(i==Telemetry.ODOMETER)return 999999;
         return i==8?7:100;   // gear: the 7DCT has 7 forward gears
     }
-    private static String axis(float value){return String.format(Locale.US,value==(int)value?"%.0f":"%.1f",value);}
+    private static String axis(float value){return Fmt.f(value==(int)value?"%.0f":"%.1f",value);}
     public void draw(Canvas c,Telemetry data,long now,GaugeLayout layout){
         int save=c.save();c.clipRect(0,52,800,480);p.setColor(T(0xff070b0e));c.drawRect(0,52,800,480,p);
         text(c,UiText.t("게이지를 길게 눌러 항목 · 모양 · 위치 편집"),300,71,13,MUTED);

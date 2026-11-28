@@ -301,7 +301,7 @@ final class PixelCluster extends ClusterKit {
         fill(c,l,t,r,t+mpH(),0xff000000);outline(c,l+2,t+2,r-2,t+mpH()-2,0,2,W);
         String tm=null;
         if(music.hasProgress()){long ps=Math.min(music.durationMs,music.positionMs+(pl?music.timeAgeMs:0))/1000,ds=music.durationMs/1000;
-            tm=String.format(Locale.US,"%d:%02d / %d:%02d",ps/60,ps%60,ds/60,ds%60);}
+            tm=Fmt.f("%d:%02d",ps/60,ps%60)+" / "+Fmt.f("%d:%02d",ds/60,ds%60);}
         float tx,tw,ty,ay,mx,my,by0;   // text column: left, width, title / artist / time baselines, progress bar top
         if(wide){   // cover left, text beside it, keys across the bottom
             fill(c,l+10,t+10,l+74,t+74,0xff1c303b);blit(c,artwork,0,0,artwork.getWidth(),artwork.getHeight(),l+10,t+10,l+74,t+74);
@@ -436,7 +436,7 @@ final class PixelCluster extends ClusterKit {
         return cache[slot];
     }
     private final Bitmap[] cityChase=new Bitmap[3];
-    @Override void trim(){
+    @Override void trim(){super.trim();
         backdrop=recycle(backdrop);backdropCanvas=null;
         recycle(sideCar);recycle(cityStrip);recycle(hillStrip);recycle(heartBmp);recycle(cityChase);beam=recycle(beam);highBeam=recycle(highBeam);
         recycle(ditherCache);recycle(textCache);recycle(arcadeCar);plateText=recycle(plateText);recycle(trafficCar);
@@ -661,17 +661,17 @@ final class PixelCluster extends ClusterKit {
         float range=v(Telemetry.RANGE),hearts=Float.isNaN(range)?0:range/100;
         for(int i=0;i<5;i++)heart(c,58+i*22,128,clamp(hearts-i,0,1));
         float odo=v(Telemetry.ODOMETER);
-        sh(c,"SCORE",780,82,13,W,Paint.Align.RIGHT);sh(c,Float.isNaN(odo)?"-------":String.format(Locale.US,"%07d",(int)odo),780,104,18,Y,Paint.Align.RIGHT);
-        sh(c,String.format(Locale.US,"COIN x%03d",coins),780,128,13,Y,Paint.Align.RIGHT);
-        Calendar k=Calendar.getInstance();sh(c,String.format(Locale.US,"TIME %02d:%02d",k.get(Calendar.HOUR_OF_DAY),k.get(Calendar.MINUTE)),780,150,13,W,Paint.Align.RIGHT);
+        sh(c,"SCORE",780,82,13,W,Paint.Align.RIGHT);sh(c,Float.isNaN(odo)?"-------":Fmt.f("%07d",(int)odo),780,104,18,Y,Paint.Align.RIGHT);
+        sh(c,Fmt.f("COIN x%03d",coins),780,128,13,Y,Paint.Align.RIGHT);
+        Calendar k=Calendar.getInstance();sh(c,Fmt.f("TIME %02d:%02d",k.get(Calendar.HOUR_OF_DAY),k.get(Calendar.MINUTE)),780,150,13,W,Paint.Align.RIGHT);
         boolean hot=!Float.isNaN(boost)&&boost>0.4f;
         int tb=Float.isNaN(boost)?0:Math.round(clamp((boost+0.7f)/(boostTop()+0.7f),0,1)*12);
         float ty=chase?436:168;
         sh(c,"TURBO",20,ty,13,hot?(blink(now,300)?0xffff8a3a:Y):0xff7a7a8a);
         float bx=chase?20:84,by=chase?ty+8:ty-12;
         for(int i=0;i<12;i++){fill(c,bx+i*10,by,bx+9+i*10,by+14,0xff000000);fill(c,bx+1+i*10,by+1,bx+8+i*10,by+13,i<tb?(i>8?0xffff8a3a:0xff3ad8ff):0xff2a2a3a);}
-        sh(c,Float.isNaN(boost)?"-.-BAR":String.format(Locale.US,"%+.1fBAR",Math.abs(boost)<0.05f?0f:boost),chase?146:210,chase?by+12:ty,11,hot?W:0xff9a9aaa);   // the pressure now (vacuum below 0)
-        String sp=Float.isNaN(v)?"---":String.format(Locale.US,"%03d",Math.round(v));
+        sh(c,Float.isNaN(boost)?"-.-BAR":Fmt.f("%+.1fBAR",Math.abs(boost)<0.05f?0f:boost),chase?146:210,chase?by+12:ty,11,hot?W:0xff9a9aaa);   // the pressure now (vacuum below 0)
+        String sp=Float.isNaN(v)?"---":Fmt.f("%03d",Math.round(v));
         if(chase){sh(c,sp,720,464,36,W,Paint.Align.RIGHT);sh(c,"KM/H",780,464,13,W,Paint.Align.RIGHT);}
         else{sh(c,sp,720,214,40,W,Paint.Align.RIGHT);sh(c,"KM/H",780,214,13,W,Paint.Align.RIGHT);}
         String msg=message(rpm,v);
@@ -688,16 +688,16 @@ final class PixelCluster extends ClusterKit {
      *  banner: the countdown, GO!, CRASH!, GAME OVER. */
     private void gameHud(Canvas c){
         for(int i=0;i<3;i++)heart(c,20+i*22,70,i<game.hp||game.state==ArcadeGame.COUNT?1:0);
-        sh(c,String.format(Locale.US,"%.2fKM",game.dist),20,112,18,W);
-        sh(c,"BEST",780,82,13,W,Paint.Align.RIGHT);sh(c,String.format(Locale.US,"%.2fKM",game.best),780,104,18,Y,Paint.Align.RIGHT);
+        sh(c,Fmt.f("%.2fKM",game.dist),20,112,18,W);
+        sh(c,"BEST",780,82,13,W,Paint.Align.RIGHT);sh(c,Fmt.f("%.2fKM",game.best),780,104,18,Y,Paint.Align.RIGHT);
         float deg=v(Telemetry.STEERING);deg=Float.isNaN(deg)?0:deg;boolean past=Math.abs(deg)>90;int at=6+Math.round(clamp(deg/90,-1,1)*6);
         sh(c,"STEER",20,436,13,past?Y:W);
         for(int i=0;i<13;i++){fill(c,20+i*10,444,29+i*10,458,0xff000000);fill(c,21+i*10,445,28+i*10,457,i==at?(past?Y:0xff3ad8ff):i==6?0xff4a4a5a:0xff2a2a3a);}
-        sh(c,String.format(Locale.US,"%03d",Math.round(game.kmh())),720,464,36,W,Paint.Align.RIGHT);sh(c,"KM/H",780,464,13,W,Paint.Align.RIGHT);
+        sh(c,Fmt.f("%03d",Math.round(game.kmh())),720,464,36,W,Paint.Align.RIGHT);sh(c,"KM/H",780,464,13,W,Paint.Align.RIGHT);
         String big=null,small=null;
         if(game.state==ArcadeGame.COUNT){big=String.valueOf(game.count(now));small="HOLD BRAKE";pedals(c,258,true);}
         else if(game.state==ArcadeGame.PLAY&&v(9)>5)noGas(c);
-        else if(game.state==ArcadeGame.OVER){big="GAME OVER";small=String.format(Locale.US,"%.2fKM",game.dist);}
+        else if(game.state==ArcadeGame.OVER){big="GAME OVER";small=Fmt.f("%.2fKM",game.dist);}
         else if(now-game.hitAt<900)big="CRASH!";
         else if(now-game.at<800)big="GO!";
         if(big==null)return;
@@ -744,8 +744,8 @@ final class PixelCluster extends ClusterKit {
         if(lv>0)return String.format(Locale.US,lv==2?"CLUTCH HOT! %s %.0fC - COOL DOWN":"CLUTCH WARM... %s %.0fC",ev?"EVEN":"ODD",ev?ce:co);
         if(now-fireAt<450)return "BACKFIRE! POP POP!";
         if(now-shiftAt<800)return "SHIFT! LV "+lastGear+" REACHED";
-        if(!Float.isNaN(brake)&&brake>35)return String.format(Locale.US,"BRAKE!! %.2fG",Float.isNaN(lon)?0:lon);
-        if(!Float.isNaN(lat)&&Math.abs(lat)>0.35f)return String.format(Locale.US,"DRIFT! LAT %.2fG",Math.abs(lat));
+        if(!Float.isNaN(brake)&&brake>35)return Fmt.f("BRAKE!! %.2fG",Float.isNaN(lon)?0:lon);
+        if(!Float.isNaN(lat)&&Math.abs(lat)>0.35f)return Fmt.f("DRIFT! LAT %.2fG",Math.abs(lat));
         if(!Float.isNaN(fuel)&&fuel==0&&v>0)return mode==ECO?"FUEL CUT  +2 COIN/s":"FUEL CUT  +1 COIN/s";
         if(chase&&parkedNow)return HINT;   // the game's way in
         if(Float.isNaN(v)||v<1)return "READY? PRESS GAS!";

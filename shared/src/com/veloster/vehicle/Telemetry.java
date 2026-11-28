@@ -60,7 +60,7 @@ public final class Telemetry {
     public static float displayValue(int signal,float raw){return signal==STEERING?(raw==0?0:-raw):signal==7?raw*speedScale:raw;}
     /** String.format(Locale.US,f,x), but a value that rounds to zero loses its minus: idle boost -0.004 reads 0.00
      * (+0.00 under a '+' flag), not -0.00. */
-    /** One formatted number, kept: most numbers on screen are formatted again every frame with the value unchanged, and
+    /** One formatted number (through the top-level Fmt, not java.util.Formatter), kept: most numbers on screen are formatted again every frame with the value unchanged, and
      *  String.format allocates a Formatter and several strings each time (garbage the head unit's old collector pauses for). */
     private static final class Fmt{final String f,s;final int bits;Fmt(String f,int bits,String s){this.f=f;this.bits=bits;this.s=s;}}
     private static final Fmt[] FMT=new Fmt[1024];   // direct-mapped; an entry is immutable, so a race only costs a miss
@@ -70,7 +70,7 @@ public final class Telemetry {
         String s=format0(f,x);FMT[at]=new Fmt(f,bits,s);return s;
     }
     private static String format0(String f,float x){
-        String s=String.format(java.util.Locale.US,f,x);
+        String s=com.veloster.vehicle.Fmt.f(f,x);
         if(s.length()<2||s.charAt(0)!='-'||s.charAt(1)!='0')return s;
         // A character scan, not a regex: this runs for most numbers on screen every frame (String.matches compiles a Pattern per call).
         int i=2;if(i<s.length()&&s.charAt(i)=='.')for(i++;i<s.length()&&s.charAt(i)=='0';i++);
@@ -423,7 +423,7 @@ public final class Telemetry {
     public static String timeLabel(float sec){
         if(Float.isNaN(sec)||sec<0)return "—";
         int t=(int)sec,h=t/3600,m=(t%3600)/60,s=t%60;
-        return h>0?String.format(java.util.Locale.US,"%d:%02d:%02d",h,m,s):String.format(java.util.Locale.US,"%d:%02d",m,s);
+        return h>0?com.veloster.vehicle.Fmt.f("%d:%02d:%02d",h,m,s):com.veloster.vehicle.Fmt.f("%d:%02d",m,s);
     }
     /** tm_hscan_service poller feed (read only): one decoded value into its signal slot. */
     public synchronized void tm(int sig,float v,boolean ok,long now){put(sig,v,ok,now);}

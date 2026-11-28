@@ -68,7 +68,7 @@ final class TaxiCluster extends ClusterKit {
     private static final boolean[][] HORSE=horse();
     /** The same frames as small bitmaps, painted on first use (one stamp per frame instead of ~250 squares). */
     private final Bitmap[] horseBmp=new Bitmap[HORSE.length];
-    @Override void trim(){recycle(horseBmp);}
+    @Override void trim(){super.trim();recycle(horseBmp);}
 
     /** The table in use: the trip's, or while vacant the one where the car is. */
     private TaxiTariff tariff=TaxiTariff.of("서울");
@@ -144,18 +144,18 @@ final class TaxiCluster extends ClusterKit {
         seg7(c,shown,452,160,90,RED,RED_OFF,false);
         bold(c,t("원"),494,252,22,WON,Paint.Align.RIGHT);
         boolean slowNow=!Float.isNaN(v)&&v<=15;
-        text(c,waitStop?t("멈추면 다음 운행 준비"):!hired?t("움직이면 자동 시작 · 버튼으로 바로 시작"):slowNow?String.format(Locale.US,t("시간 요금 · %d초당 100원"),tariff.stepS):String.format(Locale.US,t("다음 100원까지 %.0f m"),Math.ceil(fare.toNext())),46,280,12,HINT,Paint.Align.LEFT,Typeface.DEFAULT);
+        text(c,waitStop?t("멈추면 다음 운행 준비"):!hired?t("움직이면 자동 시작 · 버튼으로 바로 시작"):slowNow?Fmt.f(t("시간 요금 · %d초당 100원"),tariff.stepS):Fmt.f(t("다음 100원까지 %.0f m"),Math.ceil(fare.toNext())),46,280,12,HINT,Paint.Align.LEFT,Typeface.DEFAULT);
         fill(c,290,272,490,280,RED_OFF);fill(c,290,272,290+200*fare.progress(),280,RED);
         // distance / time / slow time
         String[] lab={t("주행 거리 km"),t("주행 시간"),t("저속 시간")};
-        String[] val={String.format(Locale.US,"%.2f",km),mmss(tripSec),mmss(slowSec)};
+        String[] val={Fmt.f("%.2f",km),mmss(tripSec),mmss(slowSec)};
         for(int i=0;i<3;i++){float x=34+i*158;round(c,x,302,x+148,374,6,CELL_BG);text(c,lab[i],x+10,320,12,ALBL,Paint.Align.LEFT,Typeface.DEFAULT);
             seg7(c,val[i],x+138,330,34,AMB,AMB_OFF,false);}
         // one button, labelled by state: start (vacant), end (hired), or a note while an ended trip still rolls
         // A raised meter key: dark recess, shadow lip, face, a highlight along the top edge, and a lamp in the state's colour.
         key(c,34,386,268,452,hired?t("운행 종료 · 버튼"):waitStop?t("정차 후 다음 운행"):t("운행 시작"),26,hired?KEY_RED:waitStop?KEY_GREY:KEY_GREEN,0);
-        text(c,String.format(Locale.US,t("기본 %,d원 (%.1f km)"),tariff.base,tariff.baseM/1000f),282,414,13,0xff8a8a90,Paint.Align.LEFT,Typeface.DEFAULT);
-        text(c,String.format(Locale.US,t("심야 %s시 최대 %d%%"),tariff.nightHours(),tariff.nightMax())+" · "+(tariff.out>0?String.format(Locale.US,t("시계외 %d%%"),tariff.out):t("시계외 없음")),282,438,13,0xff8a8a90,Paint.Align.LEFT,Typeface.DEFAULT);
+        text(c,Fmt.f(t("기본 %,d원 (%.1f km)"),tariff.base,tariff.baseM/1000f),282,414,13,0xff8a8a90,Paint.Align.LEFT,Typeface.DEFAULT);
+        text(c,String.format(Locale.US,t("심야 %s시 최대 %d%%"),tariff.nightHours(),tariff.nightMax())+" · "+(tariff.out>0?Fmt.f(t("시계외 %d%%"),tariff.out):t("시계외 없음")),282,438,13,0xff8a8a90,Paint.Align.LEFT,Typeface.DEFAULT);
         if(ended)receipt(c,total,v);else radio(c);
     }
     /** Taxi dash radio: source, play state, title over two lines, artist, progress, in the meter's amber. */
@@ -202,7 +202,7 @@ final class TaxiCluster extends ClusterKit {
         }
         return out.toArray(new String[0]);
     }
-    private static String clock(long ms){long sec=Math.max(0,ms)/1000;return String.format(Locale.US,"%d:%02d",sec/60,sec%60);}
+    private static String clock(long ms){long sec=Math.max(0,ms)/1000;return Fmt.f("%d:%02d",sec/60,sec%60);}
     private void receipt(Canvas c,int total,float v){
         float l=538,t=64,rr=784,b=444;
         fill(c,l+6,t+6,rr+4,b+6,0x80000000);fill(c,l,t,rr,b,0xfff1ede3);
@@ -210,16 +210,16 @@ final class TaxiCluster extends ClusterKit {
         int ink=0xff2a2724,soft=0xff7a756c;
         bold(c,t("영 수 증"),(l+rr)/2,t+30,18,0xff1d1b18,Paint.Align.CENTER);
         for(float x=l+16;x<rr-16;x+=6)fill(c,x,t+44,x+3,t+45,0xffbdb7aa);
-        mono(c,t("거리  ")+String.format(Locale.US,"%.2f km",km),l+16,t+68,13,ink,Paint.Align.LEFT);
+        mono(c,t("거리  ")+Fmt.f("%.2f km",km),l+16,t+68,13,ink,Paint.Align.LEFT);
         mono(c,t("시간  ")+mmss(tripSec),l+16,t+88,13,ink,Paint.Align.LEFT);
         for(float x=l+16;x<rr-16;x+=6)fill(c,x,t+102,x+3,t+103,0xffbdb7aa);
         TaxiTariff tf=fare.tariff();
-        String[] a={String.format(Locale.US,t("기본요금 %.1f km"),tf.baseM/1000f),String.format(Locale.US,t("거리 %d m × "),tf.stepM)+fare.distUnits,
-            String.format(Locale.US,t("시간 %d초 × "),tf.stepS)+fare.timeUnits,t("할증 (심야·시계외)")};
+        String[] a={Fmt.f(t("기본요금 %.1f km"),tf.baseM/1000f),Fmt.f(t("거리 %d m × "),tf.stepM)+fare.distUnits,
+            Fmt.f(t("시간 %d초 × "),tf.stepS)+fare.timeUnits,t("할증 (심야·시계외)")};
         int[] w={tf.base,fare.distWon,fare.timeWon,fare.surcharge()};
-        for(int i=0;i<4;i++){text(c,a[i],l+16,t+126+i*24,13,ink,Paint.Align.LEFT,Typeface.DEFAULT);mono(c,String.format(Locale.US,"%,d",w[i]),rr-16,t+126+i*24,14,ink,Paint.Align.RIGHT);}
+        for(int i=0;i<4;i++){text(c,a[i],l+16,t+126+i*24,13,ink,Paint.Align.LEFT,Typeface.DEFAULT);mono(c,Fmt.f("%,d",w[i]),rr-16,t+126+i*24,14,ink,Paint.Align.RIGHT);}
         fill(c,l+16,t+212,rr-16,t+214,ink);
-        bold(c,t("합계"),l+16,t+242,16,0xff1d1b18,Paint.Align.LEFT);bold(c,String.format(Locale.US,t("%,d원"),total),rr-16,t+242,20,0xffb3261e,Paint.Align.RIGHT);
+        bold(c,t("합계"),l+16,t+242,16,0xff1d1b18,Paint.Align.LEFT);bold(c,Fmt.f(t("%,d원"),total),rr-16,t+242,20,0xffb3261e,Paint.Align.RIGHT);
         text(c,hired?t("운행 중"):t("운행 종료"),l+16,t+268,12,soft,Paint.Align.LEFT,Typeface.DEFAULT);
         text(c,t("현재 ")+fmt("%.0f",v)+" km/h · "+gear(),l+16,t+288,12,soft,Paint.Align.LEFT,Typeface.DEFAULT);
         for(int i=0,x=(int)l+30;x<rr-30;i++){int bw=1+((i*7)%3);fill(c,x,t+310,x+bw,t+344,ink);x+=bw+1+((i*5)%2);}
@@ -234,6 +234,6 @@ final class TaxiCluster extends ClusterKit {
         if(x>=538&&x<=784&&y>=64&&y<=452&&ended){ended=false;return true;}   // receipt back to the radio
         return false;
     }
-    private static String mmss(float sec){int s=(int)sec;return String.format(Locale.US,"%02d:%02d",s/60,s%60);}
+    private static String mmss(float sec){int s=(int)sec;return Fmt.f("%02d:%02d",s/60,s%60);}
 
 }

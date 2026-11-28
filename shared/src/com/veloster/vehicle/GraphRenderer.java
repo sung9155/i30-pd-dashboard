@@ -3,7 +3,6 @@ package com.veloster.vehicle;
 import com.veloster.i18n.UiText;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import java.util.Locale;
@@ -14,7 +13,8 @@ public final class GraphRenderer {
     private static int T(int c){return Theme.current().map(c);}
     private static int D(){return Theme.current().danger;}
     private final Paint p=new Paint(3);
-    private final Path path=new Path();
+    private float[] seg=new float[1024];   // drawLines pairs, grown as needed
+    private final RectF card=new RectF();
     private static final int BLUE=0xffa4d9ef,WHITE=0xffe1edf2,MUTED=0xff8299a4,LINE=0xff293943;
     private void text(Canvas c,String s,float x,float y,float size,int color){p.setStyle(Paint.Style.FILL);p.setTypeface(Typeface.DEFAULT);p.setTextAlign(Paint.Align.LEFT);p.setTextSize(size);p.setColor(T(color));c.drawText(s,x,y,p);}
     private void line(Canvas c,float x,float y,float xx,float yy,int color){p.setStyle(Paint.Style.STROKE);p.setColor(T(color));p.setStrokeWidth(1);c.drawLine(x,y,xx,yy,p);p.setStyle(Paint.Style.FILL);}
@@ -31,7 +31,7 @@ public final class GraphRenderer {
     }
     private void drawSeries(Canvas c,Telemetry model,long now,GraphLayout layout,int slot){
         int signal=layout.signal(slot);float top=GraphLayout.top(slot);
-        p.setStyle(Paint.Style.FILL);p.setColor(T(0xff101920));c.drawRoundRect(new RectF(18,top,782,top+124),7,7,p);
+        p.setStyle(Paint.Style.FILL);p.setColor(T(0xff101920));card.set(18,top,782,top+124);c.drawRoundRect(card,7,7,p);
         text(c,UiText.t(Telemetry.LABELS[signal]),30,top+20,15,BLUE);
         Telemetry.Sample current=model.sample(signal,now);
         String value=current.valid?number(signal,Telemetry.displayValue(signal,current.value)):"—";
@@ -45,16 +45,21 @@ public final class GraphRenderer {
         for(int row=0;row<=2;row++){float y=plotTop+(bottom-plotTop)*row/2;line(c,left,y,right,y,LINE);text(c,number(signal,hi-(hi-lo)*row/2),27,y+4,10,MUTED);}
         text(c,layout.window()==60000?UiText.t("−1분"):UiText.t("−5분"),left,top+117,10,MUTED);text(c,layout.window()==60000?UiText.t("−30초"):UiText.t("−2분30초"),392,top+117,10,MUTED);text(c,UiText.t("지금"),740,top+117,10,MUTED);
         if(lo<0&&hi>0)line(c,left,bottom-(0-lo)/(hi-lo)*(bottom-plotTop),right,bottom-(0-lo)/(hi-lo)*(bottom-plotTop),0xff49616c);
-        path.reset();boolean connected=false;long previous=0;
+        // segments with drawLines, not a Path: the line moves every frame, and 4.2 rasterised the path into a new texture each time
+        int segs=0;boolean connected=false;long previous=0;float px=0,py=0;
         int saved=c.save();c.clipRect(left,plotTop,right,bottom);
         for(int i=0;i<series.size();i++){
             if(!series.valid[i]){connected=false;continue;}
             float v=Telemetry.displayValue(signal,series.values[i]);
             float x=right-(now-series.times[i])*(right-left)/layout.window(),y=bottom-(v-lo)/(hi-lo)*(bottom-plotTop);
             // a dot only where a stretch starts (a lone sample has no line): one per sample was about 720 circles a frame
-            if(!connected||series.breakBefore[i]||series.times[i]-previous>2000){path.moveTo(x,y);p.setStyle(Paint.Style.FILL);p.setColor(T(BLUE));c.drawCircle(x,y,1.4f,p);}else path.lineTo(x,y);
-            connected=true;previous=series.times[i];
+            if(!connected||series.breakBefore[i]||series.times[i]-previous>2000){p.setStyle(Paint.Style.FILL);p.setColor(T(BLUE));c.drawCircle(x,y,1.4f,p);}
+            else{if(segs*4+4>seg.length)seg=java.util.Arrays.copyOf(seg,seg.length*2);
+                seg[segs*4]=px;seg[segs*4+1]=py;seg[segs*4+2]=x;seg[segs*4+3]=y;segs++;}
+            px=x;py=y;connected=true;previous=series.times[i];
         }
-        p.setStyle(Paint.Style.STROKE);p.setColor(T(BLUE));p.setStrokeWidth(2);c.drawPath(path,p);p.setStyle(Paint.Style.FILL);c.restoreToCount(saved);
+        p.setStyle(Paint.Style.STROKE);p.setColor(T(BLUE));p.setStrokeWidth(2);p.setStrokeCap(Paint.Cap.ROUND);   // round ends join the segments
+        if(segs>0)c.drawLines(seg,0,segs*4,p);
+        p.setStrokeCap(Paint.Cap.BUTT);p.setStyle(Paint.Style.FILL);c.restoreToCount(saved);
     }
 }

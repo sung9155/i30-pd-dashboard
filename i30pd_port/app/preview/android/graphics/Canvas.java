@@ -47,6 +47,7 @@ public class Canvas {
     public void drawRoundRect(RectF r,float rx,float ry,Paint p){shape(new RoundRectangle2D.Float(r.left,r.top,r.right-r.left,r.bottom-r.top,rx*2,ry*2),p);}
     public void drawCircle(float x,float y,float radius,Paint p){shape(new Ellipse2D.Float(x-radius,y-radius,radius*2,radius*2),p);}
     public void drawLine(float x,float y,float x2,float y2,Paint p){apply(p);g.draw(new Line2D.Float(x,y,x2,y2));}
+    public void drawLines(float[] pts,int off,int n,Paint p){for(int i=off;i+3<off+n;i+=4)drawLine(pts[i],pts[i+1],pts[i+2],pts[i+3],p);}
     public void drawPath(Path path,Paint p){shape(path.shape,p);}
     // Android sweeps clockwise from 3 o'clock; Java2D counter-clockwise, hence the negated angles.
     public void drawArc(RectF r,float start,float sweep,boolean center,Paint p){

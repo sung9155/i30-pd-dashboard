@@ -39,7 +39,7 @@ final class NeonCluster extends ClusterKit {
         // rpm bar: the lit part of the kept bar, whole segments only
         int lit=Float.isNaN(rpm)?0:Math.round(clamp(rpm/prof.maxRpm,0,1)*SEGS);
         if(lit>0){float w=lit*(SEG_W+SEG_GAP)+6;blit(c,bar,0,0,(int)w,(int)(BAR_B+12),BAR_L-6,BAR_T-6,BAR_L-6+(int)w,BAR_T-6+(int)(BAR_B+12));}
-        text(c,Float.isNaN(rpm)?"—":String.format(Locale.US,"%,d",Math.round(rpm/10)*10),BAR_L,92,26,CYAN,Paint.Align.LEFT,num());
+        text(c,Float.isNaN(rpm)?"—":Fmt.f("%,d",Math.round(rpm/10)*10),BAR_L,92,26,CYAN,Paint.Align.LEFT,num());
         // speed: plain white; yellow at the target; near it a small glitch (two thin slices nudged sideways) and SHIFT
         boolean valid=!Float.isNaN(rpm),near=valid&&rpm>=shiftTarget-300,at=valid&&rpm>=shiftTarget;
         String sp=fmt("%.0f",kmh);float sx=400,sy=258,ss=150;
@@ -80,7 +80,7 @@ final class NeonCluster extends ClusterKit {
     private static int hash(long x){x=(x^(x>>>33))*0xff51afd7ed558ccdL;x^=x>>>33;return (int)x&0x7fffffff;}
 
     // ---- the still parts, drawn once ----
-    @Override void trim(){face=recycle(face);bar=recycle(bar);faceKey="";}
+    @Override void trim(){super.trim();face=recycle(face);bar=recycle(bar);faceKey="";}
     /** The lit bar: cyan up to the shift target, magenta past it, each segment with a soft glow. */
     private Bitmap buildBar(){
         Bitmap b=bitmap(800,(int)(BAR_B+12));Canvas c=new Canvas(b);c.translate(6-BAR_L,6-BAR_T);int sh=shiftSeg();

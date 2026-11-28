@@ -187,7 +187,7 @@ final class EcoCluster extends ClusterKit {
         key(c,564,262,766,298,t("동전 소리")+"  "+t(coinSound?"켬":"끔"),15,coinSound?KEY_GREEN:KEY_SLATE,0);
     }
     private void row(Canvas c,String k,String v,float y){bold(c,k,564,y,16,MUT,Paint.Align.LEFT);text(c,v,766,y,19,FG,Paint.Align.RIGHT,numFace());}
-    private static String won(int w){return String.format(java.util.Locale.US,"%,d",w);}
+    private static String won(int w){return Fmt.f("%,d",w);}
     private void leaf(Canvas c,float x,float y,float sz){
         c.save();c.translate(x,y);c.rotate(-34);path.reset();path.moveTo(0,-sz);path.quadTo(sz*.9f,-sz*.2f,0,sz);path.quadTo(-sz*.9f,-sz*.2f,0,-sz);path.close();
         poly(c,GRN);line(c,0,-sz*.7f,0,sz*.8f,1.5f,PANEL);c.restore();
@@ -314,7 +314,7 @@ final class EcoCluster extends ClusterKit {
     }
     /** Grain tile (stones, tar spots) seen in perspective: PH frames one TH-unit period apart, the lane left of the wheel,
      *  the fog toward the car and its shadow baked in. One frame is one bitmap per draw. */
-    @Override void trim(){recycle(asphalt);asphalt=null;car=recycle(car);recycle(flat);flat=null;recycle(spin);spin=null;shelfBmp=recycle(shelfBmp);shelfFor=-1;graphBmp=recycle(graphBmp);graphKey="";
+    @Override void trim(){super.trim();recycle(asphalt);asphalt=null;car=recycle(car);recycle(flat);flat=null;recycle(spin);spin=null;shelfBmp=recycle(shelfBmp);shelfFor=-1;graphBmp=recycle(graphBmp);graphKey="";
         CAR=recycle(CAR);PAINT=recycle(PAINT);}   // the two APK images too (1.6 MB): VehicleDash reads them again on the way back
     private static Bitmap[] buildAsphalt(){
         java.util.Random r=new java.util.Random(3);int[] tile=new int[TW*TH];

@@ -20,7 +20,7 @@ def main():
     java = Path(found).resolve()
     javac = java.with_name("javac.exe" if os.name == "nt" else "javac")
     hub = ROOT / "apps/hub/src/com/veloster/carplayhub"
-    sources = [ROOT / "shared/src/com/veloster/vehicle/Telemetry.java",
+    sources = [ROOT / "shared/src/com/veloster/vehicle/Telemetry.java", ROOT / "shared/src/com/veloster/vehicle/Fmt.java",
                ROOT / "shared/src/com/veloster/vehicle/VehicleProfile.java",
                ROOT / "shared/src/com/veloster/vehicle/ShiftGuide.java",
                ROOT / "shared/src/com/veloster/vehicle/Dtc.java",

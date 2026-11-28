@@ -66,11 +66,11 @@ final class WrcCluster extends ClusterKit {
         boolean gate=manualGate(g);String gs=gate?g.substring(1):g;
         text(c,gs,684,176,gs.length()>1?84:124,shift&&on?BLUE:FG,Paint.Align.CENTER,num());
         if(gate)bold(c,"M",756,104,24,YEL,Paint.Align.CENTER);
-        text(c,Float.isNaN(rpm)?"—":String.format(Locale.US,"%,d",Math.round(rpm/10)*10),772,64,20,!Float.isNaN(rpm)&&rpm>=prof.redline?RED:FG,Paint.Align.RIGHT,num());
+        text(c,Float.isNaN(rpm)?"—":Fmt.f("%,d",Math.round(rpm/10)*10),772,64,20,!Float.isNaN(rpm)&&rpm>=prof.redline?RED:FG,Paint.Align.RIGHT,num());
         text(c,fmt("%.0f",kmh),728,258,54,FG,Paint.Align.RIGHT,num());
         boolean running=stageStart>=0;long ms=running?now-stageStart:stageMs;
         bold(c,t(running?"구간 진행 중":stageMs>=0?"지난 구간":"출발하면 시작"),598,298,14,running?YEL:MUT,Paint.Align.LEFT);
-        text(c,ms<0?"--:--.-":String.format(Locale.US,"%02d:%02d.%d",ms/60000,ms/1000%60,ms/100%10),772,334,36,running?YEL:ms<0?MUT:FG,Paint.Align.RIGHT,num());
+        text(c,ms<0?"--:--.-":Fmt.f("%02d:%02d.%d",ms/60000,ms/1000%60,ms/100%10),772,334,36,running?YEL:ms<0?MUT:FG,Paint.Align.RIGHT,num());
         // bottom strip: pedals, wheel, G
         bar(c,98,376,pedal/100,GRN);bar(c,98,404,Float.isNaN(brake)?Float.NaN:brake/80,RED);
         String wheel=Float.isNaN(steer)?"—":Math.abs(Math.round(steer))+"° "+(steer>0.5f?"R":steer<-0.5f?"L":"");
@@ -91,7 +91,7 @@ final class WrcCluster extends ClusterKit {
         boolean noData=Float.isNaN(kmh)&&Float.isNaN(lat)&&Float.isNaN(steer);
         String state=n>=0?t("이 길의 노트"):!Float.isNaN(Commute.delta(now))?t("노트 만드는 중"):t("이 길은 처음");
         boolean gps=!Float.isNaN(Commute.along(now));
-        if(n<0)state=gps?state+" · "+String.format(Locale.US,t("코너 %d개"),Commute.recorded()):"";   // without GPS the road is not known
+        if(n<0)state=gps?state+" · "+Fmt.f(t("코너 %d개"),Commute.recorded()):"";   // without GPS the road is not known
         if(!noData)bold(c,state,544,62,15,MUT,Paint.Align.RIGHT);
         int live=det.live();
         if(calls>0){
@@ -133,7 +133,7 @@ final class WrcCluster extends ClusterKit {
     }
     /** {"150", "m"} / {"1.2", "km"}: metres to the call, to 10 m. */
     private static String[] dist(float m){
-        return m<995?new String[]{String.valueOf(Math.round(m/10)*10),"m"}:new String[]{String.format(Locale.US,"%.1f",m/1000),"km"};
+        return m<995?new String[]{String.valueOf(Math.round(m/10)*10),"m"}:new String[]{Fmt.f("%.1f",m/1000),"km"};
     }
     /** The yellow tab's text (the tab is on the bitmap): the distance and its unit, centred. */
     private void tab(Canvas c,String big,String unit,int color){
@@ -165,7 +165,7 @@ final class WrcCluster extends ClusterKit {
     }
 
     // ---- the still parts, drawn once ----
-    @Override void trim(){face=recycle(face);faceKey="";}
+    @Override void trim(){super.trim();face=recycle(face);faceKey="";}
     /** A panel with its left edge slanted in by k at the top (the TV graphics' cut). */
     private void slab(Canvas c,float l,float t,float rr,float b,float k,int color){
         path.reset();path.moveTo(l+k,t);path.lineTo(rr,t);path.lineTo(rr,b);path.lineTo(l,b);path.close();poly(c,color);

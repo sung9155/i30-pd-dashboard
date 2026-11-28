@@ -131,7 +131,7 @@ public final class Tiles {
         return "%.0f";
     }
     /** The tyre temperature of wheel k (0 FL .. 3 RR) as a whole number, or "-" until the BCM has answered. */
-    public static String tyreTemp(float t){return Float.isNaN(t)?"-":String.format(java.util.Locale.US,"%.0f",t);}
+    public static String tyreTemp(float t){return Float.isNaN(t)?"-":Fmt.f("%.0f",t);}
     /** 0 normal, 1 warm / low (amber), 2 critical (red). */
     public static int level(int s,float v){
         if(Float.isNaN(v))return 0;

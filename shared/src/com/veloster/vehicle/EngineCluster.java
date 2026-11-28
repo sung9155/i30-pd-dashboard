@@ -31,7 +31,7 @@ final class EngineCluster extends ClusterKit {
         else row(c,2,"SPK",fmt("%+.1f",spark),"°",Float.isNaN(spark)?Float.NaN:(spark+15)/55,WH,Float.NaN);
         row(c,3,"IAT",fmt("%.0f",iat),"°C",Float.isNaN(iat)?Float.NaN:(iat-20)/60,!Float.isNaN(iat)&&iat>60?AM:WH,Float.NaN);
         row(c,4,"SPD",fmt("%.0f",spd),"km/h",Float.isNaN(spd)?Float.NaN:spd/260,WH,Float.NaN);
-        mono(c,String.format(Locale.US,"%.1f",top),522,284+38-18,11,SUB,Paint.Align.RIGHT);
+        mono(c,Fmt.f("%.1f",top),522,284+38-18,11,SUB,Paint.Align.RIGHT);
         // right column
         fill(c,552,60,553,472,0xff1d2328);
         mono(c,"IAT",566,80,15,CY,Paint.Align.LEFT);mono(c,fmt("%+.0f",iat)+"c",620,80,15,WH,Paint.Align.LEFT);
@@ -56,11 +56,11 @@ final class EngineCluster extends ClusterKit {
         msg(c,n,"ODO "+fmt("%.0f",v(Telemetry.ODOMETER)),WH);
         mono(c,"GEAR",600,342,16,CY,Paint.Align.CENTER);outline(c,570,352,630,402,0,2,GR);mono(c,gear(),600,392,36,GR,Paint.Align.CENTER);
         mono(c,"SPD",710,342,16,CY,Paint.Align.CENTER);outline(c,652,352,770,402,0,2,WH);
-        mono(c,Float.isNaN(spd)?"---":String.format(Locale.US,"%03d",Math.round(spd)),760,392,36,WH,Paint.Align.RIGHT);
+        mono(c,Float.isNaN(spd)?"---":Fmt.f("%03d",Math.round(spd)),760,392,36,WH,Paint.Align.RIGHT);
         mono(c,"FUEL",574,444,16,CY,Paint.Align.LEFT);mono(c,fmt("%.0f",v(Telemetry.RANGE))+" KM",786,444,20,WH,Paint.Align.RIGHT);
         Calendar k=Calendar.getInstance();
         mono(c,"TIME",574,470,16,CY,Paint.Align.LEFT);
-        mono(c,String.format(Locale.US,"%02d:%02d:%02d",k.get(Calendar.HOUR_OF_DAY),k.get(Calendar.MINUTE),k.get(Calendar.SECOND)),786,470,20,GR,Paint.Align.RIGHT);
+        mono(c,Fmt.f("%02d:%02d:%02d",k.get(Calendar.HOUR_OF_DAY),k.get(Calendar.MINUTE),k.get(Calendar.SECOND)),786,470,20,GR,Paint.Align.RIGHT);
     }
     private int msg(Canvas c,int i,String s,int color){if(i<8)mono(c,s,574,120+i*25,17,color,Paint.Align.LEFT);return i+1;}
     private void dial(Canvas c,float cx,float cy,float rad,float val,float min,float max,float amb,float red,String label,String sub,String txt){

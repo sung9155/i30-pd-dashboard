@@ -205,8 +205,11 @@ public final class VehicleDash extends View implements Runnable {
             boolean car=up&&screen==ClusterPicker.CAR3D,neon=up&&screen==ClusterPicker.NEON_DRIVE;
             if(car&&carPage==null)carPage=new com.veloster.car3d.CarPage(activity,pdSignals,exitOverlay);
             if(neon&&neonPage==null)neonPage=new com.veloster.neondrive.NeonDrivePage(activity,pdSignals,exitOverlay,mediaState);   // the dashboard's now-playing state: the playing track shows at once
-            if(carPage!=null){if(!car)carPage.stop();overlay(carPage.view(),car);if(car)carPage.start();}
-            if(neonPage!=null){if(!neon)neonPage.stop();overlay(neonPage.view(),neon);if(neon)neonPage.start();}
+            // A page whose screen was left is let go (upstream db3dc11): detached, 내 차's GL thread ends and its context, mesh,
+            // lamp atlas and backdrops (~10 MB) go; 네온 드라이브's baked scenery and sprites too. The next visit builds it again.
+            // Out of sight (!up) the pages stay for the return, until trimStandalone.
+            if(carPage!=null){if(!car)carPage.stop();overlay(carPage.view(),car);if(car)carPage.start();else if(up)carPage=null;}
+            if(neonPage!=null){if(!neon)neonPage.stop();overlay(neonPage.view(),neon);if(neon)neonPage.start();else if(up)neonPage=null;}
         }catch(RuntimeException e){com.veloster.diagnostics.ErrorLog.record("own_view_page",e);android.util.Log.e("VehicleDash","screen "+screen+" unavailable",e);}
     }
     private final Runnable syncLater=new Runnable(){public void run(){syncOverlay();}};
@@ -426,6 +429,7 @@ public final class VehicleDash extends View implements Runnable {
     public static void attachStandalone(Activity a){
         FrameLayout parent=(FrameLayout)a.findViewById(android.R.id.content);
         VehicleDash dash=new VehicleDash(a);dash.standalone=true;dash.blocked=false;
+        a.getWindow().setBackgroundDrawable(null);   // the dashboard and its pages cover the window: no full-screen fill under them each frame (upstream db3dc11)
         current=new WeakReference<VehicleDash>(dash);
         parent.addView(dash,new FrameLayout.LayoutParams(-1,-1));dash.setVisibility(VISIBLE);
         dash.backupOffer();

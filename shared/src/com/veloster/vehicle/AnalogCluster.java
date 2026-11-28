@@ -84,8 +84,8 @@ final class AnalogCluster extends ClusterKit {
         aRace=ease(aRace,Float.isNaN(rpm)?-RSPAN:-RSPAN+2*RSPAN*clamp(rpm/rpmTop(),0,1.02f));
         boolean hot=!Float.isNaN(cool)&&cool>=HOT;
         String g=gear();if(manualGate(g))g=g.substring(1);
-        String odoText=Float.isNaN(odo)?"——————":String.format(java.util.Locale.US,"%06d",Math.max(0,Math.min(999999,(long)odo)));
-        String rpmText=Float.isNaN(rpm)?"—":String.format(java.util.Locale.US,"%,d",Math.round(rpm/10)*10);
+        String odoText=Float.isNaN(odo)?"——————":Fmt.f("%06d",Math.max(0,Math.min(999999,(long)odo)));
+        String rpmText=Float.isNaN(rpm)?"—":Fmt.f("%,d",Math.round(rpm/10)*10);
         float redA=-SPAN+2*SPAN*prof.redline/rpmTop(),hotA=-SMALL_SPAN+2*SMALL_SPAN*(HOT-T_MIN)/(T_MAX-T_MIN);
         switch(lk){
             case DIGITAL:
@@ -286,7 +286,7 @@ final class AnalogCluster extends ClusterKit {
     }
 
     // ---- 클래식, the still parts, drawn once ----
-    @Override void trim(){face=recycle(face);faceKey="";}
+    @Override void trim(){super.trim();face=recycle(face);faceKey="";}
     private Bitmap buildFace(float bt){
         Bitmap b=bitmap(800,428);Canvas c=new Canvas(b);
         fill(c,0,0,800,428,0xff000000);

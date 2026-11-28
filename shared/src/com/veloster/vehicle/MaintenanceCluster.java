@@ -174,7 +174,7 @@ final class MaintenanceCluster extends ClusterKit {
         MaintItems.Store s=store;builtStore=s;float odo=v(Telemetry.ODOMETER);int today=MaintItems.today(),first=MaintItems.firstRegDate(s);
         MaintLog.Usage u=MaintLog.sinceOil();
         MaintJudge.Mode md=MaintJudge.mode(s);MaintJudge.Verdict vd=MaintJudge.judge(md,u,odo);
-        odoText=Float.isNaN(odo)?"ODO —":String.format(Locale.US,"ODO %,d km",Math.round(odo));
+        odoText=Float.isNaN(odo)?"ODO —":Fmt.f("ODO %,d km",Math.round(odo));
         String used=t(vd.severe?"가혹":"일반");
         mode=t("교환 주기")+": "+used+(md==MaintJudge.Mode.AUTO?" ("+t("자동")+(vd.insufficient?" · "+t("근거 부족"):"")+")":"")+"  ▸";
         List<MaintItems.Id> shown=MaintItems.shown(prof);
@@ -208,11 +208,11 @@ final class MaintenanceCluster extends ClusterKit {
         if(prof.trans==VehicleProfile.Trans.DCT){Row cl=new Row();cl.name=t("DCT 클러치");cl.icon=I_DISC;cl.value=t("과열")+" "+u.clutchHot+t("회");
             cl.aside=t("최고 온도")+" "+fmt("%.0f °C",u.clutchMax);if(u.clutchHot>0)cl.state=SOON;items.add(cl);}
         if(prof.fuel==VehicleProfile.Fuel.DIESEL){Row dp=new Row();dp.name="DPF";dp.icon=I_FILTER;dp.value=t("재생")+" "+u.dpfRegens+t("회");
-            if(u.dpfRegens>0)dp.aside=t("평균")+String.format(Locale.US," %,d km",Math.round((float)u.movingKm/u.dpfRegens));items.add(dp);}
+            if(u.dpfRegens>0)dp.aside=t("평균")+Fmt.f(" %,d km",Math.round((float)u.movingKm/u.dpfRegens));items.add(dp);}
         split(p,items);p.cardsHead=t("기록 · 측정");
         float seen=Float.isNaN(odo)||Float.isNaN(u.odoAtOil)||odo<=u.odoAtOil?Float.NaN:(float)(100*u.seenKm/(odo-u.odoAtOil));
         p.tail=new String[]{t("가혹 근거")+(vd.severe&&vd.reason.length()>0?": "+reason(vd.reason):"")+" · "+t("앱이 켜져 있던 동안 센 값"),
-            t("엔진")+String.format(Locale.US," %.0f h",u.engineS/3600)+" · "+t("공회전")+" "+pct(u.idleS,u.engineS)+" · "+t("앱이 본 거리")+" "+fmt("%.0f %%",seen),
+            t("엔진")+Fmt.f(" %.0f h",u.engineS/3600)+" · "+t("공회전")+" "+pct(u.idleS,u.engineS)+" · "+t("앱이 본 거리")+" "+fmt("%.0f %%",seen),
             t("짧은 주행")+" "+pct(u.shortStarts,u.judgedStarts)+" · "+t("냉간 시동")+" "+u.coldStarts+" · "+t("고속")+" "+pct(u.highSpeedKm,u.movingKm)+" · "+t("고부하")+" "+pct(u.highLoadS,u.engineS)};
         finish(p,MaintLayout.TAIL_H);
     }
@@ -228,8 +228,8 @@ final class MaintenanceCluster extends ClusterKit {
     private static String pct(double a,double b){return b>0?(int)Math.floor(100*a/b)+" %":"—";}
     /** Most urgent first: past due, then amber with no bar (a record to check), then the least left, then nothing to count down. */
     private static float key(Row r){return r.state==PAST?-1+(Float.isNaN(r.fraction)?0:r.fraction):Float.isNaN(r.fraction)?(r.state==SOON?-0.001f:5):r.fraction;}
-    private static String date(int ymd){return String.format(Locale.US,"%04d-%02d-%02d",ymd/10000,ymd/100%100,ymd%100);}
-    private static String km(float k){return String.format(Locale.US,"%,d km",Math.round(Math.abs(k)));}
+    private static String date(int ymd){return Fmt.f("%04d-%02d-%02d",ymd/10000,ymd/100%100,ymd%100);}
+    private static String km(float k){return Fmt.f("%,d km",Math.round(Math.abs(k)));}
     private static String left(String a){return String.format(t("%s 남음"),a);}
     private static String over(String a){return String.format(t("%s 지남"),a);}
 
@@ -253,7 +253,7 @@ final class MaintenanceCluster extends ClusterKit {
         boolean dayFirst=!hasKm||hasDays&&em>0&&ek>0&&l.days/(em*30.4f)<l.km/ek;   // the part closer to due goes big (it is what sorts the card)
         r.value=dayFirst?dayPart:kmPart;r.aside=dayFirst?kmPart:dayPart;
         r.state=l.overdue?PAST:MaintJudge.band(id,l)==MaintJudge.Band.SOON||l.fraction<=LOW?SOON:OK;
-        if(ek>0||em>0)r.sub=t("주기")+" "+(ek>0?String.format(Locale.US,"%,d km",ek):"")+(ek>0&&em>0?" · ":"")+(em>0?years(em):"");
+        if(ek>0||em>0)r.sub=t("주기")+" "+(ek>0?Fmt.f("%,d km",ek):"")+(ek>0&&em>0?" · ":"")+(em>0?years(em):"");
         return r;
     }
     private static int icon(MaintItems.Id id){

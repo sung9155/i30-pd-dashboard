@@ -64,6 +64,9 @@ public final class MaintLogTest {
 
         reset();run(s(2000,50),20,false);run(s(2000,1),5,false);run(s(2000,50),20,false);run(s(2000,0),5,false);
         check(MaintLog.sinceOil().stops==2,"two stops after moving");
+        reset();run(s(2000,60,Telemetry.ODOMETER,95000),5,false);
+        check(MaintLog.sinceOil().odoAtOil==95000,"no oil record yet: the first odometer seen is where the counting began");
+        MaintLog.oilChanged(96000);run(s(2000,60,Telemetry.ODOMETER,96500),5,false);check(MaintLog.sinceOil().odoAtOil==96000,"an oil record is not overwritten");
         System.out.println("PASS "+n+" maintenance log checks");
     }
 }

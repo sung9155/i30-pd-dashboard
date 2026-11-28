@@ -79,6 +79,7 @@ public final class MaintLog {
         if(!Float.isNaN(kmh)&&kmh>=1){double km=kmh*dt/3600;
             for(Usage u:new Usage[]{since,total}){u.movingS+=dt;u.movingKm+=km;u.seenKm+=km;if(kmh>=HIGH_SPEED)u.highSpeedKm+=km;}}
         if(!Float.isNaN(kmh)){if(kmh>=10)moved=true;else if(moved&&kmh<3){moved=false;since.stops++;total.stops++;}}
+        float odo=val(s,Telemetry.ODOMETER);if(odo>0&&Float.isNaN(since.odoAtOil))since.odoAtOil=odo;   // no oil record yet: count from here
         float cool=val(s,2);if(eng&&!coolantSeen&&!Float.isNaN(cool)){coolantSeen=true;if(cool<COLD_C){since.coldStarts++;total.coldStarts++;}}
         float amb=val(s,Telemetry.AMBIENT);if(eng&&Float.isNaN(startAmbient)&&!Float.isNaN(amb))startAmbient=amb;
         prevOdd=clutch(val(s,Telemetry.CLUTCH_ODD),prevOdd);prevEven=clutch(val(s,Telemetry.CLUTCH_EVEN),prevEven);

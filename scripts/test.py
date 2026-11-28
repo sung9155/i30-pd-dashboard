@@ -59,6 +59,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/SettingsBackup.java",
                ROOT / "shared/src/com/veloster/vehicle/MaintItems.java",
                ROOT / "shared/src/com/veloster/vehicle/MaintLog.java",
+               ROOT / "shared/src/com/veloster/vehicle/MaintJudge.java",
                ROOT / "shared/src/com/veloster/vehicle/Glide.java",
                ROOT / "shared/src/com/veloster/vehicle/SoundYield.java",
                ROOT / "shared/src/com/veloster/vehicle/Commute.java",

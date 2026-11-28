@@ -57,6 +57,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/ArcadeGame.java",
                ROOT / "shared/src/com/veloster/vehicle/SpeedCal.java",
                ROOT / "shared/src/com/veloster/vehicle/SettingsBackup.java",
+               ROOT / "shared/src/com/veloster/vehicle/MaintItems.java",
                ROOT / "shared/src/com/veloster/vehicle/Glide.java",
                ROOT / "shared/src/com/veloster/vehicle/SoundYield.java",
                ROOT / "shared/src/com/veloster/vehicle/Commute.java",

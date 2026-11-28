@@ -10,7 +10,7 @@ import com.veloster.vehicle.Telemetry;
  * Mapping: speed (7, km/h, the GPS calibration applied like every screen), pedal (9), master cylinder (10, bar), brake
  * switch (EMS12), steering (SAS11, shown + right), turn lamps (CGW1 bits that blink with the lamp: the real lamp phase),
  * low beam (HEAD_LAMP), tail lamps (TAIL_LAMP), parking brake (EPB11), gear (8: 1..7, 0 N, 14 R; the rear camera or the
- * lever at R reads as reverse). No hazard switch is decoded on the PD: both lamps blinking counts as hazards.
+ * lever at R reads as reverse; the DCT lever's P / N / D as GEAR_P / GEAR_NEUTRAL / GEAR_D). No hazard switch is decoded on the PD: both lamps blinking counts as hazards.
  */
 public final class PdSignals extends DriveSignals {
     private final Telemetry t;
@@ -60,9 +60,14 @@ public final class PdSignals extends DriveSignals {
         s.lightSwitch = !s.lampsKnown ? -1 : s.lowBeam ? 2 : on(tail) ? 1 : 0;
         s.parkBrake = on(park);
         int g = gear == null ? -1 : Math.round(gear.value);
-        if (t.rearCamera() || lever != null && Math.round(lever.value) == 1 || g == 14) s.gear = GEAR_R;
+        // The lever as the dashboard's gear box reads it (Telemetry.selector: ignored on a 6MT, P next to a gear number
+        // ignored), so P shows P here too instead of N (2026-11-28 in-car).
+        int code = lever == null ? -1 : Telemetry.selector(lever.value, gear == null ? Float.NaN : gear.value, t.profile());
+        if (t.rearCamera() || code == 1 || g == 14) s.gear = GEAR_R;
+        else if (code == 0) s.gear = GEAR_P;
         else if (g >= 1 && g <= 8) s.gear = g;
-        else if (g == 0 || lever != null) s.gear = GEAR_NEUTRAL;   // P / N, or D before a gear number arrives
+        else if (code == 3 || code == 4) s.gear = GEAR_D;   // D / manual gate before a gear number arrives
+        else if (g == 0 || code == 2) s.gear = GEAR_NEUTRAL;
         else s.gear = GEAR_UNKNOWN;
         s.records = s.live ? 1 : 0;
         return s;

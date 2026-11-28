@@ -762,24 +762,26 @@ public final class NeonRenderer {
         float k = 4.5f;
         p.setStyle(Paint.Style.FILL);
         p.setColor(HUD_SHADOW); c.drawRect(bx - k - 1.5f, by - k - 1.5f, bx + k + 2.5f, by + k + 2.5f, p);
-        p.setColor(gear == DriveSignals.GEAR_NEUTRAL ? HUD_WHITE : HUD_YELLOW); c.drawRect(bx - k, by - k, bx + k, by + k, p);
-        p.setColor(gear == DriveSignals.GEAR_NEUTRAL ? 0xffb8c8d0 : HUD_ORANGE); c.drawRect(bx - k, by + 1, bx + k, by + k, p);
+        boolean idle = gear == DriveSignals.GEAR_NEUTRAL || gear == DriveSignals.GEAR_P || gear == DriveSignals.GEAR_D;   // no gear engaged in the H gate
+        p.setColor(idle ? HUD_WHITE : HUD_YELLOW); c.drawRect(bx - k, by - k, bx + k, by + k, p);
+        p.setColor(idle ? 0xffb8c8d0 : HUD_ORANGE); c.drawRect(bx - k, by + 1, bx + k, by + k, p);
         p.setColor(0xccffffff); c.drawRect(bx - k, by - k, bx + k, by - k + 2, p);
     }
 
     /**
      * DCT in the HUD style, like an automatic's selector and gear readout rather than a manual's H gate: a short
      * vertical gate (P R N D stacked, the lever's slot lit as a block beside its letter), and next to it one big pixel
-     * glyph — the gear number in drive (1..7), R or N otherwise, a dim dash before any gear. P is never lit (no park
-     * signal is decoded). (2026-11-27, the owner: an H shifter on an automatic looks wrong.)
+     * glyph — the gear number in drive (1..7), P / R / N / D otherwise (P and D only from the PD lever), a dim dash
+     * before any gear. (2026-11-27, the owner: an H shifter on an automatic looks wrong.)
      */
     private void drawDctGear(Canvas c, float right, float bottom, int gear) {
         boolean known = gear != DriveSignals.GEAR_UNKNOWN;
         boolean drive = gear >= 1 && gear <= 8;
-        int lit = !known ? -1 : gear == DriveSignals.GEAR_R ? 1 : gear == DriveSignals.GEAR_NEUTRAL ? 2 : drive ? 3 : -1;
+        int lit = !known ? -1 : gear == DriveSignals.GEAR_P ? 0 : gear == DriveSignals.GEAR_R ? 1 : gear == DriveSignals.GEAR_NEUTRAL ? 2
+            : drive || gear == DriveSignals.GEAR_D ? 3 : -1;
         // the big glyph
         float big = 6f, bigW = PixelFont.COLS * big, bigH = PixelFont.ROWS * big, bigTop = bottom - 4 - bigH;
-        String glyph = !known ? "-" : drive ? String.valueOf(gear) : gear == DriveSignals.GEAR_R ? "R" : gear == DriveSignals.GEAR_NEUTRAL ? "N" : "-";
+        String glyph = !known ? "-" : drive ? String.valueOf(gear) : lit >= 0 ? "PRND".substring(lit, lit + 1) : "-";
         boolean hot = known && glyph.charAt(0) != '-';
         pixelText(c, glyph, right - bigW, bigTop, big, hot ? HUD_YELLOW : 0x66b8c8d0, hot ? HUD_ORANGE : 0x66b8c8d0);
         // the gate: P R N D stacked, a cyan rail, the lit slot as a block on the rail

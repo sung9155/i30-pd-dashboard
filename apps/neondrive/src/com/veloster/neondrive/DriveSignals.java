@@ -21,8 +21,9 @@ public class DriveSignals {
     public static final long FRESH_MS = 1500;
     /** A turn lamp counts as blinking for this long after it was last lit. */
     public static final long BLINK_HOLD_MS = 1100;
-    /** Snapshot gear values besides 1..6. The last received gear is held when packets stop. */
-    public static final int GEAR_UNKNOWN = -1, GEAR_NEUTRAL = 0, GEAR_R = 10;
+    /** Snapshot gear values besides 1..6. The last received gear is held when packets stop. P and D (drive, no gear
+     *  number yet) come only from a lever the host reads (PdSignals); the N-mode packet here cannot tell them. */
+    public static final int GEAR_UNKNOWN = -1, GEAR_NEUTRAL = 0, GEAR_R = 10, GEAR_P = 11, GEAR_D = 12;
 
     public static boolean accepts(int function, int size) {
         return (function == CGW1 && size == 8) || (function == CLU11 && size == 4)

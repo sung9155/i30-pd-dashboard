@@ -298,6 +298,17 @@ public final class NeonDriveTest {
         check(!pd.snapshot(p0 + 1600).leftActive, "PD: no lit phase for longer than the hold ends it");
         check(!pd.snapshot(p0 + 400 + DriveSignals.FRESH_MS).live, "PD: stale after FRESH_MS");
         check(new DriveModel().update(pd, p0 + 10, 0.033f).mode == DriveModel.LIVE, "PD: the model runs live from Telemetry");
+        // PD lever (LVR12) read like the dashboard's gear box: P stays P, not folded into N (2026-11-28 in-car: P showed N).
+        long q = p0 + 20_000;
+        byte[] lvr = new byte[8];
+        lvr[1] = 0; lvr[7] = 1; tel.hscanPd(0xc7, 0x1d, lvr, q);
+        check(pd.snapshot(q + 10).gear == DriveSignals.GEAR_P, "PD: lever P is P, got " + pd.snapshot(q + 10).gear);
+        lvr[1] = 6; lvr[7] = 2; tel.hscanPd(0xc7, 0x1d, lvr, q + 100);
+        check(pd.snapshot(q + 110).gear == DriveSignals.GEAR_NEUTRAL, "PD: lever N is N");
+        lvr[1] = 5; lvr[7] = 3; tel.hscanPd(0xc7, 0x1d, lvr, q + 200);
+        check(pd.snapshot(q + 210).gear == DriveSignals.GEAR_D, "PD: lever D before a gear number is D, not N");
+        lvr[1] = 7; lvr[7] = 4; tel.hscanPd(0xc7, 0x1d, lvr, q + 300);
+        check(pd.snapshot(q + 310).gear == DriveSignals.GEAR_R, "PD: lever R is R");
 
         // The i30 sprite from the Arcade frames: 13 angles, sheet laid out as the renderer reads it.
         int[] body = {0xff111111, 0xff222222, 0xff333333, 0xff444444};

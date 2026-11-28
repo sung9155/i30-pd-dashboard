@@ -1321,6 +1321,7 @@ public final class UiText {
         EN.put("전자 부저","Electronic buzzer");
         EN.put("전조등","Headlamps");
         EN.put("전체 기본 배치로 복원","Reset all gauges");
+        EN.put("전체 목록에만 표시","List only");
         EN.put("전체 조망","Overview");
         EN.put("전투기 HUD","Fighter HUD");
         EN.put("절대 부하","Absolute load");
@@ -1415,6 +1416,7 @@ public final class UiText {
         EN.put("주황 LCD","Orange LCD");
         EN.put("중 (+6 dB)","Medium (+6 dB)");
         EN.put("중통 제거","Resonator delete");
+        EN.put("즐겨찾기 · 상단 바에 표시","Favourites · on the top bar");
         EN.put("증발가스 누설 (주유구 캡 풀림·없음)","Evaporative emission leak (fuel filler cap loose or missing)");
         EN.put("증발가스 벤트 밸브 회로 이상","Evaporative emission vent valve circuit malfunction");
         EN.put("증발가스 벤트 제어 회로 이상","Evaporative emission vent control circuit malfunction");

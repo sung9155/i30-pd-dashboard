@@ -12,7 +12,7 @@ public final class HeaderTabsTest {
         check(h.x(0)==HeaderTabs.LEFT,"first tab starts at the strip's left edge");
         check(h.screenAt(h.hit(HeaderTabs.LEFT+10,20))==0,"left tab is screen 0");
         check(h.screenAt(h.hit(HeaderTabs.LEFT+110,20))==3,"second tab is screen 3");
-        check(h.hit(100,20)==-1&&h.hit(700,20)==-1,"logo and back button are outside the strip");
+        check(h.hit(40,20)==-1&&h.hit(700,20)==-1,"the clock and the buttons are outside the strip");
         check(h.hit(130,60)==-1,"below the header is not a tab");
         check(h.maxScroll()==0&&!h.moreRight()&&!h.moreLeft(),"tabs that fit do not scroll");
         // a sideways drag on the strip is a scroll, not a tap (and clamps at 0 when nothing overflows)
@@ -40,11 +40,14 @@ public final class HeaderTabsTest {
         check(!h.flinging()&&h.scroll()<=h.maxScroll(),"the coast stops, clamped");
         h.down(300,20);check(!h.flinging(),"touching stops a coast");
         h.move(250,20,5000);h.move(250,20,5300);check(h.up(5300)&&!h.flinging(),"a drag that ends at rest does not coast");
-        // gear button sits right of the strip, clear of the clock
+        // 2026-11-28: the clock left of the strip (no logo), then the strip, then three 44 px buttons: list, gear, home
         float gx=HeaderTabs.GEAR_L+HeaderTabs.GEAR_W/2,gy=HeaderTabs.TOP+HeaderTabs.H/2;
         check(HeaderTabs.gear(gx,gy)&&!HeaderTabs.gear(gx,60)&&!HeaderTabs.gear(130,gy),"gear button hits only itself");
         check(h.hit(gx,gy)==-1&&HeaderTabs.GEAR_L>=HeaderTabs.RIGHT,"gear sits right of the tab strip");
-        check(HeaderTabs.GEAR_L+HeaderTabs.GEAR_W<=638,"gear stays clear of the clock (centred at 667)");
+        float lx=HeaderTabs.LIST_L+HeaderTabs.GEAR_W/2,hx=HeaderTabs.HOME_L+HeaderTabs.GEAR_W/2;
+        check(HeaderTabs.list(lx,gy)&&!HeaderTabs.list(gx,gy)&&!HeaderTabs.list(lx,60)&&HeaderTabs.home(hx,gy)&&!HeaderTabs.home(gx,gy)&&!HeaderTabs.gear(lx,gy)&&!HeaderTabs.gear(hx,gy),"list, gear and home each hit only themselves");
+        check(HeaderTabs.RIGHT<=HeaderTabs.LIST_L&&HeaderTabs.LIST_L+HeaderTabs.GEAR_W<=HeaderTabs.GEAR_L&&HeaderTabs.GEAR_L+HeaderTabs.GEAR_W<=HeaderTabs.HOME_L&&HeaderTabs.HOME_L+HeaderTabs.GEAR_W<=782,"strip, list, gear, home left to right inside the bar");
+        check(HeaderTabs.CLOCK_X+32<=HeaderTabs.LEFT&&HeaderTabs.RIGHT-HeaderTabs.LEFT>=540,"the clock clear of a strip at least 540 px wide (it was 460)");
         System.out.println("PASS "+checks+" header tab checks");
     }
 }

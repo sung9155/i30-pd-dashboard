@@ -1,17 +1,22 @@
 package com.veloster.vehicle;
 
 /**
- * The header's tab strip between the logo and the clock: every shown screen is a button that PitRenderer draws and
+ * The header's tab strip between the clock (left) and the list, gear and home buttons: every favourite screen
+ * (ClusterPicker.tabs) is a button that PitRenderer draws and
  * VehicleDash hit-tests. PitRenderer measures the labels and feeds the shown screens and their widths each frame
  * (setTabs); a finger drag that starts on the strip (or just below it) scrolls it sideways when they overflow and
  * coasts on after a quick flick (step). The strip brings the current tab into view only when the current screen
  * changes, so a drag can look past it. No Android: host-tested.
  */
 public final class HeaderTabs {
-    public static final float LEFT=120,RIGHT=580,TOP=8,H=38,GAP=4,DRAG=8,GRAB=52;   // GRAB: a drag may start down to the body's edge
-    /** Gear button left of the clock: opens the screen list in edit mode. */
-    public static final float GEAR_L=590,GEAR_W=44;
-    public static boolean gear(float x,float y){return x>=GEAR_L&&x<=GEAR_L+GEAR_W&&y>=TOP&&y<=TOP+H;}
+    public static final float LEFT=84,RIGHT=634,TOP=8,H=38,GAP=4,DRAG=8,GRAB=52;   // GRAB: a drag may start down to the body's edge
+    /** Right of the strip, three buttons GEAR_W wide: the list of every screen, the gear (settings), home (the dashboard
+     *  goes behind; it was the 돌아가기 text button). The clock's centre is CLOCK_X, where the logo was. */
+    public static final float LIST_L=642,GEAR_L=690,HOME_L=738,GEAR_W=44,CLOCK_X=44;
+    private static boolean btn(float l,float x,float y){return x>=l&&x<=l+GEAR_W&&y>=TOP&&y<=TOP+H;}
+    public static boolean list(float x,float y){return btn(LIST_L,x,y);}
+    public static boolean gear(float x,float y){return btn(GEAR_L,x,y);}
+    public static boolean home(float x,float y){return btn(HOME_L,x,y);}
 
     private int[] ids=new int[0];     // ClusterPicker screen index per tab, left to right
     private float[] w=new float[0];   // pixel width per tab

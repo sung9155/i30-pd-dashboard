@@ -85,6 +85,31 @@ public final class ClusterPickerTest {
          check(o.length==32&&o[0]==31&&o[19]==11&&o[20]==ClusterPicker.MAINT&&o[31]==0,"v3 order kept: WRC 30 -> 31, 정비 inserted after 택시 ("+java.util.Arrays.toString(o)+")");
          int[] noTaxi=new int[]{0,1,2};int[] q=ClusterPicker.migrateOrder4(noTaxi);check(q[q.length-1]==ClusterPicker.MAINT,"no 택시 in the saved order: 정비 at the end");}
         check(ClusterPicker.renumber4(30)==31&&ClusterPicker.renumber4(5)==5&&ClusterPicker.renumberMask4((1<<30)|(1<<2))==((1<<31)|(1<<2)),"v3 screen and hidden bits: 30 -> 31");
+        // The favourites line (2026-11-28): the screens above it are the header strip, the rest only the list.
+        {int[] d=ClusterPicker.defaultOrder();int N=ClusterPicker.COUNT,LINE=ClusterPicker.LINE;
+         int[] rows=ClusterPicker.rows(d,7);
+         check(rows.length==N+1&&rows[7]==LINE&&rows[0]==d[0]&&rows[6]==d[6]&&rows[8]==d[7]&&rows[N]==d[N-1],"the line is a row of its own after the 7th screen");
+         check(ClusterPicker.favOf(rows)==7&&java.util.Arrays.equals(ClusterPicker.orderOf(rows),d),"rows give the order and the line's place back");
+         int[] bar=ClusterPicker.bar(d,0,7);check(bar.length==7&&bar[0]==d[0]&&bar[6]==d[6],"the strip = the screens above the line, in order");
+         bar=ClusterPicker.bar(d,1<<d[1],7);check(bar.length==6&&bar[1]==d[2],"a screen switched off leaves the strip (no other takes its place)");
+         int[] tabs=ClusterPicker.tabs(d,0,7,d[20]);check(tabs.length==8&&tabs[7]==d[20],"the current screen from below the line rides at the strip's end");
+         check(ClusterPicker.tabs(d,0,7,d[3]).length==7,"a favourite on show adds no tab");
+         check(ClusterPicker.starred(d,7,d[6])&&!ClusterPicker.starred(d,7,d[7]),"starred = above the line");
+         int[] r=ClusterPicker.moveRow(d,7,21,0);   // 맨 위로 from below the line (row 21 = the 21st screen: the line is row 7)
+         check(ClusterPicker.orderOf(r)[0]==d[20]&&ClusterPicker.orderOf(r)[1]==d[0]&&ClusterPicker.favOf(r)==8,"to the top from below: one more favourite, the others keep their order");
+         r=ClusterPicker.moveRow(d,7,2,10);check(ClusterPicker.favOf(r)==6&&ClusterPicker.orderOf(r)[9]==d[2],"a favourite dragged below the line: one fewer");
+         r=ClusterPicker.moveRow(d,7,7,3);check(ClusterPicker.favOf(r)==3&&java.util.Arrays.equals(ClusterPicker.orderOf(r),d),"the line itself moves: the count changes, the order does not");
+         r=ClusterPicker.moveRow(d,7,7,0);check(ClusterPicker.favOf(r)==1,"the line stops under the first row (at least one favourite)");
+         r=ClusterPicker.moveRow(d,1,0,5);check(ClusterPicker.favOf(r)==1&&ClusterPicker.orderOf(r)[0]!=d[0],"the last favourite dragged out: the next screen takes its place");
+         r=ClusterPicker.moveRow(d,7,8,7);check(ClusterPicker.favOf(r)==8&&java.util.Arrays.equals(ClusterPicker.orderOf(r),d),"▲ on the first row below the line crosses it");
+         check(ClusterPicker.validFav(0)==1&&ClusterPicker.validFav(99)==N&&ClusterPicker.validFav(7)==7&&ClusterPicker.FAV_DEFAULT==7,"the saved count: 1 to every screen, 7 by default");
+         int[] g=ClusterPicker.grid(d,0);int M=ClusterPicker.MAINT,C3=ClusterPicker.CAR3D,ND=ClusterPicker.NEON_DRIVE;
+         check(g.length==ClusterPicker.SLOTS&&g[0]==d[0]&&g[28]>=0&&g[29]==-1&&g[30]==M&&g[31]==ND&&g[32]==C3&&g[33]==-1,"the list: 29 dashboards, then 정비 · 네온 드라이브 · 내 차 on a row of their own");
+         for(int i=0;i<30;i++)check(g[i]!=M&&g[i]!=C3&&g[i]!=ND,"no tool or 3D screen among the dashboards (slot "+i+")");
+         int hid=1<<d[0];g=ClusterPicker.grid(d,hid);check(g[0]==d[1]&&g[28]==-1&&g[30]==M,"a screen switched off is not in the list");
+         int few=-1;for(int i=0;i<10;i++)few&=~(1<<d[i]);few&=~(1<<C3);g=ClusterPicker.grid(d,few);   // ten shown (d[0..9] holds 정비) and 내 차
+         check(g[8]>=0&&g[9]==-1&&g[12]==M&&g[13]==C3&&g[14]==-1,"few screens: the own row comes right under the dashboards ("+g[9]+","+g[12]+","+g[13]+")");
+         check(ClusterPicker.own(M)&&ClusterPicker.own(C3)&&ClusterPicker.own(ND)&&!ClusterPicker.own(ClusterPicker.WRC),"own kind: 정비, 내 차, 네온 드라이브");}
         System.out.println("PASS "+checks+" cluster picker checks");
     }
 }

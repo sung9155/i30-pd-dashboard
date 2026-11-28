@@ -21,6 +21,52 @@ public final class ClusterPicker {
     public static final int CAR3D=28,NEON_DRIVE=29;   // 2026-11-27: 내 차 and 네온 드라이브 before WRC, so the stable release (without WRC) has the same numbers
     public static final float LEFT=17,TOP=60,TILE_W=121,TILE_H=62,GAP=8;
     private ClusterPicker(){}
+    /** The favourites line of the settings' screen list (2026-11-28): the screens above it are the header strip, in this
+     *  order; the others are picked from the list (the header's list button). The line is a row of its own among the
+     *  screens (LINE; COUNT+1 rows), so dragging a row across it, or the line itself, changes how many are above. */
+    public static final int LINE=-1,FAV_DEFAULT=7;
+    /** A saved count of favourites: at least one, at most every screen. */
+    public static int validFav(int f){return Math.max(1,Math.min(COUNT,f));}
+    public static int[] rows(int[] order,int fav){
+        order=validOrder(order);fav=validFav(fav);int[] r=new int[COUNT+1];
+        System.arraycopy(order,0,r,0,fav);r[fav]=LINE;System.arraycopy(order,fav,r,fav+1,COUNT-fav);return r;
+    }
+    public static int favOf(int[] rows){for(int i=0;i<rows.length;i++)if(rows[i]==LINE)return i;return FAV_DEFAULT;}
+    public static int[] orderOf(int[] rows){int[] o=new int[COUNT];int k=0;for(int s:rows)if(s!=LINE&&k<COUNT)o[k++]=s;return o;}
+    /** The row at from taken out and put back at to: a drag, ▲▼ (to = from ± 1), 맨 위로 (to = 0). The line never ends
+     *  up above the first screen. Out of range keeps the rows. */
+    public static int[] moveRow(int[] order,int fav,int from,int to){
+        int[] r=rows(order,fav);if(from<0||from>=r.length||to<0||to>=r.length||from==to)return r;
+        int t=r[from];
+        if(from<to)System.arraycopy(r,from+1,r,from,to-from);else System.arraycopy(r,to,r,to+1,from-to);
+        r[to]=t;
+        if(r[0]==LINE){r[0]=r[1];r[1]=LINE;}
+        return r;
+    }
+    public static boolean starred(int[] order,int fav,int s){order=validOrder(order);fav=validFav(fav);for(int i=0;i<fav;i++)if(order[i]==s)return true;return false;}
+    /** The header strip: the screens above the line that are switched on. */
+    public static int[] bar(int[] order,int hidden,int fav){
+        order=validOrder(order);fav=validFav(fav);int[] out=new int[fav];int n=0;
+        for(int i=0;i<fav;i++)if((hidden&(1<<order[i]))==0)out[n++]=order[i];
+        return java.util.Arrays.copyOf(out,n);
+    }
+    /** The strip's tabs: the bar, and after it the screen on show when it is not one of them (picked from the list, or
+     *  opened by a drive mode), so the strip always shows where you are. */
+    public static int[] tabs(int[] order,int hidden,int fav,int cur){
+        int[] b=bar(order,hidden,fav);if(cur<0||cur>=COUNT)return b;
+        for(int s:b)if(s==cur)return b;
+        int[] t=java.util.Arrays.copyOf(b,b.length+1);t[b.length]=cur;return t;
+    }
+    /** Not dashboards: the service log and the two screens you go into. The list keeps them on a row of their own. */
+    public static boolean own(int s){return s==MAINT||s==CAR3D||s==NEON_DRIVE;}
+    /** The list's tiles (SLOTS, -1 = empty): the dashboards switched on, in order; then, from the next row, the own kind. */
+    public static int[] grid(int[] order,int hidden){
+        int[] g=new int[SLOTS];java.util.Arrays.fill(g,-1);int[] shown=slots(order,hidden,false);int n=0;
+        for(int s:shown)if(!own(s)&&n<SLOTS)g[n++]=s;
+        n=(n+COLS-1)/COLS*COLS;
+        for(int s:shown)if(own(s)&&n<SLOTS)g[n++]=s;
+        return g;
+    }
     /** PitRenderer page of a screen after F1. */
     public static int page(int s){return s-F1;}
     public static float left(int i){return LEFT+(i%COLS)*(TILE_W+GAP);}

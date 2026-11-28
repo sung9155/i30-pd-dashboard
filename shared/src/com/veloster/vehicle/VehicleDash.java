@@ -80,6 +80,7 @@ public final class VehicleDash extends View implements Runnable {
     private int pickSlot=-1;
     /** 화면 list drag: gripRow = the row pressed on its grip (a tap until the finger moves 16 px), dragRow = the row being dragged. */
     private int gripRow=-1,dragRow=-1;private float dragY;
+    private int fav=ClusterPicker.FAV_DEFAULT;   // screens above the settings' favourites line: the header strip (cluster_fav)
     /** 플로팅 크기 / 투명도 bar under the finger (SettingsLayout.F_SIZE or F_ALPHA), -1 none. */
     private int sliderDrag=-1;
     /** While a row is dragged: scroll the list when the finger rests near the top or bottom edge. */
@@ -381,7 +382,7 @@ public final class VehicleDash extends View implements Runnable {
             SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);
             int v=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);
             screen=v>=0&&v<ClusterPicker.COUNT?v:ClusterPicker.OVERVIEW;
-            hidden=ClusterPicker.valid(p.getInt("cluster_hidden",0));
+            hidden=ClusterPicker.valid(p.getInt("cluster_hidden",0));fav=ClusterPicker.validFav(p.getInt("cluster_fav",ClusterPicker.FAV_DEFAULT));
             int[] savedOrder=parseOrder(p.getString("cluster_order",null));int ov=p.getInt("cluster_order_v",0);
             order=ClusterPicker.validOrder(savedOrder);
             // The order is saved on every screen change, so every install has one. Before v3 a new default replaced it once;
@@ -827,7 +828,7 @@ public final class VehicleDash extends View implements Runnable {
             if(modeScreen&&!picker){int[] st=ClusterPicker.onMode(lastMode,mode,screen,modeBack,hidden,modeTargets);modeBack=st[1];if(st[0]!=screen){screen=st[0];showCluster();}}
             lastMode=mode;
         }
-        renderer.setPicker(picker,editing,hidden);renderer.setOrder(order,settingsScroll);renderer.setScreenDrag(dragRow,dragY);
+        renderer.setPicker(picker,editing,hidden);renderer.setOrder(order,settingsScroll);renderer.setFav(fav);renderer.setScreenDrag(dragRow,dragY);
         renderer.setModeOptions(modeColor,modeScreen);
         if(picker&&editing){renderer.setFloatEdit(floatEdit,floatSel,floatEditSig,floatEditGraph,floatEditTab);renderer.setSettings(settingsCat,LanguageSettings.selection(activity),pickSlot,modeTargets);renderer.setSound(soundOn,soundRoute,soundEngine,soundExhaust,soundVals);renderer.setBeep(beepOn,beepSound,beepVol,downSounds,downScope);
             if(settingsCat==SettingsLayout.FONT&&pickSlot<0){if(fontSnap==null&&!fontBusy&&!fontTried)fontScan();renderer.setFonts(fontView());}
@@ -966,28 +967,36 @@ public final class VehicleDash extends View implements Runnable {
         touching=false;
         if(tap&&!blocked&&!picker&&PitRenderer.maintBanner!=null&&SystemClock.elapsedRealtime()<PitRenderer.maintBannerUntil&&y>=PitRenderer.BANNER_T&&y<=PitRenderer.BANNER_B&&downY>=PitRenderer.BANNER_T&&downY<=PitRenderer.BANNER_B){   // the 정비 reminder opens 정비
             PitRenderer.maintBannerUntil=0;PitRenderer.maintBanner=null;screen=ClusterPicker.MAINT;showCluster();invalidate();return true;}
-        if(tap&&!blocked&&HeaderTabs.gear(x,y)&&HeaderTabs.gear(downX,downY)){   // gear: edit the screen list, again to close it
+        if(tap&&!blocked&&HeaderTabs.list(x,y)&&HeaderTabs.list(downX,downY)){   // the list of every screen, again to close it (from the settings: they close)
+            boolean open=!(picker&&!editing);if(picker&&editing)closeSettingsNow();
+            picker=open;editing=false;if(open)showCluster();invalidate();return true;
+        }
+        if(tap&&!blocked&&HeaderTabs.gear(x,y)&&HeaderTabs.gear(downX,downY)){   // gear: the settings, again to close them
             boolean open=!(picker&&editing);picker=open;editing=open;if(open)showCluster();invalidate();return true;
         }
         if(picker&&editing){   // settings: a category on the left opens its choices (완료 closes); a choice applies at once
             if(dragRow>=0){   // a dragged 화면 row lands where the finger is
                 int to=SettingsLayout.dropRow(y,settingsScroll);
-                if(to!=dragRow){order=ClusterPicker.move(order,dragRow,to);activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("cluster_order",orderCsv(order)).apply();showCluster();}
+                if(to!=dragRow){int[] r=ClusterPicker.moveRow(order,fav,dragRow,to);order=ClusterPicker.orderOf(r);fav=ClusterPicker.favOf(r);   // a screen, or the favourites line itself
+                    activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("cluster_order",orderCsv(order)).putInt("cluster_fav",fav).apply();showCluster();}
                 gripRow=-1;dragRow=-1;removeCallbacks(dragTick);invalidate();return true;}
             gripRow=-1;
             if(sliderDrag>=0){setSlider(sliderDrag,x);sliderDrag=-1;SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();invalidate();return true;}
             if(!tap)return true;
-            if(x>=698&&x<=782&&downX>=698&&downX<=782&&y>=8&&y<=46&&downY>=8&&downY<=46){closeSettingsNow();return true;}   // 돌아가기 = 완료 here
+            if(HeaderTabs.home(x,y)&&HeaderTabs.home(downX,downY)){closeSettingsNow();return true;}   // 돌아가기 = 완료 here
             int k=SettingsLayout.cat(x,y);
             if(floatEdit<0&&k>=0&&k==SettingsLayout.cat(downX,downY)){pickSlot=-1;if(k==SettingsLayout.DONE)closeSettingsNow();else{settingsCat=k;settingsScroll=0;}invalidate();return true;}
-            if(settingsCat==SettingsLayout.SCREENS&&pickSlot<0){   // the 화면 list: ▲▼ reorder, tap elsewhere toggles 사용/미사용
+            if(settingsCat==SettingsLayout.SCREENS&&pickSlot<0){   // the 화면 list: 맨 위로 and ▲▼ reorder (across the favourites line too), a tap elsewhere toggles 사용/미사용
                 int p=SettingsLayout.screenRow(y,settingsScroll);
                 if(p>=0&&p==SettingsLayout.screenRow(downY,settingsScroll)){
-                    int[] o=ClusterPicker.validOrder(order);int sc=o[p],z=SettingsLayout.screenZone(x);
-                    if(z==1)order=ClusterPicker.reorder(order,p,-1);
-                    else if(z==2)order=ClusterPicker.reorder(order,p,1);
+                    int sc=ClusterPicker.rows(order,fav)[p],z=SettingsLayout.screenZone(x);int[] r=null;
+                    if(z==1)r=ClusterPicker.moveRow(order,fav,p,p-1);
+                    else if(z==2)r=ClusterPicker.moveRow(order,fav,p,p+1);
+                    else if(sc==ClusterPicker.LINE){}   // the line has no 사용/미사용 and no 맨 위로
+                    else if(z==3)r=ClusterPicker.moveRow(order,fav,p,0);
                     else hidden=ClusterPicker.toggle(hidden,sc);
-                    activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("cluster_order",orderCsv(order)).putInt("cluster_hidden",hidden).apply();
+                    if(r!=null){order=ClusterPicker.orderOf(r);fav=ClusterPicker.favOf(r);}
+                    activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("cluster_order",orderCsv(order)).putInt("cluster_hidden",hidden).putInt("cluster_fav",fav).apply();
                     showCluster();invalidate();
                 }
                 return true;
@@ -1078,8 +1087,8 @@ public final class VehicleDash extends View implements Runnable {
         if(picker){   // a tile picks that screen, any other tap closes the list
             if(!tap)return true;
             int i=ClusterPicker.hit(x,y),slot=i==ClusterPicker.hit(downX,downY)?i:-1;
-            int[] list=ClusterPicker.slots(order,hidden,false);
-            if(slot>=0&&slot<list.length){screen=list[slot];showCluster();picker=false;}
+            int[] list=ClusterPicker.grid(order,hidden);
+            if(slot>=0&&slot<list.length&&list[slot]>=0){screen=list[slot];showCluster();picker=false;}
             else{picker=false;editing=false;}
             invalidate();return true;
         }
@@ -1089,7 +1098,7 @@ public final class VehicleDash extends View implements Runnable {
         }
         // 돌아가기 puts the dashboard behind, as the home key does: finish() threw away the run times, the taxi fare and the
         // laps, and with the floating window up left the old screen's engine sound playing beside the new one's
-        if(standalone&&tap&&x>=698&&x<=782&&downX>=698&&downX<=782&&y>=8&&y<=46&&downY>=8&&downY<=46){activity.moveTaskToBack(true);return true;}
+        if(standalone&&tap&&HeaderTabs.home(x,y)&&HeaderTabs.home(downX,downY)){activity.moveTaskToBack(true);return true;}
         if(tap&&!blocked&&!cluster&&!gauges&&!graphs&&!symmetric&&overviewDown>=0&&overviewLayout.hit(x,y)==overviewDown&&!overviewCovered(y)){
             overviewLayout.cycle(overviewDown);
             activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("overview_style_"+overviewDown,overviewLayout.style(overviewDown)).apply();
@@ -1142,7 +1151,7 @@ public final class VehicleDash extends View implements Runnable {
         gaugeEditor.dismiss();graphEditor.dismiss();
         int id=header.hit(x,y);
         if(id>=0&&id==header.hit(downX,downY))selectTab(id);
-        else if(x>=698 && x<=782 && downX>=698 && downX<=782)close();
+        else if(HeaderTabs.home(x,y)&&HeaderTabs.home(downX,downY))close();
         return true;
     }
 }

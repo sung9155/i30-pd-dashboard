@@ -66,6 +66,9 @@ public final class PitRenderer {
     private int[] order=ClusterPicker.defaultOrder();
     private float settingsScroll;
     public void setOrder(int[] o,float scroll){order=o;settingsScroll=scroll;}
+    private int fav=ClusterPicker.FAV_DEFAULT;
+    /** How many screens of the order sit above the favourites line (ClusterPicker.rows): the header strip. */
+    public void setFav(int f){fav=ClusterPicker.validFav(f);}
     /** Drive-mode options shown on their edit tiles: accent colour by mode, screen by mode. */
     private boolean modeColor,modeScreen;
     public void setModeOptions(boolean color,boolean screen){modeColor=color;modeScreen=screen;}
@@ -226,16 +229,17 @@ public final class PitRenderer {
             bodyKey=k;
         }
         cellRect.set(0,0,800,480);c.drawBitmap(body,null,cellRect,null);
-        // Tab strip: every shown screen is a button; PitRenderer measures the labels and feeds HeaderTabs, which
-        // scrolls sideways when they overflow and keeps the current tab in view.
-        int[] shownTabs=ClusterPicker.slots(order,hidden,false);int cur=screen(cluster),curTab=-1;
+        // Header (2026-11-28): the clock where the logo was, the favourites as tabs (the screens above the settings' line;
+        // the screen on show rides at the end when it is not one), then the list of every screen, the gear and home.
+        // PitRenderer measures the labels and feeds HeaderTabs, which scrolls sideways when they overflow.
+        int cur=screen(cluster),curTab=-1;int[] shownTabs=ClusterPicker.tabs(order,hidden,fav,cur);
         float[] tabW=new float[shownTabs.length];
         for(int i=0;i<shownTabs.length;i++){tabW[i]=tabWidth(UiText.t(ClusterPicker.NAMES[shownTabs[i]]));if(shownTabs[i]==cur)curTab=i;}
         header.setTabs(shownTabs,tabW,curTab);
-        boolean gearOn=picker&&editing;String time=clock(),back=UiText.t("돌아가기");
+        boolean gearOn=picker&&editing,listOn=picker&&!editing;String time=clock();
         int hh=Math.max(1,Math.round(height*52/480f));
         k=System.identityHashCode(Theme.current());k=k*31+T(BLUE);k=k*31+T(0xff233b46);k=k*31+T(MUTED);k=k*31+T(WHITE);k=k*31+T(RED);k=k*31+T(LINE);
-        k=k*31+width;k=k*31+hh;k=k*31+(gearOn?1:0);k=k*31+time.hashCode();k=k*31+back.hashCode();k=k*31+curTab;
+        k=k*31+width;k=k*31+hh;k=k*31+(gearOn?1:0)+(listOn?2:0);k=k*31+time.hashCode();k=k*31+curTab;
         k=k*31+(header.moreLeft()?1:0)+(header.moreRight()?2:0);
         for(int i=0;i<header.count();i++){k=k*31+UiText.t(ClusterPicker.NAMES[header.screenAt(i)]).hashCode();
             k=k*31+Float.floatToIntBits(header.x(i));k=k*31+Float.floatToIntBits(header.width(i));}
@@ -243,16 +247,13 @@ public final class PitRenderer {
             head=canvasBitmap(head,width,hh);Canvas h=new Canvas(head);h.scale(width/800f,hh/52f);
             box(h,0,0,800,52,0xff090b0c);box(h,18,51,782,52,LINE);
             if(Theme.current().mStripe){box(h,0,0,267,3,0xff5bc2e7);box(h,267,0,533,3,0xff1c69d4);box(h,533,0,800,3,0xffe22718);}  // BMW M stripe (not in the remap table)
-            stroke(h,19,16,13,35,RED,4);stroke(h,27,16,21,35,BLUE,4);
-            text(h,"i30 PD",36,33,23,WHITE,true);
+            centered(h,time,HeaderTabs.CLOCK_X,34,22,WHITE,true);
             h.save();h.clipRect(HeaderTabs.LEFT,0,HeaderTabs.RIGHT,52);
             for(int i=0;i<header.count();i++)button(h,UiText.t(ClusterPicker.NAMES[header.screenAt(i)]),header.x(i),HeaderTabs.TOP,header.width(i),HeaderTabs.H,i==curTab,BLUE);
             h.restore();
             if(header.moreLeft())arrow(h,HeaderTabs.LEFT+5,-1);
             if(header.moreRight())arrow(h,HeaderTabs.RIGHT-5,1);
-            gearButton(h,gearOn);
-            centered(h,time,667,32,20,WHITE,true);
-            button(h,back,698,8,84,38,false,BLUE);
+            listButton(h,listOn);gearButton(h,gearOn);homeButton(h);
             headKey=k;
         }
         cellRect.set(0,0,800,52);c.drawBitmap(head,null,cellRect,null);
@@ -261,7 +262,28 @@ public final class PitRenderer {
     private int screen(boolean cluster){
         return graphLayout!=null?ClusterPicker.GRAPHS:gaugeLayout!=null?ClusterPicker.GAUGES:cluster?ClusterPicker.F1:symmetric?ClusterPicker.F1+page:ClusterPicker.OVERVIEW;
     }
-    /** Gear left of the clock (HeaderTabs.GEAR_L): opens the screen list in edit mode; lit while editing. */
+    /** The list of every screen (HeaderTabs.LIST_L): nine squares; lit while the list is open. */
+    private void listButton(Canvas c,boolean on){
+        float x=HeaderTabs.LIST_L,cx=x+HeaderTabs.GEAR_W/2,cy=HeaderTabs.TOP+HeaderTabs.H/2;int ink=on?BLUE:MUTED;
+        button(c,"",x,HeaderTabs.TOP,HeaderTabs.GEAR_W,HeaderTabs.H,on,BLUE);
+        for(int i=0;i<9;i++){float l=cx-10+(i%3)*8,t=cy-11+(i/3)*8;box(c,l,t,l+5,t+5,ink);}
+    }
+    /** Home (HeaderTabs.HOME_L): the dashboard goes behind, as the 돌아가기 text button did. A house, not an arrow: it leaves
+     *  for the stock screen, it does not step back inside the app. */
+    private void homeButton(Canvas c){
+        float x=HeaderTabs.HOME_L,cx=x+HeaderTabs.GEAR_W/2,cy=HeaderTabs.TOP+HeaderTabs.H/2;
+        button(c,"",x,HeaderTabs.TOP,HeaderTabs.GEAR_W,HeaderTabs.H,false,BLUE);
+        paint.setStyle(Paint.Style.FILL);paint.setColor(T(MUTED));shape.reset();shape.moveTo(cx,cy-12);shape.lineTo(cx+13,cy);shape.lineTo(cx-13,cy);shape.close();c.drawPath(shape.kept(),paint);
+        box(c,cx-8,cy,cx+8,cy+10,MUTED);box(c,cx-2.5f,cy+3,cx+2.5f,cy+10,0xff111415);
+    }
+    private static final int STAR=0xffffc83d,OWN_TILE=0xff17141f;   // a favourite's star; the list's tiles that are not dashboards
+    private final Path starPath=unitStar();
+    private static Path unitStar(){Path s=new Path();
+        for(int i=0;i<10;i++){double a=-Math.PI/2+i*Math.PI/5;float r=i%2==0?1:0.42f,x=(float)Math.cos(a)*r,y=(float)Math.sin(a)*r;if(i==0)s.moveTo(x,y);else s.lineTo(x,y);}
+        s.close();return s;}
+    /** Drawn, not the ★ glyph: the head unit's fonts may lack it. */
+    private void star(Canvas c,float cx,float cy,float r,int color){c.save();c.translate(cx,cy);c.scale(r,r);paint.setStyle(Paint.Style.FILL);paint.setColor(T(color));c.drawPath(starPath,paint);c.restore();}
+    /** Gear (HeaderTabs.GEAR_L): opens the settings; lit while they are open. */
     private void gearButton(Canvas c,boolean on){
         float x=HeaderTabs.GEAR_L,cx=x+HeaderTabs.GEAR_W/2,cy=HeaderTabs.TOP+HeaderTabs.H/2;int ink=on?BLUE:MUTED;
         button(c,"",x,HeaderTabs.TOP,HeaderTabs.GEAR_W,HeaderTabs.H,on,BLUE);
@@ -269,15 +291,18 @@ public final class PitRenderer {
         paint.setColor(T(ink));c.drawCircle(cx,cy,8,paint);
         paint.setColor(T(on?0xff233b46:0xff111415));c.drawCircle(cx,cy,3.5f,paint);
     }
-    /** Screen list: 6 x 6 tiles of the shown screens over a dimmed body, the current one outlined. The gear opens settings instead. */
+    /** Screen list (the header's list button, or a long press on the strip): 6 x 6 tiles of every screen switched on
+     *  over a dimmed body, the current one outlined, a star on the favourites; 정비, 내 차 and 네온 드라이브 on a row of
+     *  their own (ClusterPicker.grid). The gear opens settings instead. */
     private void drawPicker(Canvas c,int cur){
         if(editing){drawSettings(c);return;}
         box(c,0,52,800,480,0xe6040506);
-        int[] list=ClusterPicker.slots(order,hidden,editing);
+        int[] list=ClusterPicker.grid(order,hidden);
         for(int i=0;i<list.length;i++){
-            int s=list[i];boolean off=(hidden&(1<<s))!=0;
+            int s=list[i];if(s<0)continue;boolean off=false,own=ClusterPicker.own(s);
             float l=ClusterPicker.left(i),t=ClusterPicker.top(i),w=ClusterPicker.TILE_W,h=ClusterPicker.TILE_H;
-            box(c,l,t,l+w,t+h,s==cur?0xff1c303b:off?0xff08090a:0xff101315);
+            box(c,l,t,l+w,t+h,s==cur?0xff1c303b:own?OWN_TILE:0xff101315);
+            if(ClusterPicker.starred(order,fav,s))star(c,l+w-12,t+12,6.5f,STAR);
             if(s==cur){box(c,l,t,l+w,t+3,BLUE);box(c,l,t+h-3,l+w,t+h,BLUE);box(c,l,t,l+3,t+h,BLUE);box(c,l+w-3,t,l+w,t+h,BLUE);}
             centered(c,UiText.t(ClusterPicker.NAMES[s]),l+w/2,t+29,19,off?MUTED:s==cur?BLUE:WHITE,true);
             centered(c,UiText.t(ClusterPicker.DESC[s]),l+w/2,t+49,11,MUTED,false);
@@ -627,7 +652,7 @@ public final class PitRenderer {
     public void setScreenDrag(int row,float y){dragRow=row;dragY=y;}
     /** The 화면 category as a reorderable, scrollable list: a mini preview, the name, 사용/미사용, and ▲▼ to move it. */
     private void drawScreenList(Canvas c){
-        int[] ord=ClusterPicker.validOrder(order);
+        int[] ord=ClusterPicker.rows(order,fav);   // the screens and, among them, the favourites line
         float L=SettingsLayout.PANE_L,R=SettingsLayout.PANE_R,rh=SettingsLayout.SCREEN_ROW_H,top=SettingsLayout.TOP,bot=SettingsLayout.BOTTOM;
         boolean drag=dragRow>=0&&dragRow<ord.length;
         c.save();c.clipRect(L-6,top,800,bot);
@@ -643,8 +668,35 @@ public final class PitRenderer {
         c.restore();
         drawScrollHint(c,settingsScroll,SettingsLayout.maxScreenScroll());
     }
-    /** One 화면 row at y t (shifted dx): grip, mini preview, name and description, 사용/미사용, ▲▼. lifted = being dragged. */
+    /** The favourites line, a row like the screens (dragged by its grip, ▲▼): above it the header strip's screens, below
+     *  it the ones only the list shows. Arrows say which side is which. */
+    private void lineRow(Canvas c,int p,int n,float t,float dx,boolean lifted){
+        float L=SettingsLayout.PANE_L+dx,R=SettingsLayout.PANE_R+dx,rh=SettingsLayout.SCREEN_ROW_H,m=t+rh/2;
+        if(lifted)box(c,L,t+4,R,t+rh-4,0xff1c303b);
+        for(int k=-1;k<=1;k++)box(c,L+5,m+k*6-1,L+19,m+k*6+1,STAR);   // the grip
+        float lx=L+30,le=SettingsLayout.upBtnL()+dx-12;
+        box(c,lx,m-1,le,m+1,STAR);
+        tri(c,lx+8,m-16,true,STAR);star(c,lx+28,m-16,7,STAR);text(c,UiText.t("즐겨찾기 · 상단 바에 표시"),lx+42,m-11,13,STAR,true);
+        tri(c,lx+8,m+15,false,MUTED);text(c,UiText.t("전체 목록에만 표시"),lx+24,m+20,13,MUTED,true);
+        float by=t+(rh-SettingsLayout.SBTN_W)/2;
+        moveBtn(c,SettingsLayout.upBtnL()+dx,by,true,p>1);   // never above the first screen
+        moveBtn(c,SettingsLayout.downBtnL()+dx,by,false,p<n-1);
+    }
+    private void tri(Canvas c,float cx,float cy,boolean up,int color){
+        paint.setStyle(Paint.Style.FILL);paint.setColor(T(color));shape.reset();
+        if(up){shape.moveTo(cx,cy-6);shape.lineTo(cx-7,cy+5);shape.lineTo(cx+7,cy+5);}else{shape.moveTo(cx,cy+6);shape.lineTo(cx-7,cy-5);shape.lineTo(cx+7,cy-5);}
+        shape.close();c.drawPath(shape.kept(),paint);
+    }
+    /** 맨 위로: a bar over an up arrow. */
+    private void topBtn(Canvas c,float x,float y,boolean on){
+        float w=SettingsLayout.SBTN_W;box(c,x,y,x+w,y+w,on?0xff16232b:0xff0c0e10);
+        float cx=x+w/2,cy=y+w/2;int ink=on?BLUE:0xff2a3036;box(c,cx-8,cy-10,cx+8,cy-7,ink);
+        paint.setStyle(Paint.Style.FILL);paint.setColor(T(ink));shape.reset();shape.moveTo(cx,cy-4);shape.lineTo(cx-8,cy+8);shape.lineTo(cx+8,cy+8);shape.close();c.drawPath(shape.kept(),paint);
+    }
+    /** One 화면 row at y t (shifted dx): grip, mini preview, name (a star when above the favourites line) and description,
+     *  사용/미사용, 맨 위로, ▲▼. lifted = being dragged. */
     private void screenRow(Canvas c,int p,int n,int s,float t,float dx,boolean lifted){
+        if(s==ClusterPicker.LINE){lineRow(c,p,n,t,dx,lifted);return;}
         float L=SettingsLayout.PANE_L+dx,R=SettingsLayout.PANE_R+dx,rh=SettingsLayout.SCREEN_ROW_H;
         boolean off=(hidden&(1<<s))!=0;
         box(c,L,t+4,R,t+rh-4,lifted?0xff1c303b:off?0xff08090a:0xff101315);
@@ -655,11 +707,13 @@ public final class PitRenderer {
         if(tb!=null){cellRect.set(tx0,t+9,tx0+tw,t+9+th);c.drawBitmap(tb,null,cellRect,paint);}
         else box(c,tx0,t+9,tx0+tw,t+9+th,0xff05070a);
         float tx=L+SettingsLayout.THUMB_W+8;int ink=off?MUTED:WHITE;
-        text(c,UiText.t(ClusterPicker.NAMES[s]),tx,t+rh/2-3,17,ink,true);
+        String name=UiText.t(ClusterPicker.NAMES[s]);text(c,name,tx,t+rh/2-3,17,ink,true);
+        if(p<fav){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(17);star(c,tx+paint.measureText(name)+14,t+rh/2-9,7,off?0xff5a5330:STAR);}   // above the line: on the header strip (dim when 미사용)
         text(c,UiText.t(ClusterPicker.DESC[s]),tx,t+rh/2+16,11,MUTED,false);
         String use=UiText.t(off?"미사용":"사용");paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(13);
-        text(c,use,SettingsLayout.upBtnL()+dx-12-paint.measureText(use),t+rh/2+5,13,off?MUTED:BLUE,true);
+        text(c,use,SettingsLayout.topBtnL()+dx-12-paint.measureText(use),t+rh/2+5,13,off?MUTED:BLUE,true);
         float by=t+(rh-SettingsLayout.SBTN_W)/2;
+        topBtn(c,SettingsLayout.topBtnL()+dx,by,p>0);
         moveBtn(c,SettingsLayout.upBtnL()+dx,by,true,p>0);
         moveBtn(c,SettingsLayout.downBtnL()+dx,by,false,p<n-1);
     }

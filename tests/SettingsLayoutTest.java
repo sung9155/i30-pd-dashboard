@@ -114,8 +114,11 @@ public final class SettingsLayoutTest {
             check(CarPaint.IDS[SettingsLayout.PAINT_ORDER[0]].equals("white")&&CarPaint.IDS[SettingsLayout.PAINT_ORDER[4]].equals("blue")&&CarPaint.IDS[SettingsLayout.PAINT_ORDER[8]].equals("red"),"white first, blues from 5, reds from 9");}
         // 화면 list: drag by the grip, drop rows clamp, auto-scroll at the edges
         check(SettingsLayout.onGrip(SettingsLayout.PANE_L+10)&&!SettingsLayout.onGrip(SettingsLayout.PANE_L+SettingsLayout.THUMB_W+2)&&!SettingsLayout.onGrip(SettingsLayout.PANE_L-4),"grip = the thumbnail column");
-        check(SettingsLayout.dropRow(SettingsLayout.TOP+1,0)==0&&SettingsLayout.dropRow(SettingsLayout.TOP-50,0)==0&&SettingsLayout.dropRow(SettingsLayout.BOTTOM+50,SettingsLayout.maxScreenScroll())==ClusterPicker.COUNT-1
+        check(SettingsLayout.dropRow(SettingsLayout.TOP+1,0)==0&&SettingsLayout.dropRow(SettingsLayout.TOP-50,0)==0&&SettingsLayout.dropRow(SettingsLayout.BOTTOM+50,SettingsLayout.maxScreenScroll())==ClusterPicker.COUNT
             &&SettingsLayout.dropRow(SettingsLayout.TOP+SettingsLayout.SCREEN_ROW_H*1.5f,0)==1,"drop rows clamp to the list");
+        check(SettingsLayout.screenRow(SettingsLayout.BOTTOM-1,SettingsLayout.maxScreenScroll())==ClusterPicker.COUNT,"the list has a row more than screens: the favourites line");
+        check(SettingsLayout.screenZone(SettingsLayout.topBtnL()+5)==3&&SettingsLayout.screenZone(SettingsLayout.upBtnL()+5)==1&&SettingsLayout.screenZone(SettingsLayout.downBtnL()+5)==2&&SettingsLayout.screenZone(SettingsLayout.topBtnL()-5)==0
+            &&SettingsLayout.topBtnL()+SettingsLayout.SBTN_W<=SettingsLayout.upBtnL(),"맨 위로, ▲, ▼ side by side; the rest of the row is 사용 / 미사용");
         check(SettingsLayout.autoScroll(SettingsLayout.TOP+5)<0&&SettingsLayout.autoScroll(SettingsLayout.BOTTOM-5)>0&&SettingsLayout.autoScroll(260)==0,"auto-scroll near the edges only");
         check(SettingsLayout.scrolls(SettingsLayout.SCREENS)&&SettingsLayout.scrolls(SettingsLayout.SOUND)&&SettingsLayout.scrolls(SettingsLayout.RPM)&&!SettingsLayout.scrolls(SettingsLayout.THEME),"the panes that scroll");
         // 플로팅: size / transparency bars snap to their stops

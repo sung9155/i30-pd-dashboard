@@ -634,6 +634,12 @@ public final class TabsPreview {
                   new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,now+f*50L,null);}
               ImageIO.write(img,"png",new File(out,"9t_analog_style"+s+".png"));}
          AnalogCluster.style=0;
+         // 레트로 8종: every style
+         for(int s=0;s<RetroCluster.COUNT;s++){RetroCluster.style=s;RetroCluster k=new RetroCluster();BufferedImage img=new BufferedImage(800,480,BufferedImage.TYPE_INT_RGB);
+              Telemetry.Sample[] q=with(model,now,ix,new float[]{96,4300,4,55,0,0,0,0,90,0.8f,98});android.graphics.Canvas c=new android.graphics.Canvas(img.createGraphics());
+              new PitRenderer().draw(c,800,480,false,model,now,0,false,null);k.frame(c,q,model,new DriveStats(),VehicleProfile.PETROL_DCT,now,null);
+              ImageIO.write(img,"png",new File(out,"9v_retro8_style"+s+".png"));}
+         RetroCluster.style=0;
          rec.setPage(PitRenderer.PAGE_CLASSIC);
         }
         // 수동 screen (the Λ layout, 6MT): {gear, km/h, rpm, clutch, brake bar}; the race and performance pages turn the rpm green on a match

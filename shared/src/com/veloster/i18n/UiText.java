@@ -93,6 +93,7 @@ public final class UiText {
         EN.put("5분","5 min");
         EN.put("80→120 km/h","80→120 km/h");
         EN.put("80년대","80s");
+        EN.put("80년대 · 눌러서 바꾸기","80s · tap to change");
         EN.put("80년대 디지털","80s digital");
         EN.put("8비트","8-bit");
         EN.put("8비트 게임","8-bit game");
@@ -171,6 +172,7 @@ public final class UiText {
         EN.put("GR86 삐삐삐","GR86 beep-beep-beep");
         EN.put("KIC 상설 서킷","KIC Permanent Circuit");
         EN.put("L · 가속 페달","L · accelerator");
+        EN.put("LED 매트릭스","LED matrix");
         EN.put("N 계기판","N Dashboard");
         EN.put("OBD 응답 없음","No OBD answer");
         EN.put("OBD 응답 있음","OBD answering");
@@ -293,6 +295,7 @@ public final class UiText {
         EN.put("고장코드 읽기","Read trouble codes");
         EN.put("고장코드 조회","Trouble codes");
         EN.put("고장코드 지우기","Clear trouble codes");
+        EN.put("곡선 타코","Curved tach");
         EN.put("곡이 나오면 라벨에 적힙니다","The playing track shows on the label");
         EN.put("곧 챙길 것","Due soon");
         EN.put("곧 출발","Get ready");
@@ -333,6 +336,7 @@ public final class UiText {
         EN.put("그래프는 기본 스킨의 카드·띠에서만 고릅니다","Graphs only with the Default skin on a card or bar");
         EN.put("그래프를 길게 눌러 항목 변경","Hold a graph to change its signal");
         EN.put("그린","Green");
+        EN.put("그린 아크","Green arcs");
         EN.put("근거 부족","Too little seen");
         EN.put("근거 부족 · 일반 주기 적용","Too little seen · normal intervals");
         EN.put("글꼴","Fonts");
@@ -585,7 +589,9 @@ public final class UiText {
         EN.put("레이스","Race");
         EN.put("레이스 SHIFT ▲ · F1 LED · 이름을 누르면 기본값","Race SHIFT ▲ · F1 LEDs · tap the name for the default");
         EN.put("레이스 버저","Race buzzer");
+        EN.put("레인보우","Rainbow");
         EN.put("레트로","Retro");
+        EN.put("레트로 8종","Retro 8");
         EN.put("로즈","Rose");
         EN.put("루트 권한으로 시스템 글꼴 설정(/system/etc/system_fonts.xml)을 바꾸며, 재부팅해야 반영됩니다. 처음 바꾸기 전 설정은 /data/local/tmp/vn-fonts에 보관됩니다.","This changes the system font settings (/system/etc/system_fonts.xml) as root and shows after a reboot. The settings from before the first change are kept in /data/local/tmp/vn-fonts.");
         EN.put("루트 도구 없음","no root tool");
@@ -980,6 +986,7 @@ public final class UiText {
         EN.put("앞오","FR");
         EN.put("앞왼","FL");
         EN.put("앰버","Amber");
+        EN.put("앰버 트리플","Amber triple");
         EN.put("앱","Apps");
         EN.put("앱 관리","Manage apps");
         EN.put("앱 화면을 열지 못했습니다. 알림에서 다시 시도하세요.","Could not open My Apps. Try the notification.");
@@ -1198,6 +1205,7 @@ public final class UiText {
         EN.put("원","won");
         EN.put("원 / 분"," won/min");
         EN.put("원/L"," won/L");
+        EN.put("원근 도로","Perspective road");
         EN.put("원래 화면","Previous screen");
         EN.put("원작","Original");
         EN.put("원형","Dial");
@@ -1653,6 +1661,8 @@ public final class UiText {
         EN.put("트렁크 열림","Trunk open");
         EN.put("트립 평균","Trip average");
         EN.put("트립 평균 ","Trip average ");
+        EN.put("트윈 서클","Twin circles");
+        EN.put("트윈 포드","Twin pods");
         EN.put("틱틱","Double tick");
         EN.put("틸","Teal");
         EN.put("파랑","Blue");

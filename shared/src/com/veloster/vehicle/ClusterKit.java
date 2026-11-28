@@ -201,8 +201,17 @@ abstract class ClusterKit {
         }
         if(mask==0)return;
         long sk=key(key(key(key(key(key(mask+200,x),y),w),h),t),g);
-        p.setStyle(Paint.Style.FILL);p.setColor(col(color));c.drawPath(memo(sk),p);
+        Path m=memo(sk);
+        if(segGlow>0&&lighted){   // halo: two soft strokes of the same shape under it (no blur filter on the head unit's renderer)
+            int rgb=col(color)&0xffffff;p.setStyle(Paint.Style.STROKE);p.setStrokeJoin(Paint.Join.ROUND);
+            float spread=Math.min(segGlow,1.5f+t*0.5f);   // px beyond the segment's edge
+            p.setStrokeWidth(2*spread);p.setColor(rgb|0x1c000000);c.drawPath(m,p);
+            p.setStrokeWidth(spread);p.setColor(rgb|0x30000000);c.drawPath(m,p);p.setStrokeJoin(Paint.Join.MITER);
+        }
+        p.setStyle(Paint.Style.FILL);p.setColor(col(color));c.drawPath(m,p);
     }
+    /** Seven-segment halo: the most it spreads past a segment's edge, px (0: none). 레트로 8종 sets it for its lit layer. */
+    protected float segGlow;
     private static final String SEGS="abcdefg";
     private float base;
     /** Segment corner, slanted 0.1 to the right per unit of height above the digit's baseline. */

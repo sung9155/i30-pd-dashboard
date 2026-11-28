@@ -44,10 +44,10 @@ public final class PitRenderer {
     private final TachoCluster tacho=new TachoCluster();
     private final WrcCluster wrc=new WrcCluster();private final NeonCluster neon=new NeonCluster();
     /** The screens after RPM, in ClusterPicker order (WRC, 아날로그, 신스웨이브): drawn here like 에코 and RPM. */
-    private final ClusterKit[] more={new AnalogCluster(),neon,wrc,new MaintenanceCluster()};
+    private final ClusterKit[] more={new AnalogCluster(),neon,wrc,new MaintenanceCluster(),new RetroCluster()};   // RetroCluster: 레트로 8종 (upstream 6289e95)
     /** Background thread (VehicleDash): the screens that build a lot on first sight draw once off screen (ClusterKit.warm). */
     public void warm(int screen,VehicleProfile p,long now){if(screen==ClusterPicker.ARCADE)clusterRenderer.warm(screen-ClusterPicker.CLASSIC,p,now);else if(screen==ClusterPicker.NEON)neon.warm(p,now);}   // ClusterPicker order: 아날로그, 신스웨이브, WRC
-    private ClusterKit more(int pg){int s=pg+ClusterPicker.F1;return s==ClusterPicker.ANALOG?more[0]:s==ClusterPicker.NEON?more[1]:s==ClusterPicker.WRC?more[2]:s==ClusterPicker.MAINT?more[3]:null;}
+    private ClusterKit more(int pg){int s=pg+ClusterPicker.F1;return s==ClusterPicker.ANALOG?more[0]:s==ClusterPicker.NEON?more[1]:s==ClusterPicker.WRC?more[2]:s==ClusterPicker.MAINT?more[3]:s==ClusterPicker.RETRO8?more[4]:null;}
     private final ShowRenderer showRenderer=new ShowRenderer();
     private final ClusterRenderer clusterRenderer=new ClusterRenderer();
     public static final int PAGE_PERFORMANCE=1,PAGE_RACE=2,PAGE_RECORDS=3,PAGE_SHOW=4,PAGE_CLASSIC=5,PAGE_RETRO=6,PAGE_RALLY=7;
@@ -60,9 +60,9 @@ public final class PitRenderer {
     /** The 타코 screen (TachoCluster): drawn here too. */
     public static final int PAGE_TACHO=ClusterPicker.TACHO-ClusterPicker.F1;
     private boolean picker,editing;
-    private int hidden;
+    private long hidden;
     /** Screen list over the body while open, its edit mode and the hidden screens (VehicleDash owns the gesture). */
-    public void setPicker(boolean open,boolean edit,int hiddenScreens){picker=open;editing=edit;hidden=hiddenScreens;}
+    public void setPicker(boolean open,boolean edit,long hiddenScreens){picker=open;editing=edit;hidden=hiddenScreens;}
     private int[] order=ClusterPicker.defaultOrder();
     private float settingsScroll;
     public void setOrder(int[] o,float scroll){order=o;settingsScroll=scroll;}
@@ -333,7 +333,7 @@ public final class PitRenderer {
             if(paneScroll&&(t+h<SettingsLayout.TOP||t>SettingsLayout.BOTTOM))continue;   // scrolled out of view
             String name,sub=null,value=null;boolean sel=false,dim=false;int swatch=0,swatchBg=0xff000000;
             switch(cat){
-                case SettingsLayout.SCREENS:dim=(hidden&(1<<i))!=0;name=ClusterPicker.NAMES[i];sub=dim?"미사용":"사용";break;
+                case SettingsLayout.SCREENS:dim=(hidden&(1L<<i))!=0;name=ClusterPicker.NAMES[i];sub=dim?"미사용":"사용";break;
                 case SettingsLayout.THEME:{Theme th=Theme.of(Theme.IDS[i]);sel=th==Theme.current();name=SettingsLayout.THEME_NAMES[i];sub=th.label;swatch=th.accent;swatchBg=th.map(0xff101315);break;}
                 case SettingsLayout.PAINT:
                     if(i==CarPaint.IDS.length){name="8비트 하늘";sub="자동: 와이퍼·외기온·낮 전조등";value=Weather.skyLabel();break;}
@@ -347,7 +347,7 @@ public final class PitRenderer {
                     else{int k=i-SettingsLayout.MODE_FIRST;name=ClusterPicker.MODE_NAMES[k];dim=!modeScreen;sub="눌러서 화면 고르기";value=screenName(modeTargets[k]);}
                     break;
                 case SettingsLayout.PICK:{int s=i<ClusterPicker.COUNT?i:-1;sel=modeTargets[pickSlot]==s;name=screenName(s);
-                    if(s>=0&&(hidden&(1<<s))!=0){dim=true;sub="미사용";}break;}
+                    if(s>=0&&(hidden&(1L<<s))!=0){dim=true;sub="미사용";}break;}
                 case SettingsLayout.RPM:
                     if(i==SettingsLayout.RPM_BEEP){sel=beepOn;name="변속 알림음";sub="변속 목표에서 울림 · 항상 = 플로팅 창에서도 · 맞춤 소리 화면에선 클러치 뗐을 때만";value=!beepOn?"끔":SettingsLayout.floatBeep?"항상":"계기판";break;}
                     if(i==SettingsLayout.RPM_BEEP_SOUND){name="알림음 종류";dim=!beepOn;sub="누를 때마다 바뀌고 한 번 들려줌";value=SettingsLayout.BEEP_SOUNDS[beepSound];break;}
@@ -700,7 +700,7 @@ public final class PitRenderer {
     private void screenRow(Canvas c,int p,int n,int s,float t,float dx,boolean lifted){
         if(s==ClusterPicker.LINE){lineRow(c,p,n,t,dx,lifted);return;}
         float L=SettingsLayout.PANE_L+dx,R=SettingsLayout.PANE_R+dx,rh=SettingsLayout.SCREEN_ROW_H;
-        boolean off=(hidden&(1<<s))!=0;
+        boolean off=(hidden&(1L<<s))!=0;
         box(c,L,t+4,R,t+rh-4,lifted?0xff1c303b:off?0xff08090a:0xff101315);
         if(lifted){box(c,L,t+4,R,t+6,BLUE);box(c,L,t+rh-6,R,t+rh-4,BLUE);box(c,L,t+4,L+2,t+rh-4,BLUE);box(c,R-2,t+4,R,t+rh-4,BLUE);}
         for(int k=-1;k<=1;k++)box(c,L+5,t+rh/2+k*6-1,L+19,t+rh/2+k*6+1,BLUE);   // the grip

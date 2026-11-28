@@ -9,13 +9,13 @@ package com.veloster.vehicle;
 public final class ClusterPicker {
     /** Header tab label per screen (short: the tab is 160 px wide). */
     public static final String[] NAMES={"전체 조망","게이지","그래프","F1","퍼포먼스","레이스","기록","쇼",
-        "클래식","레트로","랠리","택시","80년대","HUD","8비트","아케이드","G 원","야간","드래그","엔진","카세트","워프","서킷","람다","에코","RPM","아날로그","신스웨이브","내 차","네온 드라이브","정비","WRC"};
+        "클래식","레트로","랠리","택시","80년대","HUD","8비트","아케이드","G 원","야간","드래그","엔진","카세트","워프","서킷","람다","에코","RPM","아날로그","신스웨이브","내 차","네온 드라이브","정비","WRC","레트로 8종"};
     /** Second line on each tile. */
     public static final String[] DESC={"모든 값 한눈에","고른 값 게이지","시간 그래프","F1 스타일 계기판","랩 타이머","변속 표시·음악","주행 기록","쇼 화면",
         "계단 회전 곡선","주황 LCD","흰 네모 숫자","택시 미터기","80년대 디지털","전투기 HUD","8비트 게임","8비트 추격 시점","마찰원","야간 미니멀","드래그 출발 트리",
         "비행기 엔진 계기판","카세트 데크","우주선 워프","GPS 랩 타이머","Λ RPM·속도계","연비·연료비","원형 RPM·다운시프트",
-        "크롬 원형 바늘","사이버펑크 네온","3D 모델·램프·핸들 연동","도트 드라이브 화면","소모품 · 교환 주기","랠리 페이스노트"};
-    public static final int OVERVIEW=0,GAUGES=1,GRAPHS=2,F1=3,CLASSIC=8,ARCADE=15,MANUAL=23,ECO=24,TACHO=25,ANALOG=26,NEON=27,MAINT=30,WRC=31,COUNT=NAMES.length,COLS=6,SLOTS=36;   // MANUAL: the Λ screen (LambdaCluster), 6MT and 7DCT
+        "크롬 원형 바늘","사이버펑크 네온","3D 모델·램프·핸들 연동","도트 드라이브 화면","소모품 · 교환 주기","랠리 페이스노트","80년대 · 눌러서 바꾸기"};
+    public static final int OVERVIEW=0,GAUGES=1,GRAPHS=2,F1=3,CLASSIC=8,ARCADE=15,MANUAL=23,ECO=24,TACHO=25,ANALOG=26,NEON=27,MAINT=30,WRC=31,RETRO8=32,COUNT=NAMES.length,COLS=6,SLOTS=36;   // MANUAL: the Λ screen (LambdaCluster), 6MT and 7DCT
     /** Screens that are their own Android views over the dashboard (VehicleDash.syncOverlay), not PitRenderer pages. */
     public static final int CAR3D=28,NEON_DRIVE=29;   // 2026-11-27: 내 차 and 네온 드라이브 before WRC, so the stable release (without WRC) has the same numbers
     public static final float LEFT=17,TOP=60,TILE_W=121,TILE_H=62,GAP=8;
@@ -28,9 +28,9 @@ public final class ClusterPicker {
     public static int validFav(int f){return Math.max(1,Math.min(COUNT,f));}
     /** Where the line goes when none is saved (the update that brought it, a new install): under the 7th screen that is
      *  switched on, so screens an owner switched off do not use up the strip; with fewer on, under the last of them. */
-    public static int defaultFav(int[] order,int hidden){
+    public static int defaultFav(int[] order,long hidden){
         order=validOrder(order);int on=0,last=0;
-        for(int i=0;i<COUNT;i++)if((hidden&(1<<order[i]))==0){last=i;if(++on==FAV_DEFAULT)break;}
+        for(int i=0;i<COUNT;i++)if((hidden&(1L<<order[i]))==0){last=i;if(++on==FAV_DEFAULT)break;}
         return validFav(last+1);
     }
     public static int[] rows(int[] order,int fav){
@@ -51,14 +51,14 @@ public final class ClusterPicker {
     }
     public static boolean starred(int[] order,int fav,int s){order=validOrder(order);fav=validFav(fav);for(int i=0;i<fav;i++)if(order[i]==s)return true;return false;}
     /** The header strip: the screens above the line that are switched on. */
-    public static int[] bar(int[] order,int hidden,int fav){
+    public static int[] bar(int[] order,long hidden,int fav){
         order=validOrder(order);fav=validFav(fav);int[] out=new int[fav];int n=0;
-        for(int i=0;i<fav;i++)if((hidden&(1<<order[i]))==0)out[n++]=order[i];
+        for(int i=0;i<fav;i++)if((hidden&(1L<<order[i]))==0)out[n++]=order[i];
         return java.util.Arrays.copyOf(out,n);
     }
     /** The strip's tabs: the bar, and after it the screen on show when it is not one of them (picked from the list, or
      *  opened by a drive mode), so the strip always shows where you are. */
-    public static int[] tabs(int[] order,int hidden,int fav,int cur){
+    public static int[] tabs(int[] order,long hidden,int fav,int cur){
         int[] b=bar(order,hidden,fav);if(cur<0||cur>=COUNT)return b;
         for(int s:b)if(s==cur)return b;
         int[] t=java.util.Arrays.copyOf(b,b.length+1);t[b.length]=cur;return t;
@@ -66,7 +66,7 @@ public final class ClusterPicker {
     /** Not dashboards: the service log and the two screens you go into. The list keeps them on a row of their own. */
     public static boolean own(int s){return s==MAINT||s==CAR3D||s==NEON_DRIVE;}
     /** The list's tiles (SLOTS, -1 = empty): the dashboards switched on, in order; then, from the next row, the own kind. */
-    public static int[] grid(int[] order,int hidden){
+    public static int[] grid(int[] order,long hidden){
         int[] g=new int[SLOTS];java.util.Arrays.fill(g,-1);int[] shown=slots(order,hidden,false);int n=0;
         for(int s:shown)if(!own(s)&&n<SLOTS)g[n++]=s;
         n=(n+COLS-1)/COLS*COLS;
@@ -82,17 +82,22 @@ public final class ClusterPicker {
         for(int i=0;i<SLOTS;i++){float l=left(i),t=top(i);if(x>=l&&x<=l+TILE_W&&y>=t&&y<=t+TILE_H)return i;}
         return -1;
     }
-    /** Every screen's bit; 32 screens fill the int (1<<32 would wrap to 1): the next new screen needs a long mask. */
-    private static final int ALL=COUNT>=32?-1:(1<<COUNT)-1;
+    /** Every screen's bit. The hidden mask is a long since 레트로 8종 (screen 32, the 33rd): an int held 32. VehicleDash keeps
+     *  it as two int preferences (cluster_hidden: screens 0-31 as before, cluster_hidden_hi: 32 and up). */
+    private static final long ALL=COUNT>=64?-1L:(1L<<COUNT)-1;
     /** A saved mask, or 0 (all shown) when it is out of range or hides every screen. */
-    public static int valid(int hidden){return (hidden&~ALL)!=0||hidden==ALL?0:hidden;}
+    public static long valid(long hidden){return (hidden&~ALL)!=0||hidden==ALL?0:hidden;}
+    /** The mask from its two saved halves, and the halves of a mask. */
+    public static long mask(int lo,int hi){return (lo&0xffffffffL)|((long)hi<<32);}
+    public static int maskLo(long hidden){return (int)hidden;}
+    public static int maskHi(long hidden){return (int)(hidden>>>32);}
     /** Natural display order 0..COUNT-1 (screen numbers; the convenience calls below and host tests). */
     public static int[] naturalOrder(){int[] o=new int[COUNT];for(int i=0;i<COUNT;i++)o[i]=i;return o;}
     /** Default display order (2026-11-27): related screens together — everyday, shift / RPM, track and timing, rally,
      *  retro and themes, then the games and the screens you go into (아케이드, 네온 드라이브, 내 차) last. */
-    private static final int[] DEFAULT_ORDER={0,1,2,8,26,17,24,11,30, 25,23,5,3, 4,22,18,16,6, 10,31, 9,12,20,19,13,27,21,7, 14,15,29,28};
+    private static final int[] DEFAULT_ORDER={0,1,2,8,26,17,24,11,30, 25,23,5,3, 4,22,18,16,6, 10,31, 9,12,32,20,19,13,27,21,7, 14,15,29,28};
     /** Bump when DEFAULT_ORDER changes: a saved order from before is replaced by it once (VehicleDash). */
-    public static final int ORDER_VERSION=4;   // 3: screen numbers 28-30 changed (내 차, 네온 드라이브, WRC); 4: 정비 30, WRC 31 (the saved order kept)
+    public static final int ORDER_VERSION=4;   // 3: screen numbers 28-30 changed (내 차, 네온 드라이브, WRC); 4: 정비 30, WRC 31 (the saved order kept). 레트로 8종 (32) needed no bump: validOrder puts a new screen after a saved order
     /** A v3 saved order in v4 numbers: WRC 30 -> 31, and 정비 (30) right after 택시 (11), or last when 택시 is not in it. */
     public static int[] migrateOrder4(int[] saved){
         if(saved==null)return null;
@@ -103,12 +108,12 @@ public final class ClusterPicker {
     }
     /** A v3 screen number in v4 numbers (only WRC moved). */
     public static int renumber4(int s){return s==30?WRC:s;}
-    public static int renumberMask4(int m){return (m&~(1<<30))|((m&(1<<30))!=0?1<<31:0);}
+    public static long renumberMask4(long m){return (m&~(1L<<30))|((m&(1L<<30))!=0?1L<<31:0);}
     public static int[] defaultOrder(){return DEFAULT_ORDER.clone();}
     /** A screen number saved before ORDER_VERSION 3 (test builds: 28 WRC, 29 내 차, 30 네온 드라이브) as it is now; stable
      *  builds never had 28-30, so for them it changes nothing. */
     public static int renumber(int s){return s==28?WRC:s==29?CAR3D:s==30?NEON_DRIVE:s;}
-    public static int renumberMask(int m){int out=m&~(7<<28);for(int s=28;s<=30;s++)if((m&(1<<s))!=0)out|=1<<renumber(s);return out;}
+    public static long renumberMask(long m){long out=m&~(7L<<28);for(int s=28;s<=30;s++)if((m&(1L<<s))!=0)out|=1L<<renumber(s);return out;}
     /** A saved order repaired to a permutation of 0..COUNT-1 (the default when it is missing or malformed). An order saved
      *  before screens were added keeps its arrangement, with the new screens after it. */
     public static int[] validOrder(int[] o){
@@ -133,22 +138,22 @@ public final class ClusterPicker {
         order[to]=t;return order;
     }
     /** The shown screen after cur in display order, wrapping; cur itself when it is the only one. */
-    public static int next(int[] order,int cur,int hidden){
+    public static int next(int[] order,int cur,long hidden){
         order=validOrder(order);int at=pos(order,cur);
-        for(int k=1;k<=order.length;k++){int s=order[(at+k)%order.length];if((hidden&(1<<s))==0)return s;}
+        for(int k=1;k<=order.length;k++){int s=order[(at+k)%order.length];if((hidden&(1L<<s))==0)return s;}
         return cur;
     }
     /** The shown screen before cur in display order, wrapping; cur itself when it is the only one. */
-    public static int prev(int[] order,int cur,int hidden){
+    public static int prev(int[] order,int cur,long hidden){
         order=validOrder(order);int at=pos(order,cur);
-        for(int k=1;k<=order.length;k++){int s=order[((at-k)%order.length+order.length)%order.length];if((hidden&(1<<s))==0)return s;}
+        for(int k=1;k<=order.length;k++){int s=order[((at-k)%order.length+order.length)%order.length];if((hidden&(1L<<s))==0)return s;}
         return cur;
     }
     // Natural-order convenience for callers that keep the default order (drive-mode logic, host tests).
-    public static int next(int cur,int hidden){return next(naturalOrder(),cur,hidden);}
-    public static int prev(int cur,int hidden){return prev(naturalOrder(),cur,hidden);}
-    public static int[] slots(int hidden,boolean editing){return slots(naturalOrder(),hidden,editing);}
-    public static int shown(int s,int hidden){return shown(naturalOrder(),s,hidden);}
+    public static int next(int cur,long hidden){return next(naturalOrder(),cur,hidden);}
+    public static int prev(int cur,long hidden){return prev(naturalOrder(),cur,hidden);}
+    public static int[] slots(long hidden,boolean editing){return slots(naturalOrder(),hidden,editing);}
+    public static int shown(int s,long hidden){return shown(naturalOrder(),s,hidden);}
     /** Drive modes with a screen of their own, in settings order (CLU13 codes), and their default screens (-1 = 원래 화면). */
     public static final int[] MODES={1,3,0},MODE_DEFAULT={F1,-1,-1};
     public static final String[] MODE_NAMES={"SPORT","ECO","NORMAL"};
@@ -162,7 +167,7 @@ public final class ClusterPicker {
      * meanwhile. state = {screen, back (-1 none)}; mode codes are CLU13's (0 NORMAL, 1 SPORT, 3 ECO, -1 unknown).
      * Only a change between two known modes moves anything.
      */
-    public static int[] onMode(int prev,int mode,int screen,int back,int hidden,int[] targets){
+    public static int[] onMode(int prev,int mode,int screen,int back,long hidden,int[] targets){
         if(prev<0||mode<0||prev==mode)return new int[]{screen,back};
         int from=target(prev,hidden,targets),to=target(mode,hidden,targets);
         if(back>=0&&from>=0&&screen!=from)back=-1;   // driver left the screen a jump opened: keep their choice
@@ -171,20 +176,20 @@ public final class ClusterPicker {
         return new int[]{screen,back};
     }
     /** The mode's screen, or -1 for 원래 화면, an unknown mode or a hidden screen. */
-    private static int target(int mode,int hidden,int[] targets){
+    private static int target(int mode,long hidden,int[] targets){
         int k=modeSlot(mode),s=k<0?-1:validTarget(targets[k]);
-        return s>=0&&(hidden&(1<<s))==0?s:-1;
+        return s>=0&&(hidden&(1L<<s))==0?s:-1;
     }
     /** s when shown, else the next shown screen in display order. */
-    public static int shown(int[] order,int s,int hidden){return (hidden&(1<<s))==0?s:next(order,s,hidden);}
+    public static int shown(int[] order,int s,long hidden){return (hidden&(1L<<s))==0?s:next(order,s,hidden);}
     /** Flip screen s; the last shown screen stays shown. */
-    public static int toggle(int hidden,int s){int h=hidden^(1<<s);return h==ALL?hidden:h;}
+    public static long toggle(long hidden,int s){long h=hidden^(1L<<s);return h==ALL?hidden:h;}
     /** Screens in display order: the shown ones, or all of them while editing. */
-    public static int[] slots(int[] order,int hidden,boolean editing){
+    public static int[] slots(int[] order,long hidden,boolean editing){
         order=validOrder(order);
-        int n=0;for(int s:order)if(editing||(hidden&(1<<s))==0)n++;
+        int n=0;for(int s:order)if(editing||(hidden&(1L<<s))==0)n++;
         int[] out=new int[n];n=0;
-        for(int s:order)if(editing||(hidden&(1<<s))==0)out[n++]=s;
+        for(int s:order)if(editing||(hidden&(1L<<s))==0)out[n++]=s;
         return out;
     }
 }

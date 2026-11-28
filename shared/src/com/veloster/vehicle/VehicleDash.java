@@ -37,7 +37,7 @@ public final class VehicleDash extends View implements Runnable {
     /** Screen showing (ClusterPicker index); saved, so the dashboard reopens on it. */
     private int screen;
     /** Screens the driver hid (ClusterPicker bit mask); saved, so it survives a reboot. */
-    private int hidden;
+    private long hidden;
     /** Screen list open (long press on the Cluster tab), and its edit mode where a tile tap shows or hides it. */
     private boolean picker,editing;
     /** Options: accent colour follows the drive mode; SPORT/ECO open their screen (ClusterPicker.onMode). */
@@ -321,7 +321,7 @@ public final class VehicleDash extends View implements Runnable {
         applyScreen();FloatPanel.screen=screen;
         if(ownView(screen)&&shownScreen!=screen&&shownScreen>=0&&!ownView(shownScreen))overlayBack=shownScreen;
         shownScreen=screen;removeCallbacks(syncLater);post(syncLater);   // not inside onDraw (a drive-mode jump changes the screen there)
-        activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).putString("cluster_order",orderCsv(order)).apply();
+        activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("cluster_screen",screen).putInt("cluster_hidden",ClusterPicker.maskLo(hidden)).putInt("cluster_hidden_hi",ClusterPicker.maskHi(hidden)).putString("cluster_order",orderCsv(order)).apply();
     }
     private VehicleDash(Activity a) { super(a); activity=a; artwork=new ArtworkLoader(a,this);
         gaugeEditor=new GaugeEditor(a,gaugeLayout,new Runnable(){public void run(){invalidate();}});
@@ -362,7 +362,7 @@ public final class VehicleDash extends View implements Runnable {
         applySound();
         fonts(a);
         if(EcoCluster.CAR==null){EcoCluster.CAR=rawBitmap(a,"eco_car_rear");EcoCluster.PAINT=rawBitmap(a,"eco_car_paint");}ShiftBeep.loadCassette(a);
-        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);EcoCluster.coins=p.getBoolean("eco_coins",false);AnalogCluster.style=p.getInt("analog_look",0);LambdaCluster.downAlways=p.getBoolean("lambda_down_always",false);EcoCluster.l100=p.getBoolean("eco_l100",false);
+        try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);EcoCluster.coins=p.getBoolean("eco_coins",false);AnalogCluster.style=p.getInt("analog_look",0);RetroCluster.style=RetroCluster.validStyle(p.getInt("retro_style",0));LambdaCluster.downAlways=p.getBoolean("lambda_down_always",false);EcoCluster.l100=p.getBoolean("eco_l100",false);
             EcoCluster.grade=p.getInt("eco_grade",0)==1?1:0;
             for(int g=0;g<3;g++)EcoCluster.prices[g]=Math.max(0,Math.min(EcoCluster.PRICE_MAX,p.getInt("eco_price_"+g,0)));EcoCluster.hintDone=p.getBoolean("eco_hint_done",false);EcoCluster.coinSound=p.getBoolean("eco_coin_sound",false);}
         catch(ClassCastException e){/* defaults */}
@@ -385,7 +385,7 @@ public final class VehicleDash extends View implements Runnable {
             SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);
             int v=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);
             screen=v>=0&&v<ClusterPicker.COUNT?v:ClusterPicker.OVERVIEW;
-            hidden=ClusterPicker.valid(p.getInt("cluster_hidden",0));
+            hidden=ClusterPicker.valid(ClusterPicker.mask(p.getInt("cluster_hidden",0),p.getInt("cluster_hidden_hi",0)));   // two ints: screens 0-31, then 32 and up
             int[] savedOrder=parseOrder(p.getString("cluster_order",null));int ov=p.getInt("cluster_order_v",0);
             order=ClusterPicker.validOrder(savedOrder);
             // The order is saved on every screen change, so every install has one. Before v3 a new default replaced it once;
@@ -396,7 +396,7 @@ public final class VehicleDash extends View implements Runnable {
                     SharedPreferences.Editor me=p.edit();   // the drive-mode screens are screen numbers too (SPORT -> WRC stays WRC)
                     for(int k=0;k<modeTargets.length;k++){modeTargets[k]=ClusterPicker.renumber4(modeTargets[k]);me.putInt("mode_screen_"+ClusterPicker.MODE_NAMES[k].toLowerCase(java.util.Locale.US),modeTargets[k]);}
                     me.apply();}
-                p.edit().putString("cluster_order",orderCsv(order)).putInt("cluster_order_v",ClusterPicker.ORDER_VERSION).putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).apply();}
+                p.edit().putString("cluster_order",orderCsv(order)).putInt("cluster_order_v",ClusterPicker.ORDER_VERSION).putInt("cluster_screen",screen).putInt("cluster_hidden",ClusterPicker.maskLo(hidden)).putInt("cluster_hidden_hi",ClusterPicker.maskHi(hidden)).apply();}
             // The favourites line (2026-11-28): none saved = under the 7th screen switched on, of the order as it is now
             fav=p.contains("cluster_fav")?ClusterPicker.validFav(p.getInt("cluster_fav",ClusterPicker.FAV_DEFAULT)):ClusterPicker.defaultFav(order,hidden);
         }catch(ClassCastException e){/* Open on Overview, everything shown, for an incompatible saved value. */}
@@ -521,10 +521,10 @@ public final class VehicleDash extends View implements Runnable {
             }}).show();
     }
     /** Eco's big bitmaps on a background thread, so the first Eco frame does not build them. */
-    private boolean ecoHidden(){return (hidden&(1<<ClusterPicker.ECO))!=0;}
+    private boolean ecoHidden(){return (hidden&(1L<<ClusterPicker.ECO))!=0;}
     /** Eco's big bitmaps, then one off-screen frame of 아케이드 and 신스웨이브 (shown ones only), on a background thread. */
     private void warmEco(){
-        final boolean eco=!ecoHidden(),arcade=(hidden&(1<<ClusterPicker.ARCADE))==0,neon=(hidden&(1<<ClusterPicker.NEON))==0;final VehicleProfile prof=DATA.profile();
+        final boolean eco=!ecoHidden(),arcade=(hidden&(1L<<ClusterPicker.ARCADE))==0,neon=(hidden&(1L<<ClusterPicker.NEON))==0;final VehicleProfile prof=DATA.profile();
         new Thread(new Runnable(){public void run(){android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND);
             if(eco)try{EcoCluster.warm();}catch(RuntimeException e){/* the draw builds them */}
             if(arcade)renderer.warm(ClusterPicker.ARCADE,prof,SystemClock.elapsedRealtime());
@@ -1003,7 +1003,7 @@ public final class VehicleDash extends View implements Runnable {
                     else if(z==3)r=ClusterPicker.moveRow(order,fav,p,0);
                     else hidden=ClusterPicker.toggle(hidden,sc);
                     if(r!=null){order=ClusterPicker.orderOf(r);fav=ClusterPicker.favOf(r);}
-                    activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("cluster_order",orderCsv(order)).putInt("cluster_hidden",hidden).putInt("cluster_fav",fav).apply();
+                    activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("cluster_order",orderCsv(order)).putInt("cluster_hidden",ClusterPicker.maskLo(hidden)).putInt("cluster_hidden_hi",ClusterPicker.maskHi(hidden)).putInt("cluster_fav",fav).apply();
                     showCluster();invalidate();
                 }
                 return true;
@@ -1118,7 +1118,7 @@ public final class VehicleDash extends View implements Runnable {
         }
         if(tap&&!blocked&&symmetric&&(PitRenderer.isCluster(page)||page==PitRenderer.PAGE_ECO||page==PitRenderer.PAGE_MANUAL||page>PitRenderer.PAGE_TACHO)&&y>52&&downY>52&&renderer.clusterTap(x,y)){int kc=CassetteCluster.consumeKeyCmd();if(kc!=0)requestMedia(kc);if(EcoCluster.consumeChanged())saveEco();
             if(page==PitRenderer.PAGE_MANUAL)activity.getSharedPreferences("pit_vehicle_ui",0).edit().putBoolean("lambda_down_always",LambdaCluster.downAlways).apply();
-            if(page>PitRenderer.PAGE_TACHO)activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("analog_look",AnalogCluster.style).apply();
+            if(page>PitRenderer.PAGE_TACHO)activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("analog_look",AnalogCluster.style).putInt("retro_style",RetroCluster.style).apply();
             if(page==ClusterPicker.page(ClusterPicker.MAINT))maintPending();invalidate();return true;}   // 아날로그: the dial look
         if(tap&&!blocked&&!picker&&renderer.tbtHit(x,y)&&renderer.tbtHit(downX,downY)){renderer.tbtBig=!renderer.tbtBig;invalidate();return true;}   // the guidance band opens big, a tap closes it
         if(tap&&!blocked&&gauges&&x>=650&&x<=788&&downX>=650&&downX<=788&&y>=54&&y<=78&&downY>=54&&downY<=78){gaugeEditor.toggleGrid();return true;}

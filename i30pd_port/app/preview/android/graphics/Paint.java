@@ -17,6 +17,8 @@ public class Paint {
     public void setStyle(Style s){style=s;}
     public void setStrokeWidth(float w){width=w;}
     public void setStrokeCap(Cap c){cap=c;}
+    public enum Join{MITER,ROUND,BEVEL}
+    public void setStrokeJoin(Join j){}   // the preview strokes are always round-joined (Canvas.stroke)
     public void setTextSize(float s){size=s;}
     public void setTextAlign(Align a){align=a;}
     public Shader setShader(Shader s){shader=s;return s;}

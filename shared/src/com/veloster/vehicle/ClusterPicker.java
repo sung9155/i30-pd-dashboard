@@ -24,6 +24,9 @@ public final class ClusterPicker {
      *  order; the others are picked from the list (the header's list button). The line is a row of its own among the
      *  screens (LINE; COUNT+1 rows), so dragging a row across it, or the line itself, changes how many are above. */
     public static final int LINE=-1,FAV_DEFAULT=7;
+    /** The 미사용 line (2026-11-28): the list's screens switched off sit under it, at the bottom. It stays put; a row
+     *  moved across it (a drag, ▲▼, a tap on 사용/미사용) is switched off or on. */
+    public static final int OFF=-2;
     /** A saved count of favourites: at least one, at most every screen. */
     public static int validFav(int f){return Math.max(1,Math.min(COUNT,f));}
     /** Where the line goes when none is saved (the update that brought it, a new install): under the 7th screen that is
@@ -33,22 +36,37 @@ public final class ClusterPicker {
         for(int i=0;i<COUNT;i++)if((hidden&(1L<<order[i]))==0){last=i;if(++on==FAV_DEFAULT)break;}
         return validFav(last+1);
     }
-    public static int[] rows(int[] order,int fav){
-        order=validOrder(order);fav=validFav(fav);int[] r=new int[COUNT+1];
-        System.arraycopy(order,0,r,0,fav);r[fav]=LINE;System.arraycopy(order,fav,r,fav+1,COUNT-fav);return r;
+    /** The settings' list (COUNT+2 rows): the screens in use with the favourites line among them (fav counts the ones in
+     *  use above it), the 미사용 line, then the screens switched off, each part in the order's order. */
+    public static int[] rows(int[] order,long hidden,int fav){
+        order=validOrder(order);fav=validFav(fav);hidden=valid(hidden);int[] r=new int[COUNT+2];int n=0,favOn=0,shown=0;
+        for(int i=0;i<COUNT;i++)if((hidden&(1L<<order[i]))==0){if(i<fav)favOn++;}
+        favOn=Math.max(1,favOn);
+        for(int s:order)if((hidden&(1L<<s))==0){if(shown++==favOn)r[n++]=LINE;r[n++]=s;}
+        if(shown<=favOn)r[n++]=LINE;
+        r[n++]=OFF;
+        for(int s:order)if((hidden&(1L<<s))!=0)r[n++]=s;
+        return r;
     }
+    /** The screens under the 미사용 line. */
+    public static long hiddenOf(int[] rows){long h=0;boolean off=false;for(int s:rows){if(s==OFF)off=true;else if(off&&s>=0)h|=1L<<s;}return h;}
     public static int favOf(int[] rows){for(int i=0;i<rows.length;i++)if(rows[i]==LINE)return i;return FAV_DEFAULT;}
-    public static int[] orderOf(int[] rows){int[] o=new int[COUNT];int k=0;for(int s:rows)if(s!=LINE&&k<COUNT)o[k++]=s;return o;}
-    /** The row at from taken out and put back at to: a drag, ▲▼ (to = from ± 1), 맨 위로 (to = 0). The line never ends
-     *  up above the first screen. Out of range keeps the rows. */
-    public static int[] moveRow(int[] order,int fav,int from,int to){
-        int[] r=rows(order,fav);if(from<0||from>=r.length||to<0||to>=r.length||from==to)return r;
-        int t=r[from];
+    public static int[] orderOf(int[] rows){int[] o=new int[COUNT];int k=0;for(int s:rows)if(s>=0&&k<COUNT)o[k++]=s;return o;}
+    /** The row at from taken out and put back at to: a drag, ▲▼ (to = from ± 1), 맨 위로 (to = 0), 사용/미사용 (to = the
+     *  미사용 line's row). Across the 미사용 line a screen is switched off or on; that line never moves; the favourites line
+     *  stays under the first screen and above the 미사용 line; the last screen in use stays. Out of range keeps the rows. */
+    public static int[] moveRow(int[] order,long hidden,int fav,int from,int to){
+        int[] o=rows(order,hidden,fav);if(from<0||from>=o.length||to<0||to>=o.length||from==to||o[from]==OFF)return o;
+        int[] r=o.clone();int t=r[from];
         if(from<to)System.arraycopy(r,from+1,r,from,to-from);else System.arraycopy(r,to,r,to+1,from-to);
         r[to]=t;
+        int li=index(r,LINE),oi=index(r,OFF);
+        if(li>oi){System.arraycopy(r,oi,r,oi+1,li-oi);r[oi]=LINE;oi++;}   // the favourites line just above the 미사용 line
+        if(oi<2)return o;   // no screen left in use
         if(r[0]==LINE){r[0]=r[1];r[1]=LINE;}
         return r;
     }
+    private static int index(int[] a,int v){for(int i=0;i<a.length;i++)if(a[i]==v)return i;return -1;}
     public static boolean starred(int[] order,int fav,int s){order=validOrder(order);fav=validFav(fav);for(int i=0;i<fav;i++)if(order[i]==s)return true;return false;}
     /** The header strip: the screens above the line that are switched on. */
     public static int[] bar(int[] order,long hidden,int fav){
@@ -84,7 +102,7 @@ public final class ClusterPicker {
     }
     /** Every screen's bit. The hidden mask is a long since 레트로 8종 (screen 32, the 33rd): an int held 32. VehicleDash keeps
      *  it as two int preferences (cluster_hidden: screens 0-31 as before, cluster_hidden_hi: 32 and up). */
-    private static final long ALL=COUNT>=64?-1L:(1L<<COUNT)-1;
+    public static final long ALL=COUNT>=64?-1L:(1L<<COUNT)-1;
     /** A saved mask, or 0 (all shown) when it is out of range or hides every screen. */
     public static long valid(long hidden){return (hidden&~ALL)!=0||hidden==ALL?0:hidden;}
     /** The mask from its two saved halves, and the halves of a mask. */

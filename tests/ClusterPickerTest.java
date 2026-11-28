@@ -89,21 +89,36 @@ public final class ClusterPickerTest {
         check(ClusterPicker.renumber4(30)==31&&ClusterPicker.renumber4(5)==5&&ClusterPicker.renumberMask4((1L<<30)|(1L<<2))==((1L<<31)|(1L<<2)),"v3 screen and hidden bits: 30 -> 31");
         // The favourites line (2026-11-28): the screens above it are the header strip, the rest only the list.
         {int[] d=ClusterPicker.defaultOrder();int N=ClusterPicker.COUNT,LINE=ClusterPicker.LINE;
-         int[] rows=ClusterPicker.rows(d,7);
-         check(rows.length==N+1&&rows[7]==LINE&&rows[0]==d[0]&&rows[6]==d[6]&&rows[8]==d[7]&&rows[N]==d[N-1],"the line is a row of its own after the 7th screen");
+         int[] rows=ClusterPicker.rows(d,0L,7);
+         check(rows.length==N+2&&rows[7]==LINE&&rows[0]==d[0]&&rows[6]==d[6]&&rows[8]==d[7]&&rows[N]==d[N-1]&&rows[N+1]==ClusterPicker.OFF,"the line is a row of its own after the 7th screen, the 미사용 line last when every screen is on");
          check(ClusterPicker.favOf(rows)==7&&java.util.Arrays.equals(ClusterPicker.orderOf(rows),d),"rows give the order and the line's place back");
          int[] bar=ClusterPicker.bar(d,0,7);check(bar.length==7&&bar[0]==d[0]&&bar[6]==d[6],"the strip = the screens above the line, in order");
          bar=ClusterPicker.bar(d,1L<<d[1],7);check(bar.length==6&&bar[1]==d[2],"a screen switched off leaves the strip (no other takes its place)");
          int[] tabs=ClusterPicker.tabs(d,0,7,d[20]);check(tabs.length==8&&tabs[7]==d[20],"the current screen from below the line rides at the strip's end");
          check(ClusterPicker.tabs(d,0,7,d[3]).length==7,"a favourite on show adds no tab");
          check(ClusterPicker.starred(d,7,d[6])&&!ClusterPicker.starred(d,7,d[7]),"starred = above the line");
-         int[] r=ClusterPicker.moveRow(d,7,21,0);   // 맨 위로 from below the line (row 21 = the 21st screen: the line is row 7)
+         int[] r=ClusterPicker.moveRow(d,0L,7,21,0);   // 맨 위로 from below the line (row 21 = the 21st screen: the line is row 7)
          check(ClusterPicker.orderOf(r)[0]==d[20]&&ClusterPicker.orderOf(r)[1]==d[0]&&ClusterPicker.favOf(r)==8,"to the top from below: one more favourite, the others keep their order");
-         r=ClusterPicker.moveRow(d,7,2,10);check(ClusterPicker.favOf(r)==6&&ClusterPicker.orderOf(r)[9]==d[2],"a favourite dragged below the line: one fewer");
-         r=ClusterPicker.moveRow(d,7,7,3);check(ClusterPicker.favOf(r)==3&&java.util.Arrays.equals(ClusterPicker.orderOf(r),d),"the line itself moves: the count changes, the order does not");
-         r=ClusterPicker.moveRow(d,7,7,0);check(ClusterPicker.favOf(r)==1,"the line stops under the first row (at least one favourite)");
-         r=ClusterPicker.moveRow(d,1,0,5);check(ClusterPicker.favOf(r)==1&&ClusterPicker.orderOf(r)[0]!=d[0],"the last favourite dragged out: the next screen takes its place");
-         r=ClusterPicker.moveRow(d,7,8,7);check(ClusterPicker.favOf(r)==8&&java.util.Arrays.equals(ClusterPicker.orderOf(r),d),"▲ on the first row below the line crosses it");
+         r=ClusterPicker.moveRow(d,0L,7,2,10);check(ClusterPicker.favOf(r)==6&&ClusterPicker.orderOf(r)[9]==d[2],"a favourite dragged below the line: one fewer");
+         r=ClusterPicker.moveRow(d,0L,7,7,3);check(ClusterPicker.favOf(r)==3&&java.util.Arrays.equals(ClusterPicker.orderOf(r),d),"the line itself moves: the count changes, the order does not");
+         r=ClusterPicker.moveRow(d,0L,7,7,0);check(ClusterPicker.favOf(r)==1,"the line stops under the first row (at least one favourite)");
+         r=ClusterPicker.moveRow(d,0L,1,0,5);check(ClusterPicker.favOf(r)==1&&ClusterPicker.orderOf(r)[0]!=d[0],"the last favourite dragged out: the next screen takes its place");
+         r=ClusterPicker.moveRow(d,0L,7,8,7);check(ClusterPicker.favOf(r)==8&&java.util.Arrays.equals(ClusterPicker.orderOf(r),d),"▲ on the first row below the line crosses it");
+         // 미사용 (2026-11-28): the screens switched off sit under a second line at the bottom of the list
+         long offs=(1L<<d[2])|(1L<<d[10]);int OFF=ClusterPicker.OFF;
+         rows=ClusterPicker.rows(d,offs,7);int oi=N-1;   // 30 shown + the favourites line above the 미사용 line
+         check(rows.length==N+2&&rows[oi]==OFF&&rows[oi+1]==d[2]&&rows[oi+2]==d[10],"switched-off screens under the 미사용 line, in their order");
+         check(ClusterPicker.favOf(rows)==6&&rows[0]==d[0]&&rows[2]==d[3],"a favourite switched off leaves the favourites (6 left above the line)");
+         check(ClusterPicker.hiddenOf(rows)==offs,"rows give the switched-off set back");
+         check(java.util.Arrays.equals(ClusterPicker.bar(ClusterPicker.orderOf(rows),ClusterPicker.hiddenOf(rows),ClusterPicker.favOf(rows)),ClusterPicker.bar(d,offs,7)),"the strip is the same before and after the list is sorted this way");
+         r=ClusterPicker.moveRow(d,0L,7,3,N+1);check(ClusterPicker.hiddenOf(r)==(1L<<d[3])&&r[N]==OFF&&r[N+1]==d[3]&&ClusterPicker.favOf(r)==6,"사용 → 미사용: the row moves right under the 미사용 line");
+         r=ClusterPicker.moveRow(d,offs,7,oi+2,oi);check(ClusterPicker.hiddenOf(r)==(1L<<d[2])&&r[oi]==d[10]&&r[oi+1]==OFF,"미사용 → 사용: the row moves to the end of the screens in use");
+         r=ClusterPicker.moveRow(d,offs,7,oi+1,0);check(r[0]==d[2]&&ClusterPicker.hiddenOf(r)==(1L<<d[10])&&ClusterPicker.favOf(r)==7,"맨 위로 from 미사용: on again, a favourite");
+         r=ClusterPicker.moveRow(d,offs,7,oi,2);check(java.util.Arrays.equals(r,rows),"the 미사용 line itself does not move");
+         r=ClusterPicker.moveRow(d,offs,7,6,oi+2);check(r[oi-1]==LINE&&r[oi]==OFF&&ClusterPicker.favOf(r)==oi-1,"the favourites line dragged below the 미사용 line stops just above it");
+         long all=ClusterPicker.ALL&~(1L<<d[0]);rows=ClusterPicker.rows(d,all,7);
+         check(rows[0]==d[0]&&rows[1]==LINE&&rows[2]==OFF,"one screen in use: it, the favourites line, the 미사용 line");
+         r=ClusterPicker.moveRow(d,all,7,0,5);check(java.util.Arrays.equals(r,rows),"the last screen in use cannot go under the 미사용 line");
          check(ClusterPicker.validFav(0)==1&&ClusterPicker.validFav(99)==N&&ClusterPicker.validFav(7)==7&&ClusterPicker.FAV_DEFAULT==7,"the saved count: 1 to every screen, 7 by default");
          int[] g=ClusterPicker.grid(d,0);int M=ClusterPicker.MAINT,C3=ClusterPicker.CAR3D,ND=ClusterPicker.NEON_DRIVE;
          check(g.length==ClusterPicker.SLOTS&&g[0]==d[0]&&g[29]>=0&&g[30]==M&&g[31]==ND&&g[32]==C3&&g[33]==-1,"the list: 30 dashboards (five full rows with 레트로 8종), then 정비 · 네온 드라이브 · 내 차 on a row of their own");

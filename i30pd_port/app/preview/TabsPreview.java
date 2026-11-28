@@ -205,6 +205,8 @@ public final class TabsPreview {
         rec.setSettings(SettingsLayout.SCREENS,"auto",-1,targets);rec.setOrder(null,62);rec.setScreenDrag(2,250);save(out,"9_settings_screens_drag",rec,model,now,false,false);rec.setScreenDrag(-1,0);
         rec.setOrder(null,62*4.5f);save(out,"9_settings_screens_line",rec,model,now,false,false);   // the favourites line between the 7th and 8th screen
         com.veloster.i18n.UiText.configure("en","en");save(out,"9_settings_screens_line_en",rec,model,now,false,false);com.veloster.i18n.UiText.configure("ko","ko");rec.setOrder(null,0);
+        rec.setPicker(true,true,(1L<<9)|(1L<<13)|(1L<<20));rec.setOrder(null,SettingsLayout.maxScreenScroll());save(out,"9_settings_screens_off",rec,model,now,false,false);   // three screens off: under the 미사용 line at the bottom
+        com.veloster.i18n.UiText.configure("en","en");save(out,"9_settings_screens_off_en",rec,model,now,false,false);com.veloster.i18n.UiText.configure("ko","ko");rec.setPicker(true,true,0);rec.setOrder(null,0);
         {   // the floating window (FloatPanel): shapes, cell counts and sizes over the 개요 page standing in for another app
             int[][] combos={{1,4,1},{1,4,3},{1,2,1},{1,1,2},{2,4,1},{2,2,0},{3,4,1},{3,2,2}};
             String[] cn={"card4","card4_xl","card2","card1_l","strip4","strip2_s","side4","side2_l"};FloatPanel.cells[2]=-1;

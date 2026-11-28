@@ -942,7 +942,8 @@ public final class VehicleDash extends View implements Runnable {
             removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;touching=true;downX=x;downY=y;lastMoveY=y;header.down(x,y);
             if(!blocked&&!picker&&header.onStrip(x,y))postDelayed(clusterHold,600);
             gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);
-            if(picker&&editing&&pickSlot<0&&floatEdit<0&&settingsCat==SettingsLayout.SCREENS&&SettingsLayout.onGrip(x))gripRow=SettingsLayout.screenRow(y,settingsScroll);
+            if(picker&&editing&&pickSlot<0&&floatEdit<0&&settingsCat==SettingsLayout.SCREENS&&SettingsLayout.onGrip(x)){gripRow=SettingsLayout.screenRow(y,settingsScroll);
+                if(gripRow>=0&&ClusterPicker.rows(order,hidden,fav)[gripRow]==ClusterPicker.OFF)gripRow=-1;}   // the 미사용 line stays put
             if(picker&&editing&&pickSlot<0&&floatEdit<0&&settingsCat==SettingsLayout.FLOAT){float[] sb=SettingsLayout.F_SIZE_BAR,ab=SettingsLayout.F_ALPHA_BAR;
                 if(x>=sb[0]&&x<=sb[2]&&y>=sb[1]&&y<=sb[3])sliderDrag=SettingsLayout.F_SIZE;else if(x>=ab[0]&&x<=ab[2]&&y>=ab[1]&&y<=ab[3])sliderDrag=SettingsLayout.F_ALPHA;}
             removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;lapHeld=false;if(!blocked&&!picker&&onLap(x,y))postDelayed(lapHold,700);
@@ -984,8 +985,8 @@ public final class VehicleDash extends View implements Runnable {
         if(picker&&editing){   // settings: a category on the left opens its choices (완료 closes); a choice applies at once
             if(dragRow>=0){   // a dragged 화면 row lands where the finger is
                 int to=SettingsLayout.dropRow(y,settingsScroll);
-                if(to!=dragRow){int[] r=ClusterPicker.moveRow(order,fav,dragRow,to);order=ClusterPicker.orderOf(r);fav=ClusterPicker.favOf(r);   // a screen, or the favourites line itself
-                    activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("cluster_order",orderCsv(order)).putInt("cluster_fav",fav).apply();showCluster();}
+                if(to!=dragRow){int[] r=ClusterPicker.moveRow(order,hidden,fav,dragRow,to);order=ClusterPicker.orderOf(r);fav=ClusterPicker.favOf(r);hidden=ClusterPicker.hiddenOf(r);   // a screen (across the 미사용 line: off / on), or the favourites line
+                    activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("cluster_order",orderCsv(order)).putInt("cluster_hidden",ClusterPicker.maskLo(hidden)).putInt("cluster_hidden_hi",ClusterPicker.maskHi(hidden)).putInt("cluster_fav",fav).apply();showCluster();}
                 gripRow=-1;dragRow=-1;removeCallbacks(dragTick);invalidate();return true;}
             gripRow=-1;
             if(sliderDrag>=0){setSlider(sliderDrag,x);sliderDrag=-1;SharedPreferences.Editor e=activity.getSharedPreferences("pit_vehicle_ui",0).edit();saveFloat(e);e.apply();invalidate();return true;}
@@ -993,16 +994,18 @@ public final class VehicleDash extends View implements Runnable {
             if(HeaderTabs.home(x,y)&&HeaderTabs.home(downX,downY)){closeSettingsNow();return true;}   // 돌아가기 = 완료 here
             int k=SettingsLayout.cat(x,y);
             if(floatEdit<0&&k>=0&&k==SettingsLayout.cat(downX,downY)){pickSlot=-1;if(k==SettingsLayout.DONE)closeSettingsNow();else{settingsCat=k;settingsScroll=0;}invalidate();return true;}
-            if(settingsCat==SettingsLayout.SCREENS&&pickSlot<0){   // the 화면 list: 맨 위로 and ▲▼ reorder (across the favourites line too), a tap elsewhere toggles 사용/미사용
+            if(settingsCat==SettingsLayout.SCREENS&&pickSlot<0){   // the 화면 list: 맨 위로 and ▲▼ reorder (across both lines too), a tap elsewhere moves the row across the 미사용 line
                 int p=SettingsLayout.screenRow(y,settingsScroll);
                 if(p>=0&&p==SettingsLayout.screenRow(downY,settingsScroll)){
-                    int sc=ClusterPicker.rows(order,fav)[p],z=SettingsLayout.screenZone(x);int[] r=null;
-                    if(z==1)r=ClusterPicker.moveRow(order,fav,p,p-1);
-                    else if(z==2)r=ClusterPicker.moveRow(order,fav,p,p+1);
-                    else if(sc==ClusterPicker.LINE){}   // the line has no 사용/미사용 and no 맨 위로
-                    else if(z==3)r=ClusterPicker.moveRow(order,fav,p,0);
-                    else hidden=ClusterPicker.toggle(hidden,sc);
-                    if(r!=null){order=ClusterPicker.orderOf(r);fav=ClusterPicker.favOf(r);}
+                    int[] rows=ClusterPicker.rows(order,hidden,fav);int sc=rows[p],z=SettingsLayout.screenZone(x),offAt=0;int[] r=null;
+                    while(rows[offAt]!=ClusterPicker.OFF)offAt++;
+                    if(sc==ClusterPicker.OFF){}   // the 미사용 line: nothing to press
+                    else if(z==1)r=ClusterPicker.moveRow(order,hidden,fav,p,p-1);
+                    else if(z==2)r=ClusterPicker.moveRow(order,hidden,fav,p,p+1);
+                    else if(sc==ClusterPicker.LINE){}   // the favourites line has no 사용/미사용 and no 맨 위로
+                    else if(z==3)r=ClusterPicker.moveRow(order,hidden,fav,p,0);
+                    else r=ClusterPicker.moveRow(order,hidden,fav,p,offAt);   // 사용 -> under the 미사용 line, 미사용 -> the end of the screens in use
+                    if(r!=null){order=ClusterPicker.orderOf(r);fav=ClusterPicker.favOf(r);hidden=ClusterPicker.hiddenOf(r);}
                     activity.getSharedPreferences("pit_vehicle_ui",0).edit().putString("cluster_order",orderCsv(order)).putInt("cluster_hidden",ClusterPicker.maskLo(hidden)).putInt("cluster_hidden_hi",ClusterPicker.maskHi(hidden)).putInt("cluster_fav",fav).apply();
                     showCluster();invalidate();
                 }

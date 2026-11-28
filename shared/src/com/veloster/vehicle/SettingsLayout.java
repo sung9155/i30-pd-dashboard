@@ -121,10 +121,10 @@ public final class SettingsLayout {
     /** Rows are dragged by the grip column (the grip and the thumbnail); the rest of the row scrolls or taps. */
     public static boolean onGrip(float x){return x>=PANE_L&&x<PANE_L+THUMB_W;}
     /** The display position a dragged row lands on for a finger at y, clamped to the list. */
-    public static int dropRow(float y,float scroll){return Math.max(0,Math.min(ClusterPicker.COUNT,(int)Math.floor((y-TOP+scroll)/SCREEN_ROW_H)));}   // COUNT+1 rows: the favourites line is one
+    public static int dropRow(float y,float scroll){return Math.max(0,Math.min(ClusterPicker.COUNT+1,(int)Math.floor((y-TOP+scroll)/SCREEN_ROW_H)));}   // COUNT+2 rows: the favourites line and the 미사용 line
     /** Scroll step per tick while a row is held near the top or bottom edge (40 px), else 0. */
     public static float autoScroll(float y){return y<TOP+40?-8:y>BOTTOM-40?8:0;}
-    public static float maxScreenScroll(){return Math.max(0,(ClusterPicker.COUNT+1)*SCREEN_ROW_H-(BOTTOM-TOP));}
+    public static float maxScreenScroll(){return Math.max(0,(ClusterPicker.COUNT+2)*SCREEN_ROW_H-(BOTTOM-TOP));}
     public static float topBtnL(){return upBtnL()-SBTN_W-8;}   // 맨 위로
     public static float upBtnL(){return PANE_R-2*SBTN_W-14;}
     public static float downBtnL(){return PANE_R-SBTN_W-6;}
@@ -132,7 +132,7 @@ public final class SettingsLayout {
     public static int screenRow(float y,float scroll){
         if(y<TOP||y>BOTTOM)return -1;
         int p=(int)((y-TOP+scroll)/SCREEN_ROW_H);
-        return p>=0&&p<=ClusterPicker.COUNT?p:-1;
+        return p>=0&&p<=ClusterPicker.COUNT+1?p:-1;
     }
     /** − / + rows (RPM, 엔진 사운드, 효과음): two wide buttons STEP_W x STEP_H at the right. A finger that lands between them
      *  goes to the nearer one, a little left of − still counts as −; the label half of the row puts the default back (0);

@@ -654,6 +654,7 @@ public final class UiText {
         EN.put("미리보기 · 칸을 누르면 값 고르기","Preview · tap a cell to choose its reading");
         EN.put("미리보기 · 화면을 누르면 시험 버튼","Preview · tap for test buttons");
         EN.put("미사용","Off");
+        EN.put("미사용 · 상단 바와 목록에 안 나옴","Not in use · not on the bar or the list");
         EN.put("바디 (BCM)","Body (BCM)");
         EN.put("바디 (에어백 · 공조 · 편의장치)","Body (airbags · climate control · convenience features)");
         EN.put("바디 제어기(BCM)와 통신 끊김","Lost communication with body control module (BCM)");

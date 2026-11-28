@@ -653,7 +653,7 @@ public final class PitRenderer {
     public void setScreenDrag(int row,float y){dragRow=row;dragY=y;}
     /** The 화면 category as a reorderable, scrollable list: a mini preview, the name, 사용/미사용, and ▲▼ to move it. */
     private void drawScreenList(Canvas c){
-        int[] ord=ClusterPicker.rows(order,fav);   // the screens and, among them, the favourites line
+        int[] ord=ClusterPicker.rows(order,hidden,fav);rowFav=ClusterPicker.favOf(ord);   // the screens in use with the favourites line, the 미사용 line, the screens switched off
         float L=SettingsLayout.PANE_L,R=SettingsLayout.PANE_R,rh=SettingsLayout.SCREEN_ROW_H,top=SettingsLayout.TOP,bot=SettingsLayout.BOTTOM;
         boolean drag=dragRow>=0&&dragRow<ord.length;
         c.save();c.clipRect(L-6,top,800,bot);
@@ -672,6 +672,13 @@ public final class PitRenderer {
     }
     /** The favourites line, a row like the screens (dragged by its grip, ▲▼): above it the header strip's screens, below
      *  it the ones only the list shows. Arrows say which side is which. */
+    private int rowFav;   // the favourites line's row in the list on show
+    /** The 미사용 line: fixed (no grip, no buttons); the screens under it are switched off. */
+    private void offRow(Canvas c,float t){
+        float L=SettingsLayout.PANE_L,R=SettingsLayout.PANE_R,rh=SettingsLayout.SCREEN_ROW_H,m=t+rh/2;
+        box(c,L+30,m-1,R-12,m+1,MUTED);
+        tri(c,L+38,m+15,false,MUTED);text(c,UiText.t("미사용 · 상단 바와 목록에 안 나옴"),L+54,m+20,13,MUTED,true);
+    }
     private void lineRow(Canvas c,int p,int n,float t,float dx,boolean lifted){
         float L=SettingsLayout.PANE_L+dx,R=SettingsLayout.PANE_R+dx,rh=SettingsLayout.SCREEN_ROW_H,m=t+rh/2;
         if(lifted)box(c,L,t+4,R,t+rh-4,0xff1c303b);
@@ -699,6 +706,7 @@ public final class PitRenderer {
      *  사용/미사용, 맨 위로, ▲▼. lifted = being dragged. */
     private void screenRow(Canvas c,int p,int n,int s,float t,float dx,boolean lifted){
         if(s==ClusterPicker.LINE){lineRow(c,p,n,t,dx,lifted);return;}
+        if(s==ClusterPicker.OFF){offRow(c,t);return;}
         float L=SettingsLayout.PANE_L+dx,R=SettingsLayout.PANE_R+dx,rh=SettingsLayout.SCREEN_ROW_H;
         boolean off=(hidden&(1L<<s))!=0;
         box(c,L,t+4,R,t+rh-4,lifted?0xff1c303b:off?0xff08090a:0xff101315);
@@ -710,14 +718,14 @@ public final class PitRenderer {
         else box(c,tx0,t+9,tx0+tw,t+9+th,0xff05070a);
         float tx=L+SettingsLayout.THUMB_W+8;int ink=off?MUTED:WHITE;
         String name=UiText.t(ClusterPicker.NAMES[s]);text(c,name,tx,t+rh/2-3,17,ink,true);
-        if(p<fav){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(17);star(c,tx+paint.measureText(name)+14,t+rh/2-9,7,off?0xff5a5330:STAR);}   // above the line: on the header strip (dim when 미사용)
+        if(p<rowFav){paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(17);star(c,tx+paint.measureText(name)+14,t+rh/2-9,7,off?0xff5a5330:STAR);}   // above the line: on the header strip (dim when 미사용)
         text(c,UiText.t(ClusterPicker.DESC[s]),tx,t+rh/2+16,11,MUTED,false);
         String use=UiText.t(off?"미사용":"사용");paint.setTypeface(Typeface.DEFAULT_BOLD);paint.setTextSize(13);
         text(c,use,SettingsLayout.topBtnL()+dx-12-paint.measureText(use),t+rh/2+5,13,off?MUTED:BLUE,true);
         float by=t+(rh-SettingsLayout.SBTN_W)/2;
         topBtn(c,SettingsLayout.topBtnL()+dx,by,p>0);
         moveBtn(c,SettingsLayout.upBtnL()+dx,by,true,p>0);
-        moveBtn(c,SettingsLayout.downBtnL()+dx,by,false,p<n-1&&!(p==0&&fav==1));   // the only favourite stays above the line
+        moveBtn(c,SettingsLayout.downBtnL()+dx,by,false,p<n-1&&!(p==0&&rowFav==1));   // the only favourite stays above the line
     }
     private void moveBtn(Canvas c,float x,float y,boolean up,boolean on){
         float w=SettingsLayout.SBTN_W;box(c,x,y,x+w,y+w,on?0xff16232b:0xff0c0e10);

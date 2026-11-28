@@ -45,6 +45,9 @@ public final class MaintItemsTest {
         check(l.recorded&&Math.round(l.km)==50000&&l.days==639,"coolant, factory fill from the first registration: 200,000 km / 120 months "+l.km+" "+l.days);
         l=MaintItems.left(Id.COOLANT,rec(150000,20260101),false,151000,20260601,20180301);
         check(Math.round(l.km)==39000,"coolant after a change: 40,000 km");
+        check(l.everyKm==40000&&l.everyMo==24,"the interval counted from, after a change ("+l.everyKm+" km, "+l.everyMo+" mo)");
+        l=MaintItems.left(Id.COOLANT,new MaintItems.Rec(),false,150000,20260601,20180301);
+        check(l.everyKm==200000&&l.everyMo==120,"the interval counted from: the factory fill's, not the default ("+l.everyKm+" km, "+l.everyMo+" mo)");
 
         l=MaintItems.left(Id.INSPECTION,new MaintItems.Rec(),false,Float.NaN,20260601,20180301);
         check(l.recorded&&l.days==639,"inspection from the first registration: 4 years, then every 2 ("+l.days+")");

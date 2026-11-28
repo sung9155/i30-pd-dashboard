@@ -42,7 +42,7 @@ final class MaintenanceCluster extends ClusterKit {
     /** A card (or a chip when nothing is recorded): name, the big value, a small note beside the name, a line under. */
     static final class Row { String name,value="",aside="",sub="";float fraction=Float.NaN;int state=INFO,icon;MaintItems.Id id;int action;boolean chip; }
     private static final class Page {
-        Row hero;String heroHead="",button,caption="",cardsHead="",tail[];
+        Row hero;String heroHead="",button,caption="",cardsHead="",tail[];boolean buttonIcon=true;
         final List<Row> cards=new ArrayList<Row>(),chips=new ArrayList<Row>();MaintLayout.Grid grid;int past;
     }
     private final Page[] pages={new Page(),new Page(),new Page()};
@@ -129,8 +129,8 @@ final class MaintenanceCluster extends ClusterKit {
         if(h.aside.length()>0)fit(c,h.aside,L+16,T+196,w,14,SOFT,Paint.Align.LEFT,false);
         if(h.sub.length()>0)fit(c,h.sub,L+16,T+218,w,13,MUTED,Paint.Align.LEFT,false);
         if(pg.button!=null){float bl=MaintLayout.BTN_L,bt=MaintLayout.BTN_T,br=MaintLayout.BTN_R,bb=MaintLayout.BTN_B;
-            round(c,bl,bt,br,bb,10,WHITE);float tw=width(pg.button,16,Typeface.DEFAULT_BOLD),x=(bl+br)/2-tw/2+12,m=(bt+bb)/2;
-            icon(c,I_CHECK,x-16,m,8,BG);bold(c,pg.button,x,m+6,16,BG,Paint.Align.LEFT);
+            round(c,bl,bt,br,bb,10,WHITE);float tw=width(pg.button,16,Typeface.DEFAULT_BOLD),x=(bl+br)/2-tw/2+(pg.buttonIcon?12:0),m=(bt+bb)/2;
+            if(pg.buttonIcon)icon(c,I_CHECK,x-16,m,8,BG);bold(c,pg.button,x,m+6,16,BG,Paint.Align.LEFT);
             fit(c,pg.caption,(L+R)/2,bb+19,w,12,MUTED,Paint.Align.CENTER,false);}
     }
     /** 타이어's big card: the four pressures around a car seen from above, front up, and this period's low warnings. */
@@ -197,7 +197,7 @@ final class MaintenanceCluster extends ClusterKit {
         Row dt=new Row();dt.name=t("고장코드 · 경고등");dt.icon=I_LAMP;dt.action=ACT_DTC;int dc=dtcCount(s);float mil=v(Telemetry.MIL);
         dt.value=t(mil>0?"경고등 켜짐":"경고등 꺼짐");dt.aside=dc<0?t("조회 기록 없음"):dc==0?t("코드 없음"):dc+t("개");
         int dd=num(s==null?"":s.get("maint_dtc_date"));if(dd>0)dt.sub=t("마지막 조회")+" "+date(dd);
-        dt.state=mil>0||dc>0?PAST:OK;p.hero=dt;p.heroHead=t("차 상태");p.button=null;
+        dt.state=mil>0||dc>0?PAST:OK;p.hero=dt;p.heroHead=t("차 상태");p.button=t("지금 조회");p.caption=t("정차 중에만");p.buttonIcon=false;
         items.clear();items.add(item(MaintItems.Id.BATTERY,s,vd,odo,today,first));
         Row bv=new Row();bv.name=t("배터리 전압");bv.icon=I_BATTERY;
         if(Float.isNaN(u.restV)&&Float.isNaN(u.startV))bv.value=t("아직 잡힌 값 없음");
@@ -226,8 +226,8 @@ final class MaintenanceCluster extends ClusterKit {
     /** MaintJudge's reason ("짧은 주행 62 %") with its label in the screen's language. */
     private static String reason(String r){for(String l:new String[]{"짧은 주행","공회전","저속 · 정체 평균","정지","고속","고부하"})if(r.startsWith(l))return t(l)+r.substring(l.length());return r;}
     private static String pct(double a,double b){return b>0?(int)Math.floor(100*a/b)+" %":"—";}
-    /** Most urgent first: past due, then the least left, then those with nothing to count down. */
-    private static float key(Row r){return r.state==PAST?-1+(Float.isNaN(r.fraction)?0:r.fraction):Float.isNaN(r.fraction)?5:r.fraction;}
+    /** Most urgent first: past due, then amber with no bar (a record to check), then the least left, then nothing to count down. */
+    private static float key(Row r){return r.state==PAST?-1+(Float.isNaN(r.fraction)?0:r.fraction):Float.isNaN(r.fraction)?(r.state==SOON?-0.001f:5):r.fraction;}
     private static String date(int ymd){return String.format(Locale.US,"%04d-%02d-%02d",ymd/10000,ymd/100%100,ymd%100);}
     private static String km(float k){return String.format(Locale.US,"%,d km",Math.round(Math.abs(k)));}
     private static String left(String a){return String.format(t("%s 남음"),a);}
@@ -249,7 +249,7 @@ final class MaintenanceCluster extends ClusterKit {
         r.fraction=l.fraction;
         boolean hasKm=!Float.isNaN(l.km),hasDays=l.days!=Integer.MIN_VALUE;
         String kmPart=hasKm?(l.km<0?over(km(l.km)):left(km(l.km))):"",dayPart=hasDays?(l.days<0?over(span(-l.days)):left(span(l.days))):"";
-        int ek=rec.everyKm>=0?rec.everyKm:MaintItems.defaultKm(id,severe),em=rec.everyMo>=0?rec.everyMo:MaintItems.defaultMonths(id,severe);
+        int ek=l.everyKm,em=l.everyMo;   // what left() counted from (coolant's factory fill, not the default)
         boolean dayFirst=!hasKm||hasDays&&em>0&&ek>0&&l.days/(em*30.4f)<l.km/ek;   // the part closer to due goes big (it is what sorts the card)
         r.value=dayFirst?dayPart:kmPart;r.aside=dayFirst?kmPart:dayPart;
         r.state=l.overdue?PAST:MaintJudge.band(id,l)==MaintJudge.Band.SOON||l.fraction<=LOW?SOON:OK;

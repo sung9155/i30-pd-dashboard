@@ -1365,6 +1365,7 @@ public final class UiText {
         EN.put("정차 · 공회전 ","Stopped · idle ");
         EN.put("정차 상태에서 확인하세요. 이 화면을 여는 것만으로 무선 설정은 바뀌지 않습니다.","Check while parked. Opening this screen alone does not change wireless settings.");
         EN.put("정차 중","Stopped");
+        EN.put("정차 중에만","Parked only");
         EN.put("정차 중에만 입력할 수 있습니다","Only while stopped");
         EN.put("정차 후 다음 운행","Stop for next trip");
         EN.put("정차 후 출발하면 측정","starts when you pull away from a stop");

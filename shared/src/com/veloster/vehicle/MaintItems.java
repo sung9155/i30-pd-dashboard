@@ -83,7 +83,9 @@ public final class MaintItems {
     /** What is left. km / days: negative = past due; NaN / MIN_VALUE = not counted. since = km since the record.
      *  odoBad: no km can be counted (odometer 0, or below the record: then ahead, as the record may be the typo). */
     public static final class Left { public boolean recorded,overdue,odoBad,ahead;public float km=Float.NaN,since=Float.NaN,fraction=Float.NaN;
-        public int days=Integer.MIN_VALUE; }
+        public int days=Integer.MIN_VALUE;
+        /** The interval counted down from (the factory fill's for coolant with no record): 0 = none. */
+        public int everyKm,everyMo; }
 
     public static Left left(Id id,Rec r,boolean severe,float odoKm,int today,int firstReg){
         Left l=new Left();
@@ -94,6 +96,7 @@ public final class MaintItems {
             l.recorded=true;l.days=daysBetween(today,due);l.overdue=l.days<0;return l;}
         if(id==Id.COOLANT&&!r.any()&&firstReg>0){baseKm=0;baseDate=firstReg;
             if(r.everyKm<0)everyKm=COOLANT_FIRST_KM;if(r.everyMo<0)everyMo=COOLANT_FIRST_MO;}
+        l.everyKm=Math.max(0,everyKm);l.everyMo=Math.max(0,everyMo);
         if(baseKm<0&&baseDate<=0)return l;
         l.recorded=true;
         boolean odoOk=!Float.isNaN(odoKm)&&odoKm>0;

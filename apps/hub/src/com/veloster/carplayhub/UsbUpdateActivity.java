@@ -36,6 +36,9 @@ public final class UsbUpdateActivity extends Activity {
     /** A row per app: its package, the installed and the new build name, and its step (UsbInstaller.WAIT .. OK). */
     private String[] pkg = {}, from = {}, to = {};
     private int[] step = {};
+    /** The whole install in percent (-1: not started); the bar's two halves, so a new number moves it without a new layout. */
+    private int pct = -1;
+    private View barOn, barOff; private TextView barText;
     /** Fallback (silent install refused): the apps still to hand to the system installer, one per return here. */
     private int fallbackNext = -1;
     /** The mount point the screen was opened for (null: the usual ones), kept for 다시 확인. */
@@ -130,6 +133,8 @@ public final class UsbUpdateActivity extends Activity {
         }
         card.addView(Look.label(this, h, 28, ink, true));
         for (int i = 0; i < pkg.length; i++) row(card, i);
+        barOn = null;
+        if (state == RUN || state == DONE) bar(card, state == DONE ? 100 : Math.max(pct, 0));
         if (n.length() > 0) { TextView v = Look.label(this, n, 19, Look.MUT, false); v.setPadding(0, 14, 0, 0); v.setLineSpacing(5, 1); card.addView(v); }
         if (detail.length() > 0 && (state == FAIL || state == NONE)) { TextView v = Look.label(this, detail, 14, 0xff6a7078, false); v.setPadding(0, 8, 0, 0); card.addView(v); }
         root.addView(card, new LinearLayout.LayoutParams(-1, 0, 1));
@@ -165,6 +170,26 @@ public final class UsbUpdateActivity extends Activity {
         View rule = new View(this); rule.setBackgroundColor(Look.LINE); card.addView(rule, new LinearLayout.LayoutParams(-1, 1));
     }
 
+    /** The progress bar under the rows: a track, its filled part, and the percent. */
+    private void bar(LinearLayout card, int p) {
+        LinearLayout line = new LinearLayout(this); line.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout track = new LinearLayout(this); track.setBackgroundDrawable(Look.shape(Look.LINE, 0, 9));
+        barOn = new View(this); barOn.setBackgroundDrawable(Look.shape(p >= 100 ? Look.ON : Look.ACC, 0, 9)); barOff = new View(this);
+        track.addView(barOn, new LinearLayout.LayoutParams(0, -1, p)); track.addView(barOff, new LinearLayout.LayoutParams(0, -1, 100 - p));
+        line.addView(track, new LinearLayout.LayoutParams(0, 18, 1));
+        barText = Look.label(this, p + " %", 22, Look.TXT, true); barText.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        line.addView(barText, new LinearLayout.LayoutParams(100, -2));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2); lp.topMargin = 18;
+        card.addView(line, lp);
+    }
+
+    private void setPct(int p) {
+        pct = p;
+        if (barOn == null) return;
+        barOn.setLayoutParams(new LinearLayout.LayoutParams(0, -1, p)); barOff.setLayoutParams(new LinearLayout.LayoutParams(0, -1, 100 - p));
+        barText.setText(p + " %");
+    }
+
     /** A bottom button, 76 px tall: the main one filled with the accent, the other an outline. */
     private void big(LinearLayout parent, String text, boolean main, float weight, final Runnable action) {
         TextView v = Look.label(this, text, 26, Look.TXT, true); v.setGravity(Gravity.CENTER);
@@ -178,14 +203,15 @@ public final class UsbUpdateActivity extends Activity {
 
     private void install() {
         if (offer == null || state != CONFIRM) return;
-        state = RUN; saveRows(); render();
+        state = RUN; pct = 0; saveRows(); render();
         final UsbInstaller.Offer o = offer;
         new Thread(new Runnable() { public void run() {
             Exception failed = null;
             try {
                 installer.install(o, new UsbInstaller.Progress() { public void step(final int app, final int phase) {
                     runOnUiThread(new Runnable() { public void run() { if (app < step.length) { step[app] = phase; render(); } } });
-                }});
+                }
+                public void percent(final int p) { runOnUiThread(new Runnable() { public void run() { setPct(p); } }); }});
             } catch (Exception e) { failed = e; }
             final Exception error = failed;
             runOnUiThread(new Runnable() { public void run() { finished(error); } });

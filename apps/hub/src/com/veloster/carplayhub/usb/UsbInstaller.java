@@ -42,7 +42,15 @@ public final class UsbInstaller {
 
     /** Where one app of an install stands: waiting, being copied and checked, being installed, installed. */
     public static final int WAIT = 0, COPY = 1, INSTALL = 2, OK = 3;
-    public interface Progress { void step(int app, int phase); }
+    /** step: one app's phase; percent: the whole install, 0..100 (copying by bytes, each install by an estimate). */
+    public interface Progress { void step(int app, int phase); void percent(int p); }
+
+    /** Turns bytes done into percent of the whole install, telling the screen only when the number changes. */
+    private static final class Meter {
+        final Progress progress; final long total; int last = -1;
+        Meter(Progress p, long total) { progress = p; this.total = Math.max(1, total); }
+        void at(long done) { int p = (int) Math.min(100, done * 100 / total); if (p != last) { last = p; progress.percent(p); } }
+    }
 
     private final Context context;
     public UsbInstaller(Context c) { context = c.getApplicationContext(); }
@@ -93,11 +101,14 @@ public final class UsbInstaller {
     /** Copy and check every APK of the offer, then install them in order. Returns a line per app. Background thread. */
     public List<String> install(Offer o, Progress progress) throws Exception {
         List<File> staged = new ArrayList<File>();
+        long all = 0; for (UsbBundle.App a : o.apps) all += a.bytes;
+        Meter meter = new Meter(progress, all * 2); long base = 0;   // copying all of them is half, installing the other half
+        meter.at(0);
         try {
             for (int i = 0; i < o.apps.size(); i++) {
                 UsbBundle.App a = o.apps.get(i);
                 progress.step(i, COPY);
-                File f = stage(new File(o.folder, a.file), a);
+                File f = stage(new File(o.folder, a.file), a, meter, base); base += a.bytes;
                 o.bundle.checkApk(f, a);
                 PackageInfo archive = context.getPackageManager().getPackageArchiveInfo(f.getPath(), 0);
                 UsbBundle.require(archive != null && a.packageName.equals(archive.packageName) && archive.versionCode == a.version && a.name.equals(archive.versionName), "APK package / version");
@@ -111,7 +122,8 @@ public final class UsbInstaller {
                 if (a.packageName.equals(context.getPackageName()))   // replacing ourselves: the report comes after the restart
                     context.getSharedPreferences(PREFS, 0).edit().putInt("pending_self", a.version).putString("release", o.bundle.release).commit();
                 silent(f);
-                if (!waitFor(a.packageName, a.version, a.name, 180000)) throw new IOException("install of " + a.packageName + " did not finish");
+                if (!waitFor(a.packageName, a.version, a.name, 180000, meter, base, a.bytes)) throw new IOException("install of " + a.packageName + " did not finish");
+                base += a.bytes; meter.at(base);
                 progress.step(i, OK);
                 done.add(a.packageName + " " + a.name);
             }
@@ -139,9 +151,13 @@ public final class UsbInstaller {
     }
 
     /** Installed = the asked versionCode under the asked name (the name is what changes between this build's releases). */
-    private boolean waitFor(String name, int version, String versionName, long timeoutMs) {
-        long until = SystemClock.elapsedRealtime() + timeoutMs;
+    private boolean waitFor(String name, int version, String versionName, long timeoutMs, Meter meter, long base, long bytes) {
+        long start = SystemClock.elapsedRealtime(), until = start + timeoutMs;
+        // ponytail: the package manager tells nothing until it is done; the bar creeps on an estimate (5 s + 1 s per 2 MB)
+        // and stops at 90 % of this app's share, so it never claims done early.
+        double expect = 5000 + bytes / 2000.0;
         while (SystemClock.elapsedRealtime() < until) {
+            meter.at(base + (long) (bytes * Math.min(0.9, (SystemClock.elapsedRealtime() - start) / expect)));
             PackageInfo p = installedInfo(name);
             if (p != null && p.versionCode == version && versionName.equals(p.versionName)) return true;
             SystemClock.sleep(500);
@@ -151,7 +167,7 @@ public final class UsbInstaller {
 
     /** Fallback: the checked copy of one app for the system installer screen (API 17 takes file:// URIs). */
     public Intent installerIntent(Offer o, UsbBundle.App a) throws Exception {
-        File f = stage(new File(o.folder, a.file), a);
+        File f = stage(new File(o.folder, a.file), a, null, 0);
         o.bundle.checkApk(f, a);
         UsbBundle.require(f.setReadable(true, false), "installer file access");
         Intent i = new Intent(Intent.ACTION_VIEW);
@@ -161,7 +177,7 @@ public final class UsbInstaller {
     }
 
     /** Copies an APK from the stick into files/ (readable by the package manager), checking its size on the way. */
-    private File stage(File source, UsbBundle.App a) throws Exception {
+    private File stage(File source, UsbBundle.App a, Meter meter, long base) throws Exception {
         UsbBundle.require(source.isFile() && source.length() == a.bytes, a.file + " missing or a different size");
         File dir = context.getFilesDir();
         dir.setExecutable(true, false);   // the package manager's copier reads the file by path
@@ -171,7 +187,7 @@ public final class UsbInstaller {
         OutputStream os = new FileOutputStream(out);
         try {
             byte[] b = new byte[65536]; int n; long total = 0;
-            while ((n = in.read(b)) != -1) { total += n; UsbBundle.require(total <= a.bytes, a.file + " grew"); os.write(b, 0, n); }
+            while ((n = in.read(b)) != -1) { total += n; UsbBundle.require(total <= a.bytes, a.file + " grew"); os.write(b, 0, n); if (meter != null) meter.at(base + total); }
         } finally { in.close(); os.close(); }
         out.setReadable(true, false);
         return out;

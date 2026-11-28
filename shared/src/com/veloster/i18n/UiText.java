@@ -188,11 +188,13 @@ public final class UiText {
         EN.put("USB 디버깅 OFF 명령을 보냈습니다(엔지니어 모드 Factory Test 0A 01 → 65 00 → 0A 02와 같은 명령). PC 연결이 끊기지 않으면 시동을 다시 거세요.","USB debugging OFF sent (the same command as Engineer Mode Factory Test 0A 01 → 65 00 → 0A 02). If the PC stays connected, restart the engine.");
         EN.put("USB 디버깅 ON 명령을 보냈습니다(엔지니어 모드 Factory Test와 같은 명령). 몇 초 뒤 PC를 연결하세요. 내비게이션을 재시작하면 일반 USB(CarPlay)로 돌아갑니다.","USB debugging ON sent (the same command as Engineer Mode Factory Test). Connect the PC in a few seconds. Restarting the head unit returns to normal USB (CarPlay).");
         EN.put("USB 디버깅 · 시동 안내 건너뛰기 · 블루투스 등","USB debugging · skip the start-up notice · Bluetooth and more");
+        EN.put("USB 메모리 맨 위에 i30-update 폴더를 넣고 다시 꽂으세요.","Put the i30-update folder at the top of a USB stick and plug it in again.");
         EN.put("USB 메모리를 확인하는 중…","Checking USB sticks…");
         EN.put("USB 모드 전환 실패: ","USB mode request failed: ");
         EN.put("USB 모드 전환 요청이 거부되었습니다.","The USB mode request was denied.");
         EN.put("USB 업데이트","USB update");
-        EN.put("USB 업데이트 파일을 쓸 수 없습니다.","The USB update files cannot be used.");
+        EN.put("USB에 든 버전","Version on the stick");
+        EN.put("USB에서 i30-update 폴더를 찾지 못했습니다","No i30-update folder found on the USB stick");
         EN.put("V6 트윈터보","V6 twin-turbo");
         EN.put("V8 크로스플레인","V8 cross-plane");
         EN.put("V8 플랫플레인","V8 flat-plane");
@@ -279,6 +281,7 @@ public final class UiText {
         EN.put("계기판 따라 = 지금 계기판 화면의 스킨 (스킨이 없는 화면은 기본)","Follow the screen = the skin of the dashboard screen (Default where it has none)");
         EN.put("계기판 따라: 지금 계기판 화면과 같은 스킨","Follow the screen: the same skin as the dashboard screen");
         EN.put("계기판 신호 이상","Instrument cluster signal fault");
+        EN.put("계기판 열기","Open the dashboard");
         EN.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","Open dashboard; long-press for My Apps; drag to move");
         EN.put("계기판과 통신 끊김","Lost communication with instrument cluster");
         EN.put("계기판에서 숨김","Hide on the dashboard");
@@ -400,6 +403,7 @@ public final class UiText {
         EN.put("꺼짐","Off");
         EN.put("끄기","Disable");
         EN.put("끔","Off");
+        EN.put("끝날 때까지 시동을 끄거나 USB를 빼지 마세요.","Keep the ignition on and the USB stick in until it finishes.");
         EN.put("나눔손글씨 붓","Nanum Brush Script");
         EN.put("나눔손글씨 펜","Nanum Pen Script");
         EN.put("나눔스퀘어 네오","NanumSquare Neo");
@@ -480,6 +484,7 @@ public final class UiText {
         EN.put("늦어진 정도로 추정합니다.","is estimated as retard.");
         EN.put("다른 칸과 위치 바꾸기","Swap with another slot");
         EN.put("다시 조회","Read again");
+        EN.put("다시 확인","Check again");
         EN.put("다운","Down");
         EN.put("다운시프트 맞춤 소리가 나는 화면 · 누르면 바뀜","Where the downshift match sounds play · tap to change");
         EN.put("다음","Next");
@@ -498,6 +503,7 @@ public final class UiText {
         EN.put("닫기","Close");
         EN.put("닫힌 채 고착","Stuck closed");
         EN.put("대구","Daegu");
+        EN.put("대기","Waiting");
         EN.put("대기(1회 감지)","Pending (detected once)");
         EN.put("대시보드 앱 삭제","Remove the dashboard apps");
         EN.put("대시보드 열기","Open the dashboard");
@@ -829,7 +835,7 @@ public final class UiText {
         EN.put("상태 확인 실패: ","Status check failed: ");
         EN.put("상향등","High beam");
         EN.put("새 기기","New device");
-        EN.put("새 업데이트가 있는 USB 메모리가 없습니다.\nUSB 메모리 맨 위에 i30-update 폴더를 넣고 다시 꽂으세요.","No USB stick with a newer update.\nPut the i30-update folder at the top of a USB stick and plug it in again.");
+        EN.put("새 업데이트가 있습니다","A new update is ready");
         EN.put("새로 시작","Start fresh");
         EN.put("새로고침","Refresh");
         EN.put("새로고침을 누르면 글꼴을 찾습니다","Press Refresh to look for fonts");
@@ -838,6 +844,7 @@ public final class UiText {
         EN.put("색감 고르기","Choose a look");
         EN.put("샴페인","Champagne");
         EN.put("섀시 (제동 · 조향 · 서스펜션)","Chassis (brakes · steering · suspension)");
+        EN.put("서명이 맞지 않습니다. 배포 파일을 다시 받아 USB에 넣으세요.","The signature does not match. Download the release files onto the stick again.");
         EN.put("서울","Seoul");
         EN.put("서킷","Circuit");
         EN.put("서킷 선택","Choose circuit");
@@ -857,8 +864,11 @@ public final class UiText {
         EN.put("설정된 글꼴","Set font");
         EN.put("설정으로 / Back","Back");
         EN.put("설치","Install");
+        EN.put("설치 중…","Installing…");
         EN.put("설치 화면에서 [설치]를 누르세요.","Tap Install on the installer screen.");
+        EN.put("설치가 끝나지 않았습니다. 다시 확인을 눌러 보세요.","The install did not finish. Tap Check again.");
         EN.put("설치된 기본 앱 중 외부 실행이 허용된 앱만 표시합니다.","Only installed system apps that allow external launch are shown.");
+        EN.put("설치된 앱과 서명이 다릅니다. 설치기로 다시 설치하세요.","The installed app is signed differently. Reinstall it with the installer.");
         EN.put("설치하는 동안 계기판과 내 앱이 잠시 닫힙니다.","The dashboard and My Apps close for a moment while installing.");
         EN.put("설치하는 중…","Installing…");
         EN.put("성능 저하·작동 이상","Reduced performance / incorrect operation");
@@ -1012,10 +1022,10 @@ public final class UiText {
         EN.put("얇은 띠","Thin strip");
         EN.put("언어","Language");
         EN.put("언어 설정을 저장하지 못했습니다.","Could not save the language setting.");
-        EN.put("업데이트","Update");
         EN.put("업데이트 완료","Update complete");
+        EN.put("업데이트 파일이 손상됐습니다. 다시 받아 USB에 넣으세요.","The update files are damaged. Download them onto the stick again.");
         EN.put("업데이트를 설치할까요?","Install the update?");
-        EN.put("업데이트하지 못했습니다.","The update failed.");
+        EN.put("업데이트하지 못했습니다","The update failed");
         EN.put("없음","none");
         EN.put("에메랄드","Emerald");
         EN.put("에어백 (ACU)","Airbag (ACU)");
@@ -1243,6 +1253,7 @@ public final class UiText {
         EN.put("응답 없음 (미장착일 수 있음)","no reply (may not be fitted)");
         EN.put("응답이 없습니다.","No answer.");
         EN.put("응답한 제어기가 없습니다. 시동을 켠 상태에서 다시 조회하세요.","No control unit answered. Turn the ignition on and read again.");
+        EN.put("이 USB 업데이트는 쓸 수 없습니다","This USB update cannot be used");
         EN.put("이 글꼴은 적용할 수 없습니다","This font cannot be applied");
         EN.put("이 글꼴은 한글이 모자라 빠진 글자는 기존 대체 글꼴로 보입니다.","This font lacks some Korean characters; those show in the existing fallback font.");
         EN.put("이 글꼴을 미리보기로 열지 못했습니다","This font could not be opened for the preview");
@@ -1256,6 +1267,7 @@ public final class UiText {
         EN.put("이 시스템에서 바로가기 서비스를 시작할 수 없습니다.","This system cannot start the shortcut service.");
         EN.put("이 제어기 고장코드 지우기","Clear this unit's trouble codes");
         EN.put("이 항목의 교환 기록을 지웁니다.","Clears this item's record.");
+        EN.put("이 헤드유닛용 업데이트가 아닙니다. i30 PD용 파일을 받으세요.","This update is for another head unit. Get the i30 PD files.");
         EN.put("이 화면에서 시작한 검색을 종료했습니다.","Stopped discovery started from this screen.");
         EN.put("이름 없는 기기","Unnamed device");
         EN.put("이모빌라이저 — 엔진 제어기 메모리 오류","Immobiliser — engine control unit memory error");
@@ -1266,6 +1278,7 @@ public final class UiText {
         EN.put("이미 기기를 검색 중입니다.","Discovery is already running.");
         EN.put("이미 내비게이션 재시작을 요청했습니다.","A head-unit restart has already been requested.");
         EN.put("이미 설정된 글꼴입니다","This font is already set");
+        EN.put("이미 최신 버전입니다","Already up to date");
         EN.put("이미 페어링된 기기입니다. 실제 연결은 해당 앱에서 진행하세요.","Already paired. Use the relevant app to connect.");
         EN.put("이미 페어링된 기기입니다. 프로필 연결은 해당 앱에서 진행하세요.","Already paired. Connect the required profile from the relevant app.");
         EN.put("이번","This run");
@@ -1481,6 +1494,7 @@ public final class UiText {
         EN.put("지금","Now");
         EN.put("지금 G","G now");
         EN.put("지금 모양에 입힌 모습 · 누르면 바로 적용","Shown on the current shape · a tap applies it");
+        EN.put("지금 설치","Install now");
         EN.put("지금 속도","Speed now");
         EN.put("지금 연비 ","Now ");
         EN.put("지금 재부팅","Reboot now");
@@ -1759,6 +1773,7 @@ public final class UiText {
         EN.put("확대","scaled up");
         EN.put("확인","OK");
         EN.put("확인 불가","Unknown");
+        EN.put("확인 중…","Checking…");
         EN.put("확인하지 않은 amossu입니다","An amossu this app has not checked");
         EN.put("확정","Confirmed");
         EN.put("활성 시험 백업이 없습니다. 기존 핫스팟 접속정보는 차량 설정에서 확인하세요.","No active test backup. Check existing hotspot credentials in the vehicle settings.");

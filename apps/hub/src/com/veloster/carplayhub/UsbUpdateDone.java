@@ -3,15 +3,15 @@ package com.veloster.carplayhub;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.widget.Toast;
 import com.veloster.carplayhub.usb.UsbInstaller;
-import com.veloster.i18n.UiText;
 
-/** USB 업데이트 replaced My Apps itself (the process ended mid-install): remove the staged copies and say it finished, once. */
+/** USB 업데이트 replaced My Apps itself (the process ended mid-install): remove the staged copies and open the screen
+ *  again on what was installed, once. */
 public final class UsbUpdateDone extends BroadcastReceiver {
     @Override public void onReceive(Context context, Intent intent) {
         UsbInstaller.clean(context);
         if (UsbInstaller.takePendingSelf(context) != 0)
-            Toast.makeText(context, UiText.t("업데이트 완료") + " · " + UiText.t("내 앱"), Toast.LENGTH_LONG).show();
+            context.startActivity(new Intent(context, UsbUpdateActivity.class).putExtra(UsbUpdateActivity.EXTRA_DONE, true)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP));
     }
 }

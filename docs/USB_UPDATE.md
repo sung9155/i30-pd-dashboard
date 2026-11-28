@@ -7,7 +7,8 @@
 1. `i30-usb-update.zip`을 받습니다. (릴리스에 올라온 경우에만 있습니다. 아래 "개발자용" 참고)
 2. 압축을 풀어 나온 **`i30-update` 폴더를 USB 메모리 맨 위**에 넣습니다(FAT32/exFAT). 폴더 안에는 `manifest.txt`, `manifest.sig`, `dashboard.apk`, `hub.apk`가 있어야 합니다.
 3. 시동을 켠 차에 USB 메모리를 꽂습니다. 설치된 것보다 새 버전이면 **USB 업데이트** 창이 뜹니다(같은 업데이트는 한 번만 저절로 뜹니다). 뜨지 않으면 **'내 앱' → USB 업데이트**를 누릅니다.
-4. **[설치]** → 확인. 계기판이 먼저, '내 앱'이 나중에 바뀝니다. 그동안 두 앱이 잠시 닫히고, 끝나면 "업데이트 완료" 알림이 뜹니다. 계기판은 다시 열면 됩니다.
+4. **[설치]** → **[지금 설치]**. 계기판이 먼저, '내 앱'이 나중에 바뀌고 앱마다 진행 상태(확인 중 → 설치 중 → 완료)가 보입니다. 그동안 두 앱이 잠시 닫히고, 끝나면 "업데이트 완료" 화면이 뜹니다. 거기서 **[계기판 열기]**를 누르면 됩니다.
+5. 창이 "USB에서 i30-update 폴더를 찾지 못했습니다", "이미 최신 버전입니다", "이 USB 업데이트는 쓸 수 없습니다"라고 하면 그 아래 줄에 할 일이 적혀 있습니다.
 
 안전장치
 - 두 앱은 누구나 구할 수 있는 AOSP 플랫폼 시험 키로 서명되어 있어, APK 서명만으로는 우리 파일인지 알 수 없습니다. 그래서 `manifest.txt`는 별도의 **업데이트 키**(RSA 2048)로 서명하고, '내 앱'은 이 서명과 각 APK의 크기·SHA-256·서명자·패키지·버전을 모두 확인한 뒤에만 설치합니다. 하나라도 다르면 설치하지 않습니다.
@@ -36,7 +37,7 @@ Update the i30 Dashboard and My Apps from a USB stick, without a computer or pho
 1. Get `i30-usb-update.zip` (only when a release carries it; see "For developers").
 2. Unzip it and put the **`i30-update` folder at the top of a USB stick** (FAT32/exFAT): `manifest.txt`, `manifest.sig`, `dashboard.apk`, `hub.apk`.
 3. Plug the stick into the car with the ignition on. When it holds newer versions than installed, **USB update** opens (once per update); otherwise use **My Apps → USB update**.
-4. **Install** → confirm. The dashboard is replaced first, My Apps last; both close for a moment and "Update complete" shows at the end.
+4. **Install** → **Install now**. The dashboard is replaced first, My Apps last, each with its step shown; both close for a moment and the screen ends on "Update complete". When there is nothing to install the screen says why and what to do.
 
 Safeguards: `manifest.txt` is signed with a separate **update key** (the APKs carry the public AOSP platform test key, which proves nothing); My Apps checks that signature and every APK's size, SHA-256, signer, package and version, only for this head unit (`pd_kr`, API 17; a Veloster N bundle has another key and format), only the two apps, and only after the tap. This build keeps versionCode between releases and names each build (`v1.20.3`): two release names install only upwards, a test build on either side is offered when the names differ, a lower versionCode never. Without `INSTALL_PACKAGES` it falls back to the system installer screen, one per app.
 

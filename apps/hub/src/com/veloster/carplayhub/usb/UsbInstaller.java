@@ -30,7 +30,7 @@ public final class UsbInstaller {
     /** Where the head unit mounts USB sticks: /storage/usb0 on the PD (seen in the car's boot records). Not /storage/sdcard1,
      *  which is the navigation map card here. */
     public static final String[] ROOTS = {"/storage/usb0", "/storage/usb1", "/storage/usb2", "/storage/usb3", "/mnt/usb", "/mnt/usb0", "/mnt/usb_storage"};
-    static final String PREFS = "usb_update";
+    public static final String PREFS = "usb_update";
     private static final int INSTALL_REPLACE_EXISTING = 2;
 
     /** A stick worth offering: the bundle, its folder, and the apps in it that are newer than what is installed. */
@@ -40,26 +40,31 @@ public final class UsbInstaller {
         Offer(UsbBundle b, File f) { bundle = b; folder = f; }
     }
 
-    public interface Progress { void step(String message); }
+    /** Where one app of an install stands: waiting, being copied and checked, being installed, installed. */
+    public static final int WAIT = 0, COPY = 1, INSTALL = 2, OK = 3;
+    public interface Progress { void step(int app, int phase); }
 
     private final Context context;
     public UsbInstaller(Context c) { context = c.getApplicationContext(); }
 
     /** The first mounted stick (the given root first) with a valid bundle newer than the installed apps; null when none. */
     public Offer find(String preferredRoot) {
+        lastError = null; current = null;
         List<String> roots = new ArrayList<String>();
         if (preferredRoot != null) roots.add(preferredRoot);
         for (String r : ROOTS) if (!roots.contains(r)) roots.add(r);
         for (String r : roots) {
             File folder = new File(r, UsbBundle.FOLDER);
             if (!new File(folder, UsbBundle.MANIFEST).isFile()) continue;
-            try { Offer o = check(folder); if (!o.apps.isEmpty()) return o; } catch (Exception e) { lastError = e.getMessage(); }
+            try { Offer o = check(folder); if (!o.apps.isEmpty()) return o; current = o.bundle.release; } catch (Exception e) { lastError = e.getMessage(); }
         }
         return null;
     }
 
     /** Why the last stick with an i30-update folder was not offered (null when none was seen). */
     public String lastError;
+    /** The release of a valid bundle that holds nothing newer than what is installed (null when none was seen). */
+    public String current;
 
     public Offer check(File folder) throws Exception {
         UsbBundle b = UsbBundle.verify(UsbBundle.read(new File(folder, UsbBundle.MANIFEST), UsbBundle.MAX_MANIFEST),
@@ -89,22 +94,25 @@ public final class UsbInstaller {
     public List<String> install(Offer o, Progress progress) throws Exception {
         List<File> staged = new ArrayList<File>();
         try {
-            for (UsbBundle.App a : o.apps) {
-                progress.step(a.packageName + ": copy");
+            for (int i = 0; i < o.apps.size(); i++) {
+                UsbBundle.App a = o.apps.get(i);
+                progress.step(i, COPY);
                 File f = stage(new File(o.folder, a.file), a);
                 o.bundle.checkApk(f, a);
                 PackageInfo archive = context.getPackageManager().getPackageArchiveInfo(f.getPath(), 0);
                 UsbBundle.require(archive != null && a.packageName.equals(archive.packageName) && archive.versionCode == a.version && a.name.equals(archive.versionName), "APK package / version");
                 staged.add(f);
+                progress.step(i, WAIT);   // checked: waits its turn
             }
             List<String> done = new ArrayList<String>();
             for (int i = 0; i < o.apps.size(); i++) {
                 UsbBundle.App a = o.apps.get(i); File f = staged.get(i);
-                progress.step(a.packageName + ": install");
+                progress.step(i, INSTALL);
                 if (a.packageName.equals(context.getPackageName()))   // replacing ourselves: the report comes after the restart
                     context.getSharedPreferences(PREFS, 0).edit().putInt("pending_self", a.version).putString("release", o.bundle.release).commit();
                 silent(f);
                 if (!waitFor(a.packageName, a.version, a.name, 180000)) throw new IOException("install of " + a.packageName + " did not finish");
+                progress.step(i, OK);
                 done.add(a.packageName + " " + a.name);
             }
             return done;

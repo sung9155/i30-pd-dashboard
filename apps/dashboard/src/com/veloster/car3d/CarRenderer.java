@@ -459,7 +459,14 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         "precision mediump float;\n" + LIGHTING +
         "varying vec3 vN; varying vec3 vW; varying vec4 vC;\n" +
         "void main(){ vec3 n=normalize(vN); vec3 v=normalize(uEye-vW);\n" +
-        " gl_FragColor=vec4(shade(vC.rgb,vC.a,n,v),1.0); }\n";
+        // the back of a panel (inside an open door, bonnet or hatch, the roof seen through an opening): matte grey trim,
+        // with a soft fill so it is not black where the light does not reach; gloss 0 marks the inside the same way
+        // (trim, cabin, engine bay: scripts/car3d_model.py)
+        // (a back face by its normal turned from the eye, not gl_FrontFacing, which the emulator's GPU got wrong; -0.15 so
+        // a front face's smoothed normal at the outline does not count)
+        " float back=step(dot(n,v),-0.15); float fill=max(back,1.0-step(0.004,vC.a));\n" +
+        " vec3 base=mix(vC.rgb,vec3(0.24,0.24,0.25),back);\n" +
+        " gl_FragColor=vec4(shade(base,vC.a*(1.0-back),n,v)+base*0.5*fill*uAmbient,1.0); }\n";
     private static final String GLASS_FS =
         "precision mediump float;\n" + LIGHTING +
         "varying vec3 vN; varying vec3 vW; varying vec4 vC;\n" +

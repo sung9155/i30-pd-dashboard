@@ -21,8 +21,8 @@ What the conversion does, for a Telechips tcc893x (GLES 2.0) at 800x480:
   * the four wheels (rim + tyre: spin + steer) and the callipers (steer only) are separate nodes in the glTF
   * the parts that open on a hinge are parts of their own, with their glass and lamps: the front doors and the bonnet
     are nodes in the glTF; the rear doors, the hatch (with the roof spoiler) and the mirrors are cut out of the body
-    and the front doors along their shut lines (triangles are split on the line). The model has no engine bay and no
-    door jambs: an open part shows the cabin, or through the car
+    and the front doors along their shut lines (triangles are split on the line). The model has no engine bay and hardly
+    a cabin: plain blocks (BLOCKS) fill them, and the inner side of what opens is matte grey trim
   * lamp groups: the glow decals by node (brakes = stop, reverse, rear position guides = tail, the bar low in the front
     bumper = turn signal); the lamp units by where they sit and the colour under them (red at the back = tail, the
     tail lamp's lower clear bar = turn signal on the outer part, reversing lamp on the inner part, the inner part's LED
@@ -39,7 +39,8 @@ File format (little endian), assets/car3d/i30n.bin:
             u8 corner (wheel / calliper: 0 FL, 1 FR, 2 RL, 3 RR; hinge: the part, DOOR_FL .. MIRROR_R), u8 0,
             f32 pivot x y z (wheel centre / hinge point; the part's vertices are relative to it), u32 vertices,
             u32 indices, vertices*28 bytes, indices*u16 (padded to 4)
-  vertex (28 bytes): f32 x y z, s16 nx ny nz (/32767), u16 lamp group (8 = body paint), u8 r g b a (body: a = gloss, glass: a = opacity),
+  vertex (28 bytes): f32 x y z, s16 nx ny nz (/32767), u16 lamp group (8 = body paint), u8 r g b a (body: a = gloss, 0 = the
+          inside: trim, cabin, engine bay, lit softly; glass: a = opacity),
           u16 u v (/65535)
   number plates: u v 0..1 across the plate as seen from outside (u to the right, v down), for the app's plate picture
   then u32 spots, per spot: u8 lamp group, u8 hinged part + 1 (0: on the body), 2 x u8 0, f32 x y z, f32 normal x y z,
@@ -549,6 +550,59 @@ def hinge_pivots(parts):
     return out
 
 
+# ---- what shows through an open door, bonnet or hatch ----------------------------------------------------------------
+# The model has no cabin to speak of (two crude front seats, a steering wheel, a mirror) and no engine bay, so an open
+# part showed a black hole. These plain blocks fill it: (side profile (z, y), x from, x to, colour). Sized to stay inside
+# the closed body and clear of the wheels (inner face x 0.651, top y 0.675; fronts z 0.925..1.600, rears -1.730..-1.055)
+# and of the bonnet's underside (y 0.99 at z 1.15 down to 0.78 at z 1.95). Gloss 0 marks them (and the trim below) as
+# inside: matte, with a soft fill light in the shader, so a face turned away from the light is grey, not black.
+SEAT, CARPET, DASH, TRIM, BAY, ENGINE = (0.22, 0.22, 0.23), (0.12, 0.12, 0.13), (0.14, 0.14, 0.15), (0.24, 0.24, 0.25), (0.10, 0.10, 0.11), (0.30, 0.30, 0.32)
+FRONT_SEATS = ((0.40, 0.85, -0.06), (-0.40, 0.85, -0.06))   # the model's own seat pieces (centres): recoloured SEAT
+BLOCKS = [
+    ([(-1.05, 0.34), (0.90, 0.34), (0.90, 0.38), (-1.05, 0.38)], -0.70, 0.70, CARPET),                     # cabin floor
+    ([(0.62, 0.66), (0.96, 0.66), (0.96, 1.00), (0.70, 0.97)], -0.68, 0.68, DASH),                          # dashboard
+    ([(0.86, 0.38), (0.92, 0.38), (0.92, 0.66), (0.86, 0.66)], -0.68, 0.68, DASH),                          # footwell
+    ([(-0.30, 0.38), (0.66, 0.38), (0.66, 0.70), (0.30, 0.62), (-0.30, 0.55)], -0.12, 0.12, DASH),          # centre console
+    ([(-0.95, 0.38), (-0.42, 0.38), (-0.42, 0.60), (-0.47, 0.64), (-0.95, 0.62)], -0.64, 0.64, SEAT),       # rear cushion
+    ([(-1.10, 0.60), (-0.97, 0.62), (-1.08, 1.10), (-1.20, 1.10)], -0.62, 0.62, SEAT),                      # rear backrest
+    ([(-1.88, 0.62), (-1.12, 0.62), (-1.12, 0.66), (-1.88, 0.66)], -0.62, 0.62, CARPET),                    # boot floor
+    ([(-1.88, 0.62), (-1.12, 0.62), (-1.12, 1.02), (-1.88, 1.02)], 0.60, 0.64, TRIM),                       # boot sides
+    ([(-1.88, 0.62), (-1.12, 0.62), (-1.12, 1.02), (-1.88, 1.02)], -0.64, -0.60, TRIM),
+    ([(1.04, 0.42), (1.84, 0.42), (1.84, 0.46), (1.04, 0.46)], -0.56, 0.56, BAY),                           # engine bay floor
+    ([(1.02, 0.42), (1.06, 0.42), (1.06, 0.95), (1.02, 0.95)], -0.58, 0.58, BAY),                           # bulkhead
+    ([(1.80, 0.42), (1.84, 0.42), (1.84, 0.72), (1.80, 0.72)], -0.56, 0.56, BAY),                           # radiator
+    ([(1.04, 0.42), (1.84, 0.42), (1.84, 0.70), (1.04, 0.92)], 0.54, 0.58, BAY),                            # wheel arch walls
+    ([(1.04, 0.42), (1.84, 0.42), (1.84, 0.70), (1.04, 0.92)], -0.58, -0.54, BAY),
+    ([(1.04, 0.71), (1.80, 0.71), (1.80, 0.74), (1.04, 0.74)], 0.58, 0.78, BAY),                            # ledges over the wheels
+    ([(1.04, 0.71), (1.80, 0.71), (1.80, 0.74), (1.04, 0.74)], -0.78, -0.58, BAY),
+    ([(1.22, 0.46), (1.66, 0.46), (1.66, 0.78), (1.58, 0.83), (1.30, 0.87), (1.22, 0.85)], -0.32, 0.32, ENGINE),   # engine cover
+]
+INTERIOR_GLOSS = 0.0   # no other body part has gloss 0 (GLOSS, CALLIPER_GLOSS)
+
+
+def prism(profile, x0, x1):
+    """A convex side profile (z, y) pushed out from x0 to x1: triangles (n, 3, 3) wound outward, face normals."""
+    ring = [np.array([[x, y, z] for z, y in profile]) for x in (x0, x1)]
+    k = len(profile); tris = []
+    for i in range(k):
+        j = (i + 1) % k
+        tris += [[ring[0][i], ring[0][j], ring[1][j]], [ring[0][i], ring[1][j], ring[1][i]]]
+    for r in ring:
+        tris += [[r[0], r[i], r[i + 1]] for i in range(1, k - 1)]
+    T = np.array(tris); n = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0])
+    inside = np.r_[(x0 + x1) / 2, np.mean(profile, 0)[::-1]]   # convex: the corners' mean is inside
+    flip = (n * (T.mean(1) - inside)).sum(1) < 0
+    T[flip] = T[flip][:, ::-1]; n[flip] = -n[flip]
+    n /= np.linalg.norm(n, axis=1, keepdims=True)
+    return T, np.repeat(n[:, None], 3, 1)
+
+
+def inward(V, h):
+    """Per triangle of a hinged part: faces the inside of the car (its normal points toward the middle)."""
+    n = V[:, :, 3:6].mean(1); c = V[:, :, :3].mean(1)
+    return (n * (c - [0.0, 0.5, -0.1])).sum(1) < 0 if h in (BONNET, HATCH) else n[:, 0] * np.sign(c[:, 0]) < 0
+
+
 class Part:
     def __init__(self, program, motion, corner):
         self.program, self.motion, self.corner = program, motion, corner
@@ -582,6 +636,13 @@ def build(prims):
     def put(program, q, tri, nrm, group, col, uv):
         """Triangles that do not turn with a wheel: to the body, or (cut along the shut lines) to the part that opens."""
         V, G, hinge = hinged(np.concatenate([tri, nrm, col, uv], axis=2), group, q)
+        if program == BODY:   # the inner side of what opens: door cards (black in the texture) and the inner skins
+            for h in (DOOR_FL, DOOR_FR, DOOR_RL, DOOR_RR, BONNET, HATCH):
+                dark = (G == NONE) & (V[:, :, 6:9].max((1, 2)) < 0.15) if h != HATCH else False   # not the hatch's black spoiler
+                m = (hinge == h) & ((G == PAINT) | dark)
+                m[m] = inward(V[m], h)
+                V[m, :, 6:9] = TRIM; V[m, :, 9] = INTERIOR_GLOSS; G = np.where(m, NONE, G)
+                stats['trim'] = stats.get('trim', 0) + int(m.sum())
         for h in np.unique(hinge):
             m = hinge == h; N = V[m][..., 3:6]
             (part(program, HINGE, int(h)) if h >= 0 else part(program)).add(
@@ -638,6 +699,11 @@ def build(prims):
             if p['base'] is not None:
                 col = col * sample(p['base'], uv)
             col[..., 3] = CALLIPER_GLOSS if calliper else GLOSS.get(mat, 0.15)
+            if 'Carpaint' in node and 'detach' not in node:   # the model's front seats
+                seat = np.zeros(n, bool); pc = part_centres(q)
+                for s in FRONT_SEATS:
+                    seat |= np.linalg.norm(pc - s, axis=1) < 0.08
+                col[seat, :, :3] = SEAT; col[seat, :, 3] = INTERIOR_GLOSS
             group = np.full(n, NONE)
             if p['coat'] is not None:   # Material.001: the clearcoated panels are the paint
                 paint = sample(p['coat'], p['UV'][I].mean(1))[:, 0] > 0.5
@@ -650,6 +716,10 @@ def build(prims):
                 put(BODY, q, tri, nrm, group, col, np.zeros((n, 3, 2)))
             key = 'wheel' if wheel else 'calliper' if calliper else mat
         stats[key] = stats.get(key, 0) + n
+    for profile, x0, x1, colour in BLOCKS:
+        T, N = prism(profile, x0, x1); k = len(T)
+        part(BODY).add(T, N, np.full(k, NONE), np.tile(list(colour) + [INTERIOR_GLOSS], (k, 3, 1)), np.zeros((k, 3, 2)))
+        stats['interior'] = stats.get('interior', 0) + k
     return parts, centres, hinge_pivots(parts), radius, offset, stats, finish_spots(spots), tints
 
 

@@ -381,11 +381,14 @@ public final class VehicleDash extends View implements Runnable {
             int v=p.getInt("cluster_screen",ClusterPicker.OVERVIEW);
             screen=v>=0&&v<ClusterPicker.COUNT?v:ClusterPicker.OVERVIEW;
             hidden=ClusterPicker.valid(p.getInt("cluster_hidden",0));
-            order=ClusterPicker.validOrder(parseOrder(p.getString("cluster_order",null)));
-            // The order is saved on every screen change, so every install has one: a new default replaces it once.
-            if(p.getInt("cluster_order_v",0)<ClusterPicker.ORDER_VERSION){
-                if(p.getInt("cluster_order_v",0)<3){screen=ClusterPicker.renumber(screen);hidden=ClusterPicker.valid(ClusterPicker.renumberMask(hidden));}   // test builds before v3: WRC was 28
-                order=ClusterPicker.defaultOrder();p.edit().putString("cluster_order",orderCsv(order)).putInt("cluster_order_v",ClusterPicker.ORDER_VERSION).putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).apply();}
+            int[] savedOrder=parseOrder(p.getString("cluster_order",null));int ov=p.getInt("cluster_order_v",0);
+            order=ClusterPicker.validOrder(savedOrder);
+            // The order is saved on every screen change, so every install has one. Before v3 a new default replaced it once;
+            // v3 -> v4 (정비 30, WRC 31) keeps the owner's order: WRC renumbered, 정비 after 택시.
+            if(ov<ClusterPicker.ORDER_VERSION){
+                if(ov<3){screen=ClusterPicker.renumber(screen);hidden=ClusterPicker.valid(ClusterPicker.renumberMask(hidden));order=ClusterPicker.defaultOrder();}   // test builds before v3: WRC was 28
+                else{screen=ClusterPicker.renumber4(screen);hidden=ClusterPicker.valid(ClusterPicker.renumberMask4(hidden));order=ClusterPicker.validOrder(ClusterPicker.migrateOrder4(savedOrder));}
+                p.edit().putString("cluster_order",orderCsv(order)).putInt("cluster_order_v",ClusterPicker.ORDER_VERSION).putInt("cluster_screen",screen).putInt("cluster_hidden",hidden).apply();}
         }catch(ClassCastException e){/* Open on Overview, everything shown, for an incompatible saved value. */}
         warmEco();
         applyScreen();

@@ -98,7 +98,18 @@ final class CarView extends FrameLayout implements Runnable {
     static final float RENDER_SCALE = 0.8f;
     @Override protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        if (w > 0 && h > 0) gl.getHolder().setFixedSize(Math.round(w * RENDER_SCALE), Math.round(h * RENDER_SCALE));
+        float k = renderScale();
+        if (w > 0 && h > 0) gl.getHolder().setFixedSize(Math.round(w * k), Math.round(h * k));
+    }
+    /** RENDER_SCALE, or `adb shell setprop debug.car3d.scale 0.7` (0.4..1, read when the screen opens) to try another size on
+     *  the head unit without a rebuild. ponytail: a tuning knob for the car test, not a setting. */
+    private static float renderScale() {
+        try {
+            String v = (String) Class.forName("android.os.SystemProperties").getMethod("get", String.class, String.class).invoke(null, "debug.car3d.scale", "");
+            float k = Float.parseFloat(v);
+            if (k >= 0.4f && k <= 1f) return k;
+        } catch (Exception e) { /* unset or unreadable: the default */ }
+        return RENDER_SCALE;
     }
 
     /** The 넓은 번호판 shown on both plates (PlatePixels.wide, set here or in 설정 → 차량 색), and when it changes the plate

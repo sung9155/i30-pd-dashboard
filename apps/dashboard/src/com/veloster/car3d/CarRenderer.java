@@ -48,7 +48,7 @@ final class CarRenderer implements GLSurfaceView.Renderer {
     private Bitmap plateBmp;
     private boolean plateUploaded;
     private boolean uploaded;
-    private Program body, lamp, glass, floor, halo, rim, sky;
+    private Program body, lamp, glass, floor, halo, rim, sky, depth;
     private FloatBuffer quad;
     private int width = 800, height = 480;
     private final float[] proj = new float[16], view = new float[16], vp = new float[16], modelM = new float[16], mvp = new float[16], tmp = new float[16];
@@ -91,6 +91,7 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         synchronized (lock) { uploaded = false; skyUploaded = false; plateUploaded = false; texSky = texEnv = texPlate = 0; }   // a new context: every buffer and texture is gone
         body = new Program(BODY_VS, BODY_FS); lamp = new Program(LAMP_VS, LAMP_FS); glass = new Program(BODY_VS, GLASS_FS);
         floor = new Program(FLOOR_VS, FLOOR_FS); halo = new Program(HALO_VS, HALO_FS); rim = new Program(RIM_VS, RIM_FS); sky = new Program(SKY_VS, SKY_FS);
+        depth = new Program(DEPTH_VS, DEPTH_FS);
         quad = ByteBuffer.allocateDirect(8 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
         quad.put(new float[] {-1, -1, 1, -1, -1, 1, 1, 1}); rewind(quad);
         skyGrid = skyGrid();
@@ -99,6 +100,7 @@ final class CarRenderer implements GLSurfaceView.Renderer {
 
     @Override public void onSurfaceChanged(GL10 unused, int w, int h) {
         width = Math.max(1, w); height = Math.max(1, h);
+        android.util.Log.i("Car3D", "render size " + width + "x" + height);   // next to the frame times (page car3d)
         GLES20.glViewport(0, 0, width, height);
         Matrix.perspectiveM(proj, 0, 36f, width / (float) height, 0.3f, 60f);
     }
@@ -141,6 +143,16 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         if (m == null) { GLES20.glDepthMask(false); drawSky(); drawFloor(g, sc, road); GLES20.glDepthMask(true); return; }
         GLES20.glDepthMask(true);
         GLES20.glDisable(GLES20.GL_BLEND);
+        // Depth first, colour off: the car is about three layers deep where it shows (far side, inner panels, cabin, engine
+        // bay; measured 2.5-3.0 on the emulator), and the shaded pass below drew each layer that came first in the mesh. With
+        // the depth laid down, only the nearest surface passes LEQUAL and runs the heavy shader: once a pixel, not three times.
+        GLES20.glColorMask(false, false, false, false);
+        depth.use();
+        for (int i = 0; i < m.chunks.length; i++) {
+            int pr = m.chunks[i].program;
+            if (pr == CarModel.BODY || pr == CarModel.LAMP || pr == CarModel.PLATE && texPlate != 0) drawChunk(depth, m, i, wd, roll);
+        }
+        GLES20.glColorMask(true, true, true, true);
         // Opaque body, then lamps.
         body.use();
         GLES20.glUniform3f(body.u("uEye"), eye[0], eye[1], eye[2]);
@@ -425,8 +437,13 @@ final class CarRenderer implements GLSurfaceView.Renderer {
     }
 
     // ---- shaders ---------------------------------------------------------------------------------------------------
+    /** The depth pass: the same position as BODY_VS / LAMP_VS (invariant in all three, so LEQUAL matches exactly). */
+    private static final String DEPTH_VS =
+        "invariant gl_Position; uniform mat4 uMVP; attribute vec3 aPos;\n" +
+        "void main(){ gl_Position=uMVP*vec4(aPos,1.0); }\n";
+    private static final String DEPTH_FS = "precision mediump float; void main(){ gl_FragColor=vec4(0.0); }\n";
     private static final String BODY_VS =
-        "uniform mat4 uMVP; uniform mat4 uModel; uniform vec3 uPaint; uniform float uPaintOn; uniform float uPaintGloss;\n" +
+        "invariant gl_Position; uniform mat4 uMVP; uniform mat4 uModel; uniform vec3 uPaint; uniform float uPaintOn; uniform float uPaintGloss;\n" +
         "attribute vec3 aPos; attribute vec3 aNrm; attribute float aGroup; attribute vec4 aCol;\n" +
         "varying vec3 vN; varying vec3 vW; varying vec4 vC;\n" +
         "void main(){ vW=(uModel*vec4(aPos,1.0)).xyz; vN=(uModel*vec4(aNrm,0.0)).xyz;\n" +
@@ -450,7 +467,7 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         " float diff=max(dot(n,uLight),0.0); float hemi=0.5+0.5*n.y;\n" +
         " vec3 r=reflect(-v,n);\n" +
         " vec3 sky=env(uEnv,r)*uEnvGain;\n" +
-        " float fres=0.06+0.94*pow(1.0-ndv,5.0);\n" +
+        " float q=1.0-ndv; float q2=q*q; float fres=0.06+0.94*q2*q2*q;\n" +   // x^5 by multiplying: pow is log2 + exp2 on the GPU
         " vec3 h=normalize(uLight+v); float spec=pow(max(dot(n,h),0.0),70.0);\n" +
         " vec3 lit=base*((0.14+0.32*hemi)*uAmbient+0.78*diff*uKey);\n" +
         " return lit*(1.0-gloss*0.2)+gloss*(sky*mix(0.12,1.0,fres)*0.8+uKey*spec*1.2);\n" +
@@ -471,12 +488,12 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         "precision mediump float;\n" + LIGHTING +
         "varying vec3 vN; varying vec3 vW; varying vec4 vC;\n" +
         "void main(){ vec3 n=normalize(vN); vec3 v=normalize(uEye-vW);\n" +
-        " float ndv=abs(dot(n,v)); float fres=0.05+0.95*pow(1.0-ndv,5.0);\n" +
+        " float q=1.0-abs(dot(n,v)); float q2=q*q; float fres=0.05+0.95*q2*q2*q;\n" +
         " vec3 refl=shade(vec3(0.0),1.0,n,v);\n" +
         " float a=clamp(vC.a+fres*0.35,0.0,1.0);\n" +
         " gl_FragColor=vec4(vC.rgb*vC.a+refl*0.6,a); }\n";
     private static final String LAMP_VS =
-        "uniform mat4 uMVP; uniform mat4 uModel; uniform float uGlow[9];\n" +
+        "invariant gl_Position; uniform mat4 uMVP; uniform mat4 uModel; uniform float uGlow[9];\n" +
         "attribute vec3 aPos; attribute vec3 aNrm; attribute float aGroup; attribute vec4 aCol; attribute vec2 aUV;\n" +
         "varying vec3 vN; varying vec3 vW; varying vec2 vUV; varying float vK; varying float vG;\n" +
         "void main(){ vW=(uModel*vec4(aPos,1.0)).xyz; vN=(uModel*vec4(aNrm,0.0)).xyz; vUV=aUV; vG=aGroup;\n" +
@@ -515,7 +532,7 @@ final class CarRenderer implements GLSurfaceView.Renderer {
         "   float paint=0.85*dash*(line(p.x,1.85,0.12)+line(p.x,-1.85,0.12))+0.8*(line(p.x,5.6,0.15)+line(p.x,-5.6,0.15));\n" +
         "   f=mix(f,vec3(0.7,0.7,0.66),paint); refl*=(1.0-0.7*paint)*(0.75+0.5*fract(sin(dot(floor(p*1.7),vec2(7.1,3.7)))*9631.7)); }\n" +   // puddles
         " vec3 vd=normalize(vec3(p.x,0.0,p.y)-uEye);\n" +
-        " float fres=0.25+0.75*pow(1.0-abs(vd.y),3.0);\n" +
+        " float q=1.0-abs(vd.y); float fres=0.25+0.75*q*q*q;\n" +
         " float sh=length(vec2(p.x/1.0,(p.y+0.08)/2.15)); float shadow=mix(0.18,1.0,smoothstep(0.55,1.25,sh));\n" +
         " vec3 c=(f+env(uEnv,vec3(vd.x,-vd.y,vd.z))*refl*fres)*shadow;\n" +
         " float alpha=1.0-smoothstep(uScene>2.5?10.0:6.0,uScene>2.5?28.0:20.0,d);\n" +

@@ -8,7 +8,8 @@ import android.view.MotionEvent;
 import android.view.View;
 
 /**
- * Full-screen animation surface. A tap shows the settings (gear) button for a few seconds;
+ * Full-screen animation surface. A tap shows the settings (gear) button for a few seconds; inside the dashboard the
+ * dashboard's header strip (its tabs, list, gear and home) shows with it through a gap left at the top;
  * the gear opens the settings panel: HUD on/off, demo mode, time of day (auto: clock and tail lamps).
  * The car is the i30 N in the dashboard's car colour (CarPaint).
  */
@@ -213,7 +214,7 @@ final class NeonView extends View implements Runnable {
         float dt = lastFrame < 0 ? 0f : (now - lastFrame) / 1000f;
         lastFrame = now;
         DriveModel.State s = model.update(signals, now, dt);
-        float gear = gearUntil == Long.MIN_VALUE || now >= gearUntil ? 0f : Math.min(1f, (gearUntil - now) / (float) GEAR_FADE_MS);
+        float gear = gear(now);
         renderer.setUi(gear, panelOpen, paint, model.demoForced(), themeMode);
         com.veloster.vehicle.MediaState.Snapshot track = media.snapshot(now);
         if (artwork != null) artwork.request(track);
@@ -223,13 +224,17 @@ final class NeonView extends View implements Runnable {
         java.util.Calendar local = java.util.Calendar.getInstance();
         double nowMin = local.get(java.util.Calendar.HOUR_OF_DAY) * 60 + local.get(java.util.Calendar.MINUTE) + local.get(java.util.Calendar.SECOND) / 60.0;
         renderer.setTheme(Theme.resolve(themeMode, nowMin, sunriseMin, sunsetMin));
+        float top = barBottom(gear);
+        if (top > 0) { canvas.save(); canvas.clipRect(0, top, getWidth(), getHeight()); }   // the dashboard's header shows above
         renderer.draw(canvas, getWidth(), getHeight(), s);
+        if (top > 0) canvas.restore();
         stat.end(t0);   // the canvas commands; the GPU replays them after, so a low frame count also points there
     }
 
     public boolean onTouchEvent(MotionEvent e) {
         switch (e.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
+                if (e.getY() < barBottom(gear(SystemClock.elapsedRealtime()))) return false;   // the header strip: the dashboard behind takes it
                 downX = e.getX(); downY = e.getY(); tracking = true;
                 return true;
             case MotionEvent.ACTION_MOVE:
@@ -243,6 +248,21 @@ final class NeonView extends View implements Runnable {
                 tracking = false;
                 return true;
         }
+    }
+
+    /** The gear's (and the header strip's) share: 1 while shown, down to 0 over the fade. */
+    private float gear(long now) {
+        return gearUntil == Long.MIN_VALUE || now >= gearUntil ? 0f : Math.min(1f, (gearUntil - now) / (float) GEAR_FADE_MS);
+    }
+    /** Inside the dashboard, the bottom of the gap (view px) its header strip shows through: the strip's 52 of 480 while the
+     *  gear shows, rising to 0 over the fade; 0 standalone or with the panel open. */
+    private float barBottom(float gear) {
+        return onExit == null || panelOpen || gear <= 0.05f ? 0f : NeonRenderer.HEADER_H * getHeight() / NeonRenderer.H * gear;
+    }
+    /** A finger on the header strip (the dashboard has it) keeps the strip up: shown until 4 s after the last touch. */
+    void keepBar() {
+        long now = SystemClock.elapsedRealtime();
+        if (!panelOpen && gearUntil != Long.MIN_VALUE && gearUntil > now) gearUntil = Math.max(gearUntil, now + GEAR_SHOW_MS);
     }
 
     /** Set when Neon Drive runs inside the N dashboard: its back button calls this. */

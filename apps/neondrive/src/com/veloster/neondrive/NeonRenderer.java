@@ -141,7 +141,11 @@ public final class NeonRenderer {
     public boolean clock() { return clockOn; }
 
     /** Inside the N dashboard: a back button left of the gear (shown with it) returns to the dashboard. */
-    static final float EXIT_X = GEAR_X, EXIT_Y = GEAR_Y + 56;   // under the gear, clear of the HUD numbers
+    static final float EXIT_X = GEAR_X, EXIT_DY = 56;   // under the gear, clear of the HUD numbers
+    /** The dashboard's header strip (52 of 480): inside the dashboard it shows with the gear (NeonView), so the gear and the
+     *  back button sit under it, clear of its home button. */
+    static final float HEADER_H = 52;
+    float gearY() { return GEAR_Y + (exitButton ? HEADER_H : 0); }
     private boolean exitButton;
     public void setExitButton(boolean on) { exitButton = on; }
     public void setUi(float gearAlpha, boolean panelOpen, int paint, boolean demo, int themeMode) {
@@ -170,8 +174,8 @@ public final class NeonRenderer {
     public int hit(float vx, float vy) {
         float x = (vx - viewOffX) / viewScale, y = (vy - viewOffY) / viewScale;
         if (!panelOpen) {
-            if (exitButton && gearAlpha > 0.05f && Math.abs(x - EXIT_X) < 30 && Math.abs(y - EXIT_Y) < 26) return HIT_EXIT;
-            return gearAlpha > 0.05f && Math.abs(x - GEAR_X) < 30 && Math.abs(y - GEAR_Y) < 30 ? HIT_GEAR : HIT_NONE;
+            if (exitButton && gearAlpha > 0.05f && Math.abs(x - EXIT_X) < 30 && Math.abs(y - gearY() - EXIT_DY) < 26) return HIT_EXIT;
+            return gearAlpha > 0.05f && Math.abs(x - GEAR_X) < 30 && Math.abs(y - gearY()) < 30 ? HIT_GEAR : HIT_NONE;
         }
         if (x < PX0 || x > PX1 || y < PY0 || y > PY1) return HIT_OUTSIDE;
         if (x > 584 && y < 80) return HIT_CLOSE;
@@ -888,8 +892,8 @@ public final class NeonRenderer {
     private String t(String ko, String en) { return korean ? ko : en; }
 
     private void drawUi(Canvas c) {
-        if (!panelOpen && gearAlpha > 0.01f) drawGear(c, GEAR_X, GEAR_Y, gearAlpha);
-        if (exitButton && !panelOpen && gearAlpha > 0.01f) drawExit(c, EXIT_X, EXIT_Y, gearAlpha);
+        if (!panelOpen && gearAlpha > 0.01f) drawGear(c, GEAR_X, gearY(), gearAlpha);
+        if (exitButton && !panelOpen && gearAlpha > 0.01f) drawExit(c, EXIT_X, gearY() + EXIT_DY, gearAlpha);
         if (!panelOpen) return;
         p.setStyle(Paint.Style.FILL);
         p.setColor(0x66000000);

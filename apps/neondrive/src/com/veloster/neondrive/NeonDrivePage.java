@@ -21,4 +21,6 @@ public final class NeonDrivePage {
     public View view() { return view; }
     public void start() { if (running) return; running = true; view.resume(); }
     public void stop() { if (!running) return; running = false; view.pause(); }
+    /** The dashboard got a touch on its header strip, shown through the page's gap: the strip stays up. */
+    public void keepBar() { view.keepBar(); }
 }

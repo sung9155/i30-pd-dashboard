@@ -202,7 +202,9 @@ public final class VehicleDash extends View implements Runnable {
         boolean up=resumed&&getVisibility()==VISIBLE;
         try{
             if(pdSignals==null)pdSignals=new com.veloster.neondrive.PdSignals(DATA);
-            boolean car=up&&screen==ClusterPicker.CAR3D,neon=up&&screen==ClusterPicker.NEON_DRIVE;
+            // 네온 드라이브 shows the header strip through a gap (NeonView): its list and gear open here, so the page goes down
+            // while the list or the settings are open and comes back when they close (run: pickerSynced).
+            boolean car=up&&screen==ClusterPicker.CAR3D,neon=up&&screen==ClusterPicker.NEON_DRIVE&&!picker;
             if(car&&carPage==null)carPage=new com.veloster.car3d.CarPage(activity,pdSignals,exitOverlay);
             if(neon&&neonPage==null)neonPage=new com.veloster.neondrive.NeonDrivePage(activity,pdSignals,exitOverlay,mediaState);   // the dashboard's now-playing state: the playing track shows at once
             // A page whose screen was left is let go (upstream db3dc11): detached, 내 차's GL thread ends and its context, mesh,
@@ -776,8 +778,10 @@ public final class VehicleDash extends View implements Runnable {
     }
     protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity);Gps.start(activity);TbtReader.start(); post(this); }
     protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();mediaReceiver.stop();artwork.close();Gps.stop();TbtReader.stop();super.onDetachedFromWindow(); }
+    private boolean pickerSynced;
     public void run() {
         long delay=100;
+        if(picker!=pickerSynced){pickerSynced=picker;syncOverlay();}   // every path that opens or closes the list / settings
         long tick=SystemClock.elapsedRealtime();
         if(resumed&&!standalone&&tick-lastPolicyCheck>=1000){lastPolicyCheck=tick;int status=RegulationState.read(activity);if(status>=0)policy(status==1,"service");}
         tryRequestedEntry();
@@ -938,6 +942,7 @@ public final class VehicleDash extends View implements Runnable {
     private boolean overviewCovered(float y){return y>=347&&mediaState.snapshot(SystemClock.elapsedRealtime()).notice;}
     public boolean onTouchEvent(MotionEvent event) {
         float x=event.getX()*800/getWidth(), y=event.getY()*480/getHeight();
+        if(neonPage!=null&&neonPage.view().getParent()!=null)neonPage.keepBar();   // a touch here came through 네온 드라이브's header gap
         if(event.getAction()==MotionEvent.ACTION_DOWN) {
             removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;touching=true;downX=x;downY=y;lastMoveY=y;header.down(x,y);
             if(!blocked&&!picker&&header.onStrip(x,y))postDelayed(clusterHold,600);

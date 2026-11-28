@@ -12,16 +12,19 @@ import java.nio.ByteOrder;
  * No Android: host-tested. Vertex and index data come back in direct buffers ready for glBufferData.
  */
 public final class CarModel {
-    public static final int VERSION = 2, STRIDE = 28;
+    public static final int VERSION = 3, STRIDE = 28;
     /** PLATE: the number plates, UV 0..1 across each plate for the app's plate picture (CarPlate). */
     public static final int BODY = 0, LAMP = 1, GLASS = 2, PLATE = 3;
-    public static final int FIXED = 0, WHEEL = 1, CALLIPER = 2;
+    public static final int FIXED = 0, WHEEL = 1, CALLIPER = 2, HINGE = 3;
     public static final int FL = 0, FR = 1, RL = 2, RR = 3;
+    /** Hinged parts (a HINGE chunk's corner): the four doors (front left = the driver's), bonnet, hatch, mirrors. Same
+     *  numbers as scripts/car3d_model.py and CarState. (From upstream 734ea5f; its Veloster has three doors and an engine bay.) */
+    public static final int DOOR_FL = 0, DOOR_FR = 1, DOOR_RL = 2, DOOR_RR = 3, BONNET = 4, HATCH = 5, MIRROR_L = 6, MIRROR_R = 7, HINGES = 8;
 
     /** One draw call: up to 65535 vertices (16-bit indices, GLES 2.0 core). */
     public static final class Chunk {
         public int program, motion, corner, vertices, indices;
-        /** Wheel / calliper pivot (the wheel centre); vertices are relative to it. */
+        /** Wheel / calliper pivot (the wheel centre) or hinge point; vertices are relative to it. */
         public float px, py, pz;
         public ByteBuffer vertexData, indexData;
     }
@@ -29,6 +32,8 @@ public final class CarModel {
     /** Where a lamp group glows (for the halo sprites). */
     public static final class Spot {
         public int group;
+        /** The hinged part the lamp sits on (it moves with it), or -1 on the body. */
+        public int hinge = -1;
         public float x, y, z, nx, ny, nz, radius;
     }
 
@@ -63,7 +68,7 @@ public final class CarModel {
                 c.program = in.get() & 255; c.motion = in.get() & 255; c.corner = in.get() & 255; in.get();
                 c.px = in.getFloat(); c.py = in.getFloat(); c.pz = in.getFloat();
                 c.vertices = in.getInt(); c.indices = in.getInt();
-                if (c.program > PLATE || c.motion > CALLIPER || c.corner > RR || c.vertices <= 0 || c.vertices > 65535
+                if (c.program > PLATE || c.motion > HINGE || c.corner >= (c.motion == HINGE ? HINGES : 4) || c.vertices <= 0 || c.vertices > 65535
                     || c.indices <= 0 || c.indices % 3 != 0) throw new IOException("chunk " + i);
                 c.vertexData = slice(data, in, c.vertices * STRIDE);
                 c.indexData = slice(data, in, c.indices * 2);
@@ -77,7 +82,8 @@ public final class CarModel {
             Spot[] spots = new Spot[n];
             for (int i = 0; i < n; i++) {
                 Spot s = new Spot();
-                s.group = in.get() & 255; in.get(); in.get(); in.get();
+                s.group = in.get() & 255; s.hinge = (in.get() & 255) - 1; in.get(); in.get();
+                if (s.hinge >= HINGES) throw new IOException("spot hinge");
                 s.x = in.getFloat(); s.y = in.getFloat(); s.z = in.getFloat();
                 s.nx = in.getFloat(); s.ny = in.getFloat(); s.nz = in.getFloat(); s.radius = in.getFloat();
                 spots[i] = s;

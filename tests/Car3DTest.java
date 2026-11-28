@@ -28,6 +28,7 @@ public class Car3DTest {
         int[] wheels = new int[4], callipers = new int[4]; boolean lamp = false, glass = false;
         float minY = 9, maxY = -9, minZ = 9, maxZ = -9, minX = 9, maxX = -9;
         int[] groups = new int[CarState.GROUPS];
+        int[] hinged = new int[CarModel.HINGES]; float[] hx = new float[CarModel.HINGES], hy = new float[CarModel.HINGES], hz = new float[CarModel.HINGES];
         for (CarModel.Chunk c : m.chunks) {
             if (c.motion == CarModel.WHEEL) wheels[c.corner]++;
             if (c.motion == CarModel.CALLIPER) callipers[c.corner]++;
@@ -40,7 +41,8 @@ public class Car3DTest {
                 check(g < CarState.GROUPS, "lamp group in range");
                 if (c.program == CarModel.LAMP || g == 8) groups[g]++;
             }
-            if (c.motion != CarModel.FIXED) {
+            if (c.motion == CarModel.HINGE) { hinged[c.corner]++; hx[c.corner] = c.px; hy[c.corner] = c.py; hz[c.corner] = c.pz; }
+            if (c.motion == CarModel.WHEEL || c.motion == CarModel.CALLIPER) {
                 check(c.py > 0.3f && c.py < 0.35f, "wheel pivot at the axle height (tyre radius)");
                 check((c.corner == CarModel.FL || c.corner == CarModel.RL) == (c.px > 0), "left corners on +X");
                 check((c.corner <= CarModel.FR) == (c.pz > 0), "front corners on +Z");
@@ -62,6 +64,13 @@ public class Car3DTest {
         }
         check(plates == 1 && pf > 2.1f && pr < -2.0f, "front and rear plate: " + plates + " " + pf + " " + pr);
         check(umin == 0 && umax == 1 && vmin == 0 && vmax == 1, "plate UVs span the plate picture");
+        for (int h = 0; h < CarModel.HINGES; h++) check(hinged[h] > 0, "hinged part present: " + h);
+        check(hx[CarModel.DOOR_FL] > 0.7f && hz[CarModel.DOOR_FL] > 0.5f && hx[CarModel.DOOR_FR] < -0.7f && hz[CarModel.DOOR_FR] > 0.5f, "front doors hinge at their front edge, outer side");
+        check(hx[CarModel.DOOR_RL] > 0.7f && hx[CarModel.DOOR_RR] < -0.7f && hz[CarModel.DOOR_RL] < 0 && hz[CarModel.DOOR_RL] > -0.6f && Math.abs(hz[CarModel.DOOR_RR] - hz[CarModel.DOOR_RL]) < 0.01f, "rear doors hinged behind the B-pillar");
+        check(hz[CarModel.BONNET] > 0.7f && hz[CarModel.BONNET] < 1.1f && hy[CarModel.BONNET] > 0.7f, "bonnet hinged at its rear edge");
+        check(hz[CarModel.HATCH] < -1.2f && hy[CarModel.HATCH] > 1.2f && hx[CarModel.HATCH] == 0, "hatch hinged at the roof");
+        check(hx[CarModel.MIRROR_L] > 0.6f && hx[CarModel.MIRROR_R] < -0.6f && hy[CarModel.MIRROR_L] > 0.9f && hz[CarModel.MIRROR_L] > hz[CarModel.DOOR_RL] && hz[CarModel.MIRROR_L] < hz[CarModel.DOOR_FL], "mirrors fold at their base on each front door");
+        for (int h = 0; h < CarModel.HINGES; h += 2) if (h != CarModel.BONNET) check(Math.abs(hx[h] + hx[h + 1]) < 0.01f && Math.abs(hy[h] - hy[h + 1]) < 0.01f, "left and right hinge alike: " + h);
         check(Math.abs(minY) < 0.01f, "the car stands on y=0");
         check(maxZ - minZ > 4.25f && maxZ - minZ < 4.45f, "length of an i30 hatch (4,340 mm class): " + (maxZ - minZ));
         check(maxX - minX > 1.75f && maxX - minX < 2.15f, "width with mirrors: " + (maxX - minX));
@@ -78,6 +87,9 @@ public class Car3DTest {
             if (s.group == CarState.REVERSE) check(s.z < -1.5f && Math.abs(s.x) < 0.62f, "reversing lamps on the inner (tailgate) part " + s.x);
             if (s.group == CarState.HEAD) check(s.z > 1.5f && s.nz > 0, "headlamps at the front, facing forward");
             if (s.group == CarState.TAIL || s.group == CarState.STOP) check(s.z < -1.5f, "tail / stop lamps at the back");
+            if (s.group == CarState.REVERSE || s.group == CarState.STOP && Math.abs(s.x) < 0.2f) check(s.hinge == CarModel.HATCH, "the reversing lamps and the high-mount stop lamp lift with the hatch");
+            if (s.group == CarState.HEAD || s.z > 0) check(s.hinge == -1, "front lamps on the body");
+            check(s.hinge < CarState.OPENINGS, "lamp spots ride on the body or an opening part");
         }
         check(spot[CarState.HEAD] && spot[CarState.TAIL] && spot[CarState.STOP] && spot[CarState.TURN_L] && spot[CarState.TURN_R], "halo spots for the lamps");
         // corrupt files are refused
@@ -97,6 +109,28 @@ public class Car3DTest {
         boolean sawOn = false, sawOff = false;
         for (long t = 1500; t < 3000; t += 20) { s.update(null, CarState.TEST_LEFT, t); if (s.left) sawOn = true; else sawOff = true; check(!s.right, "only the left side blinks"); }
         check(sawOn && sawOff && s.leftActive, "test turn signal self-blinks");
+
+        // doors, bonnet, hatch, mirrors: test buttons open and shut them at a steady pace, eased in the swing
+        CarState op = new CarState(); long td = 20_000;
+        op.update(null, 0, td);
+        for (int h = 0; h < CarState.OPENINGS; h++) check(op.open[h] == 0 && op.hingeDeg(h) == 0, "everything shut at first");
+        op.update(null, CarState.TEST_DOOR_FL | CarState.TEST_MIRRORS, td += 300);
+        check(op.open[CarModel.DOOR_FL] > 0.2f && op.open[CarModel.DOOR_FL] < 0.5f && op.animating(), "the door is swinging after 0.3 s");
+        check(op.open[CarModel.DOOR_FR] == 0 && op.open[CarModel.DOOR_RL] == 0 && op.open[CarModel.BONNET] == 0, "only the asked part moves");
+        for (int i = 0; i < 10; i++) op.update(null, CarState.TEST_DOOR_FL | CarState.TEST_MIRRORS, td += 100);
+        check(op.open[CarModel.DOOR_FL] == 1 && Math.abs(op.hingeDeg(CarModel.DOOR_FL) - CarState.HINGE_DEG[CarModel.DOOR_FL]) < 0.01f, "fully open after 0.9 s");
+        check(op.open[CarModel.MIRROR_L] == 1 && op.open[CarModel.MIRROR_R] == 1, "both mirrors fold together");
+        for (int h = 0; h < CarState.OPENINGS; h++) check(CarState.HINGE_PARENT[h] < h, "a hinged part's parent comes before it: " + h);
+        check(CarState.HINGE_PARENT[CarModel.MIRROR_L] == CarModel.DOOR_FL && CarState.HINGE_PARENT[CarModel.MIRROR_R] == CarModel.DOOR_FR, "the mirrors ride on the front doors");
+        for (int i = 0; i < 10; i++) op.update(null, 0, td += 100);
+        check(op.open[CarModel.DOOR_FL] == 0 && op.open[CarModel.MIRROR_R] == 0 && !op.animating(), "released: shut again and still");
+        for (int i = 0; i < 10; i++) op.update(null, CarState.TEST_DOORS_REAR, td += 100);
+        check(op.open[CarModel.DOOR_RL] == 1 && op.open[CarModel.DOOR_RR] == 1 && op.open[CarModel.DOOR_FL] == 0, "one button opens both rear doors");
+        check(CarState.OPENINGS == CarModel.HINGES && CarState.HINGE_AXIS.length == CarState.OPENINGS && CarState.HINGE_DEG.length == CarState.OPENINGS && CarState.HINGE_PARENT.length == CarState.OPENINGS, "an axis, a swing and a parent for every hinged part");
+        for (int h = 0; h < CarState.OPENINGS; h++) {
+            float[] a = CarState.HINGE_AXIS[h];
+            check(Math.abs(a[0] * a[0] + a[1] * a[1] + a[2] * a[2] - 1) < 1e-6f && CarState.HINGE_DEG[h] > 30 && CarState.HINGE_DEG[h] < 90, "hinge axis / swing " + h);
+        }
 
         // live signals
         DriveSignals sig = new DriveSignals();
@@ -165,6 +199,6 @@ public class Car3DTest {
         check(ink[0] > 800 && ink[1] >= 8 && ink[2] <= com.veloster.car3d.CarPlate.W - 8 && ink[3] >= 6 && ink[4] <= com.veloster.car3d.CarPlate.H - 6,
             "12\uAC00 3456: letters on the plate, clear of its edge " + java.util.Arrays.toString(ink));
         check(Math.abs((ink[1] + ink[2]) / 2f - com.veloster.car3d.CarPlate.W / 2f) < 12, "letters centred");
-        System.out.println("PASS: 3D car mesh (" + m.triangles + " triangles, " + m.chunks.length + " chunks), lamp groups, wheels, lamp and steering logic");
+        System.out.println("PASS: 3D car mesh (" + m.triangles + " triangles, " + m.chunks.length + " chunks), lamp groups, wheels, hinged parts, lamp, steering and opening logic");
     }
 }

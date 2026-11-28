@@ -19,6 +19,10 @@ What the conversion does, for a Telechips tcc893x (GLES 2.0) at 800x480:
   * the chrome / detail parts (grille, badges, lamp units) and the glow decals keep their textures: one lamp atlas,
     Material.002 on the left half, Material.006 (glows) on the right; the glow map is the same picture
   * the four wheels (rim + tyre: spin + steer) and the callipers (steer only) are separate nodes in the glTF
+  * the parts that open on a hinge are parts of their own, with their glass and lamps: the front doors and the bonnet
+    are nodes in the glTF; the rear doors, the hatch (with the roof spoiler) and the mirrors are cut out of the body
+    and the front doors along their shut lines (triangles are split on the line). The model has no engine bay and no
+    door jambs: an open part shows the cabin, or through the car
   * lamp groups: the glow decals by node (brakes = stop, reverse, rear position guides = tail, the bar low in the front
     bumper = turn signal); the lamp units by where they sit and the colour under them (red at the back = tail, the
     tail lamp's lower clear bar = turn signal on the outer part, reversing lamp on the inner part, the inner part's LED
@@ -30,13 +34,16 @@ What the conversion does, for a Telechips tcc893x (GLES 2.0) at 800x480:
 Needs numpy and Pillow (development only; the app just reads the output).
 
 File format (little endian), assets/car3d/i30n.bin:
-  "VN3D" u32 version=2, u32 parts
-  per part: u8 program (0 body, 1 lamp, 2 glass, 3 number plate), u8 motion (0 fixed, 1 wheel, 2 calliper), u8 corner (0 FL, 1 FR,
-            2 RL, 3 RR), u8 0, f32 pivot x y z, u32 vertices, u32 indices, vertices*28 bytes, indices*u16 (padded to 4)
+  "VN3D" u32 version=3, u32 parts
+  per part: u8 program (0 body, 1 lamp, 2 glass, 3 number plate), u8 motion (0 fixed, 1 wheel, 2 calliper, 3 hinge),
+            u8 corner (wheel / calliper: 0 FL, 1 FR, 2 RL, 3 RR; hinge: the part, DOOR_FL .. MIRROR_R), u8 0,
+            f32 pivot x y z (wheel centre / hinge point; the part's vertices are relative to it), u32 vertices,
+            u32 indices, vertices*28 bytes, indices*u16 (padded to 4)
   vertex (28 bytes): f32 x y z, s16 nx ny nz (/32767), u16 lamp group (8 = body paint), u8 r g b a (body: a = gloss, glass: a = opacity),
           u16 u v (/65535)
   number plates: u v 0..1 across the plate as seen from outside (u to the right, v down), for the app's plate picture
-  then u32 spots, per spot: u8 lamp group, 3 x u8 0, f32 x y z, f32 normal x y z, f32 radius (glow halos)
+  then u32 spots, per spot: u8 lamp group, u8 hinged part + 1 (0: on the body), 2 x u8 0, f32 x y z, f32 normal x y z,
+            f32 radius (glow halos)
 """
 import argparse
 import json
@@ -46,11 +53,14 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-VERSION = 2
+VERSION = 3
 OUT_NAME = 'i30n.bin'
 BODY, LAMP, GLASS, PLATE = 0, 1, 2, 3
-FIXED, WHEEL, CALLIPER = 0, 1, 2
+FIXED, WHEEL, CALLIPER, HINGE = 0, 1, 2, 3
 FL, FR, RL, RR = 0, 1, 2, 3
+# Hinged parts (CarModel / CarState use the same numbers): four doors, bonnet, hatch, the two mirrors (on the front doors).
+DOOR_FL, DOOR_FR, DOOR_RL, DOOR_RR, BONNET, HATCH, MIRROR_L, MIRROR_R, HINGES = range(9)
+HINGE_NODES = (('detach_door_L', DOOR_FL), ('detach_door_R', DOOR_FR), ('detach_hood', BONNET))   # nodes of their own in the glTF
 # Lamp groups (CarScene.java uses the same numbers).
 NONE, HEAD, POSITION, TAIL, STOP, TURN_L, TURN_R, REVERSE = 0, 1, 2, 3, 4, 5, 6, 7
 PAINT = 8   # body vertices that take the chosen factory colour (CarPaint)
@@ -181,17 +191,7 @@ def dropped(p):
 def part_centres(p):
     """Per triangle: the centre of the connected piece it belongs to (vertices welded by position), so a lamp piece is
     sorted as a whole."""
-    _, weld = np.unique(np.round(p['P'], 4), axis=0, return_inverse=True)
-    I = weld.reshape(-1)[p['I']]
-    parent = np.arange(weld.max() + 1)
-
-    def root(a):
-        while parent[a] != a:
-            parent[a] = parent[parent[a]]; a = parent[a]
-        return a
-    for a, b, c in I:
-        ra = root(a); parent[root(b)] = ra; parent[root(c)] = ra
-    label = np.array([root(t[0]) for t in I])
+    label = piece_labels(p['P'], p['I'])
     c = p['P'][p['I']].mean(1); out = np.empty_like(c)
     for k in np.unique(label):
         out[label == k] = c[label == k].mean(0)
@@ -337,6 +337,218 @@ def unit_groups(p):
     return out
 
 
+# ---- the parts that open (from upstream reikop/veloster-n-dashboard 734ea5f, redone for this model) ----------------
+# The model has its front doors and bonnet as nodes of their own (HINGE_NODES). The rear doors, the hatch and the
+# mirrors are not separate in it: they are cut out along their shut lines, read off the mesh (metres, this script's
+# axes). A cut is a closed outline in one view ('zy': from the side, 'xy': from behind); every triangle that crosses it
+# is split along it, so the edge is the outline itself. Left side here; the right side is the mirror image.
+REAR_DOOR_ZY = [(-0.272, 0.3105), (-0.272, 1.03), (-0.315, 1.03), (-0.375, 1.408), (-0.681, 1.401), (-1.062, 1.373),
+                (-1.062, 1.343), (-1.076, 1.319), (-1.123, 1.236), (-1.200, 1.094), (-1.222, 1.050), (-1.243, 1.050),
+                (-1.270, 0.992), (-1.272, 0.9535), (-1.266, 0.922), (-1.240, 0.865), (-1.188, 0.7735), (-1.130, 0.680),
+                (-1.075, 0.596), (-1.021, 0.515), (-0.972, 0.444), (-0.937, 0.396), (-0.903, 0.358), (-0.874, 0.346),
+                (-0.847, 0.335), (-0.810, 0.3225)]
+FRONT_GLASS_ZY = [(-0.40, 0.90), (0.70, 0.90), (0.70, 1.45), (-0.40, 1.45)]   # the front door's window (a piece of its own)
+MIRROR_XY = [(0.80, 0.96), (1.12, 0.96), (1.12, 1.14), (0.80, 1.14)]          # the mirror, off the door's frame at its stalk
+# The hatch: behind the roof's rear edge and the D-pillar line (side view), inside its outline seen from behind (it runs
+# through the tail lamps at their seam, as on the car). The roof spoiler and the rear window come with it.
+HATCH_ZY = [(-1.528, 1.60), (-1.528, 1.372), (-1.62, 1.18), (-1.755, 1.077), (-1.79, 1.03), (-1.90, 0.99), (-1.90, 0.60),
+            (-2.50, 0.60), (-2.50, 1.60)]
+HATCH_HALF_XY = [(0.512, 0.683), (0.559, 0.747), (0.588, 0.856), (0.617, 1.008), (0.715, 1.024), (0.686, 1.088),
+                 (0.651, 1.218), (0.598, 1.315), (0.530, 1.371), (0.530, 1.60)]
+HATCH_XY = HATCH_HALF_XY + [(-x, y) for x, y in reversed(HATCH_HALF_XY)]
+B_PILLAR = (0.664, 0.85, -0.344)   # the pillar's own surface under the doors (a piece of the body mesh): stays
+WHOLE, NOTHING = 0.96, 0.04        # a piece this much inside a cut goes as a whole / this little: stays as a whole
+AXES = {'zy': (2, 1), 'xy': (0, 1)}
+
+
+def regions():
+    """The cuts, in order: (hinged part, the part its triangles are taken from (-1: the body), outlines, which triangles
+    may go: f(triangles, their centres, their piece's centre, node name))."""
+    out = [dict(hinge=HATCH, on=-1, clips=[('zy', HATCH_ZY), ('xy', HATCH_XY)],
+                pick=lambda V, c, pc, node: (V[:, :, 2].min(1) < -1.45) & ('Bottom' not in node))]
+    for s, front, rear, mirror in ((1, DOOR_FL, DOOR_RL, MIRROR_L), (-1, DOOR_FR, DOOR_RR, MIRROR_R)):
+        def skin(V, c, pc, node, s=s):   # the door's own depth: outside the cabin, and not the pillar under it
+            inner = np.where(c[:, 1] < 1.0, 0.70, 0.72 - (c[:, 1] - 1.0) * 0.45)
+            pillar = np.linalg.norm(pc * [s, 1, 1] - B_PILLAR, axis=1) < 0.05
+            return (c[:, 0] * s > inner) & ~pillar & ('Bottom' not in node)
+        out.append(dict(hinge=rear, on=-1, clips=[('zy', REAR_DOOR_ZY)], pick=skin))
+        out.append(dict(hinge=front, on=-1, clips=[('zy', FRONT_GLASS_ZY)],
+                        pick=lambda V, c, pc, node, s=s: (pc[:, 0] * s > 0.55) & ('Glass__' in node)))
+        out.append(dict(hinge=mirror, on=front, clips=[('xy', [(x * s, y) for x, y in MIRROR_XY])],
+                        pick=lambda V, c, pc, node: (c[:, 2] > 0.42) & (c[:, 2] < 0.90)))
+    return out
+
+
+def piece_labels(P, I):
+    """Per triangle: the connected piece it belongs to (vertices welded by position)."""
+    _, weld = np.unique(np.round(P, 4), axis=0, return_inverse=True)
+    T = weld.reshape(-1)[I]
+    parent = np.arange(weld.max() + 1)
+
+    def root(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]; a = parent[a]
+        return a
+    for a, b, c in T:
+        ra = root(a); parent[root(b)] = ra; parent[root(c)] = ra
+    return np.array([root(t[0]) for t in T])
+
+
+def in_polygon(poly, pts):
+    """Points (n, 2) inside a closed outline (even-odd)."""
+    x, y = pts[:, 0], pts[:, 1]; inside = np.zeros(len(pts), bool)
+    for (x0, y0), (x1, y1) in zip(poly, poly[1:] + poly[:1]):
+        cross = (y0 > y) != (y1 > y)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            inside ^= cross & (x < x0 + (y - y0) * (x1 - x0) / (y1 - y0))
+    return inside
+
+
+def on_edge(v, w, t):
+    """The point at t along the edge v -> w, worked out the same way from either triangle that shares the edge."""
+    if tuple(v[:3]) > tuple(w[:3]):
+        v, w, t = w, v, 1 - t
+    return v + (w - v) * t
+
+
+def fan(points):
+    return [np.array([points[0], points[k], points[k + 1]]) for k in range(1, len(points) - 1)]
+
+
+def insert_corner(t, q, ax):
+    """An outline corner inside a triangle becomes a corner of the mesh: the triangle as 3 (inside) or 2 (on an edge)."""
+    a, b, c = t[:, ax]
+    den = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1])
+    if abs(den) < 1e-14:
+        return [t]
+    w0 = ((b[1] - c[1]) * (q[0] - c[0]) + (c[0] - b[0]) * (q[1] - c[1])) / den
+    w1 = ((c[1] - a[1]) * (q[0] - c[0]) + (a[0] - c[0]) * (q[1] - c[1])) / den
+    w = np.array([w0, w1, 1 - w0 - w1])
+    if w.min() < -1e-9:
+        return [t]
+    zero = w < 1e-7
+    if zero.sum() >= 2:   # at a corner already
+        return [t]
+    if zero.sum() == 1:   # on the edge opposite corner i
+        i = int(np.argmax(zero)); j, k = (i + 1) % 3, (i + 2) % 3
+        m = on_edge(t[j], t[k], w[k] / (w[j] + w[k]))
+        return [np.array([t[i], t[j], m]), np.array([t[i], m, t[k]])]
+    m = w @ t
+    return [np.array([m, t[0], t[1]]), np.array([m, t[1], t[2]]), np.array([m, t[2], t[0]])]
+
+
+def slit(t, q0, q1, ax):
+    """A triangle cut along the outline segment q0 -> q1 where the segment crosses it."""
+    walk, marks = [], []
+    d = (q1[0] - q0[0], q1[1] - q0[1])
+    for i in range(3):
+        v, w = t[i], t[(i + 1) % 3]
+        walk.append(v)
+        if tuple(v[:3]) > tuple(w[:3]):
+            a, b, flip = w, v, True
+        else:
+            a, b, flip = v, w, False
+        e = (b[ax[0]] - a[ax[0]], b[ax[1]] - a[ax[1]]); den = d[0] * e[1] - d[1] * e[0]
+        if abs(den) < 1e-14:
+            continue
+        r = (a[ax[0]] - q0[0], a[ax[1]] - q0[1])
+        s = (r[0] * e[1] - r[1] * e[0]) / den; u = (r[0] * d[1] - r[1] * d[0]) / den
+        if -1e-9 <= s <= 1 + 1e-9 and 1e-7 < u < 1 - 1e-7:
+            marks.append(len(walk)); walk.append(a + (b - a) * u)
+    if not marks:
+        return [t]
+    if len(marks) == 1:   # in through an edge, out through the corner opposite it
+        k = marks[0]; walk = walk[k:] + walk[:k]
+        return [np.array([walk[0], walk[1], walk[2]]), np.array([walk[0], walk[2], walk[3]])]
+    a, b = marks[0], marks[1]
+    return fan(walk[a:b + 1]) + fan(walk[b:] + walk[:a + 1])
+
+
+def cut(V, clips):
+    """Triangles V (n, 3, k: position first) cut along closed outlines, each in its view. Returns the triangles, the
+    triangle each came from, and whether it lies inside every outline."""
+    src = np.arange(len(V)); inside = np.ones(len(V), bool)
+    for view, poly in clips:
+        ax = list(AXES[view]); lo = np.min(poly, 0); hi = np.max(poly, 0)
+        p2 = V[:, :, ax]
+        near = inside & (p2.max(1) >= lo).all(1) & (p2.min(1) <= hi).all(1)
+        e1 = p2[:, 1] - p2[:, 0]; e2 = p2[:, 2] - p2[:, 0]
+        near &= np.abs(e1[:, 0] * e2[:, 1] - e1[:, 1] * e2[:, 0]) > 1e-10   # edge-on in this view: goes by its centre
+        rows, s = [V[~near]], [src[~near]]
+        for k in np.flatnonzero(near):
+            tris = [V[k]]
+            for q in poly:
+                tris = [u for t in tris for u in insert_corner(t, q, ax)]
+            for q0, q1 in zip(poly, poly[1:] + poly[:1]):
+                tris = [u for t in tris for u in slit(t, q0, q1, ax)]
+            tris = np.array(tris); tris = tris[area(tris) > 1e-11]   # splinters of no size are left out
+            rows.append(tris); s.append(np.full(len(tris), src[k]))
+        was = np.concatenate([inside[~near]] + [np.ones(len(r), bool) for r in rows[1:]])
+        V = np.concatenate(rows); src = np.concatenate(s)
+        inside = was & in_polygon(poly, V[:, :, ax].mean(1))
+    return V, src, inside
+
+
+def area(V):
+    return np.linalg.norm(np.cross(V[:, 1, :3] - V[:, 0, :3], V[:, 2, :3] - V[:, 0, :3]), axis=1) / 2
+
+
+def hinged(V, G, q):
+    """The triangles of one mesh (corner rows V, lamp group G) sorted into the body (-1) and the parts that open, cut
+    along the shut lines. A connected piece almost all inside a cut goes whole; one barely inside stays whole."""
+    node = q['node']
+    lab = piece_labels(q['P'], q['I'])
+    hinge = np.full(len(V), next((h for key, h in HINGE_NODES if key in node), -1))
+    for r in regions():
+        if not (hinge == r['on']).any():
+            continue
+        c = V[:, :, :3].mean(1); pc = np.empty_like(c)
+        for k in np.unique(lab):
+            pc[lab == k] = c[lab == k].mean(0)
+        cand = (hinge == r['on']) & r['pick'](V, c, pc, node)
+        keep = ~cand
+        Vs, Gs, Ls, Hs = [V[keep]], [G[keep]], [lab[keep]], [hinge[keep]]
+        for k in np.unique(lab[cand]):
+            m = cand & (lab == k)
+            T, src, inside = cut(V[m], r['clips'])
+            a = area(T); share = a[inside].sum() / max(a.sum(), 1e-12)
+            if share > WHOLE or share < NOTHING:
+                T, src, inside = V[m], np.arange(int(m.sum())), np.full(int(m.sum()), share > WHOLE)
+            Vs.append(T); Gs.append(G[m][src]); Ls.append(np.full(len(T), k)); Hs.append(np.where(inside, r['hinge'], r['on']))
+        V, G, lab, hinge = np.concatenate(Vs), np.concatenate(Gs), np.concatenate(Ls), np.concatenate(Hs)
+    return V, G, hinge
+
+
+def hinge_of_point(c):
+    """The hinged part a point of the body sits on (a lamp's halo), or -1."""
+    for r in regions():
+        if r['on'] == -1 and all(in_polygon(poly, np.array([[c[AXES[view][0]], c[AXES[view][1]]]]))[0] for view, poly in r['clips']) \
+                and r['pick'](np.array([[c, c, c]]), np.array([c]), np.array([c]), '')[0]:
+            return r['hinge']
+    return -1
+
+
+def hinge_pivots(parts):
+    """Hinge points from each part's own shape: a door at its front edge on the outer side, the bonnet at its rear edge,
+    the hatch at the roof, a mirror at the inner end of its stalk."""
+    out = {}
+    for h in range(HINGES):
+        P = np.concatenate([np.concatenate(q.pos).reshape(-1, 3) for q in parts.values() if q.motion == HINGE and q.corner == h and q.program == BODY])
+        if h in (DOOR_FL, DOOR_FR, DOOR_RL, DOOR_RR):
+            front = P[P[:, 2] > P[:, 2].max() - 0.08]
+            out[h] = np.array([np.sign(P[:, 0].mean()) * np.percentile(np.abs(front[:, 0]), 90), (P[:, 1].min() + P[:, 1].max()) / 2, P[:, 2].max() - 0.02])
+        elif h == BONNET:
+            rear = P[P[:, 2] < P[:, 2].min() + 0.05]
+            out[h] = np.array([0.0, np.percentile(rear[:, 1], 90), P[:, 2].min() + 0.02])
+        elif h == HATCH:
+            front = P[P[:, 2] > P[:, 2].max() - 0.05]
+            out[h] = np.array([0.0, np.percentile(front[:, 1], 90), P[:, 2].max() - 0.01])
+        else:
+            base = P[np.abs(P[:, 0]) < np.abs(P[:, 0]).min() + 0.03]
+            out[h] = np.array([np.sign(P[:, 0].mean()) * np.abs(P[:, 0]).min(), np.median(base[:, 1]), base[:, 2].mean()])
+    return out
+
+
 class Part:
     def __init__(self, program, motion, corner):
         self.program, self.motion, self.corner = program, motion, corner
@@ -367,6 +579,16 @@ def build(prims):
     def part(program, motion=FIXED, corner=0):
         return parts.setdefault((program, motion, corner), Part(program, motion, corner))
 
+    def put(program, q, tri, nrm, group, col, uv):
+        """Triangles that do not turn with a wheel: to the body, or (cut along the shut lines) to the part that opens."""
+        V, G, hinge = hinged(np.concatenate([tri, nrm, col, uv], axis=2), group, q)
+        for h in np.unique(hinge):
+            m = hinge == h; N = V[m][..., 3:6]
+            (part(program, HINGE, int(h)) if h >= 0 else part(program)).add(
+                V[m][..., :3], N / (np.linalg.norm(N, axis=2, keepdims=True) + 1e-12), G[m], V[m][..., 6:10], V[m][..., 10:12])
+            if h >= 0:
+                stats['hinged %d' % h] = stats.get('hinged %d' % h, 0) + int(m.sum())
+
     stats = {}
     spots = {}
     tints = []   # (atlas UV triangles, colour): glow map areas to recolour (None = keeps its colour)
@@ -386,7 +608,7 @@ def build(prims):
         if p['blend']:   # glass: windows and the lamp lenses
             lens = 'Lights' in node
             col = np.tile(list(LENS if lens else WINDOW) + [OPACITY_LENS if lens else OPACITY_WINDOW], (n, 3, 1))
-            part(GLASS).add(tri, nrm, np.full(n, NONE), col, np.zeros((n, 3, 2)))
+            put(GLASS, dict(p, I=I), tri, nrm, np.full(n, NONE), col, np.zeros((n, 3, 2)))
             key = 'lens' if lens else 'window'
         elif mat in ('Material.002', 'Material.006') and not wheel and not calliper:
             # textured in the lamp atlas: Material.002 on the left half, the glow decals on the right
@@ -397,7 +619,7 @@ def build(prims):
             groups = decal_groups(q) if mat == 'Material.006' else unit_groups(q)
             uv = q['UV'][I] * [0.5, 1.0] + ([0.5, 0.0] if mat == 'Material.006' else [0.0, 0.0])
             col = np.ones((n, 3, 4))
-            part(LAMP).add(tri, nrm, groups, col, uv)
+            put(LAMP, q, tri, nrm, groups, col, uv)
             turn = (groups == TURN_L) | (groups == TURN_R)
             high = (groups == STOP) & (np.abs(tri.mean(1)[:, 0]) < 0.2) & (mat == 'Material.006')
             tints += [(uv[turn], AMBER), (uv[high], RED)]
@@ -423,13 +645,12 @@ def build(prims):
                 stats['paint'] = stats.get('paint', 0) + int(paint.sum())
                 col[paint, :, 3] = GLOSS['paint']
             if wheel or calliper:
-                target = part(BODY, CALLIPER if calliper else WHEEL, corner_of(tri.reshape(-1, 3).mean(0)))
+                part(BODY, CALLIPER if calliper else WHEEL, corner_of(tri.reshape(-1, 3).mean(0))).add(tri, nrm, group, col, np.zeros((n, 3, 2)))
             else:
-                target = part(BODY)
-            target.add(tri, nrm, group, col, np.zeros((n, 3, 2)))
+                put(BODY, q, tri, nrm, group, col, np.zeros((n, 3, 2)))
             key = 'wheel' if wheel else 'calliper' if calliper else mat
         stats[key] = stats.get(key, 0) + n
-    return parts, centres, radius, offset, stats, finish_spots(spots), tints
+    return parts, centres, hinge_pivots(parts), radius, offset, stats, finish_spots(spots), tints
 
 
 def collect_spots(p, groups, spots, weight=None):
@@ -456,11 +677,11 @@ def finish_spots(spots):
             continue
         centre = pc / w; nrm = pn / (np.linalg.norm(pn) + 1e-12)
         pts = np.vstack(pts); size = float(np.percentile(np.linalg.norm(pts - centre, axis=1), 80))
-        out.append((g, centre, nrm, max(size, 0.03)))
+        out.append((g, centre, nrm, max(size, 0.03), hinge_of_point(centre)))
     return out
 
 
-def pack(parts, centres, spots, out):
+def pack(parts, centres, pivots, spots, out):
     blobs = []
     order = sorted(parts.values(), key=lambda q: (q.program, q.motion, q.corner))
     count = 0; total_tris = 0
@@ -470,7 +691,7 @@ def pack(parts, centres, spots, out):
         key = np.c_[np.round(P * 1e5), np.round(N * 32767), G, np.round(C * 255), np.round(UV * 65535)].astype(np.int64)
         _, first, inv = np.unique(key, axis=0, return_index=True, return_inverse=True)
         inv = inv.reshape(-1); tris = inv.reshape(-1, 3)
-        pivot = centres[q.corner] if q.motion != FIXED else np.zeros(3)
+        pivot = pivots[q.corner] if q.motion == HINGE else centres[q.corner] if q.motion != FIXED else np.zeros(3)
         # Split into chunks that fit 16-bit indices.
         start = 0
         while start < len(tris):
@@ -498,7 +719,7 @@ def pack(parts, centres, spots, out):
             count += 1; total_tris += len(idx) // 3
             start = end
     trailer = struct.pack('<I', len(spots)) + b''.join(
-        struct.pack('<BBBB7f', g, 0, 0, 0, *c.astype(float), *n.astype(float), size) for g, c, n, size in spots)
+        struct.pack('<BBBB7f', g, hinge + 1, 0, 0, *c.astype(float), *n.astype(float), size) for g, c, n, size, hinge in spots)
     data = b'VN3D' + struct.pack('<II', VERSION, count) + b''.join(blobs) + trailer
     out.write_bytes(data)
     return count, total_tris, len(data)
@@ -564,16 +785,17 @@ def main():
     ap.add_argument('--out', type=Path, default=Path(__file__).resolve().parents[1] / 'apps/dashboard/assets/car3d')
     args = ap.parse_args()
     prims = load(args.model)
-    parts, centres, radius, offset, stats, spots, tints = build(prims)
+    parts, centres, pivots, radius, offset, stats, spots, tints = build(prims)
     args.out.mkdir(parents=True, exist_ok=True)
-    count, tris, size = pack(parts, centres, spots, args.out / OUT_NAME)
+    count, tris, size = pack(parts, centres, pivots, spots, args.out / OUT_NAME)
     plate = write_lamp_textures(prims, tints, args.out)
     allP = np.vstack([np.concatenate(q.pos).reshape(-1, 3) for q in parts.values()])
     print(json.dumps({'chunks': count, 'triangles': tris, 'bytes': size, 'tyre_radius_m': round(radius, 4),
                       'size_m': [round(float(v), 3) for v in np.ptp(allP, 0)],
                       'wheel_centres_m': {k: [round(float(x), 4) for x in v] for k, v in sorted(centres.items())},
                       'front_plate_px': plate,
-                      'lamp_spots': [[g, [round(float(x), 3) for x in c], round(sz, 3)] for g, c, n, sz in spots],
+                      'hinge_pivots_m': {k: [round(float(x), 4) for x in v] for k, v in sorted(pivots.items())},
+                      'lamp_spots': [[g, [round(float(x), 3) for x in c], round(sz, 3), h] for g, c, n, sz, h in spots],
                       'triangles_by_part': stats}, indent=1))
 
 

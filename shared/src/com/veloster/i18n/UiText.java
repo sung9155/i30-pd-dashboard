@@ -567,6 +567,7 @@ public final class UiText {
         EN.put("뒤로","Back");
         EN.put("뒤오","RR");
         EN.put("뒤왼","RL");
+        EN.put("뒷문","Rear doors");
         EN.put("드래그","Drag");
         EN.put("드래그 출발 트리","Drag start tree");
         EN.put("디자인","Design");
@@ -638,6 +639,7 @@ public final class UiText {
         EN.put("미드나이트 퍼플","Midnight Purple");
         EN.put("미등","Position lamps");
         EN.put("미디어 소스 · 차에서 무음","Media source · silent in car");
+        EN.put("미러 접기","Fold mirrors");
         EN.put("미리 발을 떼면 더 아낍니다","Lift off earlier to save more");
         EN.put("미리보기","Preview");
         EN.put("미리보기 · 칸을 누르면 값 고르기","Preview · tap a cell to choose its reading");

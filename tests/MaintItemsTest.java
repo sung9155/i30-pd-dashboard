@@ -64,6 +64,8 @@ public final class MaintItemsTest {
         check(b.km==12345&&b.date==20251231&&b.everyKm==7000&&b.everyMo==-1&&b.dot==4123,"save / load round trip");
         check(MaintItems.load(s,Id.OIL).km==-1&&MaintItems.load(s,Id.OIL).date==0,"missing record loads empty");
         MaintItems.setFirstRegDate(s,20180301);check(MaintItems.firstRegDate(s)==20180301,"first registration kept");
+        check(MaintItems.parseDate("2026-03-01")==20260301&&MaintItems.parseDate("20260301")==20260301&&MaintItems.parseDate("2026-13-01")==0&&MaintItems.parseDate("")==0&&MaintItems.parseDate("2026-3-1")==0,"typed dates: yyyy-mm-dd or yyyymmdd only");
+        check(MaintItems.label(Id.OIL).equals("엔진오일 · 필터")&&MaintItems.label(Id.INSPECTION).equals("정기검사"),"labels");
         System.out.println("PASS "+n+" maintenance item checks");
     }
 }

@@ -327,6 +327,7 @@ public final class VehicleDash extends View implements Runnable {
              public void put(String k,String l){rp.edit().putString(k,l).apply();}public void clear(){rp.edit().clear().apply();}});
          final SharedPreferences cp=a.getApplicationContext().getSharedPreferences("pit_vehicle_commute",0);   // 출퇴근 비교
          Commute.attach(new Commute.Store(){public String get(String k){return cp.getString(k,"");}public void put(String k,String v){cp.edit().putString(k,v).apply();}});}
+        maintAttach(a);
         try{renderer.appVersion=a.getPackageManager().getPackageInfo(a.getPackageName(),0).versionName;}catch(Exception e){/* the status row shows no name */}
         {SharedPreferences tp=a.getSharedPreferences("pit_vehicle_ui",0);   // the tiles' picks (Tiles), -1 = default
          for(int l=0;l<Tiles.KEYS.length;l++)for(int i=0;i<Tiles.picked[l].length;i++)
@@ -539,7 +540,7 @@ public final class VehicleDash extends View implements Runnable {
     }}.start();}
     public static void pauseStandalone(Activity a){
         VehicleDash d=current.get();if(d==null||d.activity!=a)return;
-        d.resumed=false;d.touching=false;d.removeCallbacks(d.editHold);backupSave(a);
+        d.resumed=false;d.touching=false;d.removeCallbacks(d.editHold);MaintLog.flush();backupSave(a);
         d.floatEdit=-1;d.gaugeEditor.dismiss();d.graphEditor.dismiss();if(d.tilePicker!=null)d.tilePicker.dismiss();d.dismissList();d.mediaReceiver.stop();d.artwork.close();
         d.syncOverlay();
     }
@@ -800,6 +801,7 @@ public final class VehicleDash extends View implements Runnable {
     }
     protected void onDraw(Canvas c) {
         long now=SystemClock.elapsedRealtime();
+        maintTick();
         if(FloatPanel.shape!=FloatPanel.OFF)FloatPanel.track(FloatPanel.count,floatSamples(FloatPanel.count),DATA.profile(),now);   // peaks and line graphs go on while the window is down
         header.step(SystemClock.uptimeMillis());   // MotionEvent times are uptime
         MediaState.Snapshot track=mediaState.snapshot(now);artwork.request(track);FloatPanel.music(track,artwork.bitmap());   // the settings' preview shows the track too
@@ -864,6 +866,57 @@ public final class VehicleDash extends View implements Runnable {
             }});
         }},"NMode-track-control").start();
     }
+    // ---- 정비 (screen 30): records in pit_vehicle_ui behind maint_* keys (the settings backup carries them), usage counted
+    // from this loop and the floating window's (MaintLog counts a drive once), a reminder once per start.
+    private static volatile MaintItems.Store maintStore;
+    private static int maintCheckedStarts=-1;
+    static volatile String maintBanner;static volatile long maintBannerUntil;
+    static final float BANNER_T=56,BANNER_B=98;
+    public static void maintAttach(android.content.Context c){
+        if(maintStore!=null)return;
+        final SharedPreferences p=c.getApplicationContext().getSharedPreferences("pit_vehicle_ui",0);
+        maintStore=new MaintItems.Store(){public String get(String k){return p.getString(k,"");}public void put(String k,String v){p.edit().putString(k,v).apply();}};
+        MaintenanceCluster.store=maintStore;MaintLog.attach(maintStore);
+    }
+    /** Both loops (this view's frames, the floating window's ticks): counts the drive, and once per start, after the first
+     *  odometer, returns the reminder text for what is due (MaintJudge.due), else null. */
+    public static String maintTick(){
+        MaintItems.Store st=maintStore;if(st==null)return null;
+        long now=SystemClock.elapsedRealtime();Telemetry.Sample[] s=DATA.snapshot(now);MaintLog.tick(s,now,System.currentTimeMillis());
+        int starts=MaintLog.total().starts;Telemetry.Sample odo=s[Telemetry.ODOMETER];
+        if(starts==maintCheckedStarts||!odo.valid||!(odo.value>0))return null;
+        maintCheckedStarts=starts;
+        int today=MaintItems.today(),first=MaintItems.firstRegDate(st);
+        MaintJudge.Verdict vd=MaintJudge.judge(MaintJudge.mode(st),MaintLog.sinceOil(),odo.value);
+        java.util.EnumMap<MaintItems.Id,MaintItems.Left> lefts=new java.util.EnumMap<MaintItems.Id,MaintItems.Left>(MaintItems.Id.class);
+        for(MaintItems.Id id:MaintItems.shown(DATA.profile()))lefts.put(id,MaintItems.left(id,MaintItems.load(st,id),vd.severe&&MaintItems.hasSevere(id),odo.value,today,first));
+        java.util.List<MaintItems.Id> due=MaintJudge.due(lefts,st,today);
+        if(due.isEmpty())return null;
+        MaintItems.Id id=due.get(0);MaintItems.Left l=lefts.get(id);
+        String what=l.overdue?UiText.t("지남"):!Float.isNaN(l.km)&&l.km<=1000?String.format(java.util.Locale.US,"%,d km ",Math.round(l.km))+UiText.t("남음"):l.days+UiText.t("일")+" "+UiText.t("남음");
+        String text=UiText.t("정비")+": "+UiText.t(MaintItems.label(id))+" "+what+(due.size()>1?" · "+UiText.t("외")+" "+(due.size()-1)+UiText.t("개"):"");
+        maintBanner=text;maintBannerUntil=now+6000;
+        android.util.Log.i("VehicleDash","Maintenance reminder: "+due);
+        return text;
+    }
+    /** The last trouble-code read's count (DtcDialog), for 정비's 상태 tab. */
+    static void maintDtc(int count){MaintItems.Store st=maintStore;if(st==null)return;st.put("maint_dtc_count",String.valueOf(count));st.put("maint_dtc_date",String.valueOf(MaintItems.today()));}
+    /** Opens a screen from outside (the floating window's reminder): DashboardActivity's intent extra "screen". */
+    public static void openScreen(Activity a,int s){VehicleDash d=current.get();if(d==null||d.activity!=a||s<0||s>=ClusterPicker.COUNT)return;d.screen=s;d.picker=false;d.showCluster();d.invalidate();}
+    /** A tap on 정비 asked for a dialog (MaintenanceCluster.pendingEdit / pendingAction). */
+    private void maintPending(){
+        MaintItems.Id id=MaintenanceCluster.pendingEdit;int act=MaintenanceCluster.pendingAction;MaintenanceCluster.pendingEdit=null;MaintenanceCluster.pendingAction=0;
+        MaintItems.Store st=maintStore;if(st==null||id==null&&act==0)return;
+        long now=SystemClock.elapsedRealtime();if(MaintDialogs.refuse(activity,DATA.sample(7,now)))return;
+        Telemetry.Sample o=DATA.sample(Telemetry.ODOMETER,now);float odo=o.valid&&o.value>0?o.value:Float.NaN;
+        Runnable after=new Runnable(){public void run(){invalidate();}};
+        if(id!=null)MaintDialogs.item(activity,st,id,odo,after);
+        else if(act==MaintenanceCluster.ACT_MODE){MaintJudge.Verdict vd=MaintJudge.judge(MaintJudge.Mode.AUTO,MaintLog.sinceOil(),odo);
+            MaintDialogs.mode(activity,st,UiText.t("자동 판단")+": "+UiText.t(vd.insufficient?"근거 부족":vd.severe?"가혹":"일반"),after);}
+        else if(act==MaintenanceCluster.ACT_FIRST_REG){final MaintItems.Store s2=st;final Runnable done=after;
+            MaintDialogs.dateDialog(activity,UiText.t("최초 등록일"),MaintItems.firstRegDate(st),new MaintDialogs.DateSink(){public void set(int d){MaintItems.setFirstRegDate(s2,d);done.run();}});}
+        else if(act==MaintenanceCluster.ACT_DTC)DtcDialog.show(activity);
+    }
     private void selectTab(int id){
         int s=header.screenAt(id);   // a tap on a tab shows that screen; a long press on the strip opens the list
         if(s<0)return;
@@ -906,6 +959,8 @@ public final class VehicleDash extends View implements Runnable {
         if(header.up(event.getEventTime())){touching=false;return true;}   // a strip scroll is never a tap
         boolean tap=touching && Math.abs(x-downX)<16 && Math.abs(y-downY)<16;
         touching=false;
+        if(tap&&!blocked&&!picker&&maintBanner!=null&&SystemClock.elapsedRealtime()<maintBannerUntil&&y>=BANNER_T&&y<=BANNER_B&&downY>=BANNER_T&&downY<=BANNER_B){   // the 정비 reminder opens 정비
+            maintBannerUntil=0;screen=ClusterPicker.MAINT;showCluster();invalidate();return true;}
         if(tap&&!blocked&&HeaderTabs.gear(x,y)&&HeaderTabs.gear(downX,downY)){   // gear: edit the screen list, again to close it
             boolean open=!(picker&&editing);picker=open;editing=open;if(open)showCluster();invalidate();return true;
         }
@@ -1042,7 +1097,8 @@ public final class VehicleDash extends View implements Runnable {
         }
         if(tap&&!blocked&&symmetric&&(PitRenderer.isCluster(page)||page==PitRenderer.PAGE_ECO||page==PitRenderer.PAGE_MANUAL||page>PitRenderer.PAGE_TACHO)&&y>52&&downY>52&&renderer.clusterTap(x,y)){int kc=CassetteCluster.consumeKeyCmd();if(kc!=0)requestMedia(kc);if(EcoCluster.consumeChanged())saveEco();
             if(page==PitRenderer.PAGE_MANUAL)activity.getSharedPreferences("pit_vehicle_ui",0).edit().putBoolean("lambda_down_always",LambdaCluster.downAlways).apply();
-            if(page>PitRenderer.PAGE_TACHO)activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("analog_look",AnalogCluster.style).apply();invalidate();return true;}   // 아날로그: the dial look
+            if(page>PitRenderer.PAGE_TACHO)activity.getSharedPreferences("pit_vehicle_ui",0).edit().putInt("analog_look",AnalogCluster.style).apply();
+            if(page==ClusterPicker.page(ClusterPicker.MAINT))maintPending();invalidate();return true;}   // 아날로그: the dial look
         if(tap&&!blocked&&!picker&&renderer.tbtHit(x,y)&&renderer.tbtHit(downX,downY)){renderer.tbtBig=!renderer.tbtBig;invalidate();return true;}   // the guidance band opens big, a tap closes it
         if(tap&&!blocked&&gauges&&x>=650&&x<=788&&downX>=650&&downX<=788&&y>=54&&y<=78&&downY>=54&&downY<=78){gaugeEditor.toggleGrid();return true;}
         if(tap&&!blocked&&graphs&&y>=54&&y<=79&&downY>=54&&downY<=79){

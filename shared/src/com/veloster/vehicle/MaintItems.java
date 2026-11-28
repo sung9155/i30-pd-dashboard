@@ -44,6 +44,12 @@ public final class MaintItems {
         {0,0,0,0}};             // INSPECTION (a due date)
     static final int COOLANT_FIRST_KM=200000,COOLANT_FIRST_MO=120;
 
+    /** The item's name (Korean; the screen translates it). */
+    public static String label(Id id){switch(id){
+        case OIL:return "엔진오일 · 필터";case AIR:return "에어클리너";case CABIN:return "에어컨 필터";case SPARK:return "점화플러그";case FUEL_FILTER:return "연료필터";
+        case DCT_OIL:return "DCT 오일";case MT_OIL:return "변속기 오일";case BRAKE_FLUID:return "브레이크액";case PADS_FRONT:return "브레이크 패드 앞";case PADS_REAR:return "브레이크 패드 뒤";
+        case COOLANT:return "냉각수";case WIPER:return "와이퍼";case TIRE_ROTATE:return "타이어 위치 교환";case TIRE_REPLACE:return "타이어 교체";case TIRE_AIR:return "공기압 보충";
+        case ALIGNMENT:return "휠 얼라인먼트";case BATTERY:return "배터리";default:return "정기검사";}}
     public static List<Id> shown(VehicleProfile p){
         List<Id> out=new ArrayList<Id>();
         for(Id id:Id.values()){
@@ -119,5 +125,7 @@ public final class MaintItems {
     public static int addMonths(int ymd,int months){GregorianCalendar c=cal(ymd);c.add(Calendar.MONTH,months);
         return c.get(Calendar.YEAR)*10000+(c.get(Calendar.MONTH)+1)*100+c.get(Calendar.DAY_OF_MONTH);}
     public static int daysBetween(int from,int to){return (int)Math.round((cal(to).getTimeInMillis()-cal(from).getTimeInMillis())/86400000.0);}
+    /** A typed date ("2026-03-01" or "20260301") as yyyymmdd, or 0. */
+    public static int parseDate(String t){if(t==null)return 0;String d=t.replaceAll("[^0-9]","");if(d.length()!=8)return 0;int v=Integer.parseInt(d),m=v/100%100,dd=v%100;return m>=1&&m<=12&&dd>=1&&dd<=31?v:0;}
     public static int today(){Calendar c=Calendar.getInstance();return c.get(Calendar.YEAR)*10000+(c.get(Calendar.MONTH)+1)*100+c.get(Calendar.DAY_OF_MONTH);}
 }

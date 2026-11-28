@@ -197,6 +197,9 @@ public final class PitRenderer {
         else if(graphLayout==null&&gaugeLayout==null){if(page!=ClusterPicker.WRC-ClusterPicker.F1||tbtBig)drawTbt(c,Tbt.current(frameTime));else tbtShown=false;}   // the navigation's next turn, over every page (WRC: in its pace-note card)
         else if(graphLayout==null&&!mediaPage && music!=null && music.notice && !showsMusic())drawMedia(c,true);
         if(cluster&&!picker&&gaugeLayout==null&&graphLayout==null&&mediaToggleShown())drawArtworkToggle(c);
+        {String mb=VehicleDash.maintBanner;if(!picker&&mb!=null&&frameTime<VehicleDash.maintBannerUntil){   // 정비 reminder, 6 s; a tap opens 정비 (VehicleDash)
+            box(c,16,VehicleDash.BANNER_T,784,VehicleDash.BANNER_B,0xf00b0f12);box(c,16,VehicleDash.BANNER_T,22,VehicleDash.BANNER_B,MAINT_AMBER);
+            text(c,mb,34,VehicleDash.BANNER_T+28,19,MAINT_AMBER,true);}}
         c.restore();
     }
     // Page background and header strip, painted into two bitmaps and repainted only when they change. On Android 4.2's
@@ -724,6 +727,7 @@ public final class PitRenderer {
         shape.reset();shape.moveTo(x+dir*4,27);shape.lineTo(x-dir*3,20);shape.lineTo(x-dir*3,34);shape.close();
         paint.setColor(T(0xcc91a5ae));c.drawPath(shape.kept(),paint);
     }
+    private static final int MAINT_AMBER=0xffffb84d;   // the 정비 reminder band
     private void box(Canvas c,float l,float t,float r,float b,int color){paint.setColor(T(color));c.drawRect(l,t,r,b,paint);}
     private void panel(Canvas c,float x,float y,float w,float h,int fill,int edge){
         if(ThemeShapes.cell(c,paint,shape,cellRect,x,y,x+w,y+h,T(fill),T(edge)))return;

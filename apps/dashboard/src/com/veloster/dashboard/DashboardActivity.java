@@ -18,11 +18,13 @@ public final class DashboardActivity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(new FrameLayout(this));
         VehicleDash.attachStandalone(this);
+        VehicleDash.openScreen(this,getIntent().getIntExtra("screen",-1));   // the floating window's 정비 reminder
         client=VehicleDataClient.shared(this);
     }
     // one car data client for the app (VehicleDataClient.shared): the floating window (FloatService) keeps it running while
     // the dashboard is not on screen, so nothing is cleared or asked twice on the way in or out
     static volatile boolean resumed;
+    @Override protected void onNewIntent(android.content.Intent i){super.onNewIntent(i);setIntent(i);VehicleDash.openScreen(this,i.getIntExtra("screen",-1));}
     protected void onResume(){super.onResume();resumed=true;FloatService.stop(this);LanguageSettings.init(this);VehicleDash.resumeStandalone(this);client.start();}
     protected void onPause(){resumed=false;VehicleDash.pauseStandalone(this);FloatService.startIfOn(this);if(!FloatService.wanted)client.stop();super.onPause();}
     // Out of sight: with only the floating window up (it draws from FloatPanel, not the screens) the screens' bitmaps are

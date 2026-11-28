@@ -125,6 +125,7 @@ public final class UiText {
         EN.put("DCT 클러치","DCT clutch");
         EN.put("DCT 클러치 온도 (홀·짝 묶음)","DCT clutch temperatures (odd · even)");
         EN.put("DCT 홀수단 클러치 온도","DCT odd-gear clutch temperature");
+        EN.put("DOT 4자리 (주·연, 예 2324)","DOT 4 digits (week, year, e.g. 2324)");
         EN.put("DPF (차압·온도·재생 묶음)","DPF (pressure · temperature · regeneration)");
         EN.put("DPF 막힘 (매연 축적)","DPF clogged (soot accumulation)");
         EN.put("DPF 막힘 (재 축적)","DPF clogged (ash accumulation)");
@@ -193,6 +194,7 @@ public final class UiText {
         EN.put("e-LSD 수치","e-LSD value");
         EN.put("i30 PD 내비에서만 바꿉니다","Changed only on the i30 PD head unit");
         EN.put("i30 PD 포팅","i30 PD port");
+        EN.put("km마다 (0 = 거리 없음)","Every km (0 = none)");
         EN.put("Λ RPM·속도계","Λ rpm and speed");
         EN.put("− / + 로 조절 · 동전·카세트·차임 · 변속 알림음은 RPM 화면에서","Tap − / + · coin, cassette, chime · shift beeps are set on the RPM screen");
         EN.put("− / + 로 조절 · 한 번 들려줌","Adjust with − / + · plays it once");
@@ -224,6 +226,7 @@ public final class UiText {
         EN.put("가장자리 버튼 + 알림 / Floating + notification","Floating + notification");
         EN.put("가장자리 버튼을 표시할 수 없어 알림 바로가기를 유지합니다. 시스템의 다른 앱 위 표시 권한을 확인하세요.","The floating button could not be shown. The notification remains. Check permission to display over other apps.");
         EN.put("가혹","Severe");
+        EN.put("가혹 (비포장 · 견인 · 영업용 등)","Severe (unpaved, towing, commercial …)");
         EN.put("가혹 근거","Severe-use evidence");
         EN.put("각진","Square");
         EN.put("갈림길","Fork");
@@ -235,9 +238,11 @@ public final class UiText {
         EN.put("개"," full");
         EN.put("개발자 설정","Developer options");
         EN.put("개월"," mo");
+        EN.put("개월마다 (0 = 기간 없음)","Every months (0 = none)");
         EN.put("거리","Distance");
         EN.put("거리  ","Dist  ");
         EN.put("거리 %d m × ","Distance %d m × ");
+        EN.put("건너뛰기","Skip");
         EN.put("검색 요청 실패: ","Discovery request failed: ");
         EN.put("검색 종료","Stop discovery");
         EN.put("검색 종료 상태를 확인하지 못했습니다.","Could not confirm that discovery stopped.");
@@ -310,6 +315,7 @@ public final class UiText {
         EN.put("광주","Gwangju");
         EN.put("교체 뒤","Since change");
         EN.put("교환","Service");
+        EN.put("교환 때 주행거리 km","Odometer at the change, km");
         EN.put("구간 시간","Stage time");
         EN.put("구간 아래에서 가속하면 측정","starts when you accelerate through the range");
         EN.put("구간 진행 중","Stage running");
@@ -353,6 +359,7 @@ public final class UiText {
         EN.put("기본 배치로 복원","Reset layout");
         EN.put("기본 파랑","N blue");
         EN.put("기본값 · 바꿀 수 있음","Defaults · changeable");
+        EN.put("기본값으로","Defaults");
         EN.put("기본값으로 되돌리기","Back to the default");
         EN.put("기본앱","Built-in apps");
         EN.put("기본요금 %.1f km","Base %.1f km");
@@ -380,6 +387,8 @@ public final class UiText {
         EN.put("나눔스퀘어 네오","NanumSquare Neo");
         EN.put("나이트","Night");
         EN.put("나중에","Later");
+        EN.put("날짜 (yyyymmdd)","Date (yyyymmdd)");
+        EN.put("날짜를 yyyymmdd로 넣으세요","Enter the date as yyyymmdd");
         EN.put("남은 거리","Remaining");
         EN.put("남은 코너 없음","No more corners");
         EN.put("남음","left");
@@ -457,6 +466,7 @@ public final class UiText {
         EN.put("다음 100원까지 %.0f m","%.0f m to the next 100 won");
         EN.put("다음 안내","Next guidance");
         EN.put("다음 재시작 때 디버깅으로 켜짐 (OFF로 되돌리기)","Debugging turns on at the next restart (press OFF to undo)");
+        EN.put("다음 정기검사일","Next inspection date");
         EN.put("다음에 이 길을 달리면 코너를 미리 불러요","Next time on this road, the corners are called ahead");
         EN.put("다이아 커팅","Diamond cut");
         EN.put("다이얼","Dial");
@@ -1055,7 +1065,9 @@ public final class UiText {
         EN.put("예약","Booked");
         EN.put("예열 플러그 제어 모듈 회로 이상","Glow plug control module circuit malfunction");
         EN.put("예열 플러그 회로 이상","Glow plug circuit malfunction");
+        EN.put("오늘 교환함","Done today");
         EN.put("오도미터 확인 필요","Check the odometer");
+        EN.put("오도미터를 아직 받지 못했습니다","No odometer yet");
         EN.put("오른쪽","Right");
         EN.put("오른쪽 ","Right ");
         EN.put("오른쪽 갈림길","Keep right");
@@ -1081,6 +1093,7 @@ public final class UiText {
         EN.put("와이퍼","Wiper");
         EN.put("와인","Wine");
         EN.put("완료","Done");
+        EN.put("외","and");
         EN.put("외기 온도","Ambient temperature");
         EN.put("외기온","Outside");
         EN.put("왼쪽","Left");
@@ -1199,6 +1212,7 @@ public final class UiText {
         EN.put("이 내비에서는 앱이 스스로 삭제할 수 없습니다. PC 설치기나 휴대폰 설치 앱의 [삭제]를 쓰세요.","This head unit does not let the app remove itself. Use [Remove] in the PC installer or the phone installer.");
         EN.put("이 시스템에서 바로가기 서비스를 시작할 수 없습니다.","This system cannot start the shortcut service.");
         EN.put("이 제어기 고장코드 지우기","Clear this unit's trouble codes");
+        EN.put("이 항목의 교환 기록을 지웁니다.","Clears this item's record.");
         EN.put("이 화면에서 시작한 검색을 종료했습니다.","Stopped discovery started from this screen.");
         EN.put("이름 없는 기기","Unnamed device");
         EN.put("이모빌라이저 — 엔진 제어기 메모리 오류","Immobiliser — engine control unit memory error");
@@ -1236,7 +1250,9 @@ public final class UiText {
         EN.put("읽기만 합니다. 고장코드 삭제는 정비소 진단기로 하세요.","Read only. Clear codes with a workshop scan tool.");
         EN.put("잎 1개 = 20점","1 leaf = 20 points");
         EN.put("자동","Auto");
+        EN.put("자동 (주행 기록으로 판단)","Auto (from driving)");
         EN.put("자동 · 가장 가까운 서킷","Auto · nearest circuit");
+        EN.put("자동 판단","Auto judgement");
         EN.put("자동 확인","confirmed automatically");
         EN.put("자동: 와이퍼·외기온·낮 전조등","Auto: wipers, outside temp, daytime lamps");
         EN.put("자주 다니는 길 (자동)","Routes you drive (found automatically)");
@@ -1326,6 +1342,7 @@ public final class UiText {
         EN.put("정차 · 공회전 ","Stopped · idle ");
         EN.put("정차 상태에서 확인하세요. 이 화면을 여는 것만으로 무선 설정은 바뀌지 않습니다.","Check while parked. Opening this screen alone does not change wireless settings.");
         EN.put("정차 중","Stopped");
+        EN.put("정차 중에만 입력할 수 있습니다","Only while stopped");
         EN.put("정차 후 다음 운행","Stop for next trip");
         EN.put("정차 후 출발하면 측정","starts when you pull away from a stop");
         EN.put("정차하면 트리가 켜집니다","Stop to light the tree");
@@ -1367,6 +1384,7 @@ public final class UiText {
         EN.put("좌","Left");
         EN.put("좌 방향지시등","Left turn signal");
         EN.put("좌회전","Turn left");
+        EN.put("주기 바꾸기","Change interval");
         EN.put("주변 기기 검색","Find nearby devices");
         EN.put("주변 기기 검색 중","Searching for nearby devices");
         EN.put("주변 기기 검색을 누르고 연결할 기기를 페어링 모드로 켜주세요.","Tap Find nearby devices and put the device into pairing mode.");
@@ -1391,6 +1409,7 @@ public final class UiText {
         EN.put("주행가능 ","Range ");
         EN.put("주행가능거리","Range");
         EN.put("주행거리","Odometer");
+        EN.put("주행거리나 날짜 중 하나는 넣어야 합니다","Enter the odometer or the date");
         EN.put("주황 LCD","Orange LCD");
         EN.put("중 (+6 dB)","Medium (+6 dB)");
         EN.put("중통 제거","Resonator delete");
@@ -1436,6 +1455,7 @@ public final class UiText {
         EN.put("직전 코너 최대 횡가속","Last corner's peak lateral G");
         EN.put("직전 코너 최저 속도","Last corner's lowest speed");
         EN.put("직접 선택","Chosen by you");
+        EN.put("직접 입력","Enter");
         EN.put("직진","Straight");
         EN.put("진단","DTC");
         EN.put("진단 서비스에 연결하지 못했습니다.","Could not connect to the diagnostic service.");
@@ -1565,10 +1585,12 @@ public final class UiText {
         EN.put("클러치 홀 %s° · 짝 %s°","Clutch odd %s° · even %s°");
         EN.put("클러치 홀수","Clutch odd");
         EN.put("타이어","Tyres");
+        EN.put("타이어 DOT","Tyre DOT");
         EN.put("타이어 공기압","Tire pressure");
         EN.put("타이어 공기압 (4바퀴 묶음)","Tyre pressures (all four)");
         EN.put("타이어 공기압 낮음","Low tire pressure");
         EN.put("타이어 교체","Tyre change");
+        EN.put("타이어 옆면 DOT 끝 4자리 (비워도 됨)","Last 4 digits of the DOT on the sidewall (optional)");
         EN.put("타이어 온도","Tire temp");
         EN.put("타이어 위치 교환","Tyre rotation");
         EN.put("타코","Tacho");

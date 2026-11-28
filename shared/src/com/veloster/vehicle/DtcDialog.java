@@ -53,6 +53,7 @@ public final class DtcDialog {
     private static void render(Activity a,LinearLayout list,List<DtcReader.Result> results){
         int total=0,answered=0;
         for(DtcReader.Result r:results)if(r.codes!=null){total+=r.codes.size();answered++;}
+        if(answered>0)VehicleDash.maintDtc(total);   // 정비's 상태 tab shows the last read
         if(answered==0)line(a,list,UiText.t("응답한 제어기가 없습니다. 시동을 켠 상태에서 다시 조회하세요."),17,0xffff8a80,true);
         else line(a,list,total==0?UiText.t("저장된 고장코드가 없습니다."):UiText.t("고장코드")+" "+total,17,total==0?0xff69f0ae:0xffffd54f,true);
         for(DtcReader.Result r:results){

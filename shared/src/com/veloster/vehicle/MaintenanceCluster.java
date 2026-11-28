@@ -127,9 +127,5 @@ final class MaintenanceCluster extends ClusterKit {
     }
     private static String span(int days){return days>=60?(days/30)+t("개월"):days+t("일");}
     private static String years(int months){return months>=12?String.format(Locale.US,"%d%s %d%s",months/12,t("년"),months%12,t("개월")):months+t("개월");}
-    static String name(MaintItems.Id id){switch(id){
-        case OIL:return "엔진오일 · 필터";case AIR:return "에어클리너";case CABIN:return "에어컨 필터";case SPARK:return "점화플러그";case FUEL_FILTER:return "연료필터";
-        case DCT_OIL:return "DCT 오일";case MT_OIL:return "변속기 오일";case BRAKE_FLUID:return "브레이크액";case PADS_FRONT:return "브레이크 패드 앞";case PADS_REAR:return "브레이크 패드 뒤";
-        case COOLANT:return "냉각수";case WIPER:return "와이퍼";case TIRE_ROTATE:return "타이어 위치 교환";case TIRE_REPLACE:return "타이어 교체";case TIRE_AIR:return "공기압 보충";
-        case ALIGNMENT:return "휠 얼라인먼트";case BATTERY:return "배터리";default:return "정기검사";}}
+    static String name(MaintItems.Id id){return MaintItems.label(id);}
 }

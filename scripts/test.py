@@ -28,6 +28,7 @@ def main():
                ROOT / "shared/src/com/veloster/vehicle/Records.java",
                ROOT / "shared/src/com/veloster/vehicle/Theme.java",
                ROOT / "shared/src/com/veloster/vehicle/HeaderTabs.java",
+               ROOT / "shared/src/com/veloster/vehicle/HeaderClock.java",
                ROOT / "shared/src/com/veloster/vehicle/ClusterPicker.java",
                ROOT / "shared/src/com/veloster/vehicle/SettingsLayout.java",
                ROOT / "shared/src/com/veloster/vehicle/SparkRetard.java",

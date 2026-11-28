@@ -8,9 +8,14 @@ package com.veloster.vehicle;
  * changes, so a drag can look past it. No Android: host-tested.
  */
 public final class HeaderTabs {
-    public static final float LEFT=120,RIGHT=580,TOP=8,H=38,GAP=4,DRAG=8,GRAB=52;   // GRAB: a drag may start down to the body's edge
-    /** Gear button left of the clock: opens the screen list in edit mode. */
-    public static final float GEAR_L=590,GEAR_W=44;
+    public static final float LEFT=120,TOP=8,H=38,GAP=4,DRAG=8,GRAB=52;   // GRAB: a drag may start down to the body's edge
+    /** Gear button left of the clock: opens the screen list in edit mode. BACK_L: where 돌아가기 starts, right of the clock. */
+    public static final float GEAR_W=44,GEAR_GAP=10,BACK_L=698;
+    /** The strip's right edge and the gear's left one. Not constants: the clock's cell is wider on the 12-hour clock
+     *  (HeaderClock.cell) and the gear and the strip give way to it. As placed for the 24-hour clock until clockCell says otherwise. */
+    public static float RIGHT=544,GEAR_L=554;
+    /** Places the gear against a clock cell of this width, and the strip's edge GEAR_GAP left of the gear. */
+    public static void clockCell(float width){GEAR_L=BACK_L-width-GEAR_W;RIGHT=GEAR_L-GEAR_GAP;}
     public static boolean gear(float x,float y){return x>=GEAR_L&&x<=GEAR_L+GEAR_W&&y>=TOP&&y<=TOP+H;}
 
     private int[] ids=new int[0];     // ClusterPicker screen index per tab, left to right

@@ -1,3 +1,4 @@
+import com.veloster.vehicle.HeaderClock;
 import com.veloster.vehicle.HeaderTabs;
 
 /** Header tab strip: dynamic shown-screen tabs, hit testing, clamped scrolling that keeps the current tab in view. */
@@ -44,7 +45,15 @@ public final class HeaderTabsTest {
         float gx=HeaderTabs.GEAR_L+HeaderTabs.GEAR_W/2,gy=HeaderTabs.TOP+HeaderTabs.H/2;
         check(HeaderTabs.gear(gx,gy)&&!HeaderTabs.gear(gx,60)&&!HeaderTabs.gear(130,gy),"gear button hits only itself");
         check(h.hit(gx,gy)==-1&&HeaderTabs.GEAR_L>=HeaderTabs.RIGHT,"gear sits right of the tab strip");
-        check(HeaderTabs.GEAR_L+HeaderTabs.GEAR_W<=638,"gear stays clear of the clock (centred at 667)");
+        check(HeaderTabs.GEAR_L+HeaderTabs.GEAR_W<=HeaderClock.left()&&HeaderClock.R<=HeaderTabs.BACK_L,"gear stays clear of the clock's cell, the cell of 돌아가기");
+        // the 12-hour clock's wider cell: gear and strip move left by the same amount and the strip still keeps the current tab in view
+        float right24=HeaderTabs.RIGHT,gear24=HeaderTabs.GEAR_L;
+        HeaderTabs.clockCell(HeaderClock.cell(true));
+        check(HeaderTabs.GEAR_L==gear24-(HeaderClock.cell(true)-HeaderClock.cell(false))&&HeaderTabs.RIGHT==right24-(HeaderClock.cell(true)-HeaderClock.cell(false)),"a wider clock cell moves the gear and the strip's edge left");
+        check(HeaderTabs.gear(HeaderTabs.GEAR_L+HeaderTabs.GEAR_W/2,gy)&&!HeaderTabs.gear(gx+HeaderTabs.GEAR_W/2+1,gy)&&h.hit(HeaderTabs.RIGHT+1,gy)==-1,"the gear and the strip are hit where they now are");
+        h.setTabs(ids,w,n-1);check(h.x(n-1)+w[n-1]<=HeaderTabs.RIGHT+0.5f,"the last tab stays in view in the narrower strip");
+        HeaderTabs.clockCell(HeaderClock.cell(false));
+        check(HeaderTabs.RIGHT==right24&&HeaderTabs.GEAR_L==gear24,"back on the 24-hour clock the strip has its width again");
         System.out.println("PASS "+checks+" header tab checks");
     }
 }

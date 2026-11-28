@@ -79,7 +79,7 @@ public final class HubActivity extends Activity {
         showIntent(getIntent());
     }
     protected void onNewIntent(Intent intent) { super.onNewIntent(intent); setIntent(intent); showIntent(intent); }
-    protected void onResume() { super.onResume(); LanguageSettings.init(this); QuickEntryService.observe(quickEntryStatus); if(prefs!=null && !busy)render(); }
+    protected void onResume() { super.onResume(); LanguageSettings.init(this); QuickEntryService.observe(quickEntryStatus); StarKey.dashboard(this,false); ModeKey.dashboard(false); ModeKey.start(this); if(prefs!=null && !busy)render(); }   // StarKey: My Apps in front = the dashboard is not on screen
     protected void onPause(){
         QuickEntryService.unobserve(quickEntryStatus);
         if(bluetoothPanel!=null)bluetoothPanel.stop();
@@ -209,7 +209,18 @@ public final class HubActivity extends Activity {
         final boolean hod=QuickEntryService.hideOnDash(this),button=mode==QuickEntryPolicy.FLOATING;   // only the edge button can step aside
         settingRow(right,UiText.t("계기판에서 숨김"),UiText.t(!button?"바로가기 버튼을 켜야 동작합니다":hod?"켬":"끔"),hod&&button,new Runnable(){public void run(){hideOnDash();}});
         String star=StarKey.status(this);
-        settingRow(right,UiText.t("☆ 버튼 → 계기판"),star,!star.equals(UiText.t("꺼짐"))&&!star.equals(UiText.t("확인 불가")),new Runnable(){public void run(){starKey();}});
+        final boolean starOn=!star.equals(UiText.t("꺼짐"))&&!star.equals(UiText.t("확인 불가")),starToggle=StarKey.toggle(this);
+        settingRow(right,UiText.t("☆ 버튼 → 계기판"),star,starOn,new Runnable(){public void run(){starKey();}});
+        // ☆ toggle: with the dashboard on screen ☆ does the stock function it had before; one tap, like 계기판에서 숨김
+        settingRow(right,UiText.t("계기판에서는 ☆ 원래 기능"),UiText.t(!starOn?"☆ 버튼 → 계기판을 켜야 동작합니다":!starToggle?"끔":StarKey.lendable(this)?"켬":"켬 (☆에 지정해 둔 원래 기능이 없습니다)"),starOn&&starToggle,
+            new Runnable(){public void run(){StarKey.toggle(HubActivity.this,!StarKey.toggle(HubActivity.this));render();}});
+        // MODE (steering wheel) goes between the dashboard and one picked app; needs the stock MODE list empty (read here, shown in the row)
+        final boolean modeOn=ModeKey.on(this);final int[] modeList=modeOn?ModeKey.list(this):null;
+        settingRow(right,UiText.t("MODE 버튼 → 계기판"),ModeKey.status(this,modeOn,modeList),modeOn&&!QuickEntryPolicy.modeListBlocks(modeList),new Runnable(){public void run(){modeKey();}});
+        // a held MODE opens My Apps instead; one tap, like 계기판에서는 ☆ 원래 기능
+        final boolean modeHold=ModeKey.hold(this);
+        settingRow(right,UiText.t("MODE 길게 → 내 앱"),UiText.t(!modeOn?"MODE 버튼 → 계기판을 켜야 동작합니다":modeHold?"켬":"끔"),modeOn&&modeHold,
+            new Runnable(){public void run(){ModeKey.hold(HubActivity.this,!ModeKey.hold(HubActivity.this));render();}});
         TextView help=label(UiText.t("바로가기 버튼은 화면 가장자리에 늘 떠 있는 작은 버튼입니다. 짧게 누르면 계기판, 길게 누르면 내 앱이 열리고, 부팅 뒤에도 다시 나타납니다. 순정 홈에는 이 앱들이 나오지 않으니 처음 설치했다면 켜 두세요."),14,MUT,false);
         help.setLineSpacing(6,1);help.setPadding(18,14,18,14);help.setBackgroundDrawable(shape(0,LINE,12));
         LinearLayout.LayoutParams hp=new LinearLayout.LayoutParams(-1,-2);hp.topMargin=12;right.addView(help,hp);
@@ -243,6 +254,42 @@ public final class HubActivity extends Activity {
             .setPositiveButton(UiText.t("켜기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){requestStar(true);}})
             .setNegativeButton(UiText.t("끄기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){requestStar(false);}})
             .setNeutralButton(UiText.t("취소"),null).show();
+    }
+    /** MODE 버튼 → 계기판: the switch. Off needs nothing put back: the feature changes nothing on the unit. */
+    private void modeKey(){
+        final boolean on=ModeKey.on(this);
+        new AlertDialog.Builder(this).setTitle(UiText.t("MODE 버튼 → 계기판"))
+            .setMessage(UiText.t("현재: ")+ModeKey.status(this,on,on?ModeKey.list(this):null)+UiText.t("\n\n켜면 운전대 MODE 버튼으로 계기판과 고른 앱(폰 프로젝션)을 오갑니다. 다른 화면에서 누르면 계기판이, 계기판에서 누르면 그 앱이 열립니다.\n순정 설정의 MODE 버튼 목록이 비어 있어야 합니다. 소스가 등록돼 있으면 순정 소스 전환이 됩니다.\n켜 둔 동안은 MODE를 길게 눌러도 순정 MODE 버튼 설정 화면이 열리지 않습니다. 그 화면은 순정 설정 메뉴에서 여세요.\n'내 앱'을 강제 종료하면 다시 열 때까지 동작하지 않을 수 있습니다."))
+            .setPositiveButton(UiText.t("켜기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){requestModeKey();}})
+            .setNegativeButton(UiText.t("끄기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){ModeKey.set(HubActivity.this,false,ModeKey.app(HubActivity.this));render();}})
+            .setNeutralButton(UiText.t("취소"),null).show();
+    }
+    /** On: the stock MODE list is read first and has to be empty (with sources in it MODE never reaches us); then the app
+     *  MODE opens from the dashboard is picked from the launchable apps, starting on the one picked before or a phone
+     *  projection app. A list that cannot be read does not stop the switch; its row then says so. */
+    private void requestModeKey(){
+        int[] list=ModeKey.list(this);
+        if(QuickEntryPolicy.modeListBlocks(list)){
+            new AlertDialog.Builder(this).setMessage(UiText.t("순정 MODE 버튼 목록에 소스가 등록돼 있어 켤 수 없습니다. 순정 설정의 MODE 버튼 설정에서 모두 해제한 뒤 다시 켜세요.")+"\n\n"+QuickEntryPolicy.modeNames(list))
+                .setPositiveButton(UiText.t("확인"),null).show();
+            return;
+        }
+        final List<ResolveInfo> apps=new ArrayList<ResolveInfo>();
+        for(ResolveInfo item:launchable())if(!"com.veloster.dashboard".equals(item.activityInfo.packageName))apps.add(item);
+        if(apps.isEmpty()){fail(UiText.t("표시할 설치 앱이 없습니다. 앱 설치 뒤 다시 열거나 목록 편집에서 선택하세요."));return;}
+        String[] names=new String[apps.size()];String current=ModeKey.app(this);int picked=-1,projection=-1;
+        for(int i=0;i<names.length;i++){
+            String name=apps.get(i).activityInfo.packageName;
+            names[i]=apps.get(i).loadLabel(getPackageManager()).toString();
+            if(name.equals(current))picked=i;
+            if(projection<0&&QuickEntryPolicy.modeProjection(name))projection=i;
+        }
+        final int[] selected={picked>=0?picked:Math.max(0,projection)};
+        new AlertDialog.Builder(this).setTitle(UiText.t("계기판에서 MODE로 열 앱"))
+            .setSingleChoiceItems(names,selected[0],new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int which){selected[0]=which;}})
+            .setPositiveButton(UiText.t("켜기"),new android.content.DialogInterface.OnClickListener(){public void onClick(android.content.DialogInterface d,int n){
+                ModeKey.set(HubActivity.this,true,apps.get(selected[0]).activityInfo.packageName);render();}})
+            .setNegativeButton(UiText.t("취소"),null).show();
     }
     private void consentSkip(){
         new AlertDialog.Builder(this).setTitle(UiText.t("시동 안내 화면 건너뛰기"))

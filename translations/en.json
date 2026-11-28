@@ -73,6 +73,9 @@
   "지우기": "Clear",
   "저장된 기록을 모두 지울까요?": "Clear all kept records?",
   "바로가기 버튼을 켜야 동작합니다": "Needs the shortcut button on",
+  "계기판에서는 ☆ 원래 기능": "☆ own function on the dashboard",
+  "☆ 버튼 → 계기판을 켜야 동작합니다": "Needs ☆ button → Dashboard on",
+  "켬 (☆에 지정해 둔 원래 기능이 없습니다)": "On (☆ had no function of its own)",
   "블루투스가 꺼져 있습니다.": "Bluetooth is off.",
   "이미 기기를 검색 중입니다.": "Discovery is already running.",
   "기기 검색 요청이 거부되었습니다.": "The discovery request was denied.",
@@ -1639,5 +1642,12 @@
   "왼쪽 갈림길": "Keep left",
   "페리": "Ferry",
   "길안내 띠": "Guidance band",
-  "순정 내비 안내 중 모든 화면 위 · 끄면 WRC 칸에만": "Over every screen while the stock navi guides · off: only in the WRC card"
+  "순정 내비 안내 중 모든 화면 위 · 끄면 WRC 칸에만": "Over every screen while the stock navi guides · off: only in the WRC card",
+  "MODE 버튼 → 계기판": "MODE button → dashboard",
+  "순정 MODE 목록에 소스가 있어 동작하지 않습니다": "Not working: the stock MODE list has sources in it",
+  "계기판에서 MODE로 열 앱": "App that MODE opens from the dashboard",
+  "순정 MODE 버튼 목록에 소스가 등록돼 있어 켤 수 없습니다. 순정 설정의 MODE 버튼 설정에서 모두 해제한 뒤 다시 켜세요.": "It cannot be turned on: the stock MODE button list has sources in it. Clear them all in the stock MODE button setting, then turn this on again.",
+  "\n\n켜면 운전대 MODE 버튼으로 계기판과 고른 앱(폰 프로젝션)을 오갑니다. 다른 화면에서 누르면 계기판이, 계기판에서 누르면 그 앱이 열립니다.\n순정 설정의 MODE 버튼 목록이 비어 있어야 합니다. 소스가 등록돼 있으면 순정 소스 전환이 됩니다.\n켜 둔 동안은 MODE를 길게 눌러도 순정 MODE 버튼 설정 화면이 열리지 않습니다. 그 화면은 순정 설정 메뉴에서 여세요.\n'내 앱'을 강제 종료하면 다시 열 때까지 동작하지 않을 수 있습니다.": "\n\nWhen on, the steering wheel's MODE button goes between the dashboard and the app you pick (phone projection). On any other screen it opens the dashboard; on the dashboard it opens that app.\nThe MODE button list in the stock settings has to be empty. With sources in it, MODE changes the stock source instead.\nWhile this is on, holding MODE does not open the stock MODE button setting screen. Open that screen from the stock settings menu.\nIf My Apps is force-stopped, this may not work until it is opened again.",
+  "MODE 길게 → 내 앱": "Hold MODE → My Apps",
+  "MODE 버튼 → 계기판을 켜야 동작합니다": "Works only with MODE button → dashboard on"
 }

@@ -302,6 +302,13 @@ public final class VehicleDash extends View implements Runnable {
             java.io.InputStream in=c.getResources().openRawResource(id);try{return android.graphics.BitmapFactory.decodeStream(in,null,o);}finally{in.close();}
         }catch(Throwable e){android.util.Log.w("VehicleDash","bitmap "+name+": "+e);return null;}
     }
+    /** Hold the header clock: 24-hour ("16:52") or 12-hour ("4:52 PM"); kept. Works with the settings open too. */
+    private final Runnable clockHold=new Runnable(){public void run(){
+        if(touching&&!blocked&&getVisibility()==VISIBLE&&HeaderClock.hit(downX,downY)){
+            touching=false;renderer.clock12=!renderer.clock12;
+            activity.getSharedPreferences("pit_vehicle_ui",0).edit().putBoolean("clock_12h",renderer.clock12).apply();invalidate();
+        }
+    }};
     private final Runnable clusterHold=new Runnable(){public void run(){
         if(touching&&!blocked&&getVisibility()==VISIBLE&&header.onStrip(downX,downY)){
             touching=false;picker=true;editing=false;showCluster();invalidate();
@@ -337,6 +344,7 @@ public final class VehicleDash extends View implements Runnable {
         // Kept as saved (0 = never set); the renderer and the -/+ buttons resolve it with the detected powertrain.
         shiftTarget=a.getSharedPreferences("pit_vehicle_ui",0).getInt("shift_target",0);
         redline=a.getSharedPreferences("pit_vehicle_ui",0).getInt("redline",0);VehicleProfile.setRedline(redline);
+        try{renderer.clock12=a.getSharedPreferences("pit_vehicle_ui",0).getBoolean("clock_12h",false);}catch(ClassCastException e){/* 24-hour, as before */}
         sound=new EngineSound(a.getApplicationContext(),DATA);beep=new ShiftBeep(a);
         try{SharedPreferences p=a.getSharedPreferences("pit_vehicle_ui",0);beepOn=p.getBoolean("shift_beep",false);SettingsLayout.floatBeep=beepOn&&p.getBoolean("float_beep",false);SettingsLayout.floatSound=p.getBoolean("engine_sound",false)&&p.getBoolean("float_sound",false);
             beepSound=Math.max(0,Math.min(SettingsLayout.BEEP_SOUNDS.length-1,p.getInt("shift_beep_sound",0)));
@@ -746,7 +754,7 @@ public final class VehicleDash extends View implements Runnable {
         }catch(Throwable e){android.util.Log.w("VehicleDash","font "+name+": "+e);return null;}
     }
     protected void onAttachedToWindow() { super.onAttachedToWindow(); introStart=0; artwork.open();mediaReceiver.start(activity);Gps.start(activity); post(this); }
-    protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();mediaReceiver.stop();artwork.close();Gps.stop();super.onDetachedFromWindow(); }
+    protected void onDetachedFromWindow() { sound.play(-1);removeCallbacks(this);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(clockHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;dismissList();touching=false;gaugeEditor.dismiss();graphEditor.dismiss();tilePicker.dismiss();mediaReceiver.stop();artwork.close();Gps.stop();super.onDetachedFromWindow(); }
     public void run() {
         long delay=100;
         long tick=SystemClock.elapsedRealtime();
@@ -854,8 +862,9 @@ public final class VehicleDash extends View implements Runnable {
     public boolean onTouchEvent(MotionEvent event) {
         float x=event.getX()*800/getWidth(), y=event.getY()*480/getHeight();
         if(event.getAction()==MotionEvent.ACTION_DOWN) {
-            removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;touching=true;downX=x;downY=y;lastMoveY=y;header.down(x,y);
+            removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(clockHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;touching=true;downX=x;downY=y;lastMoveY=y;header.down(x,y);
             if(!blocked&&!picker&&header.onStrip(x,y))postDelayed(clusterHold,600);
+            if(!blocked&&HeaderClock.hit(x,y))postDelayed(clockHold,600);
             gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);
             if(picker&&editing&&pickSlot<0&&floatEdit<0&&settingsCat==SettingsLayout.SCREENS&&SettingsLayout.onGrip(x))gripRow=SettingsLayout.screenRow(y,settingsScroll);
             if(picker&&editing&&pickSlot<0&&floatEdit<0&&settingsCat==SettingsLayout.FLOAT){float[] sb=SettingsLayout.F_SIZE_BAR,ab=SettingsLayout.F_ALPHA_BAR;
@@ -879,11 +888,11 @@ public final class VehicleDash extends View implements Runnable {
             if(Math.abs(y-downY)>=10)touching=false;   // a drag that scrolls is not a tap
             invalidate();return true;
         }
-        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y,event.getEventTime())){touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;invalidate();return true;}
-        if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;}return true;}
-        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;header.up();return true; }
+        if(event.getAction()==MotionEvent.ACTION_MOVE&&header.move(x,y,event.getEventTime())){touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(clockHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;invalidate();return true;}
+        if(event.getAction()==MotionEvent.ACTION_MOVE){if(Math.abs(x-downX)>=16||Math.abs(y-downY)>=16){touching=false;removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(clockHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;}return true;}
+        if(event.getAction()==MotionEvent.ACTION_CANCEL) { touching=false;gripRow=-1;dragRow=-1;sliderDrag=-1;removeCallbacks(dragTick);removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(clockHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;header.up();return true; }
         if(event.getAction()!=MotionEvent.ACTION_UP)return true;
-        removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;
+        removeCallbacks(editHold);removeCallbacks(tileHold);removeCallbacks(clusterHold);removeCallbacks(clockHold);removeCallbacks(lapHold);removeCallbacks(ecoHold);EcoCluster.holding=false;
         if(header.up(event.getEventTime())){touching=false;return true;}   // a strip scroll is never a tap
         boolean tap=touching && Math.abs(x-downX)<16 && Math.abs(y-downY)<16;
         touching=false;

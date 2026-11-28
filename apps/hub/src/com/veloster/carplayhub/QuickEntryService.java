@@ -115,6 +115,7 @@ public final class QuickEntryService extends Service {
     }
     public void onCreate(){
         super.onCreate();LanguageSettings.init(this);prefs=prefs(this);windows=(WindowManager)getSystemService(WINDOW_SERVICE);
+        ModeKey.start(this);   // MODE 버튼 → 계기판: this service is what keeps its receiver's process alive
     }
     public int onStartCommand(Intent intent,int flags,int startId){
         LanguageSettings.init(this);

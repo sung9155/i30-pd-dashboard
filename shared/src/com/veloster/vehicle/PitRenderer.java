@@ -117,13 +117,27 @@ public final class PitRenderer {
     private GraphLayout graphLayout;
     private GaugeLayout gaugeLayout;
     private OverviewLayout overviewLayout=new OverviewLayout();
-    private final java.text.SimpleDateFormat clockFormat=new java.text.SimpleDateFormat("HH:mm",Locale.US);
+    /** The header clock on the 12-hour clock ("4:52 PM") instead of the 24-hour one; held to change (VehicleDash keeps it). */
+    public boolean clock12;
     private long clockMinute=Long.MIN_VALUE;
-    private String clockText="";
-    private String clock(){
+    private boolean clockWas12;
+    private String clockText="",clockMark="";
+    /** Reads the time once a minute (and when the form changes): clockText the digits, clockMark "AM" / "PM" or nothing. */
+    private void clock(){
         long now=System.currentTimeMillis(),minute=now/60000;
-        if(minute!=clockMinute){clockMinute=minute;clockFormat.setTimeZone(java.util.TimeZone.getDefault());clockText=clockFormat.format(new java.util.Date(now));}
-        return clockText;
+        if(minute==clockMinute&&clock12==clockWas12)return;
+        clockMinute=minute;clockWas12=clock12;
+        java.util.Calendar at=java.util.Calendar.getInstance();at.setTimeInMillis(now);   // the unit's own time zone, as before
+        int hour=at.get(java.util.Calendar.HOUR_OF_DAY);
+        clockText=HeaderClock.digits(hour,at.get(java.util.Calendar.MINUTE),clock12);clockMark=HeaderClock.mark(hour,clock12);
+    }
+    /** Digits and mark side by side on one baseline, centred in the clock's cell (HeaderClock), the mark the smaller. */
+    private void drawClock(Canvas c){
+        float dw=textWidth(clockText,HeaderClock.SIZE,true),mw=clockMark.length()==0?0:textWidth(clockMark,HeaderClock.MARK_SIZE,true);
+        float k=HeaderClock.fit(dw,mw,HeaderClock.cell(clock12)),gap=mw>0?HeaderClock.GAP*k:0,x=HeaderClock.cx()-(dw*k+gap+mw*k)/2;
+        float base=HeaderClock.baseline(HeaderClock.SIZE*k);   // the digits in the middle of the buttons' height; the mark stands on the same line
+        text(c,clockText,x,base,HeaderClock.SIZE*k,WHITE,true);
+        if(mw>0)text(c,clockMark,x+dw*k+gap,base,HeaderClock.MARK_SIZE*k,WHITE,true);
     }
     public void setArtwork(Bitmap value){artwork=value;ClusterKit.artwork=value;}
     public void setGaugeLayout(GaugeLayout value){gaugeLayout=value;}
@@ -221,11 +235,12 @@ public final class PitRenderer {
         cellRect.set(0,0,800,480);c.drawBitmap(body,null,cellRect,null);
         // Tab strip: every shown screen is a button; PitRenderer measures the labels and feeds HeaderTabs, which
         // scrolls sideways when they overflow and keeps the current tab in view.
+        clock();HeaderTabs.clockCell(HeaderClock.cell(clock12));   // the clock's form first: the gear and the strip give way to its cell
         int[] shownTabs=ClusterPicker.slots(order,hidden,false);int cur=screen(cluster),curTab=-1;
         float[] tabW=new float[shownTabs.length];
         for(int i=0;i<shownTabs.length;i++){tabW[i]=tabWidth(UiText.t(ClusterPicker.NAMES[shownTabs[i]]));if(shownTabs[i]==cur)curTab=i;}
         header.setTabs(shownTabs,tabW,curTab);
-        boolean gearOn=picker&&editing;String time=clock(),back=UiText.t("돌아가기");
+        boolean gearOn=picker&&editing;String time=clockText+clockMark,back=UiText.t("돌아가기");
         int hh=Math.max(1,Math.round(height*52/480f));
         k=System.identityHashCode(Theme.current());k=k*31+T(BLUE);k=k*31+T(0xff233b46);k=k*31+T(MUTED);k=k*31+T(WHITE);k=k*31+T(RED);k=k*31+T(LINE);
         k=k*31+width;k=k*31+hh;k=k*31+(gearOn?1:0);k=k*31+time.hashCode();k=k*31+back.hashCode();k=k*31+curTab;
@@ -244,7 +259,7 @@ public final class PitRenderer {
             if(header.moreLeft())arrow(h,HeaderTabs.LEFT+5,-1);
             if(header.moreRight())arrow(h,HeaderTabs.RIGHT-5,1);
             gearButton(h,gearOn);
-            centered(h,time,667,32,20,WHITE,true);
+            drawClock(h);
             button(h,back,698,8,84,38,false,BLUE);
             headKey=k;
         }

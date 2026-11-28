@@ -15,6 +15,7 @@ public final class UiText {
         EN.put("\n\n이 기기와 페어링할까요?","\n\nPair with this device?");
         EN.put("\n\n켜면 ☆(사용자 버튼)을 짧게 눌러 계기판을 엽니다. 끄면 원래 기능으로 되돌립니다.\n☆를 길게 눌러 순정 설정 화면을 열면 연결이 풀립니다. 그때는 여기서 다시 켜세요.\n'내 앱'을 강제 종료하면 다시 열 때까지 ☆가 동작하지 않을 수 있습니다.","\n\nWhen on, a short press of ☆ (user button) opens the dashboard. Off puts back the previous function.\nLong-pressing ☆ opens the stock settings screen, which releases it; switch it on here again.\nIf My Apps is force-stopped, ☆ may do nothing until My Apps is opened again.");
         EN.put("\n\n켜면 내비가 켜질 때 나오는 안내 및 동의 화면을 '내 앱'이 바로 [확인]합니다. 직접 확인 버튼을 누른 것과 같습니다.\n시동을 걸 때마다 동작하려면 실행 바로가기(가장자리 버튼 또는 알림)를 켜 두세요. 꺼져 있으면 내비가 완전히 다시 켜질 때만 동작합니다.","\n\nWhen on, My Apps confirms the notice and consent screen shown when the head unit starts, the same as pressing its confirm button.\nTo act on every ignition, keep Quick entry (edge button or notification) on. Without it, it only acts when the head unit fully restarts.");
+        EN.put("\n\n켜면 운전대 MODE 버튼으로 계기판과 고른 앱(폰 프로젝션)을 오갑니다. 다른 화면에서 누르면 계기판이, 계기판에서 누르면 그 앱이 열립니다.\n순정 설정의 MODE 버튼 목록이 비어 있어야 합니다. 소스가 등록돼 있으면 순정 소스 전환이 됩니다.\n켜 둔 동안은 MODE를 길게 눌러도 순정 MODE 버튼 설정 화면이 열리지 않습니다. 그 화면은 순정 설정 메뉴에서 여세요.\n'내 앱'을 강제 종료하면 다시 열 때까지 동작하지 않을 수 있습니다.","\n\nWhen on, the steering wheel's MODE button goes between the dashboard and the app you pick (phone projection). On any other screen it opens the dashboard; on the dashboard it opens that app.\nThe MODE button list in the stock settings has to be empty. With sources in it, MODE changes the stock source instead.\nWhile this is on, holding MODE does not open the stock MODE button setting screen. Open that screen from the stock settings menu.\nIf My Apps is force-stopped, this may not work until it is opened again.");
         EN.put("\nON: PC 연결용 USB 디버깅 모드\nOFF: 일반 USB 모드로 복귀하며 PC 연결이 끊길 수 있습니다.\n개발자 설정의 일반 USB 토글과는 별개입니다.","\nON: USB debugging mode for a PC connection\nOFF: normal USB mode; the PC connection may disconnect.\nThis is separate from the standard Android developer toggle.");
         EN.put("\n비밀번호: ","\nPassword: ");
         EN.put(" L/h 지금"," L/h now");
@@ -166,6 +167,9 @@ public final class UiText {
         EN.put("GR86 삐삐삐","GR86 beep-beep-beep");
         EN.put("KIC 상설 서킷","KIC Permanent Circuit");
         EN.put("L · 가속 페달","L · accelerator");
+        EN.put("MODE 길게 → 내 앱","Hold MODE → My Apps");
+        EN.put("MODE 버튼 → 계기판","MODE button → dashboard");
+        EN.put("MODE 버튼 → 계기판을 켜야 동작합니다","Works only with MODE button → dashboard on");
         EN.put("N 계기판","N Dashboard");
         EN.put("OBD 응답 없음","No OBD answer");
         EN.put("OBD 응답 있음","OBD answering");
@@ -201,6 +205,7 @@ public final class UiText {
         EN.put("−5분","-5 min");
         EN.put("▼ 아래에 더 있음","▼ More below");
         EN.put("☆ 버튼 → 계기판","☆ button → Dashboard");
+        EN.put("☆ 버튼 → 계기판을 켜야 동작합니다","Needs ☆ button → Dashboard on");
         EN.put("☆ 버튼 설정 실패: ","☆ button setting failed: ");
         EN.put("☆ 버튼 설정이 적용되지 않았습니다. 이 내비는 지원하지 않을 수 있습니다.","The ☆ button setting did not apply. This head unit may not support it.");
         EN.put("☆ 버튼: ","☆ button: ");
@@ -262,7 +267,9 @@ public final class UiText {
         EN.put("계기판 신호 이상","Instrument cluster signal fault");
         EN.put("계기판 열기 · 길게 눌러 내 앱 · 끌어서 위치 변경 / Dashboard","Open dashboard; long-press for My Apps; drag to move");
         EN.put("계기판과 통신 끊김","Lost communication with instrument cluster");
+        EN.put("계기판에서 MODE로 열 앱","App that MODE opens from the dashboard");
         EN.put("계기판에서 숨김","Hide on the dashboard");
+        EN.put("계기판에서는 ☆ 원래 기능","☆ own function on the dashboard");
         EN.put("계기판이 보이는 동안 바로가기 버튼을 숨깁니다.","Hides the shortcut button while the dashboard is on screen.");
         EN.put("계기판이 아닌 화면 위에 값을 작게 띄움 · 끌어서 옮김 · 누르면 계기판","Readings in a small window over every other screen · drag to move · tap for the dashboard");
         EN.put("계단 회전 곡선","Stepped rev curve");
@@ -819,6 +826,8 @@ public final class UiText {
         EN.put("순간 연료소모","Fuel rate");
         EN.put("순간 연비","Instant economy");
         EN.put("순정","Stock");
+        EN.put("순정 MODE 목록에 소스가 있어 동작하지 않습니다","Not working: the stock MODE list has sources in it");
+        EN.put("순정 MODE 버튼 목록에 소스가 등록돼 있어 켤 수 없습니다. 순정 설정의 MODE 버튼 설정에서 모두 해제한 뒤 다시 켜세요.","It cannot be turned on: the stock MODE button list has sources in it. Clear them all in the stock MODE button setting, then turn this on again.");
         EN.put("순정 · 앱에 포함된 글꼴 · 내비에 설치된 글꼴","Factory, in-app and installed fonts");
         EN.put("순정 글꼴 (Mobis · Roboto)","Factory fonts (Mobis · Roboto)");
         EN.put("순정 글꼴 파일이 없습니다: ","Factory font files are missing: ");
@@ -1470,6 +1479,7 @@ public final class UiText {
         EN.put("켜면 재부팅 뒤에도 작은 바로가기만 복원합니다. 앱 화면은 자동으로 열지 않습니다. 가장자리 버튼은 끌어서 옮길 수 있습니다.\n\n시스템이 다른 앱 위 표시를 허용하지 않으면 알림만 유지합니다. 순정 화면에서 알림을 열 수 없는 경우에는 별도 메뉴 진입점이 필요합니다. 강제 종료하면 직접 앱을 다시 열 때까지 자동 복원이 중지될 수 있습니다.\n\nWhen enabled, reboot restores only the shortcut. Drag the edge button to move it. If overlays are denied, a notification remains. If the factory UI hides notifications too, use a separate menu entry. Force-stop may block restoration until My Apps is opened again.","When enabled, reboot restores only the shortcut, not the full app screen. Drag the edge button to move it.\n\nIf overlays are denied, the notification remains. If the factory UI also hides notifications, use another entry point. Force-stop may prevent restoration until My Apps is opened again.");
         EN.put("켜짐 (짧게 누르면 계기판)","On (short press opens the dashboard)");
         EN.put("켬","On");
+        EN.put("켬 (☆에 지정해 둔 원래 기능이 없습니다)","On (☆ had no function of its own)");
         EN.put("코너 %d개","%d corners");
         EN.put("코리아 인터내셔널 서킷","Korea International Circuit");
         EN.put("코치","Coach");

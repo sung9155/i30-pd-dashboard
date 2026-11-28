@@ -36,7 +36,8 @@ fail(){ echo "FAIL[$WHO]: $1"; cat "$F/out.txt"; exit 1; }
 BASE="file:///$(cygpath -m "$SRV")"
 reset; apks
 if [ $WHO = win ]; then A=(-ApkBase "$BASE"); else A=(--apk-base "$BASE"); fi
-run "${A[@]}"; [ "$(cat $F/rc)" = 0 ] && [ "$(grep -c 'pm install' $F/calls.log)" = 2 ] || fail "1 install"
+FAKE_PUSH_SECS=3 run "${A[@]}"; [ "$(cat $F/rc)" = 0 ] && [ "$(grep -c 'pm install' $F/calls.log)" = 2 ] || fail "1 install"
+grep -q 'shell ls -l .*data/local/tmp/dashboard-i30pd-platform.apk' $F/calls.log && [ "$(grep -c '#] 100%' $F/out.txt)" -ge 4 ] || fail "1 progress bars (2 downloads, 2 pushes at 100 %)"
 run "${A[@]}"; [ "$(cat $F/rc)" = 0 ] && ! grep -q 'pm install' $F/calls.log && [ "$(grep -c '건너뜀' $F/out.txt)" = 2 ] || fail "2 same install skipped"
 apks; run "${A[@]}"; [ "$(cat $F/rc)" = 0 ] && [ "$(grep -c 'pm install' $F/calls.log)" = 2 ] || fail "3 new release installs"
 if [ $WHO = win ]; then run -Diag; else run --diag; fi
@@ -63,6 +64,7 @@ if [ $WHO = win ]; then GD=-Diag; GB=(-ApkBase "$BASE"); else GD=--diag; GB=(--a
 reset; FAKE_ABSENT=2 rungui "${GB[@]}" < /dev/null
 [ "$(cat $F/rc)" = 0 ] && [ "$(grep -c '^@@WAIT [0-9]* ' $F/out.txt)" -ge 2 ] && last | grep -q "^@@DONE ok 차 화면에 '내 앱'이 열립니다" \
   && [ "$(grep -c 'pm install' $F/calls.log)" = 2 ] && grep -q '^@@STEP ' $F/out.txt && ! grep -q 'Enter' $F/out.txt || fail "G1 gui install waits for the car, asks nothing"
+grep -q '^@@PROG 100 ① 전송 (USB)' $F/out.txt && grep -q '^@@PROG -1 ② 설치 (내비)' $F/out.txt && grep -q '^@@PROG off' $F/out.txt && ! grep -q '#]' $F/out.txt || fail "G1 gui progress lines (no console bar)"
 rungui $GD < /dev/null; GF="$(tr -d '\r' < $F/out.txt | sed -n 's/^@@FILE //p' | tail -1)"; [ $WHO = win ] && GF="$(cygpath -u "$GF")"
 [ "$(cat $F/rc)" = 0 ] && [ -f "$GF" ] && last | grep -q '^@@DONE ok 진단 기록' && ! grep -qE 'pm install|uninstall|push' $F/calls.log || fail "G2 gui diag names the file"
 rm -f "$GF"

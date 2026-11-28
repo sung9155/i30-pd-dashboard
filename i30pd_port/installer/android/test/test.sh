@@ -39,6 +39,7 @@ c(){ awk -v n="== connection $1" '$0==n{on=1;next} /^== connection/{on=0} on' "$
 c 1 | head -1 | grep -qx 'auth pubkey' || fail "1 should send the public key"
 [ "$(c 1 | grep -c '^push ')" = 2 ] && c 1 | grep -q 'push /data/local/tmp/dashboard-i30pd-platform.apk 170002' || fail "1 pushes"
 [ "$(c 1 | grep -c 'pm install')" = 2 ] && c 1 | grep -q 'am start' || fail "1 installs + 내 앱"
+grep -q "PROGRESS 100 대시보드 전송 (USB)" "$T/out1.txt" && grep -q "PROGRESS -1 '내 앱' 설치 (내비)" "$T/out1.txt" || fail "1 progress bar: push to 100 %, install as a moving bar"
 c 2 | head -1 | grep -qx 'auth signature' || fail "2 should sign with the saved key"
 c 2 | grep -q 'pm uninstall com.veloster.dashboard' && [ "$(c 2 | grep -c 'pm install')" = 3 ] || fail "2 clash → uninstall → reinstall"
 grep -q '다른 서명' "$T/out2.txt" || fail "2 should ask before uninstalling"

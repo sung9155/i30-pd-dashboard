@@ -1,10 +1,11 @@
-import sys,os,shutil
+import sys,os,shutil,time
 # Fake adb for the PC installers (see run.sh). State next to this file: star.txt (☆ action), inst/<pkg>.apk (installed), tmp/ (pushed).
 # FAKE_STUCK=1: the ☆ reset call is accepted but changes nothing. FAKE_ABSENT=n: the first n 'devices' calls see no car.
 # FAKE_GONE=1: the cable comes out before the uninstall (uninstall and pm path answer with adb's error).
 # FAKE_CAP=<dir>: the car's /system/app/HKMC_SystemUI.* and /system/framework/*.odex (a capture, for 시동 안내 1초);
 # inst/com.android.systemui.apk = the SystemUI update is installed (versionCode 18), else the stock one (17).
 # FAKE_BUILD=<build>: another navi build (the installer asks whether to go on).
+# FAKE_PUSH_SECS=<s>: a push takes this long, the file growing in four parts (the progress bar reads it with ls -l).
 d=os.path.dirname(os.path.abspath(__file__));st=os.path.join(d,'star.txt');a=sys.argv[1:]
 inst=os.path.join(d,'inst');tmp=os.path.join(d,'tmp');os.makedirs(inst,exist_ok=True);os.makedirs(tmp,exist_ok=True)
 open(os.path.join(d,'calls.log'),'a',encoding='utf-8').write(' '.join(a)+'\n')
@@ -21,7 +22,11 @@ elif a[0]=='uninstall':
     f=os.path.join(inst,a[1]+'.apk')
     if os.path.exists(f):os.remove(f)
     print('Success')
-elif a[0]=='push':shutil.copy(a[1],os.path.join(tmp,os.path.basename(a[2])));print('1 file pushed')
+elif a[0]=='push':
+    data=open(a[1],'rb').read();secs=float(os.environ.get('FAKE_PUSH_SECS','0'))
+    with open(os.path.join(tmp,os.path.basename(a[2])),'wb') as o:
+        for i in range(4):o.write(data[i*len(data)//4:(i+1)*len(data)//4]);o.flush();time.sleep(secs/4)
+    print('1 file pushed')
 elif a[0]=='pull' and '/system/' in a[1].replace('\\','/'):   # Git Bash turns /system/... into C:/Program Files/Git/system/... for the mac/linux run
     cap=os.environ.get('FAKE_CAP','');r=a[1].replace('\\','/');f=os.path.join(cap,r.split('/')[-1]) if '/system/app/' in r else os.path.join(cap,'framework',r.split('/')[-1])
     if not cap or not os.path.exists(f):print("adb: error: remote object '%s' does not exist"%a[1]);sys.exit(1)
@@ -44,6 +49,9 @@ elif a[0]=='shell':
         if os.path.exists(os.path.join(inst,c[2]+'.apk')):print('package:/data/app/%s-1.apk\r'%c[2])
     elif c[:3]==['pm','install','-r']:shutil.copy(os.path.join(tmp,os.path.basename(c[3])),os.path.join(inst,PKG(c[3])+'.apk'));print('\tpkg: %s\r\nSuccess\r'%c[3])
     elif c[:2]==['rm','-f']:pass
+    elif c[:2]==['ls','-l']:   # toolbox ls on the car: mode owner group size date time name
+        f=os.path.join(tmp,os.path.basename(c[2].replace('\\','/')))
+        if os.path.exists(f):print('-rw-rw-rw- shell    shell    %d 2026-11-28 16:20 %s\r'%(os.path.getsize(f),os.path.basename(f)))
     elif c[:2]==['am','start']:print('Starting: Intent { cmp=com.veloster.carplayhub/.HubActivity }')
     elif c[:1]==['date']:print('Mon Nov  2 16:20:00 KST 2026\r')
     elif c[:3]==['dumpsys','package','com.android.systemui']:print('Packages:\r\n  Package [com.android.systemui] (40f0):\r\n    versionCode=%d targetSdk=17\r'%(18 if os.path.exists(SUI) else 17))

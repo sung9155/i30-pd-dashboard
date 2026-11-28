@@ -71,7 +71,7 @@ function Write-Host {
   foreach($part in ([string]$Object -split "`r?`n")){ foreach($l in (Fit $part)){ Microsoft.PowerShell.Utility\Write-Host $l @p } }
 }
 $ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallerVersion = '2026-11-27c'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+$InstallerVersion = '2026-11-28'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 $InstallerChannel = 'stable'   # 이 설치기가 나온 곳: stable = 최신 정식 릴리스, test = 'test' 사전 배포. ZIP을 만들 때 scripts/release.py installers가 적는다.
 $VerifiedBuild = 'eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 # 비블루링크 D-Audio Plus LOW(HYUNDAILOWI, device daudiopluslow_*): 2026-01-14 펌웨어 비교상 USB 설정·차량 데이터 데몬이
@@ -152,25 +152,57 @@ function Adb([Parameter(ValueFromRemainingArguments=$true)]$a){
 }
 # 오래 걸릴 수 있는 adb(전송·설치)는 제한 시간 안에서 돌리고, 기다리는 동안 경과 초를 같은 줄에 찍는다:
 # 멈춘 화면의 스크린샷만 봐도 어느 단계에서 몇 초째 멈췄는지 보이게. 시간 초과면 $null.
-function AdbWait([int]$sec,[string]$what,[string[]]$a){
+# 진행 바: 콘솔은 영문·숫자만 든 줄을 `r로 고쳐 찍는다(한글이 든 줄을 다시 쓰면 2칸 글자가 깨진다, 위 Fit 참고).
+# 창 설치기는 @@PROG <0..100|-1> <안내>(-1 = 얼마나 남았는지 모름: 흐르는 막대), 끝나면 @@PROG off.
+function Bar([string]$label,[int]$p){
+  if($Gui){ Write-Host "@@PROG $p $label"; return }
+  if($p -lt 0){ return }
+  $n = [int][math]::Floor([math]::Min(100, $p) / 5); $script:barOn = $true
+  Write-Host ("`r    [" + ('#' * $n) + ('-' * (20 - $n)) + ']' + ('{0,4}%' -f $p)) -NoNewline -ForegroundColor Green
+}
+function BarEnd(){ if($Gui){ Write-Host '@@PROG off' } elseif($script:barOn){ Write-Host ''; $script:barOn = $false } }
+# 받기: 받은 바이트로 진행 바를 낸다(Invoke-WebRequest는 진행률 상자 때문에 끔, 위 $ProgressPreference).
+function Fetch([string]$url,[string]$dst,[string]$label){
+  try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor 3072 } catch {}   # TLS 1.2 on older Windows
+  $req = [Net.WebRequest]::Create($url); $req.Timeout = 30000   # file:// too (the tests, a local folder)
+  if($req -is [Net.HttpWebRequest]){ $req.UserAgent = 'i30pd-installer'; $req.ReadWriteTimeout = 30000 }
+  $res = $req.GetResponse()
+  try {
+    $len = $res.ContentLength; $in = $res.GetResponseStream(); $out = [IO.File]::Create($dst)
+    try {
+      $buf = New-Object byte[] 65536; $got = [int64]0; $last = -1
+      Bar $label $(if($len -gt 0){ 0 } else { -1 })
+      while(($n = $in.Read($buf, 0, $buf.Length)) -gt 0){
+        $out.Write($buf, 0, $n); $got += $n
+        if($len -gt 0){ $pc = [int][math]::Floor($got * 100 / $len); if($pc -ne $last){ $last = $pc; Bar $label $pc } }
+      }
+    } finally { $out.Close(); $in.Close() }
+  } finally { $res.Close(); BarEnd }
+}
+
+# $tick: 1초마다 불러 진행 %(또는 $null)를 받는 블록 — 주면 초 대신 진행 바를 찍는다.
+function AdbWait([int]$sec,[string]$what,[string[]]$a,[scriptblock]$tick){
   $out = Join-Path $LogDir 'adb_out.txt'; $err = Join-Path $LogDir 'adb_err.txt'
   $line = ($a | ForEach-Object { if($_ -match '\s'){ '"' + $_ + '"' } else { $_ } }) -join ' '
   Log "> adb $line  (최대 ${sec}초)"
   $p = Start-Process -FilePath $script:adbExe -ArgumentList $line -NoNewWindow -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
   if($Gui){ Write-Host "@@WAIT 0 $what" }
-  Write-Host "  $what " -NoNewline
+  if($tick){ Write-Host "  $what"; Bar $what 0 } else { Write-Host "  $what " -NoNewline }   # 진행 바 앞에서 줄을 끝낸다
   $t0 = Get-Date; $shown = 0
   while(-not $p.WaitForExit(1000)){
     $s = [int]((Get-Date) - $t0).TotalSeconds
-    if($s -ge $shown + 5){ $shown = $s - $s % 5; Write-Host "${shown}s " -NoNewline -ForegroundColor DarkGray }
+    if($tick){ $pc = & $tick; if($null -ne $pc){ Bar $what ([math]::Min(99, [int]$pc)) } }
+    elseif($s -ge $shown + 5){ $shown = $s - $s % 5; Write-Host "${shown}s " -NoNewline -ForegroundColor DarkGray }
     if($s -ge $sec){
       & taskkill.exe /T /F /PID $p.Id *> $null   # 하위 프로세스까지 끝내야 창이 바로 닫힌다
+      if($tick){ BarEnd }
       Write-Host "멈춤(${sec}초)" -ForegroundColor Red; Log "  → ${sec}초 넘게 응답 없음, 중단"; return $null
     }
   }
   $o = [string](Get-Content -Raw $out -ErrorAction SilentlyContinue) + [string](Get-Content -Raw $err -ErrorAction SilentlyContinue)
   $s = [math]::Round(((Get-Date) - $t0).TotalSeconds, 1)
-  Write-Host "(${s}초)" -ForegroundColor DarkGray
+  if($tick){ Bar $what 100; if($Gui){ BarEnd; Write-Host "    (${s}초)" -ForegroundColor DarkGray } else { Write-Host "  (${s}초)" -ForegroundColor DarkGray; $script:barOn = $false } }
+  else { Write-Host "(${s}초)" -ForegroundColor DarkGray }
   Log ("$o  (${s}초)")
   return $o
 }
@@ -352,7 +384,7 @@ foreach($app in $(if($NoApps){ @() } else { $Apps })){
   if($ok){ $app | Add-Member -NotePropertyName path -NotePropertyValue $local -Force; Note "$($app.apk): 설치기 폴더에 있는 파일을 씁니다 (위에서 고른 버전과 상관없이 이 파일이 설치됩니다)" Yellow; continue }
   $url = "$ApkBase/$($app.apk)"; $dst = Join-Path $LogDir $app.apk
   Note "$($app.apk): 폴더에 없어 내려받습니다..." Gray
-  try { Invoke-WebRequest -Uri $url -OutFile $dst -UseBasicParsing -ErrorAction Stop } catch {
+  try { Fetch $url $dst "$($app.apk) 받는 중" } catch {
     Die ("APK 다운로드 실패: $($app.apk)`n" +
          "인터넷 연결을 확인한 뒤 다시 실행하세요. 인터넷이 안 되는 곳이라면, 다른 곳에서 받은 APK 두 개를 설치.cmd 옆에 두고 실행하면 됩니다.`n" +
          "$url`n$($_.Exception.Message)") 2
@@ -701,10 +733,15 @@ foreach($app in $Apps){
     Note "$($app.name): 이미 같은 버전이 설치돼 있습니다 — 건너뜀" Green; continue
   }
   Note ("{0} ({1} KB)" -f $app.name, [math]::Round((Get-Item $apk).Length / 1KB)) White
-  $o = AdbWait 60 '① 전송 (USB)' @('-s',$serial,'push',$apk,$remote)
+  # 전송 중 1초마다 차에 쌓인 파일 크기를 읽어 진행 바로 (adb push는 화면이 아니면 진행을 찍지 않는다)
+  $size = (Get-Item $apk).Length; $adbX = $script:adbExe; $sr = $serial
+  $sent = { $l = [string](& $adbX -s $sr shell ls -l $remote 2>$null); if($l -match '\s(\d+)\s+\d{4}-\d\d-\d\d'){ [int]([int64]$Matches[1] * 100 / $size) } }.GetNewClosure()
+  $o = AdbWait 60 '① 전송 (USB)' @('-s',$serial,'push',$apk,$remote) $sent
   if($null -eq $o){ Stuck "$($app.name) ① 전송" $pushHint }
   if($o -match 'error|failed|No such'){ Die "$($app.name) 전송 실패:`n$($o.Trim())" 1 }
+  Bar '② 설치 (내비)' -1   # 창 설치기: 내비는 끝날 때까지 아무것도 알려 주지 않아 흐르는 막대
   $o = AdbWait 120 '② 설치 (내비)' @('-s',$serial,'shell','pm','install','-r',$remote)
+  BarEnd
   if($null -eq $o){ Stuck "$($app.name) ② 설치" $pmHint }
   # Only a signature clash is fixed by uninstalling; any other failure (storage full, ...) must not remove the working app.
   if($o -match 'INCONSISTENT_CERTIFICATES|UPDATE_INCOMPATIBLE'){

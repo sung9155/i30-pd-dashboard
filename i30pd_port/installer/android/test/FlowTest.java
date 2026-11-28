@@ -13,6 +13,7 @@ public class FlowTest {
         Flow.Ui ui = new Flow.Ui() {
             public void say(String m) { System.out.println(m); }
             public boolean ask(String q) { System.out.println("ASK " + q); return true; }
+            public void progress(String l, int p) { if (p == 100 || p == -1) System.out.println("PROGRESS " + p + " " + l); }
         };
         try {
             File diag = Flow.run(a[1], Flow.Mode.valueOf(a[3].toUpperCase()), new File(a[2]), u -> tcp(port), ui);

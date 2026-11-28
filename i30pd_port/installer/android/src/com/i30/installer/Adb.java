@@ -141,13 +141,17 @@ final class Adb implements Closeable {
         else if (m.cmd == CLSE) closed = true;
     }
 
-    private void write(byte[] d, long deadline) throws IOException {
+    private void write(byte[] d, long deadline) throws IOException { write(d, deadline, null); }
+
+    private void write(byte[] d, long deadline, java.util.function.IntConsumer pct) throws IOException {
+        int last = -1;
         for (int off = 0; off < d.length; ) {
             while (!writable) { pump(deadline); if (closed) throw new IOException("내비가 연결을 닫았습니다"); }
             int n = Math.min(maxData, d.length - off);
             writable = false;
             send(WRTE, local, remote, d, off, n);
             off += n;
+            if (pct != null && (int) (off * 100L / d.length) != last) pct.accept(last = (int) (off * 100L / d.length));
         }
     }
 
@@ -173,7 +177,10 @@ final class Adb implements Closeable {
     }
 
     /** sync: SEND path,mode / DATA... / DONE mtime, then OKAY or FAIL. */
-    void push(File f, String remotePath, long timeoutMs) throws IOException {
+    void push(File f, String remotePath, long timeoutMs) throws IOException { push(f, remotePath, timeoutMs, null); }
+
+    /** pct: told the share sent so far (0..100) as it changes, or null. */
+    void push(File f, String remotePath, long timeoutMs, java.util.function.IntConsumer pct) throws IOException {
         long deadline = System.currentTimeMillis() + timeoutMs;
         open("sync:", deadline);
         ByteArrayOutputStream req = new ByteArrayOutputStream();
@@ -185,7 +192,7 @@ final class Adb implements Closeable {
         ByteBuffer done = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN);
         done.put("DONE".getBytes(StandardCharsets.US_ASCII)).putInt((int) (System.currentTimeMillis() / 1000));
         req.write(done.array(), 0, 8);
-        write(req.toByteArray(), deadline);
+        write(req.toByteArray(), deadline, pct);
         while (inbox.size() < 8 && !closed) pump(deadline);
         byte[] r = inbox.toByteArray();
         if (r.length < 8) throw new IOException("전송 실패: 내비 응답 없음");

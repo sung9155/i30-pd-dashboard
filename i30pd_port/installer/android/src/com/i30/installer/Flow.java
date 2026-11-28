@@ -36,6 +36,8 @@ final class Flow {
         boolean ask(String q);
         /** One line that shows how long this wait has lasted; null ends it. */
         default void waiting(String label) {}
+        /** The progress bar: what is going on and how far, 0..100 (-1: no telling, a moving bar); label null hides it. */
+        default void progress(String label, int pct) {}
         default boolean cancelled() { return false; }
     }
     interface Car { Adb.Transport waitCar(Ui ui) throws Exception; }
@@ -44,7 +46,7 @@ final class Flow {
     /** A failure the user should read as is (no stack trace). */
     static final class Stop extends Exception { Stop(String m) { super(m); } }
 
-    static final String VERSION = "2026-11-21";   // shown on screen and compared with the published source; raise on every change
+    static final String VERSION = "2026-11-28";   // shown on screen and compared with the published source; raise on every change
     static final String RELEASES = "https://github.com/sung9155/i30-pd-dashboard/releases";
     static final String RAW = "https://raw.githubusercontent.com/sung9155/i30-pd-dashboard/";
     static final String VERIFIED_BUILD = "eng.vmadmin.20260114.084130", LOW_BUILD = "eng.vmadmin.20260114.084725",
@@ -231,12 +233,15 @@ final class Flow {
         String remote = "/data/local/tmp/" + app[0];
         ui.say(app[2] + " (" + apk.length() / 1024 + " KB)");
         ui.say("  ① 전송 (USB)");
+        String sending = app[2] + " 전송 (USB)";
         ui.waiting("① 전송 중 (최대 60초)");
-        try { adb.push(apk, remote, 60_000); }
+        try { adb.push(apk, remote, 60_000, p -> ui.progress(sending, p)); }
         catch (IOException e) { if (ui.cancelled()) throw e; throw new Stop(app[2] + " 전송 실패: " + e.getMessage() + "\n케이블·OTG 어댑터를 확인하고 Factory Test부터 다시 하세요."); }
         ui.say("  ② 설치 (내비)");
         ui.waiting("② 설치 중 (최대 2분)");
-        String o = adb.shell("pm install -r " + remote, 120_000);
+        ui.progress(app[2] + " 설치 (내비)", -1);   // the package manager says nothing until it is done
+        String o;
+        try { o = adb.shell("pm install -r " + remote, 120_000); } finally { ui.progress(null, 0); }
         ui.waiting(null);
         // Only a signature clash is fixed by uninstalling; any other failure must not remove the working app.
         if (o.contains("INCONSISTENT_CERTIFICATES") || o.contains("UPDATE_INCOMPATIBLE")) {
@@ -348,10 +353,17 @@ final class Flow {
             URLConnection c = new URL(url).openConnection();
             c.setConnectTimeout(15_000);
             c.setReadTimeout(30_000);
+            String what = dst.getName().replace(".part", "") + " 받는 중";
+            long size = c.getContentLengthLong(), got = 0; int last = -1;
+            ui.progress(what, size > 0 ? 0 : -1);
             try (InputStream in = c.getInputStream(); OutputStream out = new FileOutputStream(dst)) {
                 byte[] b = new byte[16 * 1024];
-                for (int n; (n = in.read(b)) > 0; ) { if (ui.cancelled()) throw new Stop("취소했습니다."); out.write(b, 0, n); }
-            }
+                for (int n; (n = in.read(b)) > 0; ) {
+                    if (ui.cancelled()) throw new Stop("취소했습니다.");
+                    out.write(b, 0, n); got += n;
+                    if (size > 0 && (int) (got * 100 / size) != last) ui.progress(what, last = (int) Math.min(100, got * 100 / size));
+                }
+            } finally { ui.progress(null, 0); }
         } catch (IOException e) {
             throw new Stop("APK 다운로드 실패: " + dst.getName().replace(".part", "") + "\n인터넷 연결을 확인하세요.\n" + url + "\n" + e);
         }

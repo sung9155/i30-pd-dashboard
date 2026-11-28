@@ -14,13 +14,14 @@
 #            묻고 이 폴더의 파일을 바꾼 뒤 같은 인자로 다시 시작한다. 시험용: I30PD_API(릴리스 API 주소, 가짜 서버)
 # 맥 창 설치기(mac/gui.js)용: --gui  번호·Enter를 묻지 않고(--channel이 없으면 안정화) 차를 스스로 기다리며, 줄 단위로 찍고 상태 줄을 낸다.
 #              @@STEP <제목>  @@WAIT <초> <안내>  @@ASK <질문>(표준 입력에서 y/n 한 줄을 읽음)  @@FILE <경로>  @@DONE ok|fail <내용>
+#              @@PROG <0..100|-1> <안내>(진행 바, -1 = 얼마나 남았는지 모름)  @@PROG off
 #              새 설치기는 창의 [업데이트]가 맡는다: --check-update(더 새것이면 '@@UPDATE <버전>' 한 줄) · --gui --update(묻지 않고 바꾼 뒤
 #              '@@OPEN <새 창 설치기.command>'). --gui일 때 시작할 때의 새 설치기 확인은 건너뛴다.
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"; ME="$(basename "$0")"; ARGS=("$@")   # ARGS: 새 설치기로 다시 시작할 때 그대로 넘긴다
 # OS: Darwin(맥) / Linux. I30PD_OS로 바꿀 수 있다(시험 도구가 Windows Git Bash에서 리눅스 경로를 돌릴 때).
 OS="${I30PD_OS:-$(uname -s)}"; [ "$OS" = Darwin ] || OS=Linux
-INSTALLER_VERSION='2026-11-27c'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
+INSTALLER_VERSION='2026-11-28'   # 화면 맨 위에 찍혀, 스크린샷만으로 옛 설치기인지 알 수 있다. 고칠 때마다 올린다.
 INSTALLER_CHANNEL='stable'   # 이 설치기가 나온 곳: stable = 최신 정식 릴리스, test = 'test' 사전 배포. ZIP을 만들 때 scripts/release.py installers가 적는다.
 VERIFIED_BUILD='eng.vmadmin.20260114.084130'   # 블루링크 D-Audio Plus(HYUNDAIA) — 실차 설치 확인
 LOW_BUILD='eng.vmadmin.20260114.084725'        # 블루링크 없는 D-Audio Plus LOW — 2026-10-31 실차 설치·동작 확인
@@ -116,20 +117,51 @@ mask() { S="$SERIAL" perl -pe 's/\b(?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b/<MA
 adb_() { local o; o="$("$ADB" "$@" 2>&1)"; printf '> adb %s\n%s\n' "$*" "$o" >> "$LOG"; printf '%s' "$o"; }
 # 오래 걸릴 수 있는 adb(전송·설치)는 제한 시간 안에서 돌리고 기다리는 동안 경과 초를 같은 줄에 찍는다:
 # 멈춘 화면의 스크린샷만 봐도 어느 단계에서 몇 초째 멈췄는지 보이게. 결과는 $OUT, 시간 초과면 return 1.
+# 진행 바: 콘솔은 영문·숫자만 든 줄을 \r로 고쳐 찍고(한글 줄을 다시 쓰면 2칸 글자가 깨진다), 창 설치기에는 @@PROG 줄을 낸다.
+BAR_ON=''
+bar() {
+  if [ -n "$GUI" ]; then printf '@@PROG %s %s\n' "$2" "$1"; return; fi
+  [ "$2" -lt 0 ] && return
+  local n=$(( ($2 > 100 ? 100 : $2) / 5 )) on off; on="$(printf '%*s' $n '' | tr ' ' '#')"; off="$(printf '%*s' $((20 - n)) '' | tr ' ' '-')"
+  printf '\r    \033[32m[%s%s] %3d%%\033[0m' "$on" "$off" "$2"; BAR_ON=1
+}
+bar_end() { if [ -n "$GUI" ]; then printf '@@PROG off\n'; elif [ -n "$BAR_ON" ]; then echo; BAR_ON=''; fi; }
+# 받기: curl의 진행 표시(-#, 표준 오류)에서 %를 읽어 진행 바로. 실패하면 curl의 오류 글을 로그에 남기고 1.
+fetch() {
+  local url="$1" dst="$2" what="$3" err="$LOGDIR/curl_err.txt" pid rc pc
+  curl -fL -# $SLOW -o "$dst" "$url" 2> "$err" & pid=$!
+  bar "$what" 0
+  while kill -0 $pid 2>/dev/null; do
+    sleep 0.5; pc="$(tr '\r' '\n' < "$err" | grep -o '[0-9][0-9.]*%' | tail -1 | cut -d. -f1 | tr -d '%')"
+    [ -n "$pc" ] && bar "$what" "$pc"
+  done
+  wait $pid; rc=$?
+  [ $rc = 0 ] && bar "$what" 100; bar_end
+  [ $rc = 0 ] || tr '\r' '\n' < "$err" | grep -v '#' >> "$LOG"
+  return $rc
+}
+# 전송 중: 차에 쌓인 파일 크기로 % (adb push는 화면이 아니면 진행을 찍지 않는다). 보내는 파일 = $p, 차 경로 = $remote (설치 반복문)
+push_pct() { local n; n="$("$ADB" -s "$SERIAL" shell ls -l "$remote" 2>/dev/null | grep -oE ' [0-9]+ +[0-9]{4}-[0-9]{2}-[0-9]{2}' | awk '{print $1}')"; [ -n "$n" ] && echo $(( n * 100 / $(wc -c < "$p") )); }
+# TICK=<명령>을 주면 1초마다 그 명령이 낸 %로 진행 바를 찍는다(초 대신).
 adb_wait() {
-  local sec="$1" what="$2" f="$LOGDIR/adb_out.txt" t=0 pid; shift 2
+  local sec="$1" what="$2" f="$LOGDIR/adb_out.txt" t=0 pid pc; shift 2
   log "> adb $*  (최대 ${sec}초)"
   "$ADB" "$@" > "$f" 2>&1 & pid=$!
   [ -n "$GUI" ] && printf '@@WAIT 0 %s
 ' "$what"
-  printf '  %s ' "$what"
+  if [ -n "$TICK" ]; then printf '  %s\n' "$what"; bar "$what" 0; else printf '  %s ' "$what"; fi   # 진행 바 앞에서 줄을 끝낸다
   while kill -0 $pid 2>/dev/null; do
-    sleep 1; t=$((t + 1)); [ $((t % 5)) -eq 0 ] && printf '\033[90m%ss\033[0m ' $t
+    sleep 1; t=$((t + 1))
+    if [ -n "$TICK" ]; then pc="$($TICK)"; [ -n "$pc" ] && bar "$what" $(( pc > 99 ? 99 : pc ))
+    elif [ $((t % 5)) -eq 0 ]; then printf '\033[90m%ss\033[0m ' $t; fi
     if [ $t -ge $sec ]; then
-      kill $pid 2>/dev/null; printf '\033[31m멈춤(%s초)\033[0m\n' $sec; log "  → ${sec}초 넘게 응답 없음, 중단"; OUT=''; return 1
+      kill $pid 2>/dev/null; [ -n "$TICK" ] && bar_end; printf '\033[31m멈춤(%s초)\033[0m\n' $sec; log "  → ${sec}초 넘게 응답 없음, 중단"; OUT=''; return 1
     fi
   done
-  wait $pid; OUT="$(cat "$f")"; printf '\033[90m(%s초)\033[0m\n' $t; log "$OUT  (${t}초)"; return 0
+  wait $pid; OUT="$(cat "$f")"
+  if [ -n "$TICK" ]; then bar "$what" 100; if [ -n "$GUI" ]; then bar_end; printf '    (%s초)\n' $t; else printf '  \033[90m(%s초)\033[0m\n' $t; BAR_ON=''; fi
+  else printf '\033[90m(%s초)\033[0m\n' $t; fi
+  log "$OUT  (${t}초)"; return 0
 }
 # 전송·설치가 멈췄을 때: 멈춘 곳과 할 일, 내비의 설치 로그 끝부분을 화면에 띄우고 끝낸다.
 stuck() {
@@ -335,7 +367,7 @@ for apk in $([ -z "$NO_APPS" ] && echo $APKS); do
   if [ -f "$ROOT/$apk" ] && [ "$(head -c 2 "$ROOT/$apk")" = 'PK' ]; then warn "$apk: 설치기 폴더에 있는 파일을 씁니다 (위에서 고른 버전과 상관없이 이 파일이 설치됩니다)"; continue; fi
   [ -f "$ROOT/$apk" ] && warn "$apk: 폴더 파일이 APK가 아니라 무시하고 내려받습니다."
   note "$apk: 폴더에 없어 내려받습니다..."
-  curl -fsSL $SLOW -o "$LOGDIR/$apk" "$APK_BASE/$apk" || die "APK 다운로드 실패: $APK_BASE/$apk
+  fetch "$APK_BASE/$apk" "$LOGDIR/$apk" "$apk" || die "APK 다운로드 실패: $APK_BASE/$apk
 인터넷 연결을 확인한 뒤 다시 실행하세요. 인터넷이 안 되는 곳이라면, 다른 곳에서 받은 APK 두 개를 $ME 옆에 두고 실행하면 됩니다." 2
   # APK(=ZIP)는 'PK'로 시작. 404 안내문 등이 저장된 경우를 거른다.
   [ "$(head -c 2 "$LOGDIR/$apk")" = 'PK' ] || die "받은 파일이 APK가 아닙니다($apk): $APK_BASE/$apk" 2
@@ -644,10 +676,12 @@ for apk in $APKS; do
     ok "$name: 이미 같은 버전이 설치돼 있습니다 — 건너뜀"; continue
   fi
   printf '%s (%s KB)\n' "$name" $(( $(wc -c < "$p") / 1024 )); log "$name"
-  adb_wait 60 '① 전송 (USB)' -s "$SERIAL" push "$p" "$remote" || stuck "$name ① 전송" "$PUSH_HINT"
+  TICK=push_pct adb_wait 60 '① 전송 (USB)' -s "$SERIAL" push "$p" "$remote" || stuck "$name ① 전송" "$PUSH_HINT"
   printf '%s' "$OUT" | grep -qiE 'error|failed|No such' && die "$name 전송 실패:
 $OUT" 1
-  adb_wait 120 '② 설치 (내비)' -s "$SERIAL" shell pm install -r "$remote" || stuck "$name ② 설치" "$PM_HINT"
+  bar '② 설치 (내비)' -1   # 창 설치기: 내비는 끝날 때까지 아무것도 알려 주지 않아 흐르는 막대
+  adb_wait 120 '② 설치 (내비)' -s "$SERIAL" shell pm install -r "$remote" || { bar_end; stuck "$name ② 설치" "$PM_HINT"; }
+  bar_end
   # Only a signature clash is fixed by uninstalling; any other failure (storage full, ...) must not remove the working app.
   if printf '%s' "$OUT" | grep -qE 'INCONSISTENT_CERTIFICATES|UPDATE_INCOMPATIBLE'; then
     warn "$name: 기존에 다른 서명으로 설치돼 있습니다."

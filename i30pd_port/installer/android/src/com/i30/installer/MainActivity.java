@@ -47,6 +47,8 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
     private ScrollView scroll;
     private TextView installBtn, removeBtn, diagBtn, recordBtn, cancelBtn, refreshBtn, updateBtn;
     private TextView waitLine;
+    private TextView barLabel;
+    private android.widget.ProgressBar bar;
     private String waitLabel;   // UI thread only
     private long waitStart;
     private final AtomicBoolean cancel = new AtomicBoolean();
@@ -183,6 +185,13 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         waitLine = text("", 13, AMBER, true);
         waitLine.setVisibility(View.GONE);
         root.addView(waitLine, lp(-1, -2, 0, dp(8)));
+        barLabel = text("", 13, TEXT, true);
+        bar = new android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        bar.setMax(100);
+        bar.setProgressTintList(android.content.res.ColorStateList.valueOf(GO));
+        barLabel.setVisibility(View.GONE); bar.setVisibility(View.GONE);
+        root.addView(barLabel, lp(-1, -2, 0, dp(8)));
+        root.addView(bar, lp(-1, dp(10), 0, dp(4)));
 
         log = text("", 12, DIM, false);
         log.setTypeface(Typeface.MONOSPACE);
@@ -426,6 +435,17 @@ public class MainActivity extends Activity implements Flow.Ui, Flow.Car {
         say(zip ? "\n공유 화면에서 보낼 앱을 고르세요. 오르막에서 멈춘 곳 등 기억나는 것을 같이 적어 주면 찾기 쉽습니다."
                 : "\n공유 화면에서 보낼 앱을 고르세요. 증상(언제, 어떤 화면에서, 무엇이)도 같이 알려 주세요.");
         runOnUiThread(() -> startActivity(Intent.createChooser(send, "공유").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)));
+    }
+
+    @Override public void progress(String label, int pct) {
+        runOnUiThread(() -> {
+            int v = label == null ? View.GONE : View.VISIBLE;
+            barLabel.setVisibility(v); bar.setVisibility(v);
+            if (label == null) return;
+            bar.setIndeterminate(pct < 0);
+            if (pct >= 0) bar.setProgress(pct);
+            barLabel.setText(pct < 0 ? label + " …" : label + "  " + pct + "%");
+        });
     }
 
     @Override public void say(String m) {

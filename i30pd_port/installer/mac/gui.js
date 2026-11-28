@@ -108,6 +108,7 @@ function line(l) {
   if ((m = /^@@OPEN (.*)$/.exec(l))) { openPath = m[1]; say('새 설치기: ' + openPath); return; }
   if ((m = /^@@DONE ok ?(.*)$/.exec(l))) { finish(true, m[1].trim() || DEFAULTS[mode]); return; }
   if ((m = /^@@DONE fail ?(.*)$/.exec(l))) { finish(false, m[1]); return; }
+  if ((m = /^@@PROG (-?\d+) (.*)$/.exec(l))) { if (!waitMsg) statusLabel.stringValue = m[2] + (+m[1] >= 0 ? '  ' + m[1] + '%' : ' …'); return; }   // 진행: 상태 줄에 %
   if (/^@@/.test(l)) return;
   waitMsg = null;
   say(l);

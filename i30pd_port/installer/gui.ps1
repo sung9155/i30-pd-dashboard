@@ -6,6 +6,7 @@
   삭제.cmd = [삭제]. 새 설치기: 창이 뜨면 install.ps1 -CheckUpdate를 숨은 창에서 돌려 '@@UPDATE <버전>'이 오면 [업데이트]를
   보이고, 누르면 -Gui -Update가 이 폴더의 파일을 바꾼 뒤 '@@OPEN <새 창 설치기.cmd>'를 알린다. 이 창은 그것을 열고 닫힌다.
   install.ps1 -Gui 상태 줄: @@STEP <제목>  @@WAIT <초> <안내>  @@ASK <질문>(예/아니오 창 → y/n을 표준 입력으로)  @@FILE <경로>
+                         @@PROG <0..100|-1> <안내>(진행 바, -1 = 흐르는 막대)  @@PROG off(숨김)
                          @@DONE ok|fail <내용>
   시험용 환경 변수(test/run.sh win): VN_GUI_SMOKE=<파일>  창이 뜨면 제목·버전 줄·기록 칸 높이를 그 파일에 쓰고 닫는다.
     VN_GUI_AUTORUN=install|uninstall|diag|bootfast|bootfastremove|update  창이 뜨면 바로 그 단추를 누른다(확인 창 없이).
@@ -112,6 +113,9 @@ Row $adv
 
 $status = Label '' $bold ([System.Drawing.Color]::FromArgb(180, 100, 0))
 Row $status
+$bar = New-Object System.Windows.Forms.ProgressBar; $bar.Minimum = 0; $bar.Maximum = 100; $bar.Height = 22; $bar.Visible = $false
+$bar.MarqueeAnimationSpeed = 30
+Row $bar
 $banner = Label '' $bold; $banner.Visible = $false; $banner.Padding = New-Object System.Windows.Forms.Padding(8)
 Row $banner
 
@@ -134,7 +138,7 @@ function Say([string]$m){ $log.AppendText($m + "`r`n") }
 function Idle([bool]$on){ foreach($b in $installBtn, $removeBtn, $diagBtn, $updateBtn, $fastBtn, $stockBtn, $stable, $test){ $b.Enabled = $on }; $cancelBtn.Enabled = -not $on }
 function Finish([bool]$ok, [string]$msg){
   if($script:done){ return }; $script:done = $true
-  $status.Text = ''; $script:waitMsg = $null
+  $status.Text = ''; $script:waitMsg = $null; $bar.Visible = $false
   $banner.BackColor = $(if($ok){ [System.Drawing.Color]::FromArgb(210, 245, 220) } else { [System.Drawing.Color]::FromArgb(250, 215, 210) })
   $banner.Text = $(if($ok){ "완료했습니다. $msg" } else { "중단했습니다: $msg`n기록 칸 내용과 기록 파일을 함께 보내 주시면 원인을 볼 수 있습니다." }) +
     $(if($script:mode -ne 'update'){ "`n$UsbOff" } else { '' })
@@ -165,6 +169,13 @@ function Line([string]$l){
       $yes = ([System.Windows.Forms.MessageBox]::Show($form, $text, '확인', 'YesNo', 'Question') -eq 'Yes')
     }
     Say "$q → $(if($yes){ '예' } else { '아니오' })"; Answer $(if($yes){ 'y' } else { 'n' })
+    return
+  }
+  if($l -match '^@@PROG off'){ $bar.Visible = $false; return }
+  if($l -match '^@@PROG (-?\d+) (.*)$'){
+    $p = [int]$Matches[1]; $bar.Visible = $true
+    if($p -lt 0){ $bar.Style = 'Marquee' } else { $bar.Style = 'Continuous'; $bar.Value = [math]::Min(100, $p) }
+    if(-not $script:waitMsg){ $status.Text = $(if($p -lt 0){ $Matches[2] } else { "$($Matches[2])  $p%" }) }   # 기다림 타이머가 돌면 그 줄을 둔다
     return
   }
   if($l -match '^@@FILE (.*)$'){ $script:file = $Matches[1]; $fileBtn.Visible = $true; return }
